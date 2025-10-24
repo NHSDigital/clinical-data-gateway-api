@@ -1,10 +1,17 @@
 name: "CI/CD publish"
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - main
+  # change to workflow dispactch on initial creation from tempalte
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for the release'
+        required: true
+        default: 'v0.0.0'
 
 jobs:
   metadata:

@@ -1,4 +1,8 @@
-# Repository Template
+# Clinical Data APIs Gateway
+
+This repository has been created in support of early Alpha for this product \[GPCAPIM-159], and the README will be updated during ongoing development.
+
+## Repository Template
 
 [![CI/CD Pull Request](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml/badge.svg)](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=repository-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=repository-template)
