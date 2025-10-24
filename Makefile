@@ -1,6 +1,7 @@
 # This file is for you! Edit it to implement your own hooks (make targets) into
 # the project as automated steps to be executed on locally and in the CD pipeline.
 
+ifeq (${IN_BUILD_CONTAINER},true)
 include scripts/init.mk
 
 # ==============================================================================
@@ -8,7 +9,7 @@ include scripts/init.mk
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
 dependencies: # Install dependencies needed to build and test the project @Pipeline
-	# TODO: Implement installation of your project dependencies
+	cd gateway-api && poetry install
 
 build: # Build the project artefact @Pipeline
 	# TODO: Implement the artefact build step
@@ -34,3 +35,33 @@ ${VERBOSE}.SILENT: \
 	config \
 	dependencies \
 	deploy \
+
+else 
+
+PYTHON_VERSION=3.13.9
+
+.PHONEY: clean
+clean:
+	@echo "Stopping Build Container..."
+	@podman stop gateway-api-build-container || echo "No build container currently running."
+	@echo "Removing Build Container..."
+	@podman rm gateway-api-build-container || echo "No build container image currently built."
+
+
+.PHONEY: env
+env: clean
+	@echo "Building Build Container..."
+	# Required so that asdf plugins can be installed whilst building the container.	
+	@cp .tool-versions ./infrastructure/images/build-container/resources/.tool-versions
+	@podman build --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg INCLUDE_DEV_CERTS=true -t gateway-api-build-container  infrastructure/images/build-container
+	@echo "Starting Build Container..."
+	@podman run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,src=$(PWD),dest=/git --security-opt label=disable -d --name=gateway-api-build-container gateway-api-build-container
+	
+	@echo "Done!"
+
+
+.PHONEY: bash
+bash:
+	@podman exec -it gateway-api-build-container bash
+
+endif
