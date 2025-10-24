@@ -1,0 +1,47 @@
+[lint]
+select = [
+  # Standard configuration taken from https://docs.astral.sh/ruff/linter/#rule-selection.
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # pyupgrade
+  "UP",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
+  # Additional configuration.
+  # Flake8-bandit
+  "S",
+  # Flake8-quotes
+  "Q",
+  # Flake8-self
+  "SLF",
+  # Flake8-2020
+  "YTT",
+  # Flake8-builtins
+  "A",
+  # Flake8-commas
+  "COM",
+  # Flake8-comprehensions
+  "C4",
+  # Flake8-implicit-str-concat
+  "ISC",
+  # Flake8-import-conventions
+  "ICN",
+  # Flake8-datetimez
+  "DTZ",
+  # Flake8-logging
+  "LOG",
+  # Flake8-logging-format
+  "G",
+  # Flake8-pytest-style
+  "PT",
+  # Flake8-type-checking
+  "TC"
+]
+# Ignore Flake8-commas trailing commas as this can conflict with the Ruff standard format.
+ignore =["COM812"]
