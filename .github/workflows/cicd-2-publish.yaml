@@ -5,7 +5,7 @@ on:
   #   types: [closed]
   #   branches:
   #     - main
-  
+ 
   # change to workflow dispactch on initial creation from tempalte
   workflow_dispatch:
     inputs:

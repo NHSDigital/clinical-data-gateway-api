@@ -16,9 +16,9 @@ Composite Actions | Encapsulate repeatable checks & reports
 
 ## 1. Pull Request Validation Workflow
 
-File: [workflows/cicd-1-pull-request.yaml](workflows/cicd-1-pull-request.yaml)  
-Trigger: `pull_request` (opened, reopened).  
-Purpose: Full PR quality gate (~≤20 min target).  
+File: [workflows/cicd-1-pull-request.yaml](workflows/cicd-1-pull-request.yaml)
+Trigger: `pull_request` (opened, reopened).
+Purpose: Full PR quality gate (~≤20 min target).
 Job sequence:
 
 1. metadata – gathers timestamps, tool versions, semantic version.
@@ -33,9 +33,9 @@ Outcome: Fast feedback on security, formatting, unit tests, build readiness, and
 
 ## 2. Publish Workflow (Release on Merge)
 
-File: [workflows/cicd-2-publish.yaml](workflows/cicd-2-publish.yaml)  
-Trigger: `pull_request` closed on default branch where `merged == true`.  
-Purpose: Convert merged main commit into a release artifact and send optional notification.  
+File: [workflows/cicd-2-publish.yaml](workflows/cicd-2-publish.yaml)
+Trigger: `pull_request` closed on default branch where `merged == true`.
+Purpose: Convert merged main commit into a release artifact and send optional notification.
 Jobs:
 
 - metadata – reconstructs build/version context.
@@ -46,9 +46,9 @@ Jobs:
 
 ## 3. Deploy Workflow (Manual Promotion)
 
-File: [workflows/cicd-3-deploy.yaml](workflows/cicd-3-deploy.yaml)  
-Trigger: `workflow_dispatch` (input: tag; default latest).  
-Purpose: Manually deploy a chosen tag to an environment.  
+File: [workflows/cicd-3-deploy.yaml](workflows/cicd-3-deploy.yaml)
+Trigger: `workflow_dispatch` (input: tag; default latest).
+Purpose: Manually deploy a chosen tag to an environment.
 Jobs:
 
 - metadata – captures tag + version details.
@@ -60,9 +60,10 @@ Jobs:
 
 ### 1. Reusable Commit Stage
 
-File: [workflows/stage-1-commit.yaml](workflows/stage-1-commit.yaml) (invoked via `workflow_call`)  
+File: [workflows/stage-1-commit.yaml](workflows/stage-1-commit.yaml) (invoked via `workflow_call`)
 Parallel short-running jobs:
 
+<!-- vale off -->
 - scan-secrets – [actions/scan-secrets](actions/scan-secrets/action.yaml)
 - check-file-format – [actions/check-file-format](actions/check-file-format/action.yaml)
 - check-markdown-format – [actions/check-markdown-format](actions/check-markdown-format/action.yaml)
@@ -70,14 +71,14 @@ Parallel short-running jobs:
 - lint-terraform – [actions/lint-terraform](actions/lint-terraform/action.yaml)
 - count-lines-of-code – [actions/create-lines-of-code-report](actions/create-lines-of-code-report/action.yaml)
 - scan-dependencies – [actions/scan-dependencies](actions/scan-dependencies/action.yaml)
-
 Purpose: Early fail-fast quality, security, formatting, and reporting gates.
+<!-- vale on -->
 
 ---
 
 ### 2. Reusable Test Stage
 
-File: [workflows/stage-2-test.yaml](workflows/stage-2-test.yaml)  
+File: [workflows/stage-2-test.yaml](workflows/stage-2-test.yaml)
 Jobs:
 
 - test-unit – `make test-unit`
@@ -91,7 +92,7 @@ Purpose: Validate correctness, style, coverage, and static analysis.
 
 ### 3. Reusable Build Stage
 
-File: [workflows/stage-3-build.yaml](workflows/stage-3-build.yaml)  
+File: [workflows/stage-3-build.yaml](workflows/stage-3-build.yaml)
 Jobs:
 
 - artefact-1 – placeholder for build + artifact upload.
@@ -103,7 +104,7 @@ Purpose: Scaffold for producing distributable artifacts.
 
 ### 4. Reusable Acceptance Stage
 
-File: [workflows/stage-4-acceptance.yaml](workflows/stage-4-acceptance.yaml)  
+File: [workflows/stage-4-acceptance.yaml](workflows/stage-4-acceptance.yaml)
 Flow:
 
 1. environment-set-up – provision infra / DB / deploy app (placeholders).
@@ -123,6 +124,7 @@ Purpose: Broad functional and non-functional validation in an ephemeral environm
 
 ## Composite Actions Summary
 
+<!-- vale off -->
 Action | Path | Purpose | Key Script(s)
 ------ | ---- | ------- | -------------
 Scan secrets | [actions/scan-secrets](actions/scan-secrets/action.yaml) | Detect committed secrets | Internal script (history scan)
@@ -133,12 +135,14 @@ Lint Terraform | [actions/lint-terraform](actions/lint-terraform/action.yaml) | 
 Create LOC report | [actions/create-lines-of-code-report](actions/create-lines-of-code-report/action.yaml) | Generate & archive lines-of-code metrics | `scripts/reports/create-lines-of-code-report.sh`
 Scan dependencies | [actions/scan-dependencies](actions/scan-dependencies/action.yaml) | SBOM + vulnerability report | `scripts/reports/create-sbom-report.sh` (+ vulnerability script)
 Perform static analysis | [actions/perform-static-analysis](actions/perform-static-analysis/action.yaml) | SonarCloud analysis (conditional) | `scripts/reports/perform-static-analysis.sh`
+<!-- vale on -->
 
 ---
 
 ## Make Targets (Referenced by Workflows)
 
 Primary targets invoked:
+
 - Test stage & acceptance tests: see `scripts/tests/test.mk` for `test-*` targets.
 - Local workflow emulation: `runner-act` in `scripts/init.mk` (uses `act`).
 
