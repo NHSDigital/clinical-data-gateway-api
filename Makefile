@@ -57,11 +57,16 @@ env: clean
 	@echo "Starting Build Container..."
 	@podman run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,src=$(PWD),dest=/git --security-opt label=disable -d --name=gateway-api-build-container gateway-api-build-container
 	
+	COMMAND="make dependencies" make command
+
 	@echo "Done!"
 
+.PHONEY: command
+command:
+	@podman exec -it gateway-api-build-container bash -c 'source ~/.bashrc && ${COMMAND}'
 
 .PHONEY: bash
 bash:
-	@podman exec -it gateway-api-build-container bash
+	COMMAND=bash make command
 
 endif
