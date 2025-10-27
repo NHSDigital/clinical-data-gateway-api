@@ -57,9 +57,13 @@ env: clean
 	@echo "Starting Build Container..."
 	@podman run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,src=$(PWD),dest=/git --security-opt label=disable -d --name=gateway-api-build-container gateway-api-build-container
 	
-	COMMAND="make dependencies" make command
+	make dependencies
 
 	@echo "Done!"
+
+.PHONEY: dependencies
+dependencies:
+	COMMAND="pyenv activate gateway && make dependencies" make command
 
 .PHONEY: command
 command:
