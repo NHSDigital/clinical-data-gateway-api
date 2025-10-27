@@ -1,6 +1,7 @@
-FROM docker:28.5.0-cli AS build-container
+FROM docker:28.5.0-cli AS gateway-build-container
 
 ENV IN_BUILD_CONTAINER=true
+ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0/"
 
 ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
@@ -20,8 +21,6 @@ RUN apk update
 
 RUN apk add --no-cache --update bash \
     curl \
-    # Required for asdf installation
-    go \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -43,7 +42,19 @@ RUN /root/.pyenv/bin/pyenv global ${PYTHON_VERSION}
 COPY /resources/.bashrc /root/.bashrc
 
 # Install asdf via Go to configure plugins,
-RUN go install github.com/asdf-vm/asdf/cmd/asdf@v0.18.0
+RUN mkdir /asdf
+WORKDIR /asdf
+
+# If we're running on an arm64 architecture download the arm64 executeable.
+RUN if [ "$(uname -m)" = "aarch64" ] ; then \
+    echo "Installing ARM asdf executable..." ; \
+    wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \
+else \
+    echo "Installing x86 asdf executable..." ; \
+    wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-amd64.tar.gz"; \
+fi
+
+RUN tar -xvf asdf.tar.gz
 
 WORKDIR /resources
 # Run install other development plugins via asdf.

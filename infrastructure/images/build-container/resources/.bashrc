@@ -7,8 +7,6 @@ eval "$(pyenv virtualenv-init -)"
 # Add pipx applications to the path.
 export PATH="$PATH:/root/.local/bin"
 
-# Add go programs to the path.
-export PATH=$PATH:$(go env GOPATH)/bin
-
-# Add asdf plugins to the path.
+# Add asdf and its plugins to the path.
+export PATH="/asdf:$PATH"
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
