@@ -3,5 +3,26 @@
     "MD013": false,
     "MD024": { "siblings_only": true },
     "MD033": false
-  }
+  },
+  // Enable pylance type checking within vscode.
+  "python.analysis.typeCheckingMode": "standard",
+  // Disable all telemetry.
+  "telemetry.telemetryLevel": "off",
+  "telemetry.feedback.enabled": false,
+  // Github copilot file associations
+  "github.copilot.enable": {
+    "*": true,
+    "dotenv": false,
+    "ini": false,
+    "json": false,
+    "yaml": false,
+    ".crt": false,
+    ".key": false,
+    ".pem": false
+  },
+  // Disable telemetry for pylance and python language server.
+  "pylance.telemetry": false,
+  "python.telemetry.enable": false,
+  "debugpy.telemetry.enable": false,
+  "python.experiments.enabled": false
 }
