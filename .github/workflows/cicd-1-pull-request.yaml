@@ -30,7 +30,7 @@ jobs:
       - name: "Set CI/CD variables"
         id: variables
         run: | # Temporarily set IN_BUILD_CONTAINER variable to allow access to targets outside of the build container within CI.
-          IN_BUILD_CONTAINER=true
+          export IN_BUILD_CONTAINER=true
           datetime=$(date -u +'%Y-%m-%dT%H:%M:%S%z')
           BUILD_DATETIME=$datetime make version-create-effective-file
           echo "build_datetime_london=$(TZ=Europe/London date --date=$datetime +'%Y-%m-%dT%H:%M:%S%z')" >> $GITHUB_OUTPUT
