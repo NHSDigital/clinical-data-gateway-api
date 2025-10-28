@@ -2,6 +2,7 @@ FROM docker:28.5.0-cli AS gateway-build-container
 
 ENV IN_BUILD_CONTAINER=true
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0/"
+ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.4.1/"
 
 ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
@@ -21,6 +22,10 @@ RUN apk update
 
 RUN apk add --no-cache --update bash \
     curl \
+    # Required to validate english usage in prose/comments.
+    vale \
+    # Required to support markdownlint-cli installation.
+    npm \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -41,7 +46,7 @@ RUN /root/.pyenv/bin/pyenv global ${PYTHON_VERSION}
 
 COPY /resources/.bashrc /root/.bashrc
 
-# Install asdf via Go to configure plugins,
+# Install asdf to configure plugins.
 RUN mkdir /asdf
 WORKDIR /asdf
 
@@ -56,6 +61,23 @@ fi
 
 RUN tar -xvf asdf.tar.gz
 
+# Install editorconfig-checker to validate formatting.
+RUN mkdir /editorconfig
+WORKDIR /editorconfig
+
+RUN if [ "$(uname -m)" = "aarch64" ] ; then \
+    echo "Installing ARM editorconfig..." ; \
+    wget -O editorconfig.tar.gz "$EDITORCONFIG_DOWNLOAD_URL/ec-linux-arm64.tar.gz"; \
+    tar -xvf editorconfig.tar.gz; \
+    mv bin/ec-linux-arm64 /usr/local/bin/editorconfig; \
+else \
+    echo "Installing x86 editorconfig..." ; \
+    wget -O editorconfig.tar.gz "$EDITORCONFIG_DOWNLOAD_URL/ec-linux-amd64.tar.gz"; \
+    tar -xvf editorconfig.tar.gz; \
+    mv bin/ec-linux-amd64 /usr/local/bin/editorconfig; \
+fi
+
+
 WORKDIR /resources
 # Run install other development plugins via asdf.
 RUN bash -c "source /root/.bashrc && bash ./install-asdf-plugins.sh"
@@ -67,5 +89,8 @@ RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx 
 RUN bash -c "source /root/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway"
 
 WORKDIR /git
+
+# Install markdownlint-cli
+RUN npm install -g markdownlint-cli
 
 ENTRYPOINT ["sleep", "infinity"]

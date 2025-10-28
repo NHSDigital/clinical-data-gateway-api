@@ -27,6 +27,10 @@ config:: # Configure development environment (main) @Configuration
 	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
 	make _install-dependencies
 
+.PHONEY: pre-commit
+pre-commit:
+	make githooks-run
+
 # ==============================================================================
 
 ${VERBOSE}.SILENT: \
@@ -36,7 +40,7 @@ ${VERBOSE}.SILENT: \
 	dependencies \
 	deploy \
 
-else 
+else
 
 PYTHON_VERSION=3.13.9
 
@@ -51,26 +55,34 @@ clean:
 .PHONEY: env
 env: clean
 	@echo "Building Build Container..."
-	# Required so that asdf plugins can be installed whilst building the container.	
+	# Required so that asdf plugins can be installed whilst building the container.
 	@cp .tool-versions ./infrastructure/images/build-container/resources/.tool-versions
 	@podman build --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg INCLUDE_DEV_CERTS=true -t gateway-api-build-container  infrastructure/images/build-container
 	@echo "Starting Build Container..."
 	@podman run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,src=$(PWD),dest=/git --security-opt label=disable -d --name=gateway-api-build-container gateway-api-build-container
-	
+
 	make dependencies
 
 	@echo "Done!"
 
 .PHONEY: dependencies
 dependencies:
+	@echo "Installing git hooks..."
+	@cp ./scripts/githooks/pre-commit ./.git/hooks/pre-commit
+	@chmod u+x ./.git/hooks/pre-commit
+	@echo "Installing project dependencies within build container..."
 	COMMAND="pyenv activate gateway && make dependencies" make command
-
-.PHONEY: command
-command:
-	@podman exec -it gateway-api-build-container bash -c 'source ~/.bashrc && ${COMMAND}'
 
 .PHONEY: bash
 bash:
 	COMMAND=bash make command
+
+.PHONEY: pre-commit
+pre-commit:
+	COMMAND="make pre-commit" make command
+
+.PHONEY: command
+command:
+	@podman exec -it gateway-api-build-container bash -c 'source ~/.bashrc && ${COMMAND}'
 
 endif
