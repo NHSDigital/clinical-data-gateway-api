@@ -15,5 +15,7 @@
     "ms-python.vscode-python-envs",
     "alexkrechik.cucumberautocomplete"
   ],
-  "unwantedRecommendations": []
+  "unwantedRecommendations": [
+    "ms-vscode.notepadplusplus-keybindings"
+  ]
 }
