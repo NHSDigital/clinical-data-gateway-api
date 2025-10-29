@@ -13,6 +13,11 @@ dependencies: # Install dependencies needed to build and test the project @Pipel
 
 build: # Build the project artefact @Pipeline
 	# TODO: Implement the artefact build step
+	@echo "Hello, World!"
+	@echo "Building Docker image using Docker..."
+	@docker build -t gateway-api-image ./infrastructure/images/gateway-api
+	@echo "Docker image 'gateway-api-image' built successfully!"
+
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
@@ -67,6 +72,8 @@ env: clean
 
 .PHONEY: dependencies
 dependencies:
+	@echo "Configuring Git safe directory..."
+	@git config --global --add safe.directory /git || true
 	@echo "Installing git hooks..."
 	@cp ./scripts/githooks/pre-commit ./.git/hooks/pre-commit
 	@chmod u+x ./.git/hooks/pre-commit
