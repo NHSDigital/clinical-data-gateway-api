@@ -57,6 +57,7 @@ jobs:
           fi
       - name: "List variables"
         run: |
+          export IN_BUILD_CONTAINER=true
           export BUILD_DATETIME_LONDON="${{ steps.variables.outputs.build_datetime_london }}"
           export BUILD_DATETIME="${{ steps.variables.outputs.build_datetime }}"
           export BUILD_TIMESTAMP="${{ steps.variables.outputs.build_timestamp }}"

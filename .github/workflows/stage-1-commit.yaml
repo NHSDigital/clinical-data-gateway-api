@@ -1,5 +1,9 @@
 name: "Commit stage"
 
+env:
+  # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
+  IN_BUILD_CONTAINER: true
+
 on:
   workflow_call:
     inputs:
