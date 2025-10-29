@@ -3,8 +3,8 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.markdownlint": "always"
   },
-  // Enable pylance type checking within vscode.
-  "python.analysis.typeCheckingMode": "standard",
+  // Disable pylance type checking within vscode.
+  "python.analysis.typeCheckingMode": "off",
   // Disable all telemetry.
   "telemetry.telemetryLevel": "off",
   "telemetry.feedback.enabled": false,
@@ -35,4 +35,13 @@
   "cucumberautocomplete.steps": [
         "gateway-api/features/steps/*.py",
   ],
+  // Pylance configuration
+  "python.analysis.typeEvaluation.deprecateTypingAliases": true,
+  "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoIndent": false,
+  // Mypy configuration
+  "mypy-type-checker.cwd": "${nearestConfig}",
+  // Enable re-format on type
+  "editor.formatOnType": true
 }

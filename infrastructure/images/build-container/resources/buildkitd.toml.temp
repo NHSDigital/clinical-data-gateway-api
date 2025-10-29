@@ -1,0 +1,5 @@
+[registry."docker.io"]
+  ca = [ {{CERTS}} ]
+
+[registry."public.ecr.aws"]
+  ca = [ {{CERTS}} ]

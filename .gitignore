@@ -16,3 +16,4 @@
 
 # Testing artifacts
 gateway-api/.hypothesis
+**/.mypy_cache

@@ -13,7 +13,10 @@
     "ms-python.vscode-pylance",
     "ms-python.debugpy",
     "ms-python.vscode-python-envs",
-    "alexkrechik.cucumberautocomplete"
+    "alexkrechik.cucumberautocomplete",
+    "ms-python.mypy-type-checker"
   ],
-  "unwantedRecommendations": []
+  "unwantedRecommendations": [
+    "ms-vscode.notepadplusplus-keybindings"
+  ]
 }
