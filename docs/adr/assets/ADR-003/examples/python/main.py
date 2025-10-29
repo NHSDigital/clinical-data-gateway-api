@@ -7,13 +7,14 @@ import time
 
 
 def main():
-
     gh_app_id = os.environ.get("GITHUB_APP_ID")
     gh_app_pk_file = os.environ.get("GITHUB_APP_PK_FILE")
     gh_org = os.environ.get("GITHUB_ORG")
 
     if not gh_app_id or not gh_app_pk_file or not gh_org:
-        raise ValueError("Environment variables GITHUB_APP_ID, GITHUB_APP_PK_FILE and GITHUB_ORG must be passed to this program.")
+        raise ValueError(
+            "Environment variables GITHUB_APP_ID, GITHUB_APP_PK_FILE and GITHUB_ORG must be passed to this program."
+        )
 
     jwt_token = get_jwt_token(gh_app_id, gh_app_pk_file)
     installation_id = get_installation_id(jwt_token, gh_org)
@@ -23,7 +24,6 @@ def main():
 
 
 def get_jwt_token(gh_app_id, gh_app_pk_file):
-
     with open(gh_app_pk_file, "rb") as file:
         private_key = file.read()
     payload = {"iat": int(time.time()), "exp": int(time.time()) + 600, "iss": gh_app_id}
@@ -33,7 +33,6 @@ def get_jwt_token(gh_app_id, gh_app_pk_file):
 
 
 def get_installation_id(jwt_token, gh_org):
-
     headers = {
         "Authorization": f"Bearer {jwt_token}",
         "Accept": "application/vnd.github.v3+json",
@@ -51,7 +50,6 @@ def get_installation_id(jwt_token, gh_org):
 
 
 def get_access_token(jwt_token, installation_id):
-
     headers = {
         "Authorization": f"Bearer {jwt_token}",
         "Accept": "application/vnd.github.v3+json",
