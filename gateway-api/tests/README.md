@@ -114,6 +114,7 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 **Key points:**
 
 - The pact contract file represents the contract between the consumer and provider
+
 - As this file is committed you can track contract changes through git diffs
 - The `pact.write_file()` call merges interactions (updates existing or adds new ones)
 - Interactions with the same description get replaced; different descriptions get added
