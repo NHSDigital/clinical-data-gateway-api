@@ -15,3 +15,15 @@ Syft
 Terraform
 toolchain
 Trufflehog
+sublicense
+asdf
+dotfiles
+coreutils
+binutils
+customisability
+anonymised
+Serverless
+VMs
+namespaces
+cgroups
+serverless
