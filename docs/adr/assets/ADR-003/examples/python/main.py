@@ -15,7 +15,7 @@ def main():
     if not gh_app_id or not gh_app_pk_file or not gh_org:
         raise ValueError(
             "Environment variables GITHUB_APP_ID, GITHUB_APP_PK_FILE and GITHUB_ORG"
-            " must be passed to this program."
+            " must be passed to this program.",
         )
 
     jwt_token = get_jwt_token(gh_app_id, gh_app_pk_file)
