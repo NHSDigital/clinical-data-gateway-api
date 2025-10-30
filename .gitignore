@@ -12,3 +12,6 @@
 
 # Please, add your custom content below!
 **/__pycache__
+
+# Testing
+**/charmap.json.gz

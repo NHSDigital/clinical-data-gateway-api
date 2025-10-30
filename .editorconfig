@@ -19,3 +19,7 @@ indent_size = 4
 
 [{Makefile,*.mk,go.mod,go.sum,*.go,.gitmodules}]
 indent_style = tab
+
+# Ignore end of line rule for all auto generated json pact files in the pacts folders
+[**/pacts/*.json]
+insert_final_newline = unset
