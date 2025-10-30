@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import jwt
 import os
-import requests
 import time
+
+import jwt
+import requests
 
 
 def main():

@@ -1,2 +1,21 @@
 [lint]
-select = ["E", "F", "S"]
+select = [
+  # Standard configuration taken from https://docs.astral.sh/ruff/linter/#rule-selection.
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # pyupgrade
+  "UP",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
+  # Additional configuration.
+  # Flake8-bandit
+  "S",
+  # Flake8-quotes
+  "Q"
+]
