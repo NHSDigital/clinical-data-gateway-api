@@ -13,7 +13,8 @@ def main():
 
     if not gh_app_id or not gh_app_pk_file or not gh_org:
         raise ValueError(
-            "Environment variables GITHUB_APP_ID, GITHUB_APP_PK_FILE and GITHUB_ORG must be passed to this program."
+            "Environment variables GITHUB_APP_ID, GITHUB_APP_PK_FILE and GITHUB_ORG"
+            " must be passed to this program."
         )
 
     jwt_token = get_jwt_token(gh_app_id, gh_app_pk_file)
@@ -38,7 +39,7 @@ def get_installation_id(jwt_token, gh_org):
         "Accept": "application/vnd.github.v3+json",
     }
     url = "https://api.github.com/app/installations"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=10)
 
     installation_id = None
     for installation in response.json():
@@ -55,7 +56,7 @@ def get_access_token(jwt_token, installation_id):
         "Accept": "application/vnd.github.v3+json",
     }
     url = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
-    response = requests.post(url, headers=headers)
+    response = requests.post(url, headers=headers, timeout=10)
 
     return response.json().get("token")
 

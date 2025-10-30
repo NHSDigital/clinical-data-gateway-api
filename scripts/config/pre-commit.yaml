@@ -38,3 +38,10 @@ repos:
     entry: ./scripts/githooks/check-terraform-format.sh
     language: script
     pass_filenames: false
+- repo: local
+  hooks:
+  - id: run-ruff
+    name: Run ruff
+    entry: ./scripts/githooks/run-ruff.sh
+    language: script
+    pass_filenames: false

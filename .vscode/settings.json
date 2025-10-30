@@ -24,5 +24,9 @@
   "pylance.telemetry": false,
   "python.telemetry.enable": false,
   "debugpy.telemetry.enable": false,
-  "python.experiments.enabled": false
+  "python.experiments.enabled": false,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
 }
