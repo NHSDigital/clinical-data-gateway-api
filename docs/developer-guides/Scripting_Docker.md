@@ -18,7 +18,7 @@
 
 This document provides instructions on how to build Docker images using our automated build process. You'll learn how to specify version tags, commit changes, and understand the build output.
 
-Docker is a tool for developing, shipping and running applications inside containers for Serverless and Kubernetes-based workloads. It has grown in popularity due to its ability to address several challenges faced by engineers, like:
+Docker is a tool for developing, shipping and running applications inside containers for serverless and Kubernetes-based workloads. It has grown in popularity due to its ability to address several challenges faced by engineers, like:
 
 - **Consistency across environments**: One of the common challenges in software development is the "it works on my machine" problem. Docker containers ensure that applications run the same regardless of where the container is run, be it a developer's local machine, a test environment or a production server.
 - **Isolation**: Docker containers are isolated from each other and from the host system. This means that you can run multiple versions of the same software (like databases or libraries) on the same machine without them interfering with each other.
