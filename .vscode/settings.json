@@ -15,6 +15,7 @@
     "dotenv": false,
     "ini": false,
     "json": false,
+    "jsonc": false,
     "yaml": false,
     ".crt": false,
     ".key": false,
