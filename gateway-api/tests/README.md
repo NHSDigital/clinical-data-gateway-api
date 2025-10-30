@@ -51,6 +51,7 @@ poetry run pytest --cov=gateway_api --cov-report=html
 ## Test Types
 
 ### Unit Tests (`test_main.py`)
+
 Fast tests using Flask's test client without spinning up a server. Run these frequently during development.
 
 ### Contract Testing with Pact
@@ -82,6 +83,7 @@ Consumer Test → Mock Pact Server → Contract File (JSON)
 ```
 
 **Why this approach?**
+
 - Consumer and provider can be developed/tested independently
 - Contract file serves as the "agreement" between them
 - Changes to the contract are visible in version control
@@ -104,6 +106,7 @@ poetry run pytest tests/test_provider_contract.py
 Consumer tests generate pact files in `tests/pacts/` (e.g., `GatewayAPIConsumer-GatewayAPIProvider.json`).
 
 **Key points:**
+
 - The pact file represents the contract between the consumer and provider
 - As this file is committed you can track contract changes through git diffs
 - The `pact.write_file()` call merges interactions (updates existing or adds new ones)

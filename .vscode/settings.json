@@ -1,6 +1,7 @@
 {
-  "markdownlint.config": {
-    "extends": "scripts/config/markdownlint.yaml",
+  "markdownlint.configFile": "scripts/config/.markdownlint.yaml",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.markdownlint": "always"
   },
   // Enable pylance type checking within vscode.
   "python.analysis.typeCheckingMode": "standard",
