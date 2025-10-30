@@ -76,7 +76,7 @@ Contract testing ensures that the consumer's expectations match the provider's i
 
 **The Flow:**
 
-```
+```text
 Consumer Test → Mock Pact Server → Contract File (JSON)
                                          ↓
                                  Provider Test ← Real Flask App
