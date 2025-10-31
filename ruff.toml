@@ -43,3 +43,5 @@ select = [
   # Flake8-type-checking
   "TC"
 ]
+# Ignore Flake8-commas trailing commas as this can conflict with the Ruff standard format.
+ignore =["COM812"]
