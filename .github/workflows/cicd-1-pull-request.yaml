@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v5
       - name: "Set CI/CD variables"
         id: variables
-        run: | # Temporarily set IN_BUILD_CONTAINER variable to allow access to targets outside of the build container within CI.
+        run: | # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
           export IN_BUILD_CONTAINER=true
           datetime=$(date -u +'%Y-%m-%dT%H:%M:%S%z')
           BUILD_DATETIME=$datetime make version-create-effective-file
