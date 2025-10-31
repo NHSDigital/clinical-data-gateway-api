@@ -86,6 +86,10 @@ Once the build container has been build and is up and running. A few different m
 
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
 
+#### Continous Integration
+
+More documentation on the GitHub actions utilised to support continuous integration can be found on the [Continuous Integration](./.github/github_actions.md) page.
+
 ## Design
 
 ### Diagrams
