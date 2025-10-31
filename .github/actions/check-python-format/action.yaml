@@ -1,0 +1,17 @@
+name: "Check Python format"
+description: "Check Python format"
+runs:
+  using: "composite"
+  steps:
+    # Temporarily install python and Ruff whilst GitHub actions are not running within the container.
+    - name: "Setup Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13.9
+    - name: "Install Ruff"
+      shell: bash
+      run: "pip install ruff"
+
+    - name: "Check Python format"
+      shell: bash
+      run: ./scripts/githooks/python-lint-and-format.sh
