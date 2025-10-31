@@ -75,7 +75,7 @@ Installation and configuration of the toolchain dependencies is completed as par
 
 ## Usage
 
-Once the build container has been build and is up and running. A few different make targets are provided for installing dependencies and building the codebase.
+Once the build container has been built and is up and running. A few different make targets are provided for installing dependencies and building the codebase.
 
 - `dependencies` - installs all dependencies required for the project
 - `build` - builds the codebase so that it is ready for deployment
