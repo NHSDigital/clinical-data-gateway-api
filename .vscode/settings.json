@@ -12,9 +12,11 @@
   // Github copilot file associations
   "github.copilot.enable": {
     "*": true,
+    "plaintext": false,
     "dotenv": false,
     "ini": false,
     "json": false,
+    "jsonc": false,
     "yaml": false,
     ".crt": false,
     ".key": false,
@@ -24,5 +26,9 @@
   "pylance.telemetry": false,
   "python.telemetry.enable": false,
   "debugpy.telemetry.enable": false,
-  "python.experiments.enabled": false
+  "python.experiments.enabled": false,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
 }

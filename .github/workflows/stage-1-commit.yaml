@@ -59,6 +59,15 @@ jobs:
           fetch-depth: 0 # Full history is needed to compare branches
       - name: "Check file format"
         uses: ./.github/actions/check-file-format
+  check-python-format:
+    name: "Check Python format"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+      - name: "Check Python format"
+        uses: ./.github/actions/check-python-format
   check-markdown-format:
     name: "Check Markdown format"
     runs-on: ubuntu-latest

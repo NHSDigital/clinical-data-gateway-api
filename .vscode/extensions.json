@@ -1,19 +1,18 @@
 {
   "recommendations": [
     "davidanson.vscode-markdownlint",
-    "donjayamanne.githistory",
     "eamodio.gitlens",
     "editorconfig.editorconfig",
+    "github.codespaces",
+    "github.remotehub",
     "github.vscode-github-actions",
     "github.vscode-pull-request-github",
-    "mhutchie.git-graph",
     "ms-vscode-remote.remote-containers",
-    "streetsidesoftware.code-spell-checker-british-english",
-    "tamasfe.even-better-toml",
-    "wayou.vscode-todo-highlight",
-    "ms-vscode-remote.remote-containers",
+    "charliermarsh.ruff",
     "ms-python.python",
-    "ms-python.vscode-pylance"
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-python.vscode-python-envs"
   ],
   "unwantedRecommendations": [
     "ms-vscode.notepadplusplus-keybindings"
