@@ -12,6 +12,7 @@
   // Github copilot file associations
   "github.copilot.enable": {
     "*": true,
+    "plaintext": false,
     "dotenv": false,
     "ini": false,
     "json": false,
