@@ -124,6 +124,10 @@ Describe or link templates on how to raise an issue, feature request or make a c
 - Backlog, board, roadmap, ways of working
 - High-level requirements, guiding principles, decision records, etc.
 
+### Signed Commits
+
+To be able to contribute to the repository, any commits created need to be signed. See the [commit signing setup guide page](https://github.com/NHSDigital/software-engineering-quality-framework/blob/main/practices/guides/commit-signing.md) for guidance on setting up this up.
+
 ## Contacts
 
 Provide a way to contact the owners of this project. It can be a team, an individual or information on the means of getting in touch via active communication channels, e.g. opening a GitHub discussion, raising an issue, etc.
