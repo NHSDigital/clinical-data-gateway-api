@@ -83,7 +83,7 @@ WORKDIR /resources
 RUN bash -c "source /root/.bashrc && bash ./install-asdf-plugins.sh"
 
 # Install pipx and poetry
-RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry"
+RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
 
 # Create a virtual environment for development
 RUN bash -c "source /root/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway"

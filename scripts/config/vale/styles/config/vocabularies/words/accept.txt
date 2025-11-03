@@ -17,7 +17,8 @@ toolchain
 Trufflehog
 sublicense
 asdf
-dotfiles
+APIs
+vscode
 coreutils
 binutils
 customisability
@@ -26,3 +27,5 @@ VMs
 namespaces
 cgroups
 serverless
+Dev
+dotfiles
