@@ -16,27 +16,35 @@ dependencies: # Install dependencies needed to build and test the project @Pipel
 build-gateway-api: dependencies
 	@cd gateway-api
 	@echo "Running type checks..."
-	@poetry run mypy src/
 	@rm -rf target && rm -rf dist
+	@poetry run mypy --no-namespace-packages .
 	@echo "Packaging dependencies..."
 	@poetry build --format=wheel
 	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
+	# Copy main file separately as it is not included within the package.
+	@cp main.py ./target/gateway-api/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
 
 .PHONEY: build
 build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Building Docker image using Docker..."
-	@docker buildx build  --load -t gateway-api-image infrastructure/images/gateway-api
+	@docker buildx build  --load -t localhost/gateway-api-image infrastructure/images/gateway-api
 	@echo "Docker image 'gateway-api-image' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
-deploy: # Deploy the project artefact to the target environment @Pipeline
-	# TODO: Implement the artefact deployment step
+deploy: clean build # Deploy the project artefact to the target environment @Pipeline
+	@docker run --name gateway-api -d -p 5000:5000 localhost/gateway-api-image
 
-clean:: # Clean-up project resources (main) @Operations
-	# TODO: Implement project resources clean-up step
+clean:: stop # Clean-up project resources (main) @Operations
+	@echo "Removing Gateway API container..."
+	@docker rm gateway-api || echo "No Gateway API container currently exists."
+
+.PHONEY: stop
+stop:
+	@echo "Stopping Gateway API container..."
+	@docker stop gateway-api || echo "No Gateway API container currently running."
 
 config:: # Configure development environment (main) @Configuration
 	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
@@ -101,6 +109,10 @@ pre-commit:
 .PHONEY: build
 build:
 	COMMAND="pyenv activate gateway && make build" make command
+
+.PHONEY: deploy
+deploy:
+	COMMAND="pyenv activate gateway && make deploy" make command
 
 .PHONEY: command
 command:

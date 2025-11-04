@@ -8,4 +8,4 @@ WORKDIR /app
 
 COPY /resources/build/gateway-api .
 
-ENTRYPOINT ["sleep", "infinity"]
+ENTRYPOINT ["python", "main.py"]

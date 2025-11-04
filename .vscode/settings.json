@@ -37,5 +37,6 @@
   "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
   "python.analysis.autoImportCompletions": true,
   "python.analysis.autoIndent": false,
-  "mypy-type-checker.cwd": "${nearestConfig}"
+  "mypy-type-checker.cwd": "${nearestConfig}",
+  "editor.formatOnType": true
 }

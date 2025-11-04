@@ -1,3 +1,2 @@
-debug = true
 [registry."docker.io"]
   ca = [ {{CERTS}} ]
