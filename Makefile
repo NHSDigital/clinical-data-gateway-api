@@ -8,16 +8,26 @@ include scripts/init.mk
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
+.PHONEY: dependencies
 dependencies: # Install dependencies needed to build and test the project @Pipeline
 	cd gateway-api && poetry install
 
-build: # Build the project artefact @Pipeline
-	# TODO: Implement the artefact build step
-	@echo "Hello, World!"
-	@echo "Building Docker image using Docker..."
-	@docker build -t gateway-api-image ./infrastructure/images/gateway-api
-	@echo "Docker image 'gateway-api-image' built successfully!"
+.PHONEY: build-gateway-api
+build-gateway-api: dependencies
+	@cd gateway-api
+	@echo "Running type checks..."
+	@poetry run mypy src/
+	@rm -rf target && rm -rf dist
+	@echo "Packaging dependencies..."
+	@poetry build --format=wheel
+	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
+	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
 
+.PHONEY: build
+build: build-gateway-api # Build the project artefact @Pipeline
+	@echo "Building Docker image using Docker..."
+	@docker buildx build  --load -t gateway-api-image infrastructure/images/gateway-api
+	@echo "Docker image 'gateway-api-image' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
@@ -87,6 +97,10 @@ bash:
 .PHONEY: pre-commit
 pre-commit:
 	COMMAND="make pre-commit" make command
+
+.PHONEY: build
+build:
+	COMMAND="pyenv activate gateway && make build" make command
 
 .PHONEY: command
 command:

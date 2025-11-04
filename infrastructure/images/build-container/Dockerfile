@@ -7,6 +7,8 @@ ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorcon
 ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
 
+ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
+
 COPY resources/ /resources
 
 # Install required certificates for dev machines.
@@ -14,6 +16,8 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
     cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
     apk --no-cache add --no-check-certificate ca-certificates \
         && update-ca-certificates; \
+
+    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
 else \
     rm -r /resources/dev-certificates; \
 fi
@@ -26,6 +30,7 @@ RUN apk add --no-cache --update bash \
     vale \
     # Required to support markdownlint-cli installation.
     npm \
+    zip \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -37,6 +42,12 @@ RUN apk add --no-cache --update bash \
     sqlite-dev \
     tk-dev \
     zstd-dev
+
+# If using dev certificates, configure buildkit to use them.
+RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
+    echo "Adding dev certificates to buildkitd config..." ; \
+    bash /resources/template-buildkitd.toml.sh ; \
+fi
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
@@ -93,4 +104,7 @@ WORKDIR /git
 # Install markdownlint-cli
 RUN npm install -g markdownlint-cli
 
-ENTRYPOINT ["sleep", "infinity"]
+COPY /resources/entry-point.sh /entry-point.sh
+RUN chmod u+x /entry-point.sh
+
+ENTRYPOINT ["/entry-point.sh"]
