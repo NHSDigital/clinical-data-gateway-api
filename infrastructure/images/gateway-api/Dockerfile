@@ -1,10 +1,11 @@
 # Base image
-FROM alpine:3.22
+FROM python:3.13.9-alpine3.22
 
-# Print "Hello, World!" during the build process
-RUN echo "Hello, World! This is a message from the Dockerfile build process."
+COPY resources/ /resources
 
-# TODO: Add any other build steps below
-# install python
-# copy in the functional code
-# run the flask app
+RUN mkdir /app
+WORKDIR /app
+
+COPY /resources/build/gateway-api .
+
+ENTRYPOINT ["sleep", "infinity"]
