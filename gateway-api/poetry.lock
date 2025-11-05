@@ -6,7 +6,7 @@ version = "1.9.0"
 description = "Fast, simple object-to-object and broadcast signaling"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"},
     {file = "blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf"},
@@ -16,10 +16,9 @@ files = [
 name = "certifi"
 version = "2025.10.5"
 description = "Python package for providing Mozilla's CA Bundle."
-optional = true
+optional = false
 python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "certifi-2025.10.5-py3-none-any.whl", hash = "sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de"},
     {file = "certifi-2025.10.5.tar.gz", hash = "sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43"},
@@ -29,10 +28,9 @@ files = [
 name = "cffi"
 version = "2.0.0"
 description = "Foreign Function Interface for Python calling C code."
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "cffi-2.0.0-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:0cf2d91ecc3fcc0625c2c530fe004f82c110405f101548512cce44322fa8ac44"},
     {file = "cffi-2.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f73b96c41e3b2adedc34a7356e64c8eb96e03a3782b535e043a986276ce12a49"},
@@ -127,10 +125,9 @@ pycparser = {version = "*", markers = "implementation_name != \"PyPy\""}
 name = "charset-normalizer"
 version = "3.4.4"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-optional = true
+optional = false
 python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "charset_normalizer-3.4.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:e824f1492727fa856dd6eda4f7cee25f8518a12f3c4a56a74e8095695089cf6d"},
     {file = "charset_normalizer-3.4.4-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4bd5d4137d500351a30687c2d3971758aac9a19208fc110ccb9d7188fbe709e8"},
@@ -253,7 +250,7 @@ version = "8.3.0"
 description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.10"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "click-8.3.0-py3-none-any.whl", hash = "sha256:9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc"},
     {file = "click-8.3.0.tar.gz", hash = "sha256:e7b8232224eba16f4ebe410c25ced9f7875cb5f3263ffc93cc3e8da705e229c4"},
@@ -268,12 +265,12 @@ version = "0.4.6"
 description = "Cross-platform colored terminal text."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-groups = ["main"]
-markers = "extra == \"dev\" and sys_platform == \"win32\" or platform_system == \"Windows\""
+groups = ["main", "dev"]
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
+markers = {main = "platform_system == \"Windows\"", dev = "platform_system == \"Windows\" or sys_platform == \"win32\""}
 
 [[package]]
 name = "flask"
@@ -281,7 +278,7 @@ version = "3.1.2"
 description = "A simple framework for building complex web applications."
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "flask-3.1.2-py3-none-any.whl", hash = "sha256:ca1d8112ec8a6158cc29ea4858963350011b5c846a414cdb7a954aa9e967d03c"},
     {file = "flask-3.1.2.tar.gz", hash = "sha256:bf656c15c80190ed628ad08cdfd3aaa35beb087855e2f494910aa3774cc4fd87"},
@@ -303,10 +300,9 @@ dotenv = ["python-dotenv"]
 name = "idna"
 version = "3.11"
 description = "Internationalized Domain Names in Applications (IDNA)"
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "idna-3.11-py3-none-any.whl", hash = "sha256:771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea"},
     {file = "idna-3.11.tar.gz", hash = "sha256:795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902"},
@@ -319,10 +315,9 @@ all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2
 name = "iniconfig"
 version = "2.3.0"
 description = "brain-dead simple config-ini parsing"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12"},
     {file = "iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730"},
@@ -334,7 +329,7 @@ version = "2.2.0"
 description = "Safely pass data to untrusted environments and back."
 optional = false
 python-versions = ">=3.8"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"},
     {file = "itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173"},
@@ -346,7 +341,7 @@ version = "3.1.6"
 description = "A very fast and expressive template engine."
 optional = false
 python-versions = ">=3.7"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"},
     {file = "jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d"},
@@ -364,7 +359,7 @@ version = "3.0.3"
 description = "Safely add untrusted strings to HTML/XML markup."
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "markupsafe-3.0.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2f981d352f04553a7171b8e44369f2af4055f888dfb147d55e42d29e29e74559"},
     {file = "markupsafe-3.0.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e1c1493fb6e50ab01d20a22826e57520f1284df32f2d8601fdd90b6304601419"},
@@ -461,10 +456,9 @@ files = [
 name = "multidict"
 version = "6.7.0"
 description = "multidict implementation"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "multidict-6.7.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:9f474ad5acda359c8758c8accc22032c6abe6dc87a8be2440d097785e27a9349"},
     {file = "multidict-6.7.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4b7a9db5a870f780220e931d0002bbfd88fb53aceb6293251e2c839415c1b20e"},
@@ -618,10 +612,9 @@ files = [
 name = "packaging"
 version = "25.0"
 description = "Core utilities for Python packages"
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
     {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
@@ -631,10 +624,9 @@ files = [
 name = "pact-python"
 version = "3.1.0"
 description = "Tool for creating and verifying consumer-driven contracts using the Pact framework."
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pact_python-3.1.0-py3-none-any.whl", hash = "sha256:382e2dea3a8e4c956bd9fed6960e76678ba3f37c329581e3f83bc4a46b901c06"},
     {file = "pact_python-3.1.0.tar.gz", hash = "sha256:176c03c74f0095cf7832826e26d42c83e7ec08d507e7f45a017f01632c3ab50e"},
@@ -651,10 +643,9 @@ compat-v2 = ["click (>=8.0,<9.0)", "pact-python-cli (>=2.0,<3.0)", "psutil (>=7.
 name = "pact-python-ffi"
 version = "0.4.28.2"
 description = "Python bindings for the Pact FFI library"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pact_python_ffi-0.4.28.2-cp310-abi3-macosx_12_0_arm64.whl", hash = "sha256:32b7a2fcc107007c7c49509f028dceef3677b700bc92f65482685ff45fab6e98"},
     {file = "pact_python_ffi-0.4.28.2-cp310-abi3-macosx_12_0_x86_64.whl", hash = "sha256:607c331a0decafe93d06286ed6ca37de0a01be460830b39b32fa0138eb804e44"},
@@ -674,10 +665,9 @@ cffi = ">=2.0,<3.0"
 name = "pluggy"
 version = "1.6.0"
 description = "plugin and hook calling mechanisms for python"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746"},
     {file = "pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3"},
@@ -691,10 +681,9 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 name = "propcache"
 version = "0.4.1"
 description = "Accelerated property cache"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "propcache-0.4.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:7c2d1fa3201efaf55d730400d945b5b3ab6e672e100ba0f9a409d950ab25d7db"},
     {file = "propcache-0.4.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1eb2994229cc8ce7fe9b3db88f5465f5fd8651672840b2e426b88cdb1a30aac8"},
@@ -824,10 +813,10 @@ files = [
 name = "pycparser"
 version = "2.23"
 description = "C parser in Python"
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"dev\" and implementation_name != \"PyPy\""
+groups = ["dev"]
+markers = "implementation_name != \"PyPy\""
 files = [
     {file = "pycparser-2.23-py3-none-any.whl", hash = "sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934"},
     {file = "pycparser-2.23.tar.gz", hash = "sha256:78816d4f24add8f10a06d6f05b4d424ad9e96cfebf68a4ddc99c65c0720d00c2"},
@@ -837,10 +826,9 @@ files = [
 name = "pygments"
 version = "2.19.2"
 description = "Pygments is a syntax highlighting package written in Python."
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b"},
     {file = "pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887"},
@@ -853,10 +841,9 @@ windows-terminal = ["colorama (>=0.4.6)"]
 name = "pytest"
 version = "8.4.2"
 description = "pytest: simple powerful testing with Python"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79"},
     {file = "pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01"},
@@ -876,10 +863,9 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests
 name = "pytest-flask"
 version = "1.3.0"
 description = "A set of py.test fixtures to test Flask applications."
-optional = true
+optional = false
 python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "pytest-flask-1.3.0.tar.gz", hash = "sha256:58be1c97b21ba3c4d47e0a7691eb41007748506c36bf51004f78df10691fa95e"},
     {file = "pytest_flask-1.3.0-py3-none-any.whl", hash = "sha256:c0e36e6b0fddc3b91c4362661db83fa694d1feb91fa505475be6732b5bc8c253"},
@@ -897,10 +883,9 @@ docs = ["Sphinx", "sphinx-rtd-theme"]
 name = "requests"
 version = "2.32.5"
 description = "Python HTTP for Humans."
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6"},
     {file = "requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf"},
@@ -920,10 +905,9 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 name = "urllib3"
 version = "2.5.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc"},
     {file = "urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760"},
@@ -941,7 +925,7 @@ version = "3.1.3"
 description = "The comprehensive WSGI web application library."
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "werkzeug-3.1.3-py3-none-any.whl", hash = "sha256:54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"},
     {file = "werkzeug-3.1.3.tar.gz", hash = "sha256:60723ce945c19328679790e3282cc758aa4a6040e4bb330f53d30fa546d44746"},
@@ -957,10 +941,9 @@ watchdog = ["watchdog (>=2.3)"]
 name = "yarl"
 version = "1.22.0"
 description = "Yet another URL library"
-optional = true
+optional = false
 python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"dev\""
+groups = ["dev"]
 files = [
     {file = "yarl-1.22.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:c7bd6683587567e5a49ee6e336e0612bec8329be1b7d4c8af5687dcdeb67ee1e"},
     {file = "yarl-1.22.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:5cdac20da754f3a723cceea5b3448e1a2074866406adeb4ef35b469d089adb8f"},
@@ -1099,10 +1082,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 propcache = ">=0.2.1"
 
-[extras]
-dev = ["pact-python", "pytest", "pytest-flask", "requests"]
-
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "1029a9cbaff49269f928cef1e52348d7c9401748862015e543af9977aa3232eb"
+content-hash = "ad67dd2b5c0e8d141eb0dea702c49956c5352489bea72e80f3076014a9f2d0dc"
