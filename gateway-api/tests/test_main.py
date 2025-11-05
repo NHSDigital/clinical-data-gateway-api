@@ -1,16 +1,5 @@
 """Unit tests for the gateway API using pytest."""
 
-import pytest
-from gateway_api.main import app
-
-
-@pytest.fixture
-def client():
-    """Create a test client for the Flask application."""
-    app.config["TESTING"] = True
-    with app.test_client() as client:
-        yield client
-
 
 class TestHelloWorld:
     """Test suite for the hello world endpoint."""
@@ -23,7 +12,7 @@ class TestHelloWorld:
     def test_hello_world_returns_correct_message(self, client):
         """Test that the root endpoint returns the correct message."""
         response = client.get("/")
-        assert response.data == b"Hello, World!"
+        assert response.text == "Hello, World!"
 
     def test_hello_world_content_type(self, client):
         """Test that the response has the correct content type."""
