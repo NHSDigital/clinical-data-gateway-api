@@ -3,13 +3,14 @@ Feature: Gateway API Hello World
   I want to get a hello world message
   So that I can verify the API is working
 
+  Background: The API is running
+  Given the API is running
+
   Scenario: Get hello world message
-    Given the API is running
     When I send a GET request to "/"
     Then the response status code should be 200
     And the response should contain "Hello, World!"
 
-  Scenario: Access non-existent endpoint
-    Given the API is running
+  Scenario: Accessing a non-existent endpoint returns a 404
     When I send a GET request to "/nonexistent"
     Then the response status code should be 404
