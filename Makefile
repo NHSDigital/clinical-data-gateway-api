@@ -27,6 +27,8 @@ build-gateway-api: dependencies
 	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
 	# Copy main file separately as it is not included within the package.
 	@cp main.py ./target/gateway-api/
+	@rm -rf ../infrastructure/images/gateway-api/resources/build/
+	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
 
 .PHONEY: build
@@ -73,8 +75,8 @@ else
 
 PYTHON_VERSION=3.13.9
 
-.PHONEY: clean
-clean:
+.PHONEY: clean-env
+clean-env:
 	@echo "Stopping Build Container..."
 	@podman stop gateway-api-build-container || echo "No build container currently running."
 	@echo "Removing Build Container..."
@@ -82,7 +84,7 @@ clean:
 
 
 .PHONEY: env
-env: clean
+env: clean-env
 	@echo "Building Build Container..."
 	# Required so that asdf plugins can be installed whilst building the container.
 	@cp .tool-versions ./infrastructure/images/build-container/resources/.tool-versions
