@@ -45,3 +45,7 @@ select = [
 ]
 # Ignore Flake8-commas trailing commas as this can conflict with the Ruff standard format.
 ignore =["COM812"]
+# Ignore assert rule in test files to keep test code susinct and easy to read.
+[lint.per-file-ignores]
+"**/tests/*" = ["S101"]
+"**/steps/*" = ["S101"]
