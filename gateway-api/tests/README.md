@@ -1,20 +1,31 @@
 # Gateway API Tests
 
-This directory contains the test suite for the gateway API.
+This directory contains the unit and contract test suites for the gateway API.
 
 ## Test Structure
 
-- `test_main.py` - Unit tests for the Flask application endpoints (fast, using test client)
-- `test_consumer_contract.py` - Consumer contract tests using Pact - defines API expectations and builds pact contract file for provider contract tests
-- `test_provider_contract.py` - Provider integration tests using pact contract file from contract tests against the real Flask app to verify the expected contract is met
+```text
+tests/
+├── conftest.py                          # Shared pytest fixtures
+├── unit/                                # Unit tests
+│   └── test_main.py                    # Flask endpoint unit tests
+└── contract/                            # Contract tests (Pact)
+    ├── conftest_pact.py                # Pact-specific fixtures
+    ├── test_consumer_contract.py       # Consumer contract definitions
+    ├── test_provider_contract.py       # Provider contract verification
+    └── pacts/                          # Generated pact files
+        └── GatewayAPIConsumer-GatewayAPIProvider.json
+```
 
 ## Running Tests
 
-### Install Dependencies
+### Install Dependencies (if not using dev container)
+
+Dev container users can skip this - dependencies are pre-installed during container build.
 
 ```bash
 cd gateway-api
-poetry install --extras dev
+poetry install --with dev
 ```
 
 ### Run All Tests (with Verbose Output)
@@ -27,20 +38,22 @@ poetry run pytest -v
 
 ```bash
 # Run only unit tests
-poetry run pytest tests/test_main.py -v
+poetry run pytest tests/unit/ -v
 
-# Run only consumer contract tests
-poetry run pytest tests/test_consumer_contract.py -v
+# Run only contract tests
+poetry run pytest tests/contract/ -v
 
-# Run only provider contract tests
-poetry run pytest tests/test_provider_contract.py -v
+# Run specific test file
+poetry run pytest tests/unit/test_main.py -v
+poetry run pytest tests/contract/test_consumer_contract.py -v
+poetry run pytest tests/contract/test_provider_contract.py -v
 ```
 
 ## Test Types
 
-### Unit Tests (`test_main.py`)
+### Unit Tests (`unit/`)
 
-Fast tests using Flask's test client without spinning up a server.
+Fast tests using Flask's test client without spinning up a server. Located in `tests/unit/`.
 
 ### Contract Testing with Pact
 
@@ -82,7 +95,7 @@ Consumer Test → Mock Pact Server → Contract File (JSON)
 
 ## Pact Files
 
-Consumer tests generate the pact contract files in `tests/pacts/` (e.g., `GatewayAPIConsumer-GatewayAPIProvider.json`).
+Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g., `GatewayAPIConsumer-GatewayAPIProvider.json`).
 
 **Key points:**
 

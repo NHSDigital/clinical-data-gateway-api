@@ -38,7 +38,7 @@ class TestConsumerContract:
             assert response.text == "Hello, World!"
 
         # Write the pact file after the test
-        pact.write_file("tests/pacts")
+        pact.write_file("tests/contract/pacts")
 
     def test_get_nonexistent_route(self):
         """Test the consumer's expectation when requesting a non-existent route.
@@ -64,4 +64,4 @@ class TestConsumerContract:
             assert response.status_code == 404
 
         # Write the pact file after the test
-        pact.write_file("tests/pacts")
+        pact.write_file("tests/contract/pacts")

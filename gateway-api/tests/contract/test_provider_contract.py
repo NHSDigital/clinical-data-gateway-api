@@ -4,37 +4,11 @@ This test suite verifies that the actual Flask provider implementation
 satisfies the contracts defined by consumers.
 """
 
-import threading
-import time
-
 import pytest
-from gateway_api.main import app
 from pact import Verifier
 
-
-@pytest.fixture(scope="module")
-def provider_url():
-    """Start the Flask app in a separate thread and return its URL."""
-    # Use port 0 to let the OS assign a free port
-    import socket
-
-    # Find a free port
-    sock = socket.socket()
-    sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    sock.close()
-
-    def run_app():
-        app.run(port=port, debug=False, use_reloader=False)
-
-    # Start Flask in a daemon thread
-    thread = threading.Thread(target=run_app, daemon=True)
-    thread.start()
-
-    # Give the server time to start
-    time.sleep(1)
-
-    return f"http://localhost:{port}"
+# Import the provider_url fixture from conftest_pact
+pytest_plugins = ["tests.contract.conftest_pact"]
 
 
 class TestProviderContract:
@@ -53,7 +27,9 @@ class TestProviderContract:
         verifier.add_transport(url=provider_url)
 
         # Add the pact file as a source
-        verifier.add_source("tests/pacts/GatewayAPIConsumer-GatewayAPIProvider.json")
+        verifier.add_source(
+            "tests/contract/pacts/GatewayAPIConsumer-GatewayAPIProvider.json"
+        )
 
         # Verify the provider against the pact
         try:

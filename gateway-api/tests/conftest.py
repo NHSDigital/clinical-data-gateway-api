@@ -13,10 +13,7 @@ def app():
         }
     )
 
-    # Other setup can go here
     return flask_app
-
-    # Clean up / reset resources can be done with yield if needed
 
 
 @pytest.fixture
