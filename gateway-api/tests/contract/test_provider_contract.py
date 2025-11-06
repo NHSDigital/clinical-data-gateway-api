@@ -7,9 +7,6 @@ satisfies the contracts defined by consumers.
 import pytest
 from pact import Verifier
 
-# Import the provider_url fixture from conftest_pact
-pytest_plugins = ["tests.contract.conftest_pact"]
-
 
 class TestProviderContract:
     """Provider contract tests to verify the API implementation."""
