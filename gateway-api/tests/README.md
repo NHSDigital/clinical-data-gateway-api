@@ -6,15 +6,16 @@ This directory contains the unit and contract test suites for the gateway API.
 
 ```text
 tests/
-├── conftest.py                          # Shared pytest fixtures
+├── conftest.py                          # Shared pytest fixtures (includes provider_url)
 ├── unit/                                # Unit tests
 │   └── test_main.py                    # Flask endpoint unit tests
-└── contract/                            # Contract tests (Pact)
-    ├── conftest_pact.py                # Pact-specific fixtures
-    ├── test_consumer_contract.py       # Consumer contract definitions
-    ├── test_provider_contract.py       # Provider contract verification
-    └── pacts/                          # Generated pact files
-        └── GatewayAPIConsumer-GatewayAPIProvider.json
+├── contract/                            # Contract tests (Pact)
+│   ├── test_consumer_contract.py       # Consumer contract definitions
+│   ├── test_provider_contract.py       # Provider contract verification
+│   └── pacts/                          # Generated pact files
+│       └── GatewayAPIConsumer-GatewayAPIProvider.json
+└── schema/                              # Schema validation tests
+    └── test_openapi_schema.py          # Schemathesis property-based tests
 ```
 
 ## Running Tests
@@ -43,10 +44,8 @@ poetry run pytest tests/unit/ -v
 # Run only contract tests
 poetry run pytest tests/contract/ -v
 
-# Run specific test file
-poetry run pytest tests/unit/test_main.py -v
-poetry run pytest tests/contract/test_consumer_contract.py -v
-poetry run pytest tests/contract/test_provider_contract.py -v
+# Run only schema validation tests
+poetry run pytest tests/schema/ -v
 ```
 
 ## Test Types
@@ -54,6 +53,21 @@ poetry run pytest tests/contract/test_provider_contract.py -v
 ### Unit Tests (`unit/`)
 
 Fast tests using Flask's test client without spinning up a server. Located in `tests/unit/`.
+
+### Schema Validation Tests (`schema/`)
+
+Property-based API schema validation tests using Schemathesis. These tests automatically generate test cases from the OpenAPI specification (`openapi.yaml`) and validate that the API implementation matches the schema.
+
+**How it works:**
+
+- Loads the OpenAPI schema from `openapi.yaml`
+- Uses the `provider_url` fixture to test against the running Flask app
+- Automatically generates test cases including:
+  - Valid inputs
+  - Edge cases
+  - Boundary values
+  - Invalid inputs
+- Validates that responses match the schema definitions
 
 ### Contract Testing with Pact
 
@@ -103,3 +117,10 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 - As this file is committed you can track contract changes through git diffs
 - The `pact.write_file()` call merges interactions (updates existing or adds new ones)
 - Interactions with the same description get replaced; different descriptions get added
+
+## Shared Fixtures
+
+The `provider_url` fixture in `tests/conftest.py` is shared across test types (contract, schema, etc.). It:
+
+- Spins up the Flask app in a separate thread on a dynamically assigned free port to avoid conflicts
+- Returns the URL (e.g., `http://localhost:12345`)
