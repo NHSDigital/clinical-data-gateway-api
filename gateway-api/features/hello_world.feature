@@ -1,10 +1,10 @@
 Feature: Gateway API Hello World
   As an API consumer
-  I want to get a hello world message
-  So that I can verify the API is working
+  I want to interact with the Gateway API
+  So that I can verify it responds correctly to valid and invalid requests
 
   Background: The API is running
-  Given the API is running
+    Given the API is running
 
   Scenario: Get hello world message
     When I send a GET request to "/"
