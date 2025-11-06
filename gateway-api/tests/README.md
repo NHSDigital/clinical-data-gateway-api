@@ -80,12 +80,14 @@ Consumer Test → Mock Pact Server → Contract File (JSON)
                                  Provider Test ← Real Flask App
 ```
 
-**Why this approach?**
+**Why this approach as opposed to a unit test that has an expected response object to match against?**
 
-- Consumer and provider can be developed/tested independently
-- Contract file serves as the "agreement" between them
-- Changes to the contract are visible in version control
-- Catches integration issues early without needing both systems running
+- **Explicit contract documentation** - The pact file is a versioned artifact that documents the API contract
+- **Contract evolution tracking** - Because of the above - Git diffs will show exactly how API contracts change over time
+- **Consumer-driven development** - Consumers define their needs; providers verify they meet them
+- **Independent testing** - Consumer and provider can be developed and tested separately without both running
+- **Prevents breaking changes** - Provider tests fail if changes break existing consumer expectations
+- **Language/framework agnostic** - Contract files can be shared between different repos and tech stacks
 
 ### Contract Testing Workflow
 

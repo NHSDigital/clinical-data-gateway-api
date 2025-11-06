@@ -1,6 +1,8 @@
-# Gateway API BDD Tests
+# Gateway API BDD Acceptance Tests
 
-This directory contains the BDD (Behavior-Driven Development) acceptance test suite for the gateway API using behave.
+This directory contains the BDD (Behavior-Driven Development) acceptance and assurance test suite for the gateway API using behave.
+
+These tests verify that the API meets business requirements and acceptance criteria from a user's perspective. They serve as living documentation and ensure the system behaves correctly in real-world scenarios.
 
 ## Test Structure
 
