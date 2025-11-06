@@ -27,3 +27,4 @@ customisability
 anonymised
 Dev
 dotfiles
+pytest
