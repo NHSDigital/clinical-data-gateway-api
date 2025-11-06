@@ -19,13 +19,7 @@ cd gateway-api
 poetry install --with dev
 ```
 
-### Run All BDD Tests
-
-```bash
-poetry run behave
-```
-
-### Run with Verbose Output
+### Run All BDD Tests with Verbose Output
 
 ```bash
 poetry run behave --verbose
@@ -35,16 +29,6 @@ poetry run behave --verbose
 
 ```bash
 poetry run behave features/hello_world.feature
-```
-
-### Run with Tags
-
-```bash
-# Run only tests tagged with @smoke
-poetry run behave --tags=@smoke
-
-# Exclude tests tagged with @wip (work in progress)
-poetry run behave --tags=~@wip
 ```
 
 ### Debug Mode (Show All Output)
@@ -75,92 +59,3 @@ BDD tests describe system behavior from a user's perspective using natural langu
    - `before_scenario()` - Set up before each scenario
    - `after_scenario()` - Clean up after each scenario
    - `after_all()` - Final cleanup
-
-### The Flow
-
-```text
-Feature File → Behave Parser → Step Definitions → Flask Test Client → Assertions
-     ↓
-Gherkin Steps                      Python Code         HTTP Calls      Pass/Fail
-```
-
-### Why BDD Tests?
-
-- **Executable specifications** - Tests are documentation
-- **Stakeholder collaboration** - Business people can read/write scenarios
-- **Living documentation** - Tests describe what the system actually does
-- **End-to-end validation** - Tests real user workflows
-- **Complement unit tests** - Focus on behavior, not implementation
-
-## Writing New Tests
-
-### 1. Create a Feature File
-
-```gherkin
-Feature: User Login
-  As a user
-  I want to log in to the system
-  So that I can access protected resources
-
-  Background:
-    Given the API is running
-
-  Scenario: Successful login
-    When I send a POST request to "/login" with valid credentials
-    Then the response status code should be 200
-    And the response should contain an access token
-```
-
-### 2. Implement Step Definitions
-
-```python
-@when('I send a POST request to "{endpoint}" with valid credentials')
-def step_login_with_valid_credentials(context, endpoint):
-    context.response = context.client.post(endpoint, json={
-        "username": "testuser",
-        "password": "password123"
-    })
-
-@then("the response should contain an access token")
-def step_check_access_token(context):
-    data = context.response.get_json()
-    assert "access_token" in data
-```
-
-### 3. Run and Verify
-
-```bash
-poetry run behave features/login.feature
-```
-
-## Gherkin Best Practices
-
-- **Keep scenarios focused** - One scenario per behavior
-- **Use Background for common setup** - Avoid repetition
-- **Make scenarios readable** - Anyone should understand them
-- **Avoid technical details** - Focus on business behavior
-- **Use Scenario Outlines** - For testing multiple inputs
-
-### Example Scenario Outline
-
-```gherkin
-Scenario Outline: HTTP status codes
-  When I send a GET request to "<endpoint>"
-  Then the response status code should be <status>
-
-  Examples:
-    | endpoint       | status |
-    | /              | 200    |
-    | /nonexistent   | 404    |
-    | /health        | 200    |
-```
-
-## Comparison with Other Tests
-
-| Test Type | Purpose | Speed | When to Run |
-|-----------|---------|-------|-------------|
-| Unit Tests (pytest) | Test individual functions/classes | Fast | On every change |
-| Contract Tests (Pact) | Test API contract agreement | Medium | Before integration |
-| BDD Tests (behave) | Test user-facing behavior | Slower | Before deployment |
-
-**BDD tests** complement unit and contract tests by focusing on complete user workflows rather than individual components or contracts.
