@@ -1,0 +1,30 @@
+openapi: 3.0.3
+info:
+  title: Gateway API
+  description: Clinical Data Gateway API
+  version: 0.1.0
+  contact:
+    name: API Support
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+paths:
+  /:
+    get:
+      summary: Get hello world message
+      description: Returns a simple hello world message
+      operationId: getHelloWorld
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "Hello, World!"
+        '404':
+          description: Route not found
+          content:
+            text/html:
+              schema:
+                type: string
