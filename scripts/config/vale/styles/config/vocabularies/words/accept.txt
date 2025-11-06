@@ -28,3 +28,5 @@ anonymised
 Dev
 dotfiles
 pytest
+Schemathesis
+repos
