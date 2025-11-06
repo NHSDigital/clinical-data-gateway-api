@@ -40,6 +40,11 @@ make env
 
 > [!NOTE]<br>
 > If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container.
+> A ca certificate can also be provided by including the `DEV_CERT_FILENAME` environment variable. This filename needs to match one of the files included within the `dev-certificates` directory. This is often easiest setup via an environment variable, included within your shell's profile (`.bashrc`, `.zshrc`, etc):
+>
+> ```shell
+> export DEV_CERT_FILENAME=<dev_cert_filename>
+> ```
 
 Once the build container has been created, you can either connect to it from within vscode via the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), or connect to it via the command line via the `bash` make target.
 

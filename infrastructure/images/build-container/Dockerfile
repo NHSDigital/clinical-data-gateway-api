@@ -6,6 +6,10 @@ ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorcon
 
 ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
+ARG DEV_CERT_FILENAME
+
+ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/resources/dev-certificates/$DEV_CERT_FILENAME}
+ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
 
 COPY resources/ /resources
 
