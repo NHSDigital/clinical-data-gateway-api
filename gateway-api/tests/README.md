@@ -19,7 +19,7 @@ tests/
 
 ## Running Tests
 
-### Install Dependencies (if not using dev container)
+### Install Dependencies (if not using Dev container)
 
 Dev container users can skip this - dependencies are pre-installed during container build.
 
