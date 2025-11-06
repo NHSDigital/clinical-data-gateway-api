@@ -38,3 +38,10 @@ repos:
     entry: ./scripts/githooks/check-terraform-format.sh
     language: script
     pass_filenames: false
+- repo: local
+  hooks:
+  - id: python-linting-and-formatting
+    name: Python linting and formatting
+    entry: ./scripts/githooks/python-lint-and-format.sh
+    language: script
+    pass_filenames: false

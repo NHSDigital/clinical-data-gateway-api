@@ -1,26 +1,15 @@
-# Clinical Data APIs Gateway
-
-This repository has been created in support of early Alpha for this product \[GPCAPIM-159], and the README will be updated during ongoing development.
-
-## Repository Template
+# Clinical Data Gateway API
 
 [![CI/CD Pull Request](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml/badge.svg)](https://github.com/nhs-england-tools/repository-template/actions/workflows/cicd-1-pull-request.yaml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=repository-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=repository-template)
 
-Start with an overview or a brief description of what the project is about and what it does. For example -
+Repository housing all code responsible for handling the Clinical Data Gateway APIs. This repository houses the various Python modules responsible for managing logic within the APIs, as well as all the Terraform code responsible for deploying the APIs within an environment.
 
-Welcome to our repository template designed to streamline your project setup! This robust template provides a reliable starting point for your new projects, covering an essential tech stack and encouraging best practices in documenting.
-
-This repository template aims to foster a user-friendly development environment by ensuring that every included file is concise and adequately self-documented. By adhering to this standard, we can promote increased clarity and maintainability throughout your project's lifecycle. Bundled within this template are resources that pave the way for seamless repository creation. Currently supported technologies are:
-
-- Terraform
-- Docker
-
-Make use of this repository template to expedite your project setup and enhance your productivity right from the get-go. Enjoy the advantage of having a well-structured, self-documented project that reduces overhead and increases focus on what truly matters - coding!
+The Clinical Data Gateway APIs look to provide the [GP Connect](https://digital.nhs.uk/services/gp-connect) APIs over the internet, via the [API Management platform](https://digital.nhs.uk/services/api-platform). More details on the GP Connect specifications can be found on the [GP connect specifications for developers](https://digital.nhs.uk/services/gp-connect/develop-gp-connect-services/specifications-for-developers) page.
 
 ## Table of Contents
 
-- [Repository Template](#repository-template)
+- [Clinical Data Gateway API](#clinical-data-gateway-api)
   - [Table of Contents](#table-of-contents)
   - [Setup](#setup)
     - [Prerequisites](#prerequisites)
@@ -36,21 +25,38 @@ Make use of this repository template to expedite your project setup and enhance 
 
 ## Setup
 
-By including preferably a one-liner or if necessary a set of clear CLI instructions we improve user experience. This should be a frictionless installation process that works on various operating systems (macOS, Linux, Windows WSL) and handles all the dependencies.
-
-Clone the repository
+Clone the repository.
 
 ```shell
-git clone https://github.com/nhs-england-tools/repository-template.git
-cd nhs-england-tools/repository-template
+git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
+cd clinical-data-gateway-api.git
+```
+
+The project can then be built with `make`, initially via the `env` target. All dependencies for the project will be installed within a Docker container, ensuring a consistent build environment across all developers' machines. This container is named `gateway-build-container` and is built automatically via the `env` target.
+
+```shell
+make env
+```
+
+> [!NOTE]<br>
+> If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container.
+> A ca certificate can also be provided by including the `DEV_CERT_FILENAME` environment variable. This filename needs to match one of the files included within the `dev-certificates` directory. This is often easiest setup via an environment variable, included within your shell's profile (`.bashrc`, `.zshrc`, etc):
+>
+> ```shell
+> export DEV_CERT_FILENAME=<dev_cert_filename>
+> ```
+
+Once the build container has been created, you can either connect to it from within vscode via the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), or connect to it via the command line via the `bash` make target.
+
+```shell
+make bash
 ```
 
 ### Prerequisites
 
 The following software packages, or their equivalents, are expected to be installed and configured:
 
-- [Docker](https://www.docker.com/) container runtime or a compatible tool, e.g. [Podman](https://podman.io/),
-- [asdf](https://asdf-vm.com/) version manager,
+- [Podman](https://podman.io/) container runtime,
 - [GNU make](https://www.gnu.org/software/make/) 3.82 or later,
 
 > [!NOTE]<br>
@@ -68,24 +74,26 @@ The following software packages, or their equivalents, are expected to be instal
 > [!NOTE]<br>
 > For macOS users, installation of the GNU toolchain has been scripted and automated as part of the `dotfiles` project. Please see this [script](https://github.com/nhs-england-tools/dotfiles/blob/main/assets/20-install-base-packages.macos.sh) for details.
 
-- [Python](https://www.python.org/) required to run Git hooks,
-- [`jq`](https://jqlang.github.io/jq/) a lightweight and flexible command-line JSON processor.
-
 ### Configuration
 
-Installation and configuration of the toolchain dependencies
-
-```shell
-make config
-```
+Installation and configuration of the toolchain dependencies is completed as part of building the build container via the `make env` command above.
 
 ## Usage
 
-After a successful installation, provide an informative example of how this project can be used. Additional code snippets, screenshots and demos work well in this space. You may also link to the other documentation resources, e.g. the [User Guide](./docs/user-guide.md) to demonstrate more use cases and to show more features.
+Once the build container has been built and is up and running. A few different make targets are provided for installing dependencies and building the codebase.
+
+- `dependencies` - installs all dependencies required for the project
+- `build` - builds the codebase so that it is ready for deployment
+- `clean` - stops and destroys a built build container
+- `pre-commit` - runs all pre-commit hooks against the codebase, including linting and formatting checks
 
 ### Testing
 
 There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
+
+#### Continuous Integration
+
+More documentation on the GitHub actions utilised to support continuous integration can be found on the [Continuous Integration](./.github/github_actions.md) page.
 
 ## Design
 
@@ -120,6 +128,10 @@ Describe or link templates on how to raise an issue, feature request or make a c
 - Release process, versioning, changelog
 - Backlog, board, roadmap, ways of working
 - High-level requirements, guiding principles, decision records, etc.
+
+### Signed Commits
+
+To be able to contribute to the repository, any commits created need to be signed. See the [commit signing setup guide page](https://github.com/NHSDigital/software-engineering-quality-framework/blob/main/practices/guides/commit-signing.md) for guidance on setting up this up.
 
 ## Contacts
 
