@@ -13,8 +13,7 @@
     "ms-python.vscode-pylance",
     "ms-python.debugpy",
     "ms-python.vscode-python-envs",
-    "alexkrechik.cucumberautocomplete",
-    "ms-python.vscode-python-envs"
-  ],
+    "alexkrechik.cucumberautocomplete"
+    ],
   "unwantedRecommendations": []
 }
