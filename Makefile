@@ -14,7 +14,7 @@ dependencies: # Install dependencies needed to build and test the project @Pipel
 		echo "Configuring poetry to trust the dev certificate..."  ; \
 		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
 	fi
-	cd gateway-api && poetry install --extras dev
+	cd gateway-api && poetry sync
 
 .PHONEY: build-gateway-api
 build-gateway-api: dependencies
@@ -26,7 +26,7 @@ build-gateway-api: dependencies
 	@poetry build --format=wheel
 	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
 	# Copy main file separately as it is not included within the package.
-	@cp main.py ./target/gateway-api/
+	@cp lambda_handler.py ./target/gateway-api/
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
@@ -34,14 +34,14 @@ build-gateway-api: dependencies
 .PHONEY: build
 build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Building Docker image using Docker..."
-	@docker buildx build  --load -t localhost/gateway-api-image infrastructure/images/gateway-api
+	@docker buildx build --load --provenance=false -t localhost/gateway-api-image infrastructure/images/gateway-api
 	@echo "Docker image 'gateway-api-image' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
-	@docker run --name gateway-api -d -p 5000:5000 localhost/gateway-api-image
+	@docker run --name gateway-api -p 5000:8080 -d localhost/gateway-api-image
 
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."
@@ -126,6 +126,10 @@ build:
 .PHONEY: deploy
 deploy:
 	COMMAND="pyenv activate gateway && make deploy" make command
+
+.PHONEY: stop
+stop:
+	COMMAND="make stop" make command
 
 .PHONEY: command
 command:

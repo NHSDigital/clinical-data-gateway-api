@@ -1,11 +1,8 @@
 # Base image
-FROM python:3.13.9-alpine3.22
+FROM public.ecr.aws/lambda/python:3.13
 
 COPY resources/ /resources
 
-RUN mkdir /app
-WORKDIR /app
+COPY /resources/build/gateway-api ${LAMBDA_TASK_ROOT}
 
-COPY /resources/build/gateway-api .
-
-ENTRYPOINT ["python", "main.py"]
+CMD [ "lambda_handler.handler" ]

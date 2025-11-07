@@ -40,6 +40,8 @@
   "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
   "python.analysis.autoImportCompletions": true,
   "python.analysis.autoIndent": false,
+  // Mypy configuration
   "mypy-type-checker.cwd": "${nearestConfig}",
+  // Enable re-format on type
   "editor.formatOnType": true
 }
