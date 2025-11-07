@@ -3,7 +3,7 @@
 set -e
 
 if [ $DEV_CERTS_INCLUDED = "true" ]; then
-  echo "Addig dev certificates to buildkit..."
+  echo "Adding dev certificates to buildkit..."
   docker stop buildx_buildkit_gateway-builder0 || true
   docker rm buildx_buildkit_gateway-builder0 || true
 
