@@ -4,7 +4,6 @@ This test suite acts as a consumer that defines the expected
 interactions with the provider (the Flask API).
 """
 
-import pytest
 import requests
 from pact import Pact
 
@@ -32,7 +31,7 @@ class TestConsumerContract:
         # Start the mock server and execute the test
         with pact.serve() as server:
             # Make the actual request to the mock provider
-            response = requests.get(f"{server.url}/")
+            response = requests.get(f"{server.url}/", timeout=10)
 
             # Verify the response matches expectations
             assert response.status_code == 200
@@ -59,7 +58,7 @@ class TestConsumerContract:
         # Start the mock server and execute the test
         with pact.serve() as server:
             # Make the actual request to the mock provider
-            response = requests.get(f"{server.url}/nonexistent")
+            response = requests.get(f"{server.url}/nonexistent", timeout=10)
 
             # Verify the response matches expectations
             assert response.status_code == 404
