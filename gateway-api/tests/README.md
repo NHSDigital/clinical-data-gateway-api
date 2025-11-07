@@ -1,6 +1,6 @@
 # Gateway API Tests
 
-This directory contains the unit and contract test suites for the gateway API.
+This directory contains the unit, contract, and schema validation test suites for the gateway API.
 
 ## Test Structure
 

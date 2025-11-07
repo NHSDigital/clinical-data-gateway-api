@@ -49,7 +49,7 @@ BDD tests describe system behavior from a user's perspective using natural langu
    - Written in Gherkin syntax (Given/When/Then)
    - Describe behavior in plain English
    - Readable by non-technical stakeholders
-   - Define acceptance criteria
+   - Are acceptance tests that meet acceptance criteria
 
 2. **Step Definitions** (`steps/*.py`)
    - Python code that implements each Gherkin step

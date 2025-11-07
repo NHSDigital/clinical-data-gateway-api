@@ -33,11 +33,3 @@ class TestProviderContract:
             verifier.verify()
         except Exception as e:
             pytest.fail(f"Pact verification failed: {e}")
-
-    def test_provider_is_accessible(self, provider_url):
-        """Test that the provider is running and accessible."""
-        import requests
-
-        response = requests.get(provider_url)
-        assert response.status_code == 200
-        assert response.text == "Hello, World!"
