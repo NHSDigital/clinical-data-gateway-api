@@ -31,5 +31,8 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "terminal.integrated.defaultProfile.linux": "bash"
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "cucumberautocomplete.steps": [
+        "gateway-api/features/steps/*.py",
+  ],
 }
