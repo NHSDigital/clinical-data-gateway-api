@@ -1,8 +1,7 @@
 {
-  "markdownlint.config": {
-    "MD013": false,
-    "MD024": { "siblings_only": true },
-    "MD033": false
+  "markdownlint.configFile": "scripts/config/.markdownlint.yaml",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.markdownlint": "always"
   },
   // Enable pylance type checking within vscode.
   "python.analysis.typeCheckingMode": "standard",
@@ -31,5 +30,9 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "charliermarsh.ruff"
-  }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "cucumberautocomplete.steps": [
+        "gateway-api/features/steps/*.py",
+  ],
 }
