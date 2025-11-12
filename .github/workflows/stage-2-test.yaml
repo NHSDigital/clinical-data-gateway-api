@@ -53,14 +53,77 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: "Install dependencies"
-        run: |
-          make dependencies
+        run: make dependencies
       - name: "Run unit test suite"
         run: |
-          make test-unit
-      - name: "Save the result of fast test suite"
+          cd gateway-api
+          poetry run pytest tests/unit/ -v --junit-xml=test-results/unit-tests.xml
+      - name: "Upload unit test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: gateway-api/test-results/unit-tests.xml
+          retention-days: 30
+
+  test-contract:
+    name: "Contract tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Install Poetry"
         run: |
-          echo "Nothing to save"
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: "Install dependencies"
+        run: make dependencies
+      - name: "Run contract tests"
+        run: |
+          cd gateway-api
+          poetry run pytest tests/contract/ -v --junit-xml=test-results/contract-tests.xml
+      - name: "Upload contract test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-results
+          path: gateway-api/test-results/contract-tests.xml
+          retention-days: 30
+
+  test-schema:
+    name: "Schema validation tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Install Poetry"
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: "Install dependencies"
+        run: make dependencies
+      - name: "Run schema validation tests"
+        run: |
+          cd gateway-api
+          poetry run pytest tests/schema/ -v --junit-xml=test-results/schema-tests.xml
+      - name: "Upload schema test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-test-results
+          path: gateway-api/test-results/schema-tests.xml
+          retention-days: 30
+
   test-lint:
     name: "Linting"
     runs-on: ubuntu-latest
@@ -74,6 +137,7 @@ jobs:
       - name: "Save the linting result"
         run: |
           echo "Nothing to save"
+
   test-coverage:
     name: "Test coverage"
     needs: [test-unit]
@@ -88,6 +152,7 @@ jobs:
       - name: "Save the coverage check result"
         run: |
           echo "Nothing to save"
+
   perform-static-analysis:
     name: "Perform static analysis"
     needs: [test-unit]
