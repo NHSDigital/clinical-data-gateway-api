@@ -68,6 +68,11 @@ jobs:
           name: unit-test-results
           path: gateway-api/test-artifacts/
           retention-days: 30
+      - name: "Publish unit test results to summary"
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: gateway-api/test-artifacts/unit-tests.xml
 
   test-contract:
     name: "Contract tests"
@@ -100,6 +105,11 @@ jobs:
           name: contract-test-results
           path: gateway-api/test-artifacts/
           retention-days: 30
+      - name: "Publish contract test results to summary"
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: gateway-api/test-artifacts/contract-tests.xml
 
   test-schema:
     name: "Schema validation tests"
@@ -132,6 +142,11 @@ jobs:
           name: schema-test-results
           path: gateway-api/test-artifacts/
           retention-days: 30
+      - name: "Publish schema test results to summary"
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: gateway-api/test-artifacts/schema-tests.xml
 
   test-lint:
     name: "Linting"
