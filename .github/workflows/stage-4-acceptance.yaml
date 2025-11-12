@@ -118,11 +118,20 @@ jobs:
       - name: "Checkout code"
         uses: actions/checkout@v6
       - name: "Run integration test"
-        run: |
-          make test-integration
-      - name: "Save result"
-        run: |
-          echo "Nothing to save"
+        run: make test-integration
+      - name: "Upload integration test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: gateway-api/test-artifacts/
+          retention-days: 30
+      - name: "Publish integration test results to summary"
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: gateway-api/test-artifacts/TESTS-*.xml
+
   test-accessibility:
     name: "Accessibility test"
     runs-on: ubuntu-latest
