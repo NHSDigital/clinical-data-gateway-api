@@ -68,15 +68,6 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/unit-tests.xml
-          output: gateway-api/test-artifacts/unit-test-summary.md
-      - name: "Add test summary and HTML report link"
-        if: always()
-        run: |
-          cat gateway-api/test-artifacts/unit-test-summary.md >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Detailed HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the **unit-test-results** artifact and open \`unit-tests.html\` for an interactive report." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-contract:
     name: "Contract tests"
@@ -109,15 +100,6 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/contract-tests.xml
-          output: gateway-api/test-artifacts/contract-test-summary.md
-      - name: "Add test summary and HTML report link"
-        if: always()
-        run: |
-          cat gateway-api/test-artifacts/contract-test-summary.md >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Detailed HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the **contract-test-results** artifact and open \`contract-tests.html\` for an interactive report." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-schema:
     name: "Schema validation tests"
@@ -150,15 +132,6 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/schema-tests.xml
-          output: gateway-api/test-artifacts/schema-test-summary.md
-      - name: "Add test summary and HTML report link"
-        if: always()
-        run: |
-          cat gateway-api/test-artifacts/schema-test-summary.md >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Detailed HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the **schema-test-results** artifact and open \`schema-tests.html\` for an interactive report." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-integration:
     name: "Integration test"
@@ -191,15 +164,6 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/TESTS-*.xml
-          output: gateway-api/test-artifacts/integration-test-summary.md
-      - name: "Add test summary"
-        if: always()
-        run: |
-          cat gateway-api/test-artifacts/integration-test-summary.md >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Detailed Reports" >> $GITHUB_STEP_SUMMARY
-          echo "Download the **integration-test-results** artifact for detailed Behave reports." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-lint:
     name: "Linting"
