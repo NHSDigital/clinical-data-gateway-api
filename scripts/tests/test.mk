@@ -23,6 +23,9 @@ test-accessibility: # Run your accessibility tests from scripts/test/accessibili
 test-contract: # Run your contract tests from scripts/test/contract @Testing
 	make _test name="contract"
 
+test-schema: # Run your schema tests from scripts/test/schema @Testing
+	make _test name="schema"
+
 test-integration: # Run your integration tests from scripts/test/integration @Testing
 	make _test name="integration"
 
