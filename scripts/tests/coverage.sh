@@ -8,11 +8,10 @@ cd gateway-api
 mkdir -p test-artifacts/coverage
 
 # Copy all coverage data files from downloaded artifacts
-# Each artifact is downloaded to gateway-api/{unit,contract,schema}/
-# and contains test-artifacts/ from the upload
-cp unit/test-artifacts/.coverage.unit test-artifacts/coverage/
-cp contract/test-artifacts/.coverage.contract test-artifacts/coverage/
-cp schema/test-artifacts/.coverage.schema test-artifacts/coverage/
+# Artifacts uploaded from gateway-api/test-artifacts/ are downloaded directly to unit/, contract/, schema/
+cp unit/.coverage.unit test-artifacts/coverage/
+cp contract/.coverage.contract test-artifacts/coverage/
+cp schema/.coverage.schema test-artifacts/coverage/
 
 # Merge coverage data
 cd test-artifacts/coverage
