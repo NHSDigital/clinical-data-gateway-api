@@ -57,13 +57,16 @@ jobs:
       - name: "Run unit test suite"
         run: |
           cd gateway-api
-          poetry run pytest tests/unit/ -v --junit-xml=test-results/unit-tests.xml
+          mkdir -p test-artifacts
+          poetry run pytest tests/unit/ -v \
+            --junit-xml=test-artifacts/unit-tests.xml \
+            --html=test-artifacts/unit-tests.html --self-contained-html
       - name: "Upload unit test results"
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: gateway-api/test-results/unit-tests.xml
+          path: gateway-api/test-artifacts/
           retention-days: 30
 
   test-contract:
@@ -86,13 +89,16 @@ jobs:
       - name: "Run contract tests"
         run: |
           cd gateway-api
-          poetry run pytest tests/contract/ -v --junit-xml=test-results/contract-tests.xml
+          mkdir -p test-artifacts
+          poetry run pytest tests/contract/ -v \
+            --junit-xml=test-artifacts/contract-tests.xml \
+            --html=test-artifacts/contract-tests.html --self-contained-html
       - name: "Upload contract test results"
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: contract-test-results
-          path: gateway-api/test-results/contract-tests.xml
+          path: gateway-api/test-artifacts/
           retention-days: 30
 
   test-schema:
@@ -115,13 +121,16 @@ jobs:
       - name: "Run schema validation tests"
         run: |
           cd gateway-api
-          poetry run pytest tests/schema/ -v --junit-xml=test-results/schema-tests.xml
+          mkdir -p test-artifacts
+          poetry run pytest tests/schema/ -v \
+            --junit-xml=test-artifacts/schema-tests.xml \
+            --html=test-artifacts/schema-tests.html --self-contained-html
       - name: "Upload schema test results"
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: schema-test-results
-          path: gateway-api/test-results/schema-tests.xml
+          path: gateway-api/test-artifacts/
           retention-days: 30
 
   test-lint:
