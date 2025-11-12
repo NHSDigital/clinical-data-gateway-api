@@ -13,11 +13,12 @@ Static code analysis is an essential part of modern software development. It pro
 
 [SonarCloud](https://sonarcloud.io), an online service for continuous code quality inspection and static analysis, can be easily integrated with a GitHub repository. This repository template includes all the necessary setup for minimal configuration on your part, facilitating smooth integration with this SaaS offering.
 
+Sonar analysis is automatically performed as part of the **test stage** in the CI/CD pipeline (see [stage-2-test.yaml](../../.github/workflows/stage-2-test.yaml)). The analysis runs after unit tests complete and includes code coverage reporting when SonarCloud credentials are configured.
+
 ## Key files
 
-- [perform-static-analysis.sh](../../scripts/reports/perform-static-analysis.sh): A shell script that performs analysis
+- [stage-2-test.yaml](../../.github/workflows/stage-2-test.yaml): The test stage workflow that includes the Sonar analysis step
 - [sonar-scanner.properties](../../scripts/config/sonar-scanner.properties): A configuration file that includes the project details
-- [perform-static-analysis/action.yaml](../../.github/actions/perform-static-analysis/action.yaml): GitHub action to run the script as part of the CI/CD pipeline
 - [.gitignore](../../.gitignore): Excludes the `.scannerwork` temporary directory created during the process
 
 ## Setup
@@ -26,14 +27,30 @@ Contact the GitHub Admins via their mailbox to have your [SonarCloud](https://so
 
 ## Testing
 
-You can run and test static analysis locally on a developer's workstation using the following command
+### CI/CD Pipeline Analysis
 
-```shell
-export SONAR_ORGANISATION_KEY=nhs-england-tools # Replace with your organisation key
-export SONAR_PROJECT_KEY=repository-template # Replace with your project key
-export SONAR_TOKEN=[replace-with-your-sonar-token]
-./scripts/reports/perform-static-analysis.sh
-```
+Static analysis is performed automatically as part of the **test stage** in the CI/CD pipeline when configured with SonarCloud credentials. The workflow executes the analysis after unit tests complete, ensuring that code coverage metrics are included in the Sonar report.
+
+To trigger the analysis:
+
+1. Push changes to a pull request
+2. The test stage workflow will automatically run unit tests
+3. If SonarCloud credentials are configured, the analysis will execute and report results to SonarCloud
+
+### Local Analysis with VS Code
+
+You can also perform static analysis locally using the **SonarQube for IDE** extension in VS Code. This provides real-time feedback on code quality issues as you develop.
+
+To set up local analysis:
+
+1. Install the [SonarQube for IDE](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) extension in VS Code
+2. The extension will automatically analyze your code files as you edit them
+3. Issues will appear in the Problems panel and as inline annotations in the editor
+4. For connected mode with SonarCloud (optional):
+   - Open the SonarQube extension settings
+   - Add a connection to SonarCloud
+   - Bind your workspace to your SonarCloud project using the organization and project keys
+   - This enables synchronization of quality profiles and issue suppression with the server
 
 ## Configuration checklist
 

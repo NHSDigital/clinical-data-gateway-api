@@ -1,0 +1,24 @@
+name: "Create unique artefact name"
+description: "Generate a unique artefact name based on branch name and run number"
+inputs:
+  prefix:
+    description: "Prefix for the artefact name (e.g., 'coverage', 'build')"
+    required: true
+outputs:
+  artefact-name:
+    description: "The generated unique artefact name"
+    value: ${{ steps.create_name.outputs.artefact-name }}
+runs:
+  using: "composite"
+  steps:
+    - id: create_name
+      shell: bash
+      env:
+        HEAD_REF: ${{ github.head_ref }}
+        REF_NAME: ${{ github.ref_name }}
+        RUN_NUMBER: ${{ github.run_number }}
+        PREFIX: ${{ inputs.prefix }}
+      run: |
+        BRANCH_NAME="${HEAD_REF:-$REF_NAME}"
+        SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9_-]/-/g')
+        echo "artefact-name=${PREFIX}-${SANITIZED_BRANCH}-${RUN_NUMBER}" >> $GITHUB_OUTPUT
