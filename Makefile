@@ -48,7 +48,7 @@ else
 
 # ==============================================================================
 
-PYTHON_VERSION=3.13.9
+PYTHON_VERSION=$(shell grep "^python\s" .tool-versions | cut -f2 -d' ')
 
 .PHONEY: clean
 clean:
