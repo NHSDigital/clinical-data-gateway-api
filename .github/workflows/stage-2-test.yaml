@@ -133,6 +133,38 @@ jobs:
         with:
           paths: gateway-api/test-artifacts/schema-tests.xml
 
+  test-integration:
+    name: "Integration test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Install Poetry"
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: "Install dependencies"
+        run: make dependencies
+      - name: "Run integration test"
+        run: make test-integration
+      - name: "Upload integration test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: gateway-api/test-artifacts/
+          retention-days: 30
+      - name: "Publish integration test results to summary"
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: gateway-api/test-artifacts/TESTS-*.xml
+
   test-lint:
     name: "Linting"
     runs-on: ubuntu-latest
