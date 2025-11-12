@@ -49,7 +49,7 @@ def provider_url():
     thread = threading.Thread(target=run_app, daemon=True)
     thread.start()
 
-    # Wait for server to be ready by polling the health endpoint
+    # Wait for server to be ready by polling the hello world endpoint
     url = f"http://localhost:{port}"
     max_retries = 10
     retry_delay = 0.1  # 100ms between retries
