@@ -72,7 +72,8 @@ jobs:
         if: always()
         run: |
           echo "### 📊 Unit Test HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the [unit-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`unit-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "- Download the **unit-test-results** artifact from the Artifacts section below" >> $GITHUB_STEP_SUMMARY
+          echo "- Extract and open \`unit-tests.html\` in your browser for a detailed visual report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
   test-contract:
@@ -110,7 +111,8 @@ jobs:
         if: always()
         run: |
           echo "### 📊 Contract Test HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the [contract-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`contract-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "- Download the **contract-test-results** artifact from the Artifacts section below" >> $GITHUB_STEP_SUMMARY
+          echo "- Extract and open \`contract-tests.html\` in your browser for a detailed visual report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
   test-schema:
@@ -148,7 +150,8 @@ jobs:
         if: always()
         run: |
           echo "### 📊 Schema Test HTML Report" >> $GITHUB_STEP_SUMMARY
-          echo "Download the [schema-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`schema-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "- Download the **schema-test-results** artifact from the Artifacts section below" >> $GITHUB_STEP_SUMMARY
+          echo "- Extract and open \`schema-tests.html\` in your browser for a detailed visual report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
   test-integration:
@@ -186,7 +189,8 @@ jobs:
         if: always()
         run: |
           echo "### 📊 Integration Test Reports" >> $GITHUB_STEP_SUMMARY
-          echo "Download the [integration-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact for detailed Behave reports." >> $GITHUB_STEP_SUMMARY
+          echo "- Download the **integration-test-results** artifact from the Artifacts section below" >> $GITHUB_STEP_SUMMARY
+          echo "- Extract to view detailed Behave test reports" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
   test-lint:
