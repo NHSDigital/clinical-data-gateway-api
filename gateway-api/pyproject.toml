@@ -19,6 +19,7 @@ dev = [
     "pact-python>=2.0.0",
     "requests>=2.31.0",
     "behave>=1.3.3",
+    "behave-html-pretty-formatter>=1.15.1",
     "schemathesis>=4.4.1",
 ]
 
