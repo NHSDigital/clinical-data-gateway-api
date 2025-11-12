@@ -163,17 +163,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: unit-test-results
-          path: gateway-api/test-artifacts/unit/
+          path: gateway-api/unit/
       - name: "Download contract test coverage"
         uses: actions/download-artifact@v4
         with:
           name: contract-test-results
-          path: gateway-api/test-artifacts/contract/
+          path: gateway-api/contract/
       - name: "Download schema test coverage"
         uses: actions/download-artifact@v4
         with:
           name: schema-test-results
-          path: gateway-api/test-artifacts/schema/
+          path: gateway-api/schema/
       - name: "Merge coverage data"
         run: make test-coverage
       - name: "Upload combined coverage report"
