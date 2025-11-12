@@ -68,6 +68,12 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/unit-tests.xml
+      - name: "Add HTML report link to summary"
+        if: always()
+        run: |
+          echo "### 📊 Unit Test HTML Report" >> $GITHUB_STEP_SUMMARY
+          echo "Download the [unit-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`unit-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-contract:
     name: "Contract tests"
@@ -100,6 +106,12 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/contract-tests.xml
+      - name: "Add HTML report link to summary"
+        if: always()
+        run: |
+          echo "### 📊 Contract Test HTML Report" >> $GITHUB_STEP_SUMMARY
+          echo "Download the [contract-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`contract-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-schema:
     name: "Schema validation tests"
@@ -132,6 +144,12 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/schema-tests.xml
+      - name: "Add HTML report link to summary"
+        if: always()
+        run: |
+          echo "### 📊 Schema Test HTML Report" >> $GITHUB_STEP_SUMMARY
+          echo "Download the [schema-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact and open \`schema-tests.html\` in your browser for a detailed report." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-integration:
     name: "Integration test"
@@ -164,6 +182,12 @@ jobs:
         uses: test-summary/action@v2
         with:
           paths: gateway-api/test-artifacts/TESTS-*.xml
+      - name: "Add HTML report link to summary"
+        if: always()
+        run: |
+          echo "### 📊 Integration Test Reports" >> $GITHUB_STEP_SUMMARY
+          echo "Download the [integration-test-results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) artifact for detailed Behave reports." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
   test-lint:
     name: "Linting"
