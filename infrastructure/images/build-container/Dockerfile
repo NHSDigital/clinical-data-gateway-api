@@ -9,8 +9,9 @@ ARG INCLUDE_DEV_CERTS
 ARG DEV_CERT_FILENAME
 
 ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/etc/ssl/certs/$DEV_CERT_FILENAME}
+# Add development certificates to node if provided.
+ENV NODE_EXTRA_CA_CERTS=${DEV_CERT_FILENAME:+/etc/ssl/certs/ca-certificates.crt}
 ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
-ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 COPY resources/ /resources
 
@@ -45,12 +46,6 @@ RUN apk add --no-cache --update bash \
     sqlite-dev \
     tk-dev \
     zstd-dev
-
-# If using dev certificates, configure buildkit to use them.
-RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
-    echo "Adding dev certificates to buildkitd config..." ; \
-    bash /resources/template-buildkitd.toml.sh ; \
-fi
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
