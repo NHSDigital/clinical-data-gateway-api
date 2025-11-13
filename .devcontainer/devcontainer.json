@@ -18,7 +18,8 @@
         "ms-python.debugpy",
         "ms-python.vscode-python-envs",
         "ms-python.mypy-type-checker"
-      ]
+      ],
+      "extensions.ignoreRecommendations": true
     }
   },
   "features": {
@@ -33,10 +34,9 @@
       "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions.git https://github.com/zsh-users/zsh-syntax-highlighting.git"
     }
   },
-  "postCreateCommand": "scripts/devcontainer/post-create.sh",
+  "postCreateCommand": "bash -c 'source ~/.bashrc && make config && pyenv activate gateway && make dependencies' && scripts/devcontainer/post-create.sh",
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached",
-    // "source=${localEnv:HOME}/.gnupg,target=/root/.gnupg,type=bind,consistency=cached"
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
   ],
   "remoteUser": "root",
   "containerUser": "root"
