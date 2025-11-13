@@ -1,20 +1,32 @@
 {
-  "name": "Ubuntu",
-  "image": "mcr.microsoft.com/devcontainers/base:noble",
+  "name": "gateway-api-build-container",
+  "build":{
+    "dockerfile": "../infrastructure/images/build-container/Dockerfile",
+    "args": {
+      "INCLUDE_DEV_CERTS": "true"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig",
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-python.vscode-python-envs",
+        "ms-python.mypy-type-checker",
+        "sonarsource.sonarlint-vscode",
+        "alexkrechik.cucumberautocomplete"
+      ],
+      "extensions.ignoreRecommendations": true,
+      "settings": {
+        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-21-openjdk"
+      }
+    }
+  },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": true,
-      "azureDnsAutoDetection": true,
-      "installDockerBuildx": true,
-      "installDockerComposeSwitch": true,
-      "version": "latest",
-      "dockerDashComposeVersion": "v2"
-    },
-    "ghcr.io/devcontainers/features/go:1": {},
-    "ghcr.io/azutake/devcontainer-features/go-packages-install:0": {
-      "PACKAGES": "github.com/asdf-vm/asdf/cmd/asdf@v0.18.0"
-    },
-    "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/common-utils": {
       "installZsh": true,
       "installOhMyZsh": true,
@@ -26,8 +38,16 @@
       "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions.git https://github.com/zsh-users/zsh-syntax-highlighting.git"
     }
   },
-  "postCreateCommand": "pipx install pre-commit && make config && echo 'export GPG_TTY=$TTY' | cat - ~/.zshrc > temp && mv temp ~/.zshrc",
+  "postCreateCommand": "doas apk add --no-cache openjdk21-jre && scripts/devcontainer/configure-zsh.sh && bash -c 'source ~/.bashrc && make config && pyenv activate gateway && make dependencies'",
   "mounts": [
-    "source=${localEnv:HOME}/.gnupg,target=/home/vscode/.gnupg,type=bind,consistency=cached"
-  ]
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
+  ],
+  "remoteUser": "gateway-dev",
+  "containerUser": "gateway-dev",
+  "portsAttributes": {
+    // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
+    "default": {
+      "onAutoForward": "ignore"
+    }
+  }
 }

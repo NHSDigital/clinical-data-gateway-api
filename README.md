@@ -32,60 +32,33 @@ git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
 cd clinical-data-gateway-api.git
 ```
 
-The project can then be built with `make`, initially via the `env` target. All dependencies for the project will be installed within a Docker container, ensuring a consistent build environment across all developers' machines. This container is named `gateway-build-container` and is built automatically via the `env` target.
-
-```shell
-make env
-```
+The project can then be built within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.devcontainer/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) is installed, you should be prompted to re-open the folder within a Dev Container if you wish. If accepted, this should build the Dev Container locally which will include all required libraries and tools for development.
 
 > [!NOTE]<br>
-> If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container.
-> A ca certificate can also be provided by including the `DEV_CERT_FILENAME` environment variable. This filename needs to match one of the files included within the `dev-certificates` directory. This is often easiest setup via an environment variable, included within your shell's profile (`.bashrc`, `.zshrc`, etc):
+> If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container when the `INCLUDE_DEV_CERTS` docker build argument is set to `true`.
 >
-> ```shell
-> export DEV_CERT_FILENAME=<dev_cert_filename>
-> ```
-
-Once the build container has been created, you can either connect to it from within vscode via the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), or connect to it via the command line via the `bash` make target.
-
-```shell
-make bash
-```
+> [!NOTE]<br>
+> If running in Windows Subsystem for Linux (WSL) on Windows the vscode Dev containers extension should be configured to use WSL {"dev.containers.executeInWSL": true}.
+> It is also necessary for the repository to be cloned into the WSL filesystem and on the first build of the container (and any subsequent complete rebuilds without cache). vscode should then be connected to WSL, before subsequently opening the repository folder. The container can then be built as described above.
 
 ### Prerequisites
 
 The following software packages, or their equivalents, are expected to be installed and configured:
 
-- [Podman](https://podman.io/) container runtime,
-- [GNU make](https://www.gnu.org/software/make/) 3.82 or later,
-
-> [!NOTE]<br>
-> The version of GNU make available by default on macOS is earlier than 3.82. You will need to upgrade it or certain `make` tasks will fail. On macOS, you will need [Homebrew](https://brew.sh/) installed, then to install `make`, like so:
->
-> ```shell
-> brew install make
-> ```
->
-> You will then see instructions to fix your [`$PATH`](https://github.com/nhs-england-tools/dotfiles/blob/main/dot_path.tmpl) variable to make the newly installed version available. If you are using [dotfiles](https://github.com/nhs-england-tools/dotfiles), this is all done for you.
-
-- [GNU sed](https://www.gnu.org/software/sed/) and [GNU grep](https://www.gnu.org/software/grep/) are required for the scripted command-line output processing,
-- [GNU coreutils](https://www.gnu.org/software/coreutils/) and [GNU binutils](https://www.gnu.org/software/binutils/) may be required to build dependencies like Python, which may need to be compiled during installation,
-
-> [!NOTE]<br>
-> For macOS users, installation of the GNU toolchain has been scripted and automated as part of the `dotfiles` project. Please see this [script](https://github.com/nhs-england-tools/dotfiles/blob/main/assets/20-install-base-packages.macos.sh) for details.
+- A container manager for running containers locally, such as [Colima](https://github.com/abiosoft/colima) on Mac OS, or [Docker](https://docs.docker.com/engine/install/) within WSL on Windows or Linux natively.
 
 ### Configuration
 
-Installation and configuration of the toolchain dependencies is completed as part of building the build container via the `make env` command above.
+Installation and configuration of the toolchain dependencies is completed as part of building the Dev container as described above.
 
 ## Usage
 
-Once the build container has been built and is up and running. A few different make targets are provided for installing dependencies and building the codebase.
+Once the build container has been built and is up and running, A few different `make` targets are provided for installing dependencies and building the codebase.
 
 - `dependencies` - installs all dependencies required for the project
 - `build` - builds the codebase so that it is ready for deployment
-- `clean` - stops and destroys a built build container
-- `pre-commit` - runs all pre-commit hooks against the codebase, including linting and formatting checks
+- `deploy` - builds the codebase and deploys it within a separate container locally.
+- `clean` - stops and removes any containers outside of the Dev container locally.
 
 ### Testing
 
@@ -143,4 +116,4 @@ Provide a way to contact the owners of this project. It can be a team, an indivi
 
 Unless stated otherwise, the codebase is released under the MIT License. This covers both the codebase and any sample code in the documentation.
 
-Any HTML or Markdown documentation is [© Crown Copyright](https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/) and available under the terms of the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
+Any HTML or Markdown documentation is [© Crown Copyright](https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/) and available under the terms of the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)

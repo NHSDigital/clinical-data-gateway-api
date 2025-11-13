@@ -34,7 +34,7 @@
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.linux": "zsh",
   // Cucumber extension configuration
   "cucumberautocomplete.steps": [
         "gateway-api/tests/acceptance/steps/*.py",
@@ -52,9 +52,13 @@
   // Disabling telemetry and AI features from GitLens
   "gitlens.telemetry.enabled": false,
   "gitlens.ai.enabled": false,
-  "python.testing.pytestArgs": [
-    "tests"
-  ],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "git.enableCommitSigning": true,
+  "sonarlint.connectedMode.project": {
+    "connectionId": "nhsdigital",
+    "projectKey": "NHSDigital_clinical-data-gateway-api"
+  },
+  // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
+  "remote.autoForwardPorts": false
 }

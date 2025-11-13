@@ -18,3 +18,6 @@
 # Testing artefacts
 **/.hypothesis
 gateway-api/test-artefacts/
+
+# Any environment files
+**/.env

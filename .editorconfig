@@ -23,3 +23,7 @@ indent_style = tab
 # Ignore insert_final_newline rule for all auto generated json pact files in the pacts folders
 [**/pacts/*.json]
 insert_final_newline = unset
+
+# Ignore insert_final_newline rule for auto generated devcontainer lock file
+[.devcontainer/devcontainer-lock.json]
+insert_final_newline = unset
