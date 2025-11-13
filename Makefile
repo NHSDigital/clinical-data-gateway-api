@@ -9,10 +9,6 @@ include scripts/init.mk
 
 .PHONEY: dependencies
 dependencies: # Install dependencies needed to build and test the project @Pipeline
-	@if [[ -n "$${DEV_CERT_PATH}" ]]; then \
-		echo "Configuring poetry to trust the dev certificate..."  ; \
-		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
-	fi
 	cd gateway-api && poetry sync
 
 .PHONEY: build-gateway-api
@@ -52,7 +48,11 @@ stop:
 	@docker stop gateway-api || echo "No Gateway API container currently running."
 
 config:: # Configure development environment (main) @Configuration
-	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
+	# Configure poetry to trust dev certificate if specified
+	@if [[ -n "$${DEV_CERT_PATH}" ]]; then \
+		echo "Configuring poetry to trust the dev certificate..."  ; \
+		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
+	fi
 	make _install-dependencies
 
 # ==============================================================================
