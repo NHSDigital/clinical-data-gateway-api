@@ -41,7 +41,7 @@ jobs:
           retention-days: 30
       - name: "Publish unit test results to summary"
         if: always()
-        uses: test-summary/action@v2
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
           paths: gateway-api/test-artifacts/unit-tests.xml
 
@@ -73,7 +73,7 @@ jobs:
           retention-days: 30
       - name: "Publish contract test results to summary"
         if: always()
-        uses: test-summary/action@v2
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
           paths: gateway-api/test-artifacts/contract-tests.xml
 
@@ -105,7 +105,7 @@ jobs:
           retention-days: 30
       - name: "Publish schema test results to summary"
         if: always()
-        uses: test-summary/action@v2
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
           paths: gateway-api/test-artifacts/schema-tests.xml
 
@@ -137,7 +137,7 @@ jobs:
           retention-days: 30
       - name: "Publish integration test results to summary"
         if: always()
-        uses: test-summary/action@v2
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
           paths: gateway-api/test-artifacts/TESTS-*.xml
 
