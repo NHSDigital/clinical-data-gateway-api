@@ -29,7 +29,12 @@ packages = [{include = "gateway_api", from = "src"}]
 
 [tool.coverage.run]
 relative_files = true
-source = ["."]
+
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/gateway-api/src/",
+]
 
 [tool.coverage.xml]
 output = "coverage.xml"
