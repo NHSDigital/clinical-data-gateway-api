@@ -40,5 +40,6 @@
   // Mypy configuration
   "mypy-type-checker.cwd": "${nearestConfig}",
   // Enable re-format on type
-  "editor.formatOnType": true
+  "editor.formatOnType": true,
+  "git.enableCommitSigning": true
 }
