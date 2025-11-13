@@ -126,3 +126,5 @@ The `provider_url` fixture in `tests/conftest.py` is shared across test types (c
 
 - Spins up the Flask app in a separate thread on a dynamically assigned free port to avoid conflicts
 - Returns the URL (e.g., `http://localhost:12345`)
+
+## Code Coverage
