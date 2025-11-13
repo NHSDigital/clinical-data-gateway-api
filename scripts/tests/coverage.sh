@@ -18,9 +18,11 @@ cd test-artifacts/coverage
 mv coverage.unit .coverage.unit
 mv coverage.contract .coverage.contract
 mv coverage.schema .coverage.schema
-poetry run coverage combine
+# Go back to project root for coverage operations
+cd ../..
+poetry run coverage combine test-artifacts/coverage
 
 # Generate reports
 poetry run coverage report
-poetry run coverage xml -o coverage-merged.xml
-poetry run coverage html -d coverage-merged-html
+poetry run coverage xml -o test-artifacts/coverage/coverage-merged.xml
+poetry run coverage html -d test-artifacts/coverage/coverage-merged-html
