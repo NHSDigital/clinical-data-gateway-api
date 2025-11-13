@@ -25,8 +25,4 @@ poetry run coverage combine test-artifacts/coverage
 # Generate reports
 poetry run coverage report
 poetry run coverage xml -o test-artifacts/coverage/coverage-merged.xml
-# Fix the source path in XML - set it to gateway-api so paths resolve correctly
-sed -i 's|<source></source>|<source>gateway-api</source>|g' test-artifacts/coverage/coverage-merged.xml
-# Update paths in XML to be relative to repository root (add gateway-api/ prefix)
-sed -i 's#filename="src/#filename="gateway-api/src/#g' test-artifacts/coverage/coverage-merged.xml
 poetry run coverage html -d test-artifacts/coverage/coverage-merged-html
