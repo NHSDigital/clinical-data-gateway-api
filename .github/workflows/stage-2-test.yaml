@@ -186,7 +186,7 @@ jobs:
 
   perform-static-analysis:
     name: "Perform static analysis"
-    needs: [test-unit]
+    needs: [test-unit, test-contract, test-schema]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
