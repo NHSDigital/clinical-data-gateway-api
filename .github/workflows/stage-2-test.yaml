@@ -217,8 +217,9 @@ jobs:
           args: >
             -Dsonar.organization=${{ vars.SONAR_ORGANISATION_KEY }}
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=gateway-api/src
+            -Dsonar.sources=gateway-api
             -Dsonar.tests=gateway-api/tests,gateway-api/features
+            -Dsonar.exclusions=gateway-api/tests/**,gateway-api/features/**
             -Dsonar.python.coverage.reportPaths=coverage-reports/${{ needs.create-coverage-name.outputs.coverage-name }}.xml
 
   # perform-static-analysis:
