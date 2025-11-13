@@ -53,7 +53,10 @@ runs:
     - name: "Send the CLOC report to the central location"
       shell: bash
       if: steps.check.outputs.secrets_exist == 'true'
+      env:
+        BUILD_TIMESTAMP: ${{ inputs.build_timestamp }}
+        IDP_AWS_REPORT_UPLOAD_BUCKET_ENDPOINT: ${{ inputs.idp_aws_report_upload_bucket_endpoint }}
       run: |
         aws s3 cp \
           ./lines-of-code-report.json.zip \
-          ${{ inputs.idp_aws_report_upload_bucket_endpoint }}/${{ inputs.build_timestamp }}-lines-of-code-report.json.zip
+          $IDP_AWS_REPORT_UPLOAD_BUCKET_ENDPOINT/$BUILD_TIMESTAMP-lines-of-code-report.json.zip
