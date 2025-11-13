@@ -1,10 +1,10 @@
-#!/bin/zsh
+#!/bin/bash
 
 set -e
 
-echo "Running post-create script..."
+echo "Configuring zsh..."
 
-echo "export GPG_TTY=$TTY" | cat - ~/.zshrc > temp && mv temp ~/.zshrc
-echo "source ~/.bashrc" >> ~/.zshrc
+echo 'export GPG_TTY=$TTY' | cat - ~/.zshrc > temp && mv temp ~/.zshrc
+echo 'source ~/.bashrc' >> ~/.zshrc
 
-echo "Post-create script completed."
+echo "zsh configuration completed."
