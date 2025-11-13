@@ -49,6 +49,10 @@ function main() {
     "branch")
       files="$( (git diff --diff-filter=ACMRT --name-only "${BRANCH_NAME:-origin/main}" "*.md"; git diff --name-only "*.md") | sort | uniq )"
       ;;
+    *)
+      echo "Unknown check mode: '$check'. Supported modes are: all, staged-changes, working-tree-changes, branch."
+      exit 1
+      ;;
   esac
 
   if [[ -n "$files" ]]; then
