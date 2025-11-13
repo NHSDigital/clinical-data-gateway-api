@@ -1,7 +1,6 @@
 # This file is for you! Edit it to implement your own hooks (make targets) into
 # the project as automated steps to be executed on locally and in the CD pipeline.
 
-ifeq (${IN_BUILD_CONTAINER},true)
 include scripts/init.mk
 
 # ==============================================================================
@@ -68,71 +67,3 @@ ${VERBOSE}.SILENT: \
 	config \
 	dependencies \
 	deploy \
-
-else
-
-# ==============================================================================
-
-PYTHON_VERSION=3.14.0
-
-.PHONEY: clean-env
-clean-env:
-	@echo "Stopping Build Container..."
-	@podman stop gateway-api-build-container || echo "No build container currently running."
-	@echo "Removing Build Container..."
-	@podman rm gateway-api-build-container || echo "No build container image currently built."
-
-
-.PHONEY: env
-env: clean-env
-	@echo "Building Build Container..."
-	# Required so that asdf plugins can be installed whilst building the container.
-	@cp .tool-versions ./infrastructure/images/build-container/resources/.tool-versions
-	@if [[ -z "$${DEV_CERT_FILENAME:-}" ]]; then \
-		podman build --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg INCLUDE_DEV_CERTS=true -t gateway-api-build-container infrastructure/images/build-container; \
-	else \
-		echo "including development certificate: ${DEV_CERT_FILENAME}"; \
-		podman build --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg INCLUDE_DEV_CERTS=true --build-arg DEV_CERT_FILENAME=${DEV_CERT_FILENAME} -t gateway-api-build-container infrastructure/images/build-container; \
-	fi
-	@echo "Starting Build Container..."
-	@podman run -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,src=$(PWD),dest=/git --security-opt label=disable -d --name=gateway-api-build-container gateway-api-build-container
-
-	make dependencies
-
-	@echo "Done!"
-
-.PHONEY: dependencies
-dependencies:
-	@echo "Configuring Git safe directory..."
-	@git config --global --add safe.directory /git || true
-	@echo "Installing git hooks..."
-	@cp ./scripts/githooks/pre-commit ./.git/hooks/pre-commit
-	@chmod u+x ./.git/hooks/pre-commit
-	@echo "Installing project dependencies within build container..."
-	COMMAND="pyenv activate gateway && make dependencies" make command
-
-.PHONEY: bash
-bash:
-	COMMAND=bash make command
-
-.PHONEY: pre-commit
-pre-commit:
-	COMMAND="make pre-commit" make command
-
-.PHONEY: build
-build:
-	COMMAND="pyenv activate gateway && make build" make command
-
-.PHONEY: deploy
-deploy:
-	COMMAND="pyenv activate gateway && make deploy" make command
-
-.PHONEY: stop
-stop:
-	COMMAND="make stop" make command
-
-.PHONEY: command
-command:
-	@podman exec -it gateway-api-build-container bash -c 'source ~/.bashrc && ${COMMAND}'
-
-endif

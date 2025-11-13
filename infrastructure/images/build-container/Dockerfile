@@ -1,23 +1,23 @@
-FROM docker:28.5.0-cli AS gateway-build-container
+FROM mcr.microsoft.com/vscode/devcontainers/base:alpine-3.22 AS gateway-build-container
 
-ENV IN_BUILD_CONTAINER=true
+ENV PYTHON_VERSION="3.13.9"
+
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0/"
 ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.4.1/"
 
-ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
 ARG DEV_CERT_FILENAME
 
 ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/etc/ssl/certs/$DEV_CERT_FILENAME}
 ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 COPY resources/ /resources
 
 # Install required certificates for dev machines.
 RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
     cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
-    apk --no-cache add --no-check-certificate ca-certificates \
-        && update-ca-certificates; \
+    update-ca-certificates; \
 
     cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
 else \
@@ -32,6 +32,8 @@ RUN apk add --no-cache --update bash \
     vale \
     # Required to support markdownlint-cli installation.
     npm \
+    # Required to support the building of other docker images.
+    docker \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -94,18 +96,13 @@ WORKDIR /resources
 # Run install other development plugins via asdf.
 RUN bash -c "source /root/.bashrc && bash ./install-asdf-plugins.sh"
 
+WORKDIR /workspace/clinical-data-gateway-api
+
 # Install pipx and poetry
 RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
 
 # Create a virtual environment for development
 RUN bash -c "source /root/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway"
 
-WORKDIR /git
-
 # Install markdownlint-cli
 RUN npm install -g markdownlint-cli
-
-COPY /resources/entry-point.sh /entry-point.sh
-RUN chmod u+x /entry-point.sh
-
-ENTRYPOINT ["/entry-point.sh"]
