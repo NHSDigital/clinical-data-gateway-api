@@ -27,7 +27,15 @@ runs:
         SONAR_ORGANISATION_KEY: ${{ inputs.sonar_organisation_key }}
         SONAR_PROJECT_KEY: ${{ inputs.sonar_project_key }}
         SONAR_TOKEN: ${{ inputs.sonar_token }}
+<<<<<<< HEAD
         COVERAGE_XML_PATH: ${{ inputs.coverage_xml_path }}
       run: |
         export BRANCH_NAME=${GITHUB_HEAD_REF:-$(echo $GITHUB_REF | sed 's#refs/heads/##')}
+=======
+      run: |
+        export BRANCH_NAME=${GITHUB_HEAD_REF:-$(echo $GITHUB_REF | sed 's#refs/heads/##')}
+        export SONAR_ORGANISATION_KEY
+        export SONAR_PROJECT_KEY
+        export SONAR_TOKEN
+>>>>>>> a7ed2c6 ([GPCAPIM-200]: apply fix to other files)
         ./scripts/reports/perform-static-analysis.sh
