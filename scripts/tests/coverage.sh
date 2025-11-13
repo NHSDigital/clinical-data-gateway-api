@@ -7,6 +7,10 @@ cd gateway-api
 # Create coverage directory
 mkdir -p test-artifacts/coverage
 
+# Debug: List downloaded artifacts
+echo "Listing downloaded artifact directories:"
+ls -la unit/ contract/ schema/ || true
+
 # Copy all coverage data files from downloaded artifacts
 # Artifacts uploaded from gateway-api/test-artifacts/ are downloaded directly to unit/, contract/, schema/
 cp unit/.coverage.unit test-artifacts/coverage/
