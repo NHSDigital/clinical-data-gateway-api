@@ -27,6 +27,16 @@ dev = [
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
 
+[tool.coverage.run]
+relative_files = true
+source = ["src"]
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
