@@ -23,10 +23,11 @@ runs:
     - name: "Perform static analysis"
       shell: bash
       if: steps.check.outputs.secret_exist == 'true'
+      env:
+        SONAR_ORGANISATION_KEY: ${{ inputs.sonar_organisation_key }}
+        SONAR_PROJECT_KEY: ${{ inputs.sonar_project_key }}
+        SONAR_TOKEN: ${{ inputs.sonar_token }}
+        COVERAGE_XML_PATH: ${{ inputs.coverage_xml_path }}
       run: |
         export BRANCH_NAME=${GITHUB_HEAD_REF:-$(echo $GITHUB_REF | sed 's#refs/heads/##')}
-        export SONAR_ORGANISATION_KEY=${{ inputs.sonar_organisation_key }}
-        export SONAR_PROJECT_KEY=${{ inputs.sonar_project_key }}
-        export SONAR_TOKEN=${{ inputs.sonar_token }}
-        export COVERAGE_XML_PATH=${{ inputs.coverage_xml_path }}
         ./scripts/reports/perform-static-analysis.sh
