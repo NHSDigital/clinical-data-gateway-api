@@ -22,4 +22,5 @@ poetry run coverage combine
 
 # Generate reports
 poetry run coverage report
-poetry run coverage html -d html
+poetry run coverage xml -o coverage-merged.xml
+poetry run coverage html -d coverage-merged-html
