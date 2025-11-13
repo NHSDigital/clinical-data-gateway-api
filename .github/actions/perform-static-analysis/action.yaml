@@ -10,6 +10,9 @@ inputs:
   sonar_token:
     description: "Sonar token, the API key"
     required: false
+  coverage_xml_path:
+    description: "Path to the merged coverage XML file"
+    required: false
 runs:
   using: "composite"
   steps:
@@ -25,4 +28,5 @@ runs:
         export SONAR_ORGANISATION_KEY=${{ inputs.sonar_organisation_key }}
         export SONAR_PROJECT_KEY=${{ inputs.sonar_project_key }}
         export SONAR_TOKEN=${{ inputs.sonar_token }}
+        export COVERAGE_XML_PATH=${{ inputs.coverage_xml_path }}
         ./scripts/reports/perform-static-analysis.sh
