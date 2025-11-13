@@ -1,20 +1,27 @@
 {
-  "name": "Ubuntu",
-  "image": "mcr.microsoft.com/devcontainers/base:noble",
+  "name": "gateway-api-build-container",
+  "build":{
+    "dockerfile": "../infrastructure/images/build-container/Dockerfile",
+    "args": {
+      "INCLUDE_DEV_CERTS": "true",
+      "DEV_CERT_FILENAME": "${localEnv:DEV_CERT_FILENAME}"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig",
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "ms-python.vscode-python-envs",
+        "ms-python.mypy-type-checker"
+      ]
+    }
+  },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": true,
-      "azureDnsAutoDetection": true,
-      "installDockerBuildx": true,
-      "installDockerComposeSwitch": true,
-      "version": "latest",
-      "dockerDashComposeVersion": "v2"
-    },
-    "ghcr.io/devcontainers/features/go:1": {},
-    "ghcr.io/azutake/devcontainer-features/go-packages-install:0": {
-      "PACKAGES": "github.com/asdf-vm/asdf/cmd/asdf@v0.18.0"
-    },
-    "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/common-utils": {
       "installZsh": true,
       "installOhMyZsh": true,
@@ -26,8 +33,11 @@
       "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions.git https://github.com/zsh-users/zsh-syntax-highlighting.git"
     }
   },
-  "postCreateCommand": "pipx install pre-commit && make config && echo 'export GPG_TTY=$TTY' | cat - ~/.zshrc > temp && mv temp ~/.zshrc",
+  "postCreateCommand": "scripts/devcontainer/post-create.sh",
   "mounts": [
-    "source=${localEnv:HOME}/.gnupg,target=/home/vscode/.gnupg,type=bind,consistency=cached"
-  ]
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached",
+    // "source=${localEnv:HOME}/.gnupg,target=/root/.gnupg,type=bind,consistency=cached"
+  ],
+  "remoteUser": "root",
+  "containerUser": "root"
 }
