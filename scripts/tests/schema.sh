@@ -13,4 +13,4 @@ poetry run pytest tests/schema/ -v \
   --junit-xml=test-artifacts/schema-tests.xml \
   --html=test-artifacts/schema-tests.html --self-contained-html
 # Save coverage data file for merging
-mv .coverage test-artifacts/.coverage.schema
+mv .coverage test-artifacts/coverage.schema
