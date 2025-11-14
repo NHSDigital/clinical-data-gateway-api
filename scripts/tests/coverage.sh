@@ -11,6 +11,7 @@ mkdir -p test-artifacts/coverage
 cp unit/coverage.unit test-artifacts/coverage/
 cp contract/coverage.contract test-artifacts/coverage/
 cp schema/coverage.schema test-artifacts/coverage/
+cp integration/coverage.integration test-artifacts/coverage/
 
 # Merge coverage data
 cd test-artifacts/coverage
@@ -18,6 +19,7 @@ cd test-artifacts/coverage
 mv coverage.unit .coverage.unit
 mv coverage.contract .coverage.contract
 mv coverage.schema .coverage.schema
+mv coverage.integration .coverage.integration
 # Go back to project root for coverage operations
 cd ../..
 poetry run coverage combine test-artifacts/coverage
