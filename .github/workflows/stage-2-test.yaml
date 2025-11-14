@@ -125,9 +125,41 @@ jobs:
         with:
           paths: gateway-api/test-artifacts/schema-tests.xml
 
+  test-integration:
+    name: "Integration test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Install Poetry"
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: "Install dependencies"
+        run: make dependencies
+      - name: "Run integration test"
+        run: make test-integration
+      - name: "Upload integration test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: gateway-api/test-artifacts/
+          retention-days: 30
+      - name: "Publish integration test results to summary"
+        if: always()
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        with:
+          paths: gateway-api/test-artifacts/TESTS-*.xml
+
   merge-test-coverage:
     name: "Merge test coverage"
-    needs: [create-coverage-name, test-unit, test-contract, test-schema]
+    needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -158,6 +190,11 @@ jobs:
         with:
           name: schema-test-results
           path: gateway-api/schema/
+      - name: "Download integration test coverage"
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: gateway-api/integration/
       - name: "Merge coverage data"
         run: make test-coverage
       - name: "Rename coverage XML with unique name"
@@ -174,7 +211,7 @@ jobs:
 
   sonarcloud-analysis:
     name: "SonarCloud Analysis"
-    needs: [create-coverage-name, merge-test-coverage]
+    needs: [merge-test-coverage]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
