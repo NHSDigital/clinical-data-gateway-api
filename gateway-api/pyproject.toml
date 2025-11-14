@@ -29,6 +29,8 @@ packages = [{include = "gateway_api", from = "src"}]
 
 [tool.coverage.run]
 relative_files = true
+source = ["src"]
+omit = ["*/tests/*", "*/features/*"]
 
 [tool.coverage.paths]
 source = [
