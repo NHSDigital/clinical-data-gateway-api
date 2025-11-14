@@ -211,7 +211,7 @@ jobs:
 
   sonarcloud-analysis:
     name: "SonarCloud Analysis"
-    needs: [merge-test-coverage]
+    needs: [create-coverage-name, merge-test-coverage]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
