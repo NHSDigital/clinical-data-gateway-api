@@ -175,26 +175,12 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: "Install dependencies"
         run: make dependencies
-      - name: "Download unit test coverage"
+      - name: "Download all test coverage artifacts"
         uses: actions/download-artifact@v4
         with:
-          name: unit-test-results
-          path: gateway-api/unit/
-      - name: "Download contract test coverage"
-        uses: actions/download-artifact@v4
-        with:
-          name: contract-test-results
-          path: gateway-api/contract/
-      - name: "Download schema test coverage"
-        uses: actions/download-artifact@v4
-        with:
-          name: schema-test-results
-          path: gateway-api/schema/
-      - name: "Download integration test coverage"
-        uses: actions/download-artifact@v4
-        with:
-          name: integration-test-results
-          path: gateway-api/integration/
+          pattern: "*-test-results"
+          path: gateway-api/
+          merge-multiple: false
       - name: "Merge coverage data"
         run: make test-coverage
       - name: "Rename coverage XML with unique name"
