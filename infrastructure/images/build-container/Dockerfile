@@ -10,6 +10,7 @@ ARG DEV_CERT_FILENAME
 
 ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/resources/dev-certificates/$DEV_CERT_FILENAME}
 ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 COPY resources/ /resources
 

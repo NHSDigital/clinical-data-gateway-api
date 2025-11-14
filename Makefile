@@ -13,7 +13,7 @@ dependencies: # Install dependencies needed to build and test the project @Pipel
 		echo "Configuring poetry to trust the dev certificate..."  ; \
 		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
 	fi
-	cd gateway-api && poetry install --extras dev
+	cd gateway-api && poetry install --all-extras
 
 build: # Build the project artefact @Pipeline
 	# TODO: Implement the artefact build step
