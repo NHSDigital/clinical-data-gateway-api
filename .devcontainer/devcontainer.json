@@ -19,7 +19,10 @@
         "ms-python.vscode-python-envs",
         "ms-python.mypy-type-checker"
       ],
-      "extensions.ignoreRecommendations": true
+      "extensions.ignoreRecommendations": true,
+      "settings": {
+        "git.path": "/usr/bin/git"
+      }
     }
   },
   "features": {
