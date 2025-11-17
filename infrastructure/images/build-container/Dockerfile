@@ -45,7 +45,10 @@ RUN apk add --no-cache --update bash \
     readline-dev \
     sqlite-dev \
     tk-dev \
-    zstd-dev
+    zstd-dev \
+    # gnupg to support signing of commits
+    gnupg
+
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
