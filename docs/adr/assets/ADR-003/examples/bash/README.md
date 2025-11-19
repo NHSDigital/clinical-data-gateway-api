@@ -29,4 +29,4 @@ github.com
   ✓ Token: ghs_************************************
 ```
 
-See the [example (script.sh)](./script.sh) implementation. This script has been written to illustrate the concept in a clear and simple way. It is not a production ready code.
+See the [example (script.sh)](https://github.com/NHSDigital/repository-template/blob/main/docs/adr/assets/ADR-003/examples/bash/script.sh) implementation. This script has been written to illustrate the concept in a clear and simple way. It is not a production ready code.
