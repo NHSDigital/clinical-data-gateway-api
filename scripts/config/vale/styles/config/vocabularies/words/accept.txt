@@ -30,3 +30,4 @@ dotfiles
 pytest
 Schemathesis
 repos
+hostname

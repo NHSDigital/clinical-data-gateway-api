@@ -32,7 +32,6 @@ RUN apk add --no-cache --update bash \
     vale \
     # Required to support markdownlint-cli installation.
     npm \
-    zip \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \

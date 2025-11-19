@@ -19,18 +19,30 @@
       "description": "a request for the hello world message",
       "pending": false,
       "request": {
-        "method": "GET",
-        "path": "/"
-      },
-      "response": {
         "body": {
-          "content": "Hello, World!",
-          "contentType": "text/html",
+          "content": {
+            "payload": "World"
+          },
+          "contentType": "application/json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "text/html"
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/2015-03-31/functions/function/invocations"
+      },
+      "response": {
+        "body": {
+          "content": "{\"statusCode\": 200, \"headers\": {\"Content-Type\": \"application/json\"}, \"body\": \"Hello, World!\"}",
+          "contentType": "text/plain;charset=utf-8",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "text/plain;charset=utf-8"
           ]
         },
         "status": 200
