@@ -1,68 +1,69 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
-import socket
-import threading
-import time
+import json
+import os
+from datetime import timedelta
+from typing import cast
 
 import pytest
 import requests
-from gateway_api.main import app as flask_app
 
 
-@pytest.fixture
-def app():
-    """Create and configure a test instance of the Flask application."""
-    flask_app.config.update(
-        {
-            "TESTING": True,
-        }
-    )
+class Client:
+    """A simple HTTP client for testing purposes."""
 
-    return flask_app
+    def __init__(self, lambda_url: str, timeout: timedelta = timedelta(seconds=1)):
+        self._lambda_url = lambda_url
+        self._timeout = timeout.total_seconds()
 
+    def send(self, data: str) -> requests.Response:
+        """
+        Send a request to the APIs with some given parameters.
+        Args:
+            data: The data to send in the request payload
+        Returns:
+            Response object from the request
+        """
+        return self._send(data=data, include_payload=True)
 
-@pytest.fixture
-def client(app):
-    """Create a test client for the Flask application."""
-    return app.test_client()
+    def send_without_payload(self) -> requests.Response:
+        """
+        Send a request to the APIs without a payload.
+        Returns:
+            Response object from the request
+        """
+        return self._send(data=None, include_payload=False)
+
+    def _send(self, data: str | None, include_payload: bool) -> requests.Response:
+        json_data = {"payload": data} if include_payload else {}
+
+        return requests.post(
+            f"{self._lambda_url}/2015-03-31/functions/function/invocations",
+            data=json.dumps(json_data),
+            timeout=self._timeout,
+        )
 
 
 @pytest.fixture(scope="module")
-def provider_url():
-    """Start the Flask app in a separate thread and return its URL.
+def client(base_url: str) -> Client:
+    """Create a test client for the application."""
+    return Client(lambda_url=base_url)
 
-    This fixture is used by tests that need to make real HTTP requests
-    to the Flask application (e.g., contract tests, schema tests).
-    """
-    # Use port 0 to let the OS assign a free port
-    sock = socket.socket()
-    sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    sock.close()
 
-    def run_app():
-        flask_app.run(port=port, debug=False, use_reloader=False)
+@pytest.fixture(scope="module")
+def base_url() -> str:
+    """Retrieves the base URL of the currently deployed application."""
+    return _fetch_env_variable("BASE_URL", str)
 
-    # Start Flask in a daemon thread
-    # Daemon threads automatically terminate when the test process exits,
-    # so no explicit cleanup is needed
-    thread = threading.Thread(target=run_app, daemon=True)
-    thread.start()
 
-    # Wait for server to be ready by polling the health endpoint
-    url = f"http://localhost:{port}"
-    max_retries = 10
-    retry_delay = 0.1  # 100ms between retries
+@pytest.fixture(scope="module")
+def hostname() -> str:
+    """Retrieves the hostname of the currently deployed application."""
+    return _fetch_env_variable("HOSTNAME", str)
 
-    for _ in range(max_retries):
-        try:
-            response = requests.get(url, timeout=1)
-            if response.status_code == 200:
-                break
-        except requests.exceptions.RequestException:
-            # Server not ready yet, wait and retry
-            time.sleep(retry_delay)
-    else:
-        raise RuntimeError(f"Flask server failed to start on {url}")
 
-    return url
+def _fetch_env_variable[T](name: str, t: type[T]) -> T:
+    value = os.getenv(name)
+    if not value:
+        raise ValueError(f"{name} environment variable is not set.")
+    return cast("T", value)
