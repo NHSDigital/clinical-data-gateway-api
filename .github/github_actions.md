@@ -98,7 +98,7 @@ Jobs:
 - artefact-1 – placeholder for build + artifact upload.
 - artefact-2 – second placeholder pattern.
 
-Purpose: Scaffold for producing distributable artifacts.
+Purpose: Scaffold for producing distributable artefacts.
 
 ---
 
