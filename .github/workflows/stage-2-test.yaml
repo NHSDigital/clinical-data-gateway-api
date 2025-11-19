@@ -53,13 +53,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: gateway-api/test-artifacts/
+          path: gateway-api/test-artefacts/
           retention-days: 30
       - name: "Publish unit test results to summary"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          paths: gateway-api/test-artifacts/unit-tests.xml
+          paths: gateway-api/test-artefacts/unit-tests.xml
 
   test-contract:
     name: "Contract tests"
@@ -85,13 +85,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: contract-test-results
-          path: gateway-api/test-artifacts/
+          path: gateway-api/test-artefacts/
           retention-days: 30
       - name: "Publish contract test results to summary"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          paths: gateway-api/test-artifacts/contract-tests.xml
+          paths: gateway-api/test-artefacts/contract-tests.xml
 
   test-schema:
     name: "Schema validation tests"
@@ -117,13 +117,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: schema-test-results
-          path: gateway-api/test-artifacts/
+          path: gateway-api/test-artefacts/
           retention-days: 30
       - name: "Publish schema test results to summary"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          paths: gateway-api/test-artifacts/schema-tests.xml
+          paths: gateway-api/test-artefacts/schema-tests.xml
 
   test-integration:
     name: "Integration test"
@@ -149,13 +149,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
-          path: gateway-api/test-artifacts/
+          path: gateway-api/test-artefacts/
           retention-days: 30
       - name: "Publish integration test results to summary"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          paths: gateway-api/test-artifacts/TESTS-*.xml
+          paths: gateway-api/test-artefacts/TESTS-*.xml
 
   merge-test-coverage:
     name: "Merge test coverage"
@@ -175,7 +175,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: "Install dependencies"
         run: make dependencies
-      - name: "Download all test coverage artifacts"
+      - name: "Download all test coverage artefacts"
         uses: actions/download-artifact@v4
         with:
           pattern: "*-test-results"
@@ -185,14 +185,14 @@ jobs:
         run: make test-coverage
       - name: "Rename coverage XML with unique name"
         run: |
-          cd gateway-api/test-artifacts/coverage
+          cd gateway-api/test-artefacts/coverage
           mv coverage-merged.xml ${{ needs.create-coverage-name.outputs.coverage-name }}.xml
       - name: "Upload combined coverage report"
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
-          path: gateway-api/test-artifacts/coverage/
+          path: gateway-api/test-artefacts/coverage/
           retention-days: 30
 
   sonarcloud-analysis:
