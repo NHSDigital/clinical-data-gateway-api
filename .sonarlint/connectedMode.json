@@ -1,0 +1,5 @@
+{
+    "sonarCloudOrganization": "nhsdigital",
+    "projectKey": "NHSDigital_clinical-data-gateway-api",
+    "region": "EU"
+}
