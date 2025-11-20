@@ -7,6 +7,12 @@ The Gateway API has four types of tests, each serving a different purpose:
 - **[Unit, Contract, & Schema Tests](tests/README.md)** - Developer-focused technical tests using pytest
 - **[BDD Acceptance Tests](features/README.md)** - Business-focused assurance tests using behave
 
+### Continuous Integration
+
+All four test types (unit, contract, schema, and integration) run automatically in the CI/CD pipeline on every push and pull request. **Any test failure at any level will cause the pipeline to fail and prevent the PR from being merged.**
+
+Additionally, code coverage is collected from all test types, merged, and analyzed by SonarCloud. PRs must meet minimum coverage thresholds to pass quality gates.
+
 ### Quick Test Commands
 
 ```bash

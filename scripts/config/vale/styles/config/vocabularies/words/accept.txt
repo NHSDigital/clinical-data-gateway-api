@@ -31,3 +31,4 @@ pytest
 Schemathesis
 repos
 hostname
+JUnit
