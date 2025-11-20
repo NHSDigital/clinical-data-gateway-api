@@ -47,7 +47,9 @@ RUN apk add --no-cache --update bash \
     tk-dev \
     zstd-dev \
     # gnupg to support signing of commits
-    gnupg
+    gnupg \
+    # Java Runtime Environment to support SonarQube VSCode extension
+    openjdk17-jre
 
 
 # Install Python (via pyenv)

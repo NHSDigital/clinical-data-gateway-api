@@ -17,11 +17,13 @@
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "ms-python.vscode-python-envs",
-        "ms-python.mypy-type-checker"
+        "ms-python.mypy-type-checker",
+        "sonarsource.sonarlint-vscode"
       ],
       "extensions.ignoreRecommendations": true,
       "settings": {
-        "git.path": "/usr/bin/git"
+        "git.path": "/usr/bin/git",
+        "sonarlint.ls.javaHome": "/usr/lib/jvm/java-17-openjdk"
       }
     }
   },
