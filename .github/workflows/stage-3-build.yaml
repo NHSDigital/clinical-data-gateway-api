@@ -43,7 +43,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Build artefact 1"
         run: |
           echo "Building artefact 1 ..."
@@ -60,7 +60,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Build artefact 2"
         run: |
           echo "Building artefact 2 ..."
