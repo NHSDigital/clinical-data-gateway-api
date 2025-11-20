@@ -14,5 +14,5 @@
 **/__pycache__
 **/.ruff_cache
 
-# Testing artifacts
+# Testing artefacts
 gateway-api/.hypothesis

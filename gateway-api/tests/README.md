@@ -98,7 +98,7 @@ Consumer Test → Mock Pact Server → Contract File (JSON)
 
 **Why this approach as opposed to a unit test that has an expected response object to match against?**
 
-- **Explicit contract documentation** - The pact file is a versioned artifact that documents the API contract
+- **Explicit contract documentation** - The pact file is a versioned artefact that documents the API contract
 - **Contract evolution tracking** - Because of the above - Git diffs will show exactly how API contracts change over time
 - **Consumer-driven development** - Consumers define their needs; providers verify they meet them
 - **Independent testing** - Consumer and provider can be developed and tested separately without both running
@@ -126,3 +126,120 @@ The `provider_url` fixture in `tests/conftest.py` is shared across test types (c
 
 - Spins up the Flask app in a separate thread on a dynamically assigned free port to avoid conflicts
 - Returns the URL (e.g., `http://localhost:12345`)
+
+## Test Reports
+
+Test execution generates multiple report formats for both local development and CI/CD pipelines:
+
+### JUnit XML Reports
+
+JUnit XML format is used for CI/CD integration and test result summaries. All reports are displayed in GitHub Actions UI using `test-summary/action`.
+
+**Unit, Contract, and Schema Tests:**
+
+- Generated with `--junit-xml=test-artefacts/{type}-tests.xml`
+- Contains test results, execution times, and failure details
+
+**Integration Tests:**
+
+- Generated with `--junit --junit-directory test-artefacts`
+- Behave creates `TESTS-*.xml` files for each feature
+
+### HTML Test Reports
+
+Human-readable HTML reports for detailed test analysis:
+
+**Tests using pytest (Unit, Contract, Schema):**
+
+- Generated with `--html=test-artefacts/{type}-tests.html --self-contained-html`
+- Self-contained HTML files with embedded CSS/JavaScript
+- Include:
+  - Test results with pass/fail status
+  - Execution times
+  - Test metadata
+
+**Integration Tests:**
+
+- Generated with `-f behave_html_pretty_formatter:PrettyHTMLFormatter`
+- Output to `test-artefacts/integration-tests.html`
+- Features Gherkin scenarios with step-by-step results
+- Color-coded pass/fail indicators
+
+### CI/CD Report Artefacts
+
+In GitHub Actions, test reports are:
+
+1. **Uploaded as artefacts** - Available for 30 days via workflow run page
+2. **Published to job summary** - Displayed in the Actions UI using `test-summary/action`
+3. **Attached to pull requests** - Test results appear in PR checks
+
+All reports are stored in `gateway-api/test-artefacts/` and uploaded with artefact names like `unit-test-results`, `contract-test-results`, etc.
+
+## Code Coverage
+
+Code coverage is collected from all four test types (unit, contract, schema, and integration), merged into a unified code coverage report, sent to SonarCloud, which enforces the minimum coverage percentage threshold.
+
+### Coverage Collection per Test Type
+
+Each test execution script (`scripts/tests/*.sh`) collects coverage data independently:
+
+**Unit, Contract, and Schema Tests** (pytest-based):
+
+- Use `pytest-cov` plugin with `--cov=src/gateway_api` flag
+- Generate individual coverage data files: `.coverage`
+- Each test type saves its coverage file as `coverage.{type}` (e.g., `coverage.unit`, `coverage.contract`, `coverage.schema`)
+- Produce HTML reports for local viewing and terminal output for CI logs
+
+**Integration Tests** (behave-based):
+
+- Run under `coverage run -m behave` to instrument the code
+- Generate `.coverage` file tracking which lines execute during BDD scenario execution
+- Saved as `coverage.integration`
+
+### CI/CD Coverage Workflow
+
+The GitHub Actions workflow (`.github/workflows/stage-2-test.yaml`) orchestrates coverage collection:
+
+```text
+              ┌───────────────────────┐
+              │create-coverage-name   │
+              │                       │
+              │ Generate unique name: │
+              │ coverage-{branch}-    │
+              │ {run_number}.xml      │
+              └───────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Parallel Test Execution (4 jobs)                           │
+├─────────────┬──────────────┬──────────────┬─────────────────┤
+│  test-unit  │test-contract │ test-schema  │test-integration │
+│             │              │              │                 │
+│ Saves:      │ Saves:       │ Saves:       │ Saves:          │
+│ coverage.   │ coverage.    │ coverage.    │ coverage.       │
+│   unit      │   contract   │   schema     │   integration   │
+└─────┬───────┴──────┬───────┴──────┬───────┴────────┬────────┘
+      │              │              │                │
+      └──────────────┴──────────────┴────────────────┘
+                          ↓
+              ┌───────────────────────┐
+              │ merge-test-coverage   │
+              │                       │
+              │ 1. Download all 4     │
+              │    coverage files     │
+              │ 2. Combine into one   │
+              │ 3. Generate XML       │
+              │ 4. Fix paths with sed │
+              │ 5. Rename with unique │
+              │    name from job 1    │
+              │ 6. Upload merged XML  │
+              └───────────┬───────────┘
+                          ↓
+              ┌───────────────────────┐
+              │ sonarcloud-analysis   │
+              │                       │
+              │ 1. Download merged    │
+              │    coverage XML       │
+              │ 2. Send to SonarCloud │
+              │ 3. Enforce thresholds │
+              └───────────────────────┘
+```

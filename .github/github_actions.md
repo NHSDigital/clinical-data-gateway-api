@@ -98,7 +98,7 @@ Jobs:
 - artefact-1 – placeholder for build + artifact upload.
 - artefact-2 – second placeholder pattern.
 
-Purpose: Scaffold for producing distributable artifacts.
+Purpose: Scaffold for producing distributable artefacts.
 
 ---
 
@@ -109,11 +109,9 @@ Flow:
 
 1. environment-set-up – provision infra / DB / deploy app (placeholders).
 2. Parallel test jobs (all depend on setup):
-   - test-contract (`make test-contract`)
    - test-security (`make test-security`)
    - test-ui (`make test-ui`)
    - test-ui-performance (`make test-ui-performance`)
-   - test-accessibility (`make test-accessibility`)
    - test-integration (`make test-integration`)
    - test-load (`make test-load`)
 3. environment-tear-down – runs with `if: always()` after tests.
