@@ -149,14 +149,13 @@ JUnit XML format is used for CI/CD integration and test result summaries. All re
 
 Human-readable HTML reports for detailed test analysis:
 
-**Pytest-based Tests (Unit, Contract, Schema):**
+**Tests using pytest (Unit, Contract, Schema):**
 
 - Generated with `--html=test-artefacts/{type}-tests.html --self-contained-html`
 - Self-contained HTML files with embedded CSS/JavaScript
 - Include:
   - Test results with pass/fail status
   - Execution times
-  - Failure tracebacks
   - Test metadata
 
 **Integration Tests:**
