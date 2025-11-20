@@ -9,5 +9,5 @@ class User:
 
 def greet(user: User) -> str:
     if user.name == "nonexistent":
-        raise RuntimeError("nonexistent user provided.")
+        raise ValueError("nonexistent user provided.")
     return f"Hello, {user.name}!"

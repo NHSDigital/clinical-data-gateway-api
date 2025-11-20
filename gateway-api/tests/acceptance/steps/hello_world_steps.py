@@ -1,6 +1,7 @@
 """Step definitions for Gateway API hello world feature."""
 
-from pytest_bdd import given, then, when
+from pytest_bdd import given, parsers, then, when
+
 from tests.acceptance.conftest import ResponseContext
 from tests.conftest import Client
 
@@ -17,9 +18,9 @@ def step_api_is_running(client: Client) -> None:
     assert response.status_code == 200
 
 
-@when('I send a GET request to "{endpoint}"')
+@when(parsers.cfparse('I send "{message}" to the endpoint'))
 def step_send_get_request(
-    client: Client, endpoint: str, response_context: ResponseContext
+    client: Client, message: str, response_context: ResponseContext
 ) -> None:
     """Send a GET request to the specified endpoint.
 
@@ -27,10 +28,15 @@ def step_send_get_request(
         client: Test client
         endpoint: The API endpoint path to request
     """
-    response_context.response = client.send(endpoint)
+    response_context.response = client.send(message)
 
 
-@then("the response status code should be {expected_status:d}")
+@then(
+    parsers.cfparse(
+        "the response status code should be {expected_status:d}",
+        extra_types={"expected_status": int},
+    )
+)
 def step_check_status_code(
     response_context: ResponseContext, expected_status: int
 ) -> None:
@@ -42,13 +48,15 @@ def step_check_status_code(
     """
     assert response_context.response, "Response has not been set."
 
-    assert response_context.response.status_code == expected_status, (
+    data = response_context.response.json()
+
+    assert data["statusCode"] == expected_status, (
         f"Expected status {expected_status}, "
         f"got {response_context.response.status_code}"
     )
 
 
-@then('the response should contain "{expected_text}"')
+@then(parsers.cfparse('the response should contain "{expected_text}"'))
 def step_check_response_contains(
     response_context: ResponseContext, expected_text: str
 ) -> None:

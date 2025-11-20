@@ -26,8 +26,11 @@ class TestHelloWorld:
         response = client.send("nonexistent")
         assert response.status_code == 200
 
-        body = response.json().get("errorMessage")
-        assert body == "nonexistent user provided."
+        body = response.json().get("body")
+        assert body == "Provided name cannot be found. name=nonexistent"
+
+        status_code = response.json().get("statusCode")
+        assert status_code == 404
 
     def test_no_payload_returns_error(self, client: Client) -> None:
         """Test that an error is returned when no payload is provided."""

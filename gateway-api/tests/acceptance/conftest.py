@@ -1,9 +1,5 @@
 import pytest
 import requests
-from pytest_bdd import scenarios
-
-# Load all feature files from the 'features' directory
-scenarios("features")
 
 
 class ResponseContext:
@@ -21,5 +17,5 @@ class ResponseContext:
 
 
 @pytest.fixture
-def context() -> ResponseContext:
+def response_context() -> ResponseContext:
     return ResponseContext()
