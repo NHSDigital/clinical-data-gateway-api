@@ -32,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -56,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -80,6 +84,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -104,6 +110,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -129,6 +137,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
