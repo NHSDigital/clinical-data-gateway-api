@@ -8,24 +8,49 @@ include scripts/init.mk
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
+.PHONEY: dependencies
 dependencies: # Install dependencies needed to build and test the project @Pipeline
 	@if [[ -n "$${DEV_CERT_PATH}" ]]; then \
 		echo "Configuring poetry to trust the dev certificate..."  ; \
 		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
 	fi
-	cd gateway-api && poetry install --extras dev
+	cd gateway-api && poetry sync
 
-build: # Build the project artefact @Pipeline
-	# TODO: Implement the artefact build step
+.PHONEY: build-gateway-api
+build-gateway-api: dependencies
+	@cd gateway-api
+	@echo "Running type checks..."
+	@rm -rf target && rm -rf dist
+	@poetry run mypy --no-namespace-packages .
+	@echo "Packaging dependencies..."
+	@poetry build --format=wheel
+	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
+	# Copy main file separately as it is not included within the package.
+	@cp lambda_handler.py ./target/gateway-api/
+	@rm -rf ../infrastructure/images/gateway-api/resources/build/
+	@mkdir ../infrastructure/images/gateway-api/resources/build/
+	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
+
+.PHONEY: build
+build: build-gateway-api # Build the project artefact @Pipeline
+	@echo "Building Docker image using Docker..."
+	@docker buildx build --load --provenance=false -t localhost/gateway-api-image infrastructure/images/gateway-api
+	@echo "Docker image 'gateway-api-image' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
-deploy: # Deploy the project artefact to the target environment @Pipeline
-	# TODO: Implement the artefact deployment step
+deploy: clean build # Deploy the project artefact to the target environment @Pipeline
+	@docker run --name gateway-api -p 5000:8080 -d localhost/gateway-api-image
 
-clean:: # Clean-up project resources (main) @Operations
-	# TODO: Implement project resources clean-up step
+clean:: stop # Clean-up project resources (main) @Operations
+	@echo "Removing Gateway API container..."
+	@docker rm gateway-api || echo "No Gateway API container currently exists."
+
+.PHONEY: stop
+stop:
+	@echo "Stopping Gateway API container..."
+	@docker stop gateway-api || echo "No Gateway API container currently running."
 
 config:: # Configure development environment (main) @Configuration
 	# TODO: Use only 'make' targets that are specific to this project, e.g. you may not need to install Node.js
@@ -50,8 +75,8 @@ else
 
 PYTHON_VERSION=3.13.9
 
-.PHONEY: clean
-clean:
+.PHONEY: clean-env
+clean-env:
 	@echo "Stopping Build Container..."
 	@podman stop gateway-api-build-container || echo "No build container currently running."
 	@echo "Removing Build Container..."
@@ -59,7 +84,7 @@ clean:
 
 
 .PHONEY: env
-env: clean
+env: clean-env
 	@echo "Building Build Container..."
 	# Required so that asdf plugins can be installed whilst building the container.
 	@cp .tool-versions ./infrastructure/images/build-container/resources/.tool-versions
@@ -78,6 +103,8 @@ env: clean
 
 .PHONEY: dependencies
 dependencies:
+	@echo "Configuring Git safe directory..."
+	@git config --global --add safe.directory /git || true
 	@echo "Installing git hooks..."
 	@cp ./scripts/githooks/pre-commit ./.git/hooks/pre-commit
 	@chmod u+x ./.git/hooks/pre-commit
@@ -91,6 +118,18 @@ bash:
 .PHONEY: pre-commit
 pre-commit:
 	COMMAND="make pre-commit" make command
+
+.PHONEY: build
+build:
+	COMMAND="pyenv activate gateway && make build" make command
+
+.PHONEY: deploy
+deploy:
+	COMMAND="pyenv activate gateway && make deploy" make command
+
+.PHONEY: stop
+stop:
+	COMMAND="make stop" make command
 
 .PHONEY: command
 command:
