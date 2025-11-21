@@ -98,6 +98,8 @@ WORKDIR /workspace/clinical-data-gateway-api
 
 # Install pipx and poetry
 RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
+# Ensure pipx binaries are always on PATH for non-interactive shells
+ENV PATH="/root/.local/bin:${PATH}"
 
 # Create a virtual environment for development
 RUN bash -c "source /root/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway"
