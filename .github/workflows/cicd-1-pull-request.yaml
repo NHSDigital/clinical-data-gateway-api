@@ -26,7 +26,7 @@ jobs:
       does_pull_request_exist: ${{ steps.pr_exists.outputs.does_pull_request_exist }}
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Set CI/CD variables"
         id: variables
         run: | # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
