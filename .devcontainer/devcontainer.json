@@ -39,7 +39,7 @@
       "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions.git https://github.com/zsh-users/zsh-syntax-highlighting.git"
     }
   },
-  "postCreateCommand": "apk add --no-cache openjdk21-jre && scripts/devcontainer/configure-zsh.sh && bash -c 'source ~/.bashrc && make config && pyenv activate gateway && make dependencies'",
+  "postCreateCommand": "apk add --no-cache openjdk21-jre && scripts/devcontainer/install-gitleaks.sh && scripts/devcontainer/configure-zsh.sh && bash -c 'source ~/.bashrc && make config && pyenv activate gateway && make dependencies'",
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
   ],
