@@ -31,12 +31,9 @@ def step_send_get_request(
     response_context.response = client.send(message)
 
 
-@then(
-    parsers.cfparse(
-        "the response status code should be {expected_status:d}",
-        extra_types={"expected_status": int},
-    )
-)
+# fmt: off
+@then(parsers.cfparse("the response status code should be {expected_status:d}",extra_types={"expected_status": int}))  # noqa: E501
+# fmt: on
 def step_check_status_code(
     response_context: ResponseContext, expected_status: int
 ) -> None:

@@ -38,9 +38,11 @@
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "terminal.integrated.defaultProfile.linux": "bash",
+  // Cucumber extension configuration
   "cucumberautocomplete.steps": [
-        "gateway-api/features/steps/*.py",
+        "gateway-api/tests/acceptance/steps/*.py",
   ],
+  "cucumberautocomplete.gherkinDefinitionPart": "@(given|when|then|step)\\((?:parsers.*parse\\(|)",
   // Pylance configuration
   "python.analysis.typeEvaluation.deprecateTypingAliases": true,
   "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
