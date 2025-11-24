@@ -34,7 +34,7 @@
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.linux": "zsh",
   // Cucumber extension configuration
   "cucumberautocomplete.steps": [
         "gateway-api/tests/acceptance/steps/*.py",
