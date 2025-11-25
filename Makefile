@@ -73,7 +73,7 @@ else
 
 # ==============================================================================
 
-PYTHON_VERSION=3.13.9
+PYTHON_VERSION=3.14.0
 
 .PHONEY: clean-env
 clean-env:

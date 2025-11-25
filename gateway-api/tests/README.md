@@ -9,7 +9,7 @@ tests/
 ├── conftest.py                          # Shared pytest fixtures (includes base_url, hostname, client)
 ├── acceptance/                          # Acceptance tests (BDD with pytest-bdd)
 │   ├── conftest.py                      # Acceptance test fixtures (ResponseContext)
-│   ├── scenario/test_*.py               # Scenario bindings, should be named after the feature file the python script is providing scenario bindings for
+│   ├── scenarios/test_*.py              # Scenario bindings, should be named after the feature file the python script is providing scenario bindings for
 │   ├── features/                        # Gherkin feature files
 │   └── steps/                           # Step definitions
 ├── contract/                            # Contract tests (Pact)
@@ -79,7 +79,7 @@ Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. The
 
 - **Feature files** (`features/*.feature`): Written in Gherkin, these define scenarios in plain language
 - **Step definitions** (`steps/*.py`): Python implementations that map Gherkin steps to actual test code
-- **Test bindings** (`test_*.py`): Link scenarios to pytest test functions using `@scenario` decorator
+- **Test bindings** (`scenarios/test_*.py`): Link scenarios to pytest test functions using `@scenario` decorator
 
 **How it works:**
 
