@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/vscode/devcontainers/base:alpine-3.22 AS gateway-build-container
 
-ENV PYTHON_VERSION="3.13.9"
+ENV PYTHON_VERSION="3.14.0"
 
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0/"
 ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.4.1/"
