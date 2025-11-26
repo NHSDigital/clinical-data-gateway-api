@@ -61,7 +61,7 @@ RUN /root/.pyenv/bin/pyenv install ${PYTHON_VERSION}
 RUN /root/.pyenv/bin/pyenv global ${PYTHON_VERSION}
 
 # Ensure pyenv is on the PATH
-ENV PYENV_ROOT="$HOME/.pyenv"
+ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 
 # Initialise pyenv for use.
@@ -118,4 +118,4 @@ ENV PATH="/root/.local/bin:$PATH"
 RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" \
 # Install markdownlint-cli
     && npm install -g markdownlint-cli \
-    export PATH;
+    && export PATH
