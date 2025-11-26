@@ -27,7 +27,7 @@ repos:
     pass_filenames: false
   - id: lint-terraform
     name: Lint Terraform
-    entry: ./scripts/githooks/custom-check-terraform-format.sh
+    entry: ./scripts/githooks/check-terraform-format.sh
     language: script
     pass_filenames: false
   - id: python-linting-and-formatting

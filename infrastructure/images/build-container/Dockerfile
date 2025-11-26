@@ -28,6 +28,8 @@ fi
 RUN apk update
 
 RUN apk add --no-cache --update bash \
+    # Required to update default shell for a user.
+    shadow \
     curl \
     # Required to validate english usage in prose/comments.
     vale \
@@ -49,12 +51,21 @@ RUN apk add --no-cache --update bash \
     # gnupg to support signing of commits
     gnupg
 
+# Change default shell to bash for root user.
+RUN chsh -s /bin/bash root
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
 
 RUN /root/.pyenv/bin/pyenv install ${PYTHON_VERSION}
 RUN /root/.pyenv/bin/pyenv global ${PYTHON_VERSION}
+
+# Ensure pyenv is on the PATH
+ENV PYENV_ROOT="$HOME/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PATH"
+
+# Initialise pyenv for use.
+RUN /root/.pyenv/bin/pyenv init -
 
 COPY /resources/.bashrc /root/.bashrc
 
@@ -89,20 +100,22 @@ else \
     mv bin/ec-linux-amd64 /usr/local/bin/editorconfig; \
 fi
 
+# Ensure asdf is on the PATH
+ENV PATH="/asdf:$PATH"
+ENV PATH="/root/.asdf/shims:$PATH"
 
 WORKDIR /resources
 # Run install other development plugins via asdf.
-RUN bash -c "source /root/.bashrc && bash ./install-asdf-plugins.sh"
+RUN bash "./install-asdf-plugins.sh"
 
 WORKDIR /workspace/clinical-data-gateway-api
 
 # Install pipx and poetry
-RUN bash -c "source /root/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
-# Ensure pipx binaries are always on PATH for non-interactive shells
-ENV PATH="/root/.local/bin:${PATH}"
+RUN bash -c "source ~/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
+ENV PATH="/root/.local/bin:$PATH"
 
 # Create a virtual environment for development
-RUN bash -c "source /root/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway"
-
+RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" \
 # Install markdownlint-cli
-RUN npm install -g markdownlint-cli
+    && npm install -g markdownlint-cli \
+    export PATH;
