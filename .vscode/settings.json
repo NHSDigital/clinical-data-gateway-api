@@ -3,8 +3,8 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.markdownlint": "always"
   },
-  // Enable pylance type checking within vscode.
-  "python.analysis.typeCheckingMode": "standard",
+  // Disable pylance type checking within vscode.
+  "python.analysis.typeCheckingMode": "off",
   // Disable all telemetry.
   "telemetry.telemetryLevel": "off",
   "telemetry.feedback.enabled": false,
@@ -12,11 +12,10 @@
   "github.copilot.enable": {
     "*": true,
     "plaintext": false,
+    "markdown": false,
+    "scminput": false,
     "dotenv": false,
     "ini": false,
-    "json": false,
-    "jsonc": false,
-    "yaml": false,
     ".crt": false,
     ".key": false,
     ".pem": false
@@ -29,10 +28,33 @@
   // Enabling Ruff formatter for python files.
   "[python]": {
     "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
+    },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "terminal.integrated.defaultProfile.linux": "bash",
+  // Cucumber extension configuration
   "cucumberautocomplete.steps": [
-        "gateway-api/features/steps/*.py",
+        "gateway-api/tests/acceptance/steps/*.py",
   ],
+  "cucumberautocomplete.gherkinDefinitionPart": "@(given|when|then|step)\\((?:parsers.*parse\\(|)",
+  // Pylance configuration
+  "python.analysis.typeEvaluation.deprecateTypingAliases": true,
+  "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoIndent": false,
+  // Mypy configuration
+  "mypy-type-checker.cwd": "${nearestConfig}",
+  // Enable re-format on type
+  "editor.formatOnType": true,
+  // Disabling telemetry and AI features from GitLens
+  "gitlens.telemetry.enabled": false,
+  "gitlens.ai.enabled": false,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

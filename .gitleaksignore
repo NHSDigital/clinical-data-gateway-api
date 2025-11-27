@@ -1,3 +1,10 @@
-# SEE: https://github.com/gitleaks/gitleaks/blob/master/README.md#gitleaksignore
+# SEE: <https://github.com/gitleaks/gitleaks/blob/master/README.md#gitleaksignore>
 
 cd9c0efec38c5d63053dd865e5d4e207c0760d91:docs/guides/Perform_static_analysis.md:generic-api-key:37
+
+## False positives - version numbers incorrectly being picked up as ipv4 addresses
+
+407eb72328c59c67f6c1bd452c0cc9dec8e8215f:gateway-api/pyproject.toml:ipv4:27
+407eb72328c59c67f6c1bd452c0cc9dec8e8215f:gateway-api/pyproject.toml:ipv4:28
+fb663e0e5fbc8c6a730edec9083318326d405f78:gateway-api/pyproject.toml:ipv4:29
+fb663e0e5fbc8c6a730edec9083318326d405f78:gateway-api/pyproject.toml:ipv4:30

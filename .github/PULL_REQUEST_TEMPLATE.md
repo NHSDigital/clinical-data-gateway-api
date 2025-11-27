@@ -20,11 +20,11 @@
 
 <!-- Go over all the following points, and put an `x` in all the boxes that apply. -->
 
-- [ ] I am familiar with the [contributing guidelines](../docs/CONTRIBUTING.md)
 - [ ] I have followed the code style of the project
 - [ ] I have added tests to cover my changes
 - [ ] I have updated the documentation accordingly
 - [ ] This PR is a result of pair or mob programming
+- [ ] Exceptions/Exclusions to coding standards (e.g. #noqa or #NOSONAR) are included within this Pull Request.
 
 ---
 

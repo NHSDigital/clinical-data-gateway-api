@@ -8,7 +8,7 @@ ARG PYTHON_VERSION
 ARG INCLUDE_DEV_CERTS
 ARG DEV_CERT_FILENAME
 
-ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/resources/dev-certificates/$DEV_CERT_FILENAME}
+ENV DEV_CERT_PATH=${DEV_CERT_FILENAME:+/etc/ssl/certs/$DEV_CERT_FILENAME}
 ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
 
 COPY resources/ /resources
@@ -18,6 +18,8 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
     cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
     apk --no-cache add --no-check-certificate ca-certificates \
         && update-ca-certificates; \
+
+    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
 else \
     rm -r /resources/dev-certificates; \
 fi
@@ -41,6 +43,12 @@ RUN apk add --no-cache --update bash \
     sqlite-dev \
     tk-dev \
     zstd-dev
+
+# If using dev certificates, configure buildkit to use them.
+RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
+    echo "Adding dev certificates to buildkitd config..." ; \
+    bash /resources/template-buildkitd.toml.sh ; \
+fi
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
@@ -97,4 +105,7 @@ WORKDIR /git
 # Install markdownlint-cli
 RUN npm install -g markdownlint-cli
 
-ENTRYPOINT ["sleep", "infinity"]
+COPY /resources/entry-point.sh /entry-point.sh
+RUN chmod u+x /entry-point.sh
+
+ENTRYPOINT ["/entry-point.sh"]
