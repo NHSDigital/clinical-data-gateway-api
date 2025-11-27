@@ -32,7 +32,7 @@ git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
 cd clinical-data-gateway-api.git
 ```
 
-The project can then be build within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.vscode/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), you should be prompted if you wish to re-open the folder within a dev container. If accepted, this should build the dev container locally which will include all required libraries and tools for development.
+The project can then be build within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.vscode/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), you should be prompted if you wish to re-open the folder within a Dev Container. If accepted, this should build the Dev Container locally which will include all required libraries and tools for development.
 
 > [!NOTE]<br>
 > If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container.
@@ -66,7 +66,7 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-Installation and configuration of the toolchain dependencies is completed as part of building the Dev container as descibed above.
+Installation and configuration of the toolchain dependencies is completed as part of building the Dev container as described above.
 
 ## Usage
 
@@ -75,7 +75,7 @@ Once the build container has been built and is up and running. A few different m
 - `dependencies` - installs all dependencies required for the project
 - `build` - builds the codebase so that it is ready for deployment
 - `deploy` - builds the codebase and deploys it within a separate container locally.
-- `clean` - stop and remove any containers outside of the dev container locally.
+- `clean` - stop and remove any containers outside of the Dev container locally.
 
 ### Testing
 
