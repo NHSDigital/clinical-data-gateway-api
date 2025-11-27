@@ -29,6 +29,9 @@ test-schema: # Run your schema tests from scripts/test/schema @Testing
 test-integration: # Run your integration tests from scripts/test/integration @Testing
 	make _test name="integration"
 
+test-acceptance: # Run your acceptance tests from scripts/test/acceptance @Testing
+	make _test name="acceptance"
+
 test-load: # Run all your load tests @Testing
 	make \
 		test-capacity \
@@ -65,7 +68,8 @@ test: # Run all the test tasks @Testing
 		test-ui-performance \
 		test-integration \
 		test-accessibility \
-		test-load
+		test-load \
+		test-acceptance
 
 _test:
 	set -e
@@ -92,3 +96,4 @@ ${VERBOSE}.SILENT: \
 	test-ui \
 	test-ui-performance \
 	test-unit \
+	test-acceptance \
