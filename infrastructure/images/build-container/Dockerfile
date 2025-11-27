@@ -117,5 +117,5 @@ ENV PATH="/root/.local/bin:$PATH"
 # Create a virtual environment for development
 RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" \
 # Install markdownlint-cli
-    && npm install -g markdownlint-cli \
+    && npm install -g --ignore-scripts markdownlint-cli \
     && export PATH
