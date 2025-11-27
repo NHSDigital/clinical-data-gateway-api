@@ -17,5 +17,4 @@
 
 # Testing artifacts
 **/.hypothesis
-gateway-api/test-artefacts/*.html
-gateway-api/test-artefacts/*.xml
+gateway-api/test-artefacts/
