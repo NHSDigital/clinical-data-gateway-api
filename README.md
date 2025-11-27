@@ -32,11 +32,7 @@ git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
 cd clinical-data-gateway-api.git
 ```
 
-The project can then be built with `make`, initially via the `env` target. All dependencies for the project will be installed within a Docker container, ensuring a consistent build environment across all developers' machines. This container is named `gateway-build-container` and is built automatically via the `env` target.
-
-```shell
-make env
-```
+The project can then be build within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.vscode/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), you should be prompted if you wish to re-open the folder within a dev container. If accepted, this should build the dev container locally which will include all required libraries and tools for development.
 
 > [!NOTE]<br>
 > If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container.
@@ -46,17 +42,11 @@ make env
 > export DEV_CERT_FILENAME=<dev_cert_filename>
 > ```
 
-Once the build container has been created, you can either connect to it from within vscode via the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), or connect to it via the command line via the `bash` make target.
-
-```shell
-make bash
-```
-
 ### Prerequisites
 
 The following software packages, or their equivalents, are expected to be installed and configured:
 
-- [Podman](https://podman.io/) container runtime,
+- A container manager for running containers locally, such as [Colima](https://github.com/abiosoft/colima) on Mac OS, or [Docker](https://docs.docker.com/engine/install/) within Windows Subsystem for Linux on Windows or Linux natively.
 - [GNU make](https://www.gnu.org/software/make/) 3.82 or later,
 
 > [!NOTE]<br>
@@ -76,7 +66,7 @@ The following software packages, or their equivalents, are expected to be instal
 
 ### Configuration
 
-Installation and configuration of the toolchain dependencies is completed as part of building the build container via the `make env` command above.
+Installation and configuration of the toolchain dependencies is completed as part of building the Dev container as descibed above.
 
 ## Usage
 
@@ -84,8 +74,8 @@ Once the build container has been built and is up and running. A few different m
 
 - `dependencies` - installs all dependencies required for the project
 - `build` - builds the codebase so that it is ready for deployment
-- `clean` - stops and destroys a built build container
-- `pre-commit` - runs all pre-commit hooks against the codebase, including linting and formatting checks
+- `deploy` - builds the codebase and deploys it within a separate container locally.
+- `clean` - stop and remove any containers outside of the dev container locally.
 
 ### Testing
 

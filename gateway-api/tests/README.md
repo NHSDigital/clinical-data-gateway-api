@@ -41,32 +41,26 @@ poetry sync
 
 ### Run All Tests (with Verbose Output)
 
-From the `tests/` directory:
+From the root of the repository:
 
 ```bash
 pytest -v
-```
-
-Or from the `gateway-api/` directory:
-
-```bash
-poetry run pytest tests/ -v
 ```
 
 ### Run Specific Test Types
 
 ```bash
 # Run only acceptance tests
-pytest acceptance/ -v
+pytest gateway-api/tests/acceptance/ -v
 
 # Run only contract tests
-pytest contract/ -v
+pytest gateway-api/tests/contract/ -v
 
 # Run only integration tests
-pytest integration/ -v
+pytest gateway-api/tests/integration/ -v
 
 # Run only schema validation tests
-pytest schema/ -v
+pytest gateway-api/tests/schema/ -v
 ```
 
 ## Test Types
