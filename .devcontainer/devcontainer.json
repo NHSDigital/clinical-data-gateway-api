@@ -44,5 +44,11 @@
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
   ],
   "remoteUser": "root",
-  "containerUser": "root"
+  "containerUser": "root",
+  "portsAttributes": {
+    // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
+    "default": {
+      "onAutoForward": "ignore"
+    }
+  }
 }
