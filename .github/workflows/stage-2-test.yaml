@@ -29,32 +29,6 @@ jobs:
         with:
           prefix: coverage
 
-  start-lambda:
-    name: "Start local Lambda environment"
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: "Checkout code"
-        uses: actions/checkout@v6
-      - name: "Setup Python project"
-        uses: ./.github/actions/setup-python-project
-        with:
-          python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda environment"
-        run: make deploy &
-      - name: "Wait for Lambda to be ready"
-        run: |
-          echo "Waiting for local Lambda environment to be ready..."
-          for i in {1..30}; do
-            if curl -sSf http://localhost:5000/2015-03-31/functions/function/invocations -X POST -d '{}' >/dev/null; then
-              echo "Lambda is ready"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Lambda did not become ready in time"
-          exit 1
-
   test-unit:
     name: "Unit tests"
     runs-on: ubuntu-latest
@@ -66,6 +40,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
       - name: "Run unit test suite"
         run: make test-unit
       - name: "Upload unit test results"
@@ -92,6 +68,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
       - name: "Run contract tests"
         run: make test-contract
       - name: "Upload contract test results"
@@ -118,6 +96,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
       - name: "Run schema validation tests"
         run: make test-schema
       - name: "Upload schema test results"
@@ -144,6 +124,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
       - name: "Run integration test"
         run: make test-integration
       - name: "Upload integration test results"
@@ -170,20 +152,10 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda environment"
-        run: make deploy &
-      - name: "Wait for Lambda to be ready"
-        run: |
-          echo "Waiting for local Lambda environment to be ready..."
-          for i in {1..60}; do
-            if curl -sSf http://localhost:5000/2015-03-31/functions/function/invocations -X POST -d '{}' >/dev/null; then
-              echo "Lambda is ready"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Lambda did not become ready in time"
-          exit 1
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
+        with:
+          max-seconds: 90
       - name: "Run acceptance test"
         run: make test-acceptance
       - name: "Upload acceptance test results"
