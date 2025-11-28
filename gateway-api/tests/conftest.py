@@ -12,7 +12,7 @@ import requests
 class Client:
     """A simple HTTP client for testing purposes."""
 
-    def __init__(self, lambda_url: str, timeout: timedelta = timedelta(seconds=1)):
+    def __init__(self, lambda_url: str, timeout: timedelta = timedelta(seconds=5)):
         self._lambda_url = lambda_url
         self._timeout = timeout.total_seconds()
 

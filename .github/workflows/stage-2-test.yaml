@@ -45,7 +45,15 @@ jobs:
       - name: "Wait for Lambda to be ready"
         run: |
           echo "Waiting for local Lambda environment to be ready..."
-          sleep 15
+          for i in {1..30}; do
+            if curl -sSf http://localhost:5000/2015-03-31/functions/function/invocations -X POST -d '{}' >/dev/null; then
+              echo "Lambda is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Lambda did not become ready in time"
+          exit 1
 
   test-unit:
     name: "Unit tests"
