@@ -8,7 +8,7 @@ cd gateway-api
 mkdir -p test-artefacts/coverage
 
 # Copy all coverage data files from downloaded artefacts
-cp unit-test-results/coverage.unit test-artefacts/coverage/
+# cp unit-test-results/coverage.unit test-artefacts/coverage/
 cp contract-test-results/coverage.contract test-artefacts/coverage/
 cp schema-test-results/coverage.schema test-artefacts/coverage/
 cp integration-test-results/coverage.integration test-artefacts/coverage/
@@ -17,7 +17,7 @@ cp acceptance-test-results/coverage.acceptance test-artefacts/coverage/
 # Merge coverage data
 cd test-artefacts/coverage
 # Rename files to .coverage.* format that coverage combine expects
-mv coverage.unit .coverage.unit
+# mv coverage.unit .coverage.unit
 mv coverage.contract .coverage.contract
 mv coverage.schema .coverage.schema
 mv coverage.integration .coverage.integration

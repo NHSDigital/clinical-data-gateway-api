@@ -173,8 +173,7 @@ jobs:
 
   merge-test-coverage:
     name: "Merge test coverage"
-    # needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
-    needs: [create-coverage-name, test-acceptance]
+    needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

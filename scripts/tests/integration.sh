@@ -6,7 +6,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 cd gateway-api
 mkdir -p test-artefacts
-poetry run pytest test/integration/ -v \
+poetry run pytest tests/integration/ -v \
   --cov=src/gateway_api \
   --cov-report=html:test-artefacts/coverage-html \
   --cov-report=term \
