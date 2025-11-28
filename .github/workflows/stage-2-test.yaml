@@ -3,6 +3,8 @@ name: "Test stage"
 env:
   # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
   IN_BUILD_CONTAINER: true
+  BASE_URL: "http://host.docker.internal:5000"
+  HOSTNAME: "host.docker.internal"
 
 on:
   workflow_call:
@@ -26,6 +28,24 @@ jobs:
         uses: ./.github/actions/create-artifact-name
         with:
           prefix: coverage
+
+  start-lambda:
+    name: "Start local Lambda environment"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda environment"
+        run: make deploy &
+      - name: "Wait for Lambda to be ready"
+        run: |
+          echo "Waiting for local Lambda environment to be ready..."
+          sleep 15
 
   test-unit:
     name: "Unit tests"
@@ -133,6 +153,7 @@ jobs:
 
   test-acceptance:
     name: "Acceptance test"
+    needs: start-lambda
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -69,7 +69,8 @@ test: # Run all the test tasks @Testing
 		test-integration \
 		test-accessibility \
 		test-load \
-		test-acceptance
+		test-acceptance\
+		test-schema
 
 _test:
 	set -e
@@ -97,3 +98,4 @@ ${VERBOSE}.SILENT: \
 	test-ui-performance \
 	test-unit \
 	test-acceptance \
+	test-schema\
