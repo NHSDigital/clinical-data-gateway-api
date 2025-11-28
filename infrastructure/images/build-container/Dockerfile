@@ -28,7 +28,8 @@ fi
 RUN apk update
 
 RUN apk add --no-cache --update bash \
-    # Required to update default shell for a user.
+    # Required to manager user permissions.
+    doas \
     shadow \
     curl \
     # Required to validate english usage in prose/comments.
@@ -36,7 +37,7 @@ RUN apk add --no-cache --update bash \
     # Required to support markdownlint-cli installation.
     npm \
     # Required to support the building of other docker images.
-    docker \
+    docker-cli \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -51,25 +52,31 @@ RUN apk add --no-cache --update bash \
     # gnupg to support signing of commits
     gnupg
 
-# Change default shell to bash for root user.
-RUN chsh -s /bin/bash root
+# Configure doas to allow members of the wheel group to run commands as root.
+RUN echo "permit :wheel" >> /etc/doas.conf \
+    && echo "permit nopass :wheel as root cmd apk" >> /etc/doas.conf \
+    && echo "permit nopass :wheel as root cmd docker" >> /etc/doas.conf \
+    # Change default shell to bash for root user.
+    && chsh -s /bin/bash root
+
+# Ensure pyenv is on the PATH
+ENV PYENV_ROOT="/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PATH"
 
 # Install Python (via pyenv)
 RUN curl -fsSL https://pyenv.run | bash
 
-RUN /root/.pyenv/bin/pyenv install ${PYTHON_VERSION}
-RUN /root/.pyenv/bin/pyenv global ${PYTHON_VERSION}
-
-# Ensure pyenv is on the PATH
-ENV PYENV_ROOT="/root/.pyenv"
-ENV PATH="$PYENV_ROOT/bin:$PATH"
+RUN /.pyenv/bin/pyenv install ${PYTHON_VERSION}
+RUN /.pyenv/bin/pyenv global ${PYTHON_VERSION}
 
 # Initialise pyenv for use.
-RUN /root/.pyenv/bin/pyenv init -
+RUN /.pyenv/bin/pyenv init -
 
 COPY /resources/.bashrc /root/.bashrc
 
 # Install asdf to configure plugins.
+ENV ASDF_DATA_DIR="/.asdf"
+
 RUN mkdir /asdf
 WORKDIR /asdf
 
@@ -102,7 +109,7 @@ fi
 
 # Ensure asdf is on the PATH
 ENV PATH="/asdf:$PATH"
-ENV PATH="/root/.asdf/shims:$PATH"
+ENV PATH="$ASDF_DATA_DIR/shims:$PATH"
 
 WORKDIR /resources
 # Run install other development plugins via asdf.
@@ -111,11 +118,30 @@ RUN bash "./install-asdf-plugins.sh"
 WORKDIR /workspace/clinical-data-gateway-api
 
 # Install pipx and poetry
+ENV PIPX_BIN_DIR="/pipx/bin"
+ENV PIPX_HOME="/pipx/lib"
 RUN bash -c "source ~/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH="$PIPX_BIN_DIR:$PATH"
 
 # Create a virtual environment for development
 RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" \
-# Install markdownlint-cli
+    # Install markdownlint-cli
     && npm install -g --ignore-scripts markdownlint-cli \
-    && export PATH
+    && export PATH \
+    && addgroup dev \
+
+    # Allow access to pyenv tools for dev users.
+    && chown -R root:dev /.pyenv \
+    && chmod -R g+w /.pyenv \
+
+    && adduser -D gateway-dev \
+    && addgroup gateway-dev dev \
+    && addgroup gateway-dev wheel \
+
+    # Change default shell to bash for gateway-dev user.
+    && chsh -s /bin/bash gateway-dev
+
+# Update gateway-dev user's home directory.
+COPY /resources/.bashrc /home/gateway-dev/.bashrc
+
+USER gateway-dev
