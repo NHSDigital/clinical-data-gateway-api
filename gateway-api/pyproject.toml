@@ -13,6 +13,22 @@ dependencies = [
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
 
+[tool.coverage.run]
+relative_files = true
+omit = ["*/tests/*", "*/features/*"]
+
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/gateway-api/src/",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -21,12 +37,14 @@ build-backend = "poetry.core.masonry.api"
 dev = [
     "mypy (>=1.18.2,<2.0.0)",
     "pytest>=8.0.0",
+    "pytest-bdd (>=8.1.0,<9.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "pytest-html (>=4.1.1,<5.0.0)",
     "pact-python>=2.0.0",
     "requests>=2.31.0",
     "schemathesis>=4.4.1",
     "types-requests (>=2.32.4.20250913,<3.0.0.0)",
     "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)",
-    "pytest-bdd (>=8.1.0,<9.0.0)",
 ]
 
 [tool.mypy]

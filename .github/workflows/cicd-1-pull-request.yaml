@@ -38,7 +38,7 @@ jobs:
           echo "build_timestamp=$(date --date=$datetime -u +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
           echo "build_epoch=$(date --date=$datetime -u +'%s')" >> $GITHUB_OUTPUT
           echo "nodejs_version=$(grep "^nodejs\s" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
-          echo "python_version=$(grep "^python\s" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
+          echo "python_version=3.14.0" >> $GITHUB_OUTPUT
           echo "terraform_version=$(grep "^terraform\s" .tool-versions | cut -f2 -d' ')" >> $GITHUB_OUTPUT
           echo "version=$(head -n 1 .version 2> /dev/null || echo unknown)" >> $GITHUB_OUTPUT
       - name: "Check if pull request exists for this branch"
@@ -86,13 +86,7 @@ jobs:
     needs: [metadata, commit-stage]
     uses: ./.github/workflows/stage-2-test.yaml
     with:
-      build_datetime: "${{ needs.metadata.outputs.build_datetime }}"
-      build_timestamp: "${{ needs.metadata.outputs.build_timestamp }}"
-      build_epoch: "${{ needs.metadata.outputs.build_epoch }}"
-      nodejs_version: "${{ needs.metadata.outputs.nodejs_version }}"
       python_version: "${{ needs.metadata.outputs.python_version }}"
-      terraform_version: "${{ needs.metadata.outputs.terraform_version }}"
-      version: "${{ needs.metadata.outputs.version }}"
     secrets: inherit
   build-stage: # Recommended maximum execution time is 3 minutes
     name: "Build stage"

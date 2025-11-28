@@ -23,8 +23,14 @@ test-accessibility: # Run your accessibility tests from scripts/test/accessibili
 test-contract: # Run your contract tests from scripts/test/contract @Testing
 	make _test name="contract"
 
+test-schema: # Run your schema tests from scripts/test/schema @Testing
+	make _test name="schema"
+
 test-integration: # Run your integration tests from scripts/test/integration @Testing
 	make _test name="integration"
+
+test-acceptance: # Run your acceptance tests from scripts/test/acceptance @Testing
+	make _test name="acceptance"
 
 test-load: # Run all your load tests @Testing
 	make \
@@ -62,7 +68,9 @@ test: # Run all the test tasks @Testing
 		test-ui-performance \
 		test-integration \
 		test-accessibility \
-		test-load
+		test-load \
+		test-acceptance\
+		test-schema
 
 _test:
 	set -e
@@ -89,3 +97,5 @@ ${VERBOSE}.SILENT: \
 	test-ui \
 	test-ui-performance \
 	test-unit \
+	test-acceptance \
+	test-schema\

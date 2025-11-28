@@ -15,5 +15,10 @@ regexes = [
   '''(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3}|0\.0\.0\.0|255\.255\.255\.255|8\.8\.8\.8|8\.8\.4\.4|208\.67\.222\.222|208\.67\.220\.220)''',
 ]
 
+# Ignore generated test artefacts for this specific rule. These are also included in repo .gitignore
+paths = [
+  '''gateway-api/test-artefacts/.*\.html''',
+]
+
 [allowlist]
 paths = ['''.terraform.lock.hcl''', '''poetry.lock''', '''yarn.lock''']
