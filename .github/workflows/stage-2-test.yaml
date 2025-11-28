@@ -161,16 +161,29 @@ jobs:
 
   test-acceptance:
     name: "Acceptance test"
-    needs: start-lambda
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda environment"
+        run: make deploy &
+      - name: "Wait for Lambda to be ready"
+        run: |
+          echo "Waiting for local Lambda environment to be ready..."
+          for i in {1..60}; do
+            if curl -sSf http://localhost:5000/2015-03-31/functions/function/invocations -X POST -d '{}' >/dev/null; then
+              echo "Lambda is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Lambda did not become ready in time"
+          exit 1
       - name: "Run acceptance test"
         run: make test-acceptance
       - name: "Upload acceptance test results"
