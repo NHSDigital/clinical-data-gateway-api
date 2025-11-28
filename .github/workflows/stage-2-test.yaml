@@ -29,33 +29,33 @@ jobs:
         with:
           prefix: coverage
 
-  # test-unit:
-  #   name: "Unit tests"
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
-  #   steps:
-  #     - name: "Checkout code"
-  #       uses: actions/checkout@v6
-  #     - name: "Setup Python project"
-  #       uses: ./.github/actions/setup-python-project
-  #       with:
-  #         python-version: ${{ inputs.python_version }}
-  #     - name: "Start local Lambda"
-  #       uses: ./.github/actions/start-local-lambda
-  #     - name: "Run unit test suite"
-  #       run: make test-unit
-  #     - name: "Upload unit test results"
-  #       if: always()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: unit-test-results
-  #         path: gateway-api/test-artefacts/
-  #         retention-days: 30
-  #     - name: "Publish unit test results to summary"
-  #       if: always()
-  #       uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
-  #       with:
-  #         paths: gateway-api/test-artefacts/unit-tests.xml
+  test-unit:
+    name: "Unit tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Start local Lambda"
+        uses: ./.github/actions/start-local-lambda
+      - name: "Run unit test suite"
+        run: make test-unit
+      - name: "Upload unit test results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+      - name: "Publish unit test results to summary"
+        if: always()
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        with:
+          paths: gateway-api/test-artefacts/unit-tests.xml
 
   test-contract:
     name: "Contract tests"
@@ -173,7 +173,7 @@ jobs:
 
   merge-test-coverage:
     name: "Merge test coverage"
-    needs: [create-coverage-name, test-contract, test-schema, test-integration, test-acceptance]
+    needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
