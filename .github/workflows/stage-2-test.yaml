@@ -3,8 +3,8 @@ name: "Test stage"
 env:
   # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
   IN_BUILD_CONTAINER: true
-  BASE_URL: "http://host.docker.internal:5000"
-  HOSTNAME: "host.docker.internal"
+  BASE_URL: "http://localhost:5000"
+  HOSTNAME: "localhost"
 
 on:
   workflow_call:
@@ -180,7 +180,8 @@ jobs:
 
   merge-test-coverage:
     name: "Merge test coverage"
-    needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
+    # needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
+    needs: [create-coverage-name, test-acceptance]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
