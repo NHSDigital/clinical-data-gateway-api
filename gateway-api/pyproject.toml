@@ -15,12 +15,16 @@ packages = [{include = "gateway_api", from = "src"}]
 
 [tool.coverage.run]
 relative_files = true
-omit = ["*/tests/*", "*/features/*"]
+omit = ["*/tests/*", "*/features/*", "*/test_*.py"]
 
 [tool.coverage.paths]
 source = [
     "src/",
     "*/gateway-api/src/",
+]
+root = [
+    ".",
+    "*/gateway-api/",
 ]
 
 [tool.coverage.xml]

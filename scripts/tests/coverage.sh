@@ -17,5 +17,7 @@ poetry run coverage combine test-artefacts
 # Generate reports
 poetry run coverage report
 poetry run coverage xml -o test-artefacts/coverage-merged.xml
-# Fix paths in XML to be relative to repository root
-sed -i 's#filename="src/#filename="gateway-api/src/#g' test-artefacts/coverage-merged.xml
+# Fix paths in XML to be relative to repository root for SonarCloud
+sed -i -e 's#filename="src/#filename="gateway-api/src/#g' \
+        -e 's#filename="\([^/"]*\.py\)"#filename="gateway-api/\1"#g' \
+        test-artefacts/coverage-merged.xml
