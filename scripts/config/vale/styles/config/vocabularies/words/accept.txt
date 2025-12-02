@@ -31,3 +31,6 @@ pytest
 Schemathesis
 repos
 hostname
+JUnit
+base_url
+Hotspots

@@ -15,5 +15,6 @@
 **/.ruff_cache
 **/.mypy_cache
 
-# Testing artifacts
+# Testing artefacts
 **/.hypothesis
+gateway-api/test-artefacts/

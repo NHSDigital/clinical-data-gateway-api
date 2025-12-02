@@ -35,11 +35,11 @@ Outcome: Fast feedback on security, formatting, unit tests, build readiness, and
 
 File: [workflows/cicd-2-publish.yaml](workflows/cicd-2-publish.yaml)
 Trigger: `pull_request` closed on default branch where `merged == true`.
-Purpose: Convert merged main commit into a release artifact and send optional notification.
+Purpose: Convert merged main commit into a release artefact and send optional notification.
 Jobs:
 
 - metadata – reconstructs build/version context.
-- publish – placeholder for artifact retrieval (future), creates release/tag.
+- publish – placeholder for artefact retrieval (future), creates release/tag.
 - success – optional Microsoft Teams notification (webhook secret gated).
 
 ---
@@ -84,9 +84,8 @@ Jobs:
 - test-unit – `make test-unit`
 - test-lint – `make test-lint`
 - test-coverage – depends on unit; `make test-coverage`
-- perform-static-analysis – depends on unit; [actions/perform-static-analysis](actions/perform-static-analysis/action.yaml) (Sonar only if configured)
 
-Purpose: Validate correctness, style, coverage, and static analysis.
+Purpose: Validate correctness, style, and coverage.
 
 ---
 
@@ -95,10 +94,10 @@ Purpose: Validate correctness, style, coverage, and static analysis.
 File: [workflows/stage-3-build.yaml](workflows/stage-3-build.yaml)
 Jobs:
 
-- artefact-1 – placeholder for build + artifact upload.
+- artefact-1 – placeholder for build + artefact upload.
 - artefact-2 – second placeholder pattern.
 
-Purpose: Scaffold for producing distributable artifacts.
+Purpose: Scaffold for producing distributable artefacts.
 
 ---
 
@@ -109,11 +108,9 @@ Flow:
 
 1. environment-set-up – provision infra / DB / deploy app (placeholders).
 2. Parallel test jobs (all depend on setup):
-   - test-contract (`make test-contract`)
    - test-security (`make test-security`)
    - test-ui (`make test-ui`)
    - test-ui-performance (`make test-ui-performance`)
-   - test-accessibility (`make test-accessibility`)
    - test-integration (`make test-integration`)
    - test-load (`make test-load`)
 3. environment-tear-down – runs with `if: always()` after tests.
@@ -134,7 +131,6 @@ Check English usage | [actions/check-english-usage](actions/check-english-usage/
 Lint Terraform | [actions/lint-terraform](actions/lint-terraform/action.yaml) | `Terraform fmt` + validate + custom checks | `scripts/githooks/check-terraform-format.sh`
 Create LOC report | [actions/create-lines-of-code-report](actions/create-lines-of-code-report/action.yaml) | Generate & archive lines-of-code metrics | `scripts/reports/create-lines-of-code-report.sh`
 Scan dependencies | [actions/scan-dependencies](actions/scan-dependencies/action.yaml) | SBOM + vulnerability report | `scripts/reports/create-sbom-report.sh` (+ vulnerability script)
-Perform static analysis | [actions/perform-static-analysis](actions/perform-static-analysis/action.yaml) | SonarCloud analysis (conditional) | `scripts/reports/perform-static-analysis.sh`
 <!-- vale on -->
 
 ---
