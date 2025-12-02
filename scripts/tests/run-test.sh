@@ -25,7 +25,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 # Determine test path based on test type
 if [ "$TEST_TYPE" = "unit" ]; then
-  TEST_PATH="src/*/test_*.py"
+  TEST_PATH="test_*.py src/*/test_*.py"
 else
   TEST_PATH="tests/${TEST_TYPE}/"
 fi
@@ -35,9 +35,16 @@ mkdir -p test-artefacts
 
 echo "Running ${TEST_TYPE} tests..."
 
+# Set coverage path based on test type
+if [ "$TEST_TYPE" = "unit" ]; then
+  COV_PATH="."
+else
+  COV_PATH="src/gateway_api"
+fi
+
 # Note: TEST_PATH is intentionally unquoted to allow glob expansion for unit tests
 poetry run pytest ${TEST_PATH} -v \
-  --cov=src/gateway_api \
+  --cov=${COV_PATH} \
   --cov-report=html:test-artefacts/coverage-html \
   --cov-report=term \
   --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
