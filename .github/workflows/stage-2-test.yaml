@@ -203,6 +203,7 @@ jobs:
   sonarcloud-analysis:
     name: "SonarCloud Analysis"
     needs: [create-coverage-name, merge-test-coverage]
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
