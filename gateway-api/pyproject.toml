@@ -10,6 +10,9 @@ requires-python = ">3.13,<4.0.0"
 dependencies = [
 ]
 
+[tool.poetry.dependencies]
+clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", branch = "feature/GPCAPIM-190_return_hello_world_to_gateway" }
+
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
 

@@ -311,6 +311,22 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "clinical-data-common"
+version = "0.1.0"
+description = "Common code used across various clinical data API products"
+optional = false
+python-versions = ">3.13,<4.0.0"
+groups = ["main"]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/NHSDigital/clinical-data-common.git"
+reference = "feature/GPCAPIM-190_return_hello_world_to_gateway"
+resolved_reference = "f52eb216eddcd80edb72679567c28cf6a0f7f875"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -2212,4 +2228,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">3.13,<4.0.0"
-content-hash = "b1f7ca89a1d19d8d860a88040999a785e36e52110abb98e15dbedcb5c78a7073"
+content-hash = "ae5dbf06fb791c498a330ec609b8693923fcb3e9e29bdfd232609a77e5969eb6"
