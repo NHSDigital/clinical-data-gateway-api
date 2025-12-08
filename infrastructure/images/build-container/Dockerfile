@@ -47,9 +47,7 @@ RUN apk add --no-cache --update bash \
     readline-dev \
     sqlite-dev \
     tk-dev \
-    zstd-dev \
-    # gnupg to support signing of commits
-    gnupg
+    zstd-dev
 
 # Change default shell to bash for root user.
 RUN chsh -s /bin/bash root
