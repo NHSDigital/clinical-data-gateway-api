@@ -7,11 +7,11 @@ include scripts/init.mk
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
 
-.PHONEY: dependencies
+.PHONY: dependencies
 dependencies: # Install dependencies needed to build and test the project @Pipeline
 	cd gateway-api && poetry sync
 
-.PHONEY: build-gateway-api
+.PHONY: build-gateway-api
 build-gateway-api: dependencies
 	@cd gateway-api
 	@echo "Running type checks..."
@@ -26,7 +26,7 @@ build-gateway-api: dependencies
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
 
-.PHONEY: build
+.PHONY: build
 build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Building Docker image using Docker..."
 	@docker buildx build --load --provenance=false -t localhost/gateway-api-image infrastructure/images/gateway-api
@@ -42,7 +42,7 @@ clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."
 	@docker rm gateway-api || echo "No Gateway API container currently exists."
 
-.PHONEY: stop
+.PHONY: stop
 stop:
 	@echo "Stopping Gateway API container..."
 	@docker stop gateway-api || echo "No Gateway API container currently running."
