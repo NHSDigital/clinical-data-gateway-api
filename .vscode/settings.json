@@ -60,5 +60,6 @@
     "projectKey": "NHSDigital_clinical-data-gateway-api"
   },
   // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
-  "remote.autoForwardPorts": false
+  "remote.autoForwardPorts": false,
+  "files.eol": "\r\n"
 }

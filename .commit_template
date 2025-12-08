@@ -1,1 +1,16 @@
 [GPCAPIM-]:
+
+
+# Instructions for GitHub Copilot:
+# - Always start the commit summary with a JIRA key in the form '[GPCAPIM-<ticket-number>]:'.
+# You can usually derive the ticket-numnber from the branch name, but if unclear then don't guess.
+# - Use a short, imperative summary line after the JIRA key.
+# - Leave a blank line, then list bullet points describing the main changes.
+# - Do not mention files, diffs, or test commands explicitly unless requested.
+#
+# Example:
+# GPCAPIM-123: Add validation for patient IDs
+#
+# - Validate NHS number format on request
+# - Return 400 for invalid IDs
+# - Add unit tests for edge cases
