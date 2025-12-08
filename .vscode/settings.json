@@ -61,5 +61,4 @@
   },
   // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
   "remote.autoForwardPorts": false,
-  "files.eol": "\r\n"
 }

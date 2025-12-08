@@ -4,8 +4,5 @@
       "name": "clinical-data-gateway-api",
       "path": "."
     }
-  ],
-  "settings": {
-    "files.eol": "\r\n"
-  }
+  ]
 }
