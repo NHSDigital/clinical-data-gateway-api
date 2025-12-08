@@ -1,20 +1,7 @@
 {
   "recommendations": [
-    "davidanson.vscode-markdownlint",
     "eamodio.gitlens",
-    "editorconfig.editorconfig",
-    "github.codespaces",
-    "github.remotehub",
-    "github.vscode-github-actions",
-    "github.vscode-pull-request-github",
-    "ms-vscode-remote.remote-containers",
-    "charliermarsh.ruff",
-    "ms-python.python",
-    "ms-python.vscode-pylance",
-    "ms-python.debugpy",
-    "ms-python.vscode-python-envs",
-    "alexkrechik.cucumberautocomplete",
-    "ms-python.mypy-type-checker"
+    "github.vscode-pull-request-github"
   ],
   "unwantedRecommendations": [
     "ms-vscode.notepadplusplus-keybindings"
