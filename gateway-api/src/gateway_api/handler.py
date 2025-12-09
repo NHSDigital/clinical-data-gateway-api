@@ -1,4 +1,4 @@
-from clinical_data_common import get_hello
+from clinical_data_common import get_hello  # type: ignore[import-untyped]
 
 
 class User:
