@@ -1,7 +1,7 @@
 [project]
 name = "gateway-api"
 version = "0.1.0"
-description = ""
+description = "Clinical Data Gateway API - Provides GP Connect APIs over the internet via the API Management platform"
 authors = [
     {name = "Your Name", email = "you@example.com"}
 ]

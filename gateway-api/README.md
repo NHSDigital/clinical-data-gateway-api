@@ -56,3 +56,22 @@ gateway-api/
 ├── pyproject.toml                # Dependencies and config
 └── README.md
 ```
+
+## External Dependencies
+
+This module depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library for shared utilities and code. The dependency is specified as a git dependency in `pyproject.toml`:
+
+```toml
+[tool.poetry.dependencies]
+clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", branch = "main" }
+```
+
+### Updating the Dependency
+
+To pull the latest version of the common library:
+
+```bash
+poetry update clinical-data-common
+```
+
+The CI/CD pipeline automatically updates this dependency on each run to ensure the latest code from the specified branch is used during active development.

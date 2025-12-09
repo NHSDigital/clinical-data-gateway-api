@@ -32,6 +32,12 @@ git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
 cd clinical-data-gateway-api.git
 ```
 
+### External Dependencies
+
+This project depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library, which provides shared code and utilities used across various clinical data API products. The dependency is managed via Poetry and installed directly from the GitHub repository.
+
+The library is referenced in `gateway-api/pyproject.toml` as a git dependency. The CI/CD pipeline is currently configured to pull the latest version from the specified branch automatically.
+
 The project can then be build within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.vscode/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), you should be prompted if you wish to re-open the folder within a Dev Container. If accepted, this should build the Dev Container locally which will include all required libraries and tools for development.
 
 > [!NOTE]<br>
