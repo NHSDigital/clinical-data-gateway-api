@@ -324,7 +324,7 @@ develop = false
 type = "git"
 url = "https://github.com/NHSDigital/clinical-data-common.git"
 reference = "feature/GPCAPIM-190_return_hello_world_to_gateway"
-resolved_reference = "f52eb216eddcd80edb72679567c28cf6a0f7f875"
+resolved_reference = "27a37296f1c111b31bf10ac95e1b5c4234a88fac"
 
 [[package]]
 name = "colorama"

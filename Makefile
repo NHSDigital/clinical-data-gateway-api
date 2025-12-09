@@ -9,7 +9,7 @@ include scripts/init.mk
 
 .PHONEY: dependencies
 dependencies: # Install dependencies needed to build and test the project @Pipeline
-	cd gateway-api && poetry sync
+	cd gateway-api && poetry update clinical-data-common && poetry sync
 
 .PHONEY: build-gateway-api
 build-gateway-api: dependencies
