@@ -217,7 +217,7 @@ jobs:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: coverage-reports/
       - name: "SonarCloud Scan"
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
