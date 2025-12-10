@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [tool.poetry.dependencies]
-clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", branch = "feature/GPCAPIM-190_return_hello_world_to_gateway" }
+clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", branch = "main" }
 
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
