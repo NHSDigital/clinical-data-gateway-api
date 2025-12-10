@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [tool.poetry.dependencies]
-clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.2.0" }
+clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.3.0" }
 
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
