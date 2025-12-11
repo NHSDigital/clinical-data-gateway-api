@@ -41,32 +41,26 @@ poetry sync
 
 ### Run All Tests (with Verbose Output)
 
-From the `tests/` directory:
+From the root of the repository:
 
 ```bash
 pytest -v
-```
-
-Or from the `gateway-api/` directory:
-
-```bash
-poetry run pytest tests/ -v
 ```
 
 ### Run Specific Test Types
 
 ```bash
 # Run only acceptance tests
-pytest acceptance/ -v
+pytest gateway-api/tests/acceptance/ -v
 
 # Run only contract tests
-pytest contract/ -v
+pytest gateway-api/tests/contract/ -v
 
 # Run only integration tests
-pytest integration/ -v
+pytest gateway-api/tests/integration/ -v
 
 # Run only schema validation tests
-pytest schema/ -v
+pytest gateway-api/tests/schema/ -v
 ```
 
 ## Test Types
@@ -87,6 +81,7 @@ Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. The
 2. Step definitions provide the Python implementation for each step
 3. Test files create pytest test functions that bind to specific scenarios
 4. Tests run against the deployed API using the `base_url` fixture from `conftest.py`
+5. Pytest is configured to find the features within the `acceptance` directory via the `bdd_features_base_dir` parameter within the `pytest.ini` file
 
 **Example workflow:**
 

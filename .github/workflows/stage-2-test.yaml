@@ -1,8 +1,6 @@
 name: "Test stage"
 
 env:
-  # Temporarily set the IN_BUILD_CONTAINER environment variable so github actions can run targets that would only be available to the container.
-  IN_BUILD_CONTAINER: true
   BASE_URL: "http://localhost:5000"
   HOSTNAME: "localhost"
 
@@ -68,6 +66,8 @@ jobs:
           python-version: ${{ inputs.python_version }}
       - name: "Start local Lambda"
         uses: ./.github/actions/start-local-lambda
+        with:
+          python-version: ${{ inputs.python_version }}
       - name: "Run contract tests"
         run: make test-contract
       - name: "Upload contract test results"
@@ -96,6 +96,8 @@ jobs:
           python-version: ${{ inputs.python_version }}
       - name: "Start local Lambda"
         uses: ./.github/actions/start-local-lambda
+        with:
+          python-version: ${{ inputs.python_version }}
       - name: "Run schema validation tests"
         run: make test-schema
       - name: "Upload schema test results"
@@ -124,6 +126,8 @@ jobs:
           python-version: ${{ inputs.python_version }}
       - name: "Start local Lambda"
         uses: ./.github/actions/start-local-lambda
+        with:
+          python-version: ${{ inputs.python_version }}
       - name: "Run integration test"
         run: make test-integration
       - name: "Upload integration test results"
@@ -153,6 +157,7 @@ jobs:
       - name: "Start local Lambda"
         uses: ./.github/actions/start-local-lambda
         with:
+          python-version: ${{ inputs.python_version }}
           max-seconds: 90
       - name: "Run acceptance test"
         run: make test-acceptance
