@@ -45,6 +45,9 @@
   "python.analysis.showOnlyDirectDependenciesInAutoImport": true,
   "python.analysis.autoImportCompletions": true,
   "python.analysis.autoIndent": false,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/common/src"
+  ],
   // Mypy configuration
   "mypy-type-checker.cwd": "${nearestConfig}",
   // Enable re-format on type

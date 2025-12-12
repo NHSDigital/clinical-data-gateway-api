@@ -1,3 +1,6 @@
+from clinical_data_common import get_hello
+
+
 class User:
     def __init__(self, name: str):
         self._name = name
@@ -10,4 +13,5 @@ class User:
 def greet(user: User) -> str:
     if user.name == "nonexistent":
         raise ValueError("nonexistent user provided.")
-    return f"Hello, {user.name}!"
+    greeting = get_hello()
+    return f"{greeting}{user.name}!"
