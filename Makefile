@@ -51,7 +51,7 @@ config:: # Configure development environment (main) @Configuration
 	# Configure poetry to trust dev certificate if specified
 	@if [[ -n "$${DEV_CERT_PATH}" ]]; then \
 		echo "Configuring poetry to trust the dev certificate..."  ; \
-		poetry config certificates.PyPI.cert $${DEV_CERT_PATH} ; \
+		poetry config certificates.PyPI.cert /etc/ssl/cert.pem; \
 	fi
 	make _install-dependencies
 
