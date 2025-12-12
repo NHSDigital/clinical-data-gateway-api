@@ -1,7 +1,7 @@
 [project]
 name = "gateway-api"
 version = "0.1.0"
-description = ""
+description = "Clinical Data Gateway API - Provides GP Connect APIs over the internet via the API Management platform"
 authors = [
     {name = "Your Name", email = "you@example.com"}
 ]
@@ -9,6 +9,9 @@ readme = "README.md"
 requires-python = ">3.13,<4.0.0"
 dependencies = [
 ]
+
+[tool.poetry.dependencies]
+clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.1.0" }
 
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"}]
@@ -45,6 +48,7 @@ dev = [
     "pytest-cov (>=7.0.0,<8.0.0)",
     "pytest-html (>=4.1.1,<5.0.0)",
     "pact-python>=2.0.0",
+    "python-dotenv>=1.0.0",
     "requests>=2.31.0",
     "schemathesis>=4.4.1",
     "types-requests (>=2.32.4.20250913,<3.0.0.0)",
