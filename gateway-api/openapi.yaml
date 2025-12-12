@@ -8,9 +8,17 @@ info:
 servers:
   - url: http://localhost:5000
     description: Local development server
+components:
+  securitySchemes: # MAY only contain these exact values
+    nhs-login-p5:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/nhs-login-p5
+    app-level0:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level0
 paths:
   /2015-03-31/functions/function/invocations:
     post:
+      security:
+        - app-level0: []
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -54,6 +62,12 @@ paths:
                       type: string
                     description: The stack trace of the error, if an error has occurred
     get:
+      security: [
+        {
+          app-level0: []
+        }
+      ]
+
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -104,6 +118,8 @@ paths:
               schema:
                 type: string
     put:
+      security:
+        - app-level0: []
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -154,6 +170,8 @@ paths:
               schema:
                 type: string
     patch:
+      security:
+        - app-level0: []
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -204,6 +222,8 @@ paths:
               schema:
                 type: string
     delete:
+      security:
+        - app-level0: []
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -247,6 +267,8 @@ paths:
                       type: string
                     description: The stack trace of the error, if an error has occurred
     trace:
+      security:
+        - app-level0: []
       summary: Get hello world message
       description: Returns a simple hello world message
       operationId: postHelloWorld
@@ -289,3 +311,28 @@ paths:
                     items:
                       type: string
                     description: The stack trace of the error, if an error has occurred
+
+################################
+# Custom extension for NHSD APIM
+################################
+x-nhsd-apim:
+  monitoring: true # This is the default, adds _ping and _status endpoints to the list of endpoints to be monitored
+  access: # List that defines products, grants access using the allowed list of securitySchemes.
+  - title: User Restricted
+    grants:
+      nhs-login-p5: []
+  - title: Application Restricted
+    grants:
+      app-level0: []
+  target: # Only one target (omit for NO backend)
+    type: hosted # Soon to be external allowed as well.
+    healthcheck: /_status # define healthcheck endpoint to ping on the hosted container
+    containers: # define list of containers
+    - name: hello-world # must have a name
+      image: # image in AWS ECR, repo name + tag.
+        name: hello-world_hello-world
+        tag: 72537-sha6c0ccdb
+      environment: # environment values as key/value map passed to hosted container
+        LOG_LEVEL: info
+        UPSTREAM: https://internal-dev-sandbox.api.service.nhs.uk
+        NODE_ENV: ptl
