@@ -3,10 +3,16 @@
 import json
 import os
 from datetime import timedelta
+from pathlib import Path
 from typing import cast
 
 import pytest
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in the workspace root
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
 
 
 class Client:

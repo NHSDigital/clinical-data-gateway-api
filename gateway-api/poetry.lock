@@ -311,6 +311,22 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "clinical-data-common"
+version = "0.1.0"
+description = "Common code used across various clinical data API products"
+optional = false
+python-versions = ">3.13,<4.0.0"
+groups = ["main"]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/NHSDigital/clinical-data-common.git"
+reference = "v0.1.0"
+resolved_reference = "b2fbfe7d723238bb67a2b6423c04271d87ea456b"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -1549,6 +1565,21 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61"},
+    {file = "python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6"},
+]
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 description = "YAML parser and emitter for Python"
@@ -2212,4 +2243,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">3.13,<4.0.0"
-content-hash = "b1f7ca89a1d19d8d860a88040999a785e36e52110abb98e15dbedcb5c78a7073"
+content-hash = "ec013475c1d46e197243aad2c6ac8eb56957da032015c466694978937b784a61"
