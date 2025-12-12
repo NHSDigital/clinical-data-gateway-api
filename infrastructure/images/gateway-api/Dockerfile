@@ -1,5 +1,5 @@
 # Base image
-FROM public.ecr.aws/lambda/python:3.14
+FROM public.ecr.aws/lambda/python:3.12.8
 
 COPY resources/ /resources
 
