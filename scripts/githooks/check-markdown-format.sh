@@ -72,7 +72,8 @@ function run-markdownlint-natively() {
   # shellcheck disable=SC2086
   markdownlint \
     $files \
-    --config "$PWD/scripts/config/.markdownlint.yaml"
+    --config "$PWD/scripts/config/.markdownlint.yaml" \
+    --ignore "common/**"
 }
 
 # Run markdownlint in a Docker container.
@@ -90,7 +91,8 @@ function run-markdownlint-in-docker() {
     --volume "$PWD":/workdir \
     "$image" \
       $files \
-      --config /workdir/scripts/config/.markdownlint.yaml
+      --config /workdir/scripts/config/.markdownlint.yaml \
+      --ignore \"common/**\"
 }
 
 # ==============================================================================

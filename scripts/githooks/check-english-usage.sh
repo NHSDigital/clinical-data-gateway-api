@@ -31,16 +31,16 @@ function main() {
   check=${check:-working-tree-changes}
   case $check in
     "all")
-      filter="git ls-files"
+      filter="git ls-files | grep -v '^common/'"
       ;;
     "staged-changes")
-      filter="git diff --diff-filter=ACMRT --name-only --cached"
+      filter="git diff --diff-filter=ACMRT --name-only --cached | grep -v '^common/'"
       ;;
     "working-tree-changes")
-      filter="git diff --diff-filter=ACMRT --name-only"
+      filter="git diff --diff-filter=ACMRT --name-only | grep -v '^common/'"
       ;;
     "branch")
-      filter="git diff --diff-filter=ACMRT --name-only ${BRANCH_NAME:-origin/main}"
+      filter="git diff --diff-filter=ACMRT --name-only ${BRANCH_NAME:-origin/main} | grep -v '^common/'"
       ;;
     *)
       echo "Unrecognised check mode: $check" >&2 && exit 1

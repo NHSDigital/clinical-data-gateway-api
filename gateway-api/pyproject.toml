@@ -53,3 +53,4 @@ dev = [
 
 [tool.mypy]
 strict = true
+mypy_path = "../common/src"
