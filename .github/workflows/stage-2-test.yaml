@@ -187,7 +187,7 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }}
       - name: "Download all test coverage artefacts"
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: gateway-api/test-artefacts/
           merge-multiple: false
@@ -217,7 +217,7 @@ jobs:
         with:
           fetch-depth: 0 # Full history is needed for better analysis
       - name: "Download merged coverage report"
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: coverage-reports/
