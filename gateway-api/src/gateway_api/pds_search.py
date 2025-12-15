@@ -104,9 +104,55 @@ class PdsSearch:
 
         return headers
 
-    def search_patient(
+    def search_patient_by_nhs_number(
         self,
-        *,
+        nhs_number: int,
+        request_id: str | None = None,
+        correlation_id: str | None = None,
+        timeout: int | None = None,
+    ) -> SearchResults | None:
+        """
+        Does a PDS search for the patient with the given NHS number and returns
+        a SearchResults object with the matching details.
+
+        :param nhs_number: NHS number to search PDS for
+        :type nhs_number: int
+        :param request_id: If set re-use this request ID (if retrying a request) rather
+            than generating a new one.
+        :type request_id: str | None
+        :param correlation_id: Optional transaction correlation ID across multiple
+            systems; mirrored back in response.
+        :type correlation_id: str | None
+        :param timeout: Description
+        :type timeout: int | None
+        :return: Description
+        :rtype: SearchResults | None
+        """
+        headers = self._build_headers(
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+
+        url = f"{self.base_url}/Patient/{nhs_number}"
+
+        response = requests.get(
+            url,
+            headers=headers,
+            params={},
+            timeout=timeout or self.timeout,
+        )
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError:
+            # TODO: This should log, or something
+            return None
+
+        bundle = response.json()
+        return self._extract_single_search_result(bundle)
+
+    def search_patient_by_details(
+        self,
         family: str,
         given: str,
         gender: str,
