@@ -5,7 +5,10 @@ from typing import TypeAlias, cast
 
 import requests
 
-Result: TypeAlias = str | dict[str, "Result"] | list["Result"]
+ResultStructure: TypeAlias = (
+    str | dict[str, "ResultStructure"] | list["ResultStructure"]
+)
+ResultList: TypeAlias = list[dict[str, ResultStructure]]
 
 
 @dataclass
@@ -202,7 +205,7 @@ class PdsSearch:
     # --------------- internal helpers for result extraction -----------------
 
     @staticmethod
-    def _get_gp_ods_code(general_practitioners: list[dict[str, Result]]) -> str | None:
+    def _get_gp_ods_code(general_practitioners: ResultList) -> str | None:
         """
         Extract the current general practitioner ODS code from
         Patient.generalPractitioner[].identifier.value, if present.
@@ -214,20 +217,20 @@ class PdsSearch:
         if gp is None:
             return None
 
-        identifier = cast("dict[str, Result]", gp.get("identifier", {}))
+        identifier = cast("dict[str, ResultStructure]", gp.get("identifier", {}))
         ods_code = str(identifier.get("value", None))
 
         return ods_code
 
     def _extract_single_search_result(
-        self, bundle: dict[str, Result]
+        self, bundle: dict[str, ResultStructure]
     ) -> SearchResults | None:
         """
         Convert a FHIR Bundle from /Patient search into a single SearchResults
         object by using the first entry. Returns None if there are no entries.
         """
-        entries: list[dict[str, Result]] = cast(
-            "list[dict[str, Result]]", bundle.get("entry", [])
+        entries: ResultList = cast(
+            "ResultList", bundle.get("entry", [])
         )  # entries["entry"] is definitely a list
         if not entries:
             return None
@@ -235,7 +238,7 @@ class PdsSearch:
         # Search can return multiple patients, except that for APIs it can only
         # return one, so this is fine
         entry = entries[0]
-        patient = cast("dict[str, Result]", entry.get("resource", {}))
+        patient = cast("dict[str, ResultStructure]", entry.get("resource", {}))
 
         nhs_number = str(patient.get("id", "")).strip()
 
@@ -243,7 +246,7 @@ class PdsSearch:
         if not nhs_number:
             return None
 
-        names = cast("list[dict[str, Result]]", patient.get("name", []))
+        names = cast("ResultList", patient.get("name", []))
         name_obj = find_current_record(names)
 
         if name_obj is None:
@@ -256,9 +259,7 @@ class PdsSearch:
 
         # TODO: What happens if the patient isn't registered with a GP so this is empty?
         #  Probably not for Alpha
-        gp_list = cast(
-            "list[dict[str, Result]]", patient.get("generalPractitioner", [])
-        )
+        gp_list = cast("ResultList", patient.get("generalPractitioner", []))
         gp_ods_code = self._get_gp_ods_code(gp_list)
 
         return SearchResults(
@@ -270,8 +271,8 @@ class PdsSearch:
 
 
 def find_current_record(
-    records: list[dict[str, Result]], today: date | None = None
-) -> dict[str, Result] | None:
+    records: ResultList, today: date | None = None
+) -> dict[str, ResultStructure] | None:
     """
     records: list of dicts, each with period.start and period.end (ISO date strings).
     today: optional date override (for testing); defaults to today's date.
