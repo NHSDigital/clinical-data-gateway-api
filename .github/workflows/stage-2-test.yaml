@@ -42,7 +42,7 @@ jobs:
         run: make test-unit
       - name: "Upload unit test results"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: unit-test-results
           path: gateway-api/test-artefacts/
@@ -72,7 +72,7 @@ jobs:
         run: make test-contract
       - name: "Upload contract test results"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: contract-test-results
           path: gateway-api/test-artefacts/
@@ -102,7 +102,7 @@ jobs:
         run: make test-schema
       - name: "Upload schema test results"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: schema-test-results
           path: gateway-api/test-artefacts/
@@ -132,7 +132,7 @@ jobs:
         run: make test-integration
       - name: "Upload integration test results"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: integration-test-results
           path: gateway-api/test-artefacts/
@@ -163,7 +163,7 @@ jobs:
         run: make test-acceptance
       - name: "Upload acceptance test results"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: acceptance-test-results
           path: gateway-api/test-artefacts/
@@ -199,7 +199,7 @@ jobs:
           mv coverage-merged.xml ${{ needs.create-coverage-name.outputs.coverage-name }}.xml
       - name: "Upload combined coverage report"
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: gateway-api/test-artefacts
