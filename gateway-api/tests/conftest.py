@@ -11,7 +11,7 @@ from dotenv import find_dotenv, load_dotenv
 
 # Load environment variables from .env file in the workspace root
 # find_dotenv searches upward from current directory for .env file
-load_dotenv(find_dotenv(usecwd=True))
+load_dotenv(find_dotenv())
 
 
 class Client:
