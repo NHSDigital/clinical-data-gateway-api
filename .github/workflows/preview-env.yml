@@ -1,0 +1,144 @@
+name: Preview Environment
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: "900119715266"
+  ECR_REPOSITORY_NAME: "whoami"
+  TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
+  CORE_STATE_KEY: "dev/terraform.tfstate"
+  PREVIEW_STATE_PREFIX: "dev/preview/"
+
+jobs:
+  preview:
+    name: Manage preview environment
+    runs-on: ubuntu-latest
+
+    # Needed for OIDC → AWS (recommended)
+    permissions:
+      id-token: write
+      contents: read
+
+    # One job per branch at a time
+    concurrency:
+      group: preview-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: true
+
+    env:
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS_ROLE_ARN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials (OIDC recommended)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume:  ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute branch metadata
+        id: meta
+        run: |
+          # For PRs, head_ref is the source branch name
+          RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+
+          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
+          SANITIZED_BRANCH=$(echo "$RAW_BRANCH" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr -c 'a-z0-9._-' '-')
+
+          echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
+          echo "branch_name=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+
+          # ECR repo URL (must match core stack's ECR repo)
+          ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}"
+          echo "ecr_url=$ECR_URL" >> $GITHUB_OUTPUT
+
+          # Terraform state key for this preview env
+          TF_STATE_KEY="${PREVIEW_STATE_PREFIX}${SANITIZED_BRANCH}.tfstate"
+          echo "tf_state_key=$TF_STATE_KEY" >> $GITHUB_OUTPUT
+
+          # ALB listener rule priority - derive from PR number (must be unique per listener)
+          # You can tweak this formula if you like.
+          if [ -n "${{ github.event.number }}" ]; then
+            PRIORITY=$(( 1000 + ${{ github.event.number }} ))
+          else
+            PRIORITY=1999
+          fi
+          echo "alb_rule_priority=$PRIORITY" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        if: github.event.action != 'closed'
+        run: |
+          IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
+          ECR_URL="${{ steps.meta.outputs.ecr_url }}"
+
+          docker build \
+            --tag "${ECR_URL}:${IMAGE_TAG}" \
+            .
+
+      - name: Push Docker image to ECR
+        if: github.event.action != 'closed'
+        run: |
+          IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
+          ECR_URL="${{ steps.meta.outputs.ecr_url }}"
+
+          docker push "${ECR_URL}:${IMAGE_TAG}"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.0
+
+      # ---------- APPLY (PR opened / updated) ----------
+
+      - name: Terraform init (apply)
+        if: github.event.action != 'closed'
+        working-directory: preview-env
+        run: |
+          terraform init \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=${{ steps.meta.outputs.tf_state_key }}" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Terraform apply preview env
+        if: github.event.action != 'closed'
+        working-directory: preview-env
+        env:
+          TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
+          TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
+          TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
+          TF_VAR_base_domain: "aws.astrosoc.org"
+        run: |
+          terraform apply -auto-approve
+
+      # ---------- DESTROY (PR closed) ----------
+
+      - name: Terraform init (destroy)
+        if: github.event.action == 'closed'
+        working-directory: preview-env
+        run: |
+          terraform init \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=${{ steps.meta.outputs.tf_state_key }}" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Terraform destroy preview env
+        if: github.event.action == 'closed'
+        working-directory: preview-env
+        env:
+          TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
+          TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
+          TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
+          TF_VAR_base_domain: "aws.astrosoc.org"
+        run: |
+          terraform destroy -auto-approve
