@@ -61,7 +61,6 @@ class PdsSearch:
         auth_token: str,
         end_user_org_ods: str,
         base_url: str = SANDBOX_URL,
-        *,
         nhsd_session_urid: str | None = None,
         timeout: int = 10,
     ) -> None:
@@ -82,7 +81,6 @@ class PdsSearch:
 
     def _build_headers(
         self,
-        *,
         request_id: str | None = None,
         correlation_id: str | None = None,
     ) -> dict[str, str]:
