@@ -1,0 +1,20 @@
+meta {
+  name: Set to orange labs
+  type: http
+  seq: 5
+}
+
+get {
+  url: https://pokeapi.co/api/v2/pokemon/garchomp
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  bru.setEnvVar('environment', 'https://orange.testlab.nhs.uk');
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
