@@ -68,7 +68,10 @@ class PdsFhirApiStub:
     # ---------------------------
 
     def upsert_patient(
-        self, nhs_number: str, patient: dict[str, Any] = None, version_id: int = 1
+        self,
+        nhs_number: str,
+        patient: dict[str, Any] | None = None,
+        version_id: int = 1,
     ) -> None:
         """Add/replace a patient in the stub store."""
 
