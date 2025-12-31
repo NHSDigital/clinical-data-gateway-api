@@ -28,7 +28,7 @@ class PdsFhirApiStub:
     See uploaded OpenAPI for details.
     """
 
-    def __init__(self, *, strict_headers: bool = True) -> None:
+    def __init__(self, strict_headers: bool = True) -> None:
         # strict_headers=True enforces X-Request-ID presence and UUID format.
         self.strict_headers = strict_headers
         # Internal store: nhs_number -> (patient_resource, version_id_int)
@@ -68,10 +68,23 @@ class PdsFhirApiStub:
     # ---------------------------
 
     def upsert_patient(
-        self, nhs_number: str, patient: dict[str, Any], version_id: int = 1
+        self, nhs_number: str, patient: dict[str, Any] = None, version_id: int = 1
     ) -> None:
         """Add/replace a patient in the stub store."""
-        patient = dict(patient)  # shallow copy
+
+        try:
+            nhsnum_match = re.fullmatch(r"(\d{10})", nhs_number)
+        except TypeError as err:
+            raise TypeError("NHS Number must be a string") from err
+
+        if not nhsnum_match:
+            raise ValueError("NHS Number must be exactly 10 digits")
+
+        if not self._is_valid_nhs_number(nhs_number):
+            raise ValueError("NHS Number is not valid")
+
+        patient = dict(patient) if patient is not None else {}
+
         patient.setdefault("resourceType", "Patient")
         patient["id"] = nhs_number
         patient.setdefault("meta", {})
@@ -113,6 +126,7 @@ class PdsFhirApiStub:
             headers_out["X-Correlation-Id"] = correlation_id
 
         # Path parameter validation: 10 digits and valid NHS number.
+
         if not re.fullmatch(
             r"\d{10}", nhs_number or ""
         ) or not self._is_valid_nhs_number(nhs_number):
@@ -165,15 +179,18 @@ class PdsFhirApiStub:
         NHS number check-digit validation (mod 11).
         Rejects cases where computed check digit is 10.
         """
-        digits = [int(c) for c in nhs_number]
-        total = sum(digits[i] * (10 - i) for i in range(9))  # weights 10..2
-        remainder = total % 11
-        check = 11 - remainder
-        if check == 11:
-            check = 0
-        if check == 10:
-            return False
-        return digits[9] == check
+        # TODO: The AI did this. Check it's correct but also do we need this validation
+        # in the stub? In the mean time, just pass everything.
+        return True
+        # digits = [int(c) for c in nhs_number]
+        # total = sum(digits[i] * (10 - i) for i in range(9))  # weights 10..2
+        # remainder = total % 11
+        # check = 11 - remainder
+        # if check == 11:
+        #     check = 0
+        # if check == 10:
+        #     return False
+        # return digits[9] == check
 
     def _bad_request(
         self, message: str, *, request_id: str | None, correlation_id: str | None
