@@ -18,14 +18,15 @@ class PdsFhirApiStub:
     """
     Minimal in-memory stub for the PDS FHIR API, implementing only GET /Patient/{id}.
 
-    Contract elements modelled from the provided OpenAPI:
+    Contract elements modelled from the OpenAPI spec:
         - Path: /Patient/{id}
-        - id is the patient's NHS number (10 digits, must be valid)
+        - id is the patient's NHS number (10 digits)
         - X-Request-ID is mandatory and mirrored back in a response header
         - X-Correlation-ID is optional and mirrored back if supplied
         - ETag follows W/"<version>" and corresponds to Patient.meta.versionId
 
-    See uploaded OpenAPI for details.
+    OpenAPI spec available from
+    https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
     """
 
     def __init__(self, strict_headers: bool = True) -> None:
@@ -73,7 +74,16 @@ class PdsFhirApiStub:
         patient: dict[str, Any] | None = None,
         version_id: int = 1,
     ) -> None:
-        """Add/replace a patient in the stub store."""
+        """
+        Add/replace a patient in the stub store.
+
+        Arguments
+        nhs_number: String NHS number, ten digits
+        patient: Dictionary containing details of existing patient to replace
+        version_id: Version of patient. Increment this if replacing a patient, at least
+                    if you want to be able to track it
+
+        """
 
         try:
             nhsnum_match = re.fullmatch(r"(\d{10})", nhs_number)
