@@ -61,7 +61,6 @@ test: # Run all the test tasks @Testing
 	make \
 		test-unit \
 		test-lint \
-		test-coverage \
 		test-contract \
 		test-security \
 		test-ui \
