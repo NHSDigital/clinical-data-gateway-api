@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 import requests
-from stub_pds import PdsFhirApiStub
+from stubs.stub_pds import PdsFhirApiStub
 
 import gateway_api.pds_search as pds_search
 from gateway_api.pds_search import PdsSearch, find_current_record
