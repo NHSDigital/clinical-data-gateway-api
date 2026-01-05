@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
-from typing import Any
+from datetime import date, datetime, timezone, tzinfo
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -12,7 +12,7 @@ import requests
 from stubs.stub_pds import PdsFhirApiStub
 
 import gateway_api.pds_search as pds_search
-from gateway_api.pds_search import PdsSearch, find_current_record
+from gateway_api.pds_search import PdsSearch, ResultList, find_current_record
 
 
 @dataclass
@@ -27,6 +27,14 @@ class FakeResponse:
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
             raise requests.HTTPError(f"{self.status_code} Error")
+
+
+class FrozenDateTime(datetime):
+    @classmethod
+    def now(cls, tz: tzinfo | None = None) -> FrozenDateTime:
+        return cast(
+            "FrozenDateTime", datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
+        )
 
 
 @pytest.fixture
@@ -51,7 +59,7 @@ def route_requests_get(
         headers: dict[str, str] | None = None,
         params: Any = None,
         timeout: Any = None,
-    ):
+    ) -> FakeResponse:
         headers = headers or {}
         capture["url"] = url
         capture["headers"] = dict(headers)
@@ -173,16 +181,6 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     stub: PdsFhirApiStub,
     route_requests_get: dict[str, Any],
 ) -> None:
-    # Freeze "today" inside pds_search.find_current_record by monkeypatching
-    # the imported datetime class in the module.
-    # TODO: Not used, check if can be removed.
-    # frozen_today = date(2026, 1, 2)
-
-    class FrozenDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):  # type: ignore[override]
-            return datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
-
     monkeypatch.setattr(pds_search, "datetime", FrozenDateTime)
 
     stub.upsert_patient(
@@ -236,20 +234,23 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
 
 
 def test_find_current_record_with_today_override() -> None:
-    records = [
-        {
-            "identifier": {
-                "value": "a",
-                "period": {"start": "2020-01-01", "end": "2020-12-31"},
-            }
-        },
-        {
-            "identifier": {
-                "value": "b",
-                "period": {"start": "2021-01-01", "end": "2021-12-31"},
-            }
-        },
-    ]
+    records = cast(
+        "ResultList",
+        [
+            {
+                "identifier": {
+                    "value": "a",
+                    "period": {"start": "2020-01-01", "end": "2020-12-31"},
+                }
+            },
+            {
+                "identifier": {
+                    "value": "b",
+                    "period": {"start": "2021-01-01", "end": "2021-12-31"},
+                }
+            },
+        ],
+    )
 
     assert find_current_record(records, today=date(2020, 6, 1)) == records[0]
     assert find_current_record(records, today=date(2021, 6, 1)) == records[1]
