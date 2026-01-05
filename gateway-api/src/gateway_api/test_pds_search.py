@@ -99,6 +99,11 @@ def route_requests_get(
 def test_search_patient_by_nhs_number_success_defaults(
     route_requests_get: dict[str, Any],
 ) -> None:
+    """
+    Verifies that a successful GET /Patient/{nhs_number} returns a parsed SearchResults
+    populated from the stubbed seeded patient, and that gp_ods_code is None when no
+    current generalPractitioner record exists.
+    """
     client = PdsSearch(
         auth_token="test-token",  # noqa S106 # test token hardcoded
         end_user_org_ods="A12345",
@@ -117,6 +122,11 @@ def test_search_patient_by_nhs_number_success_defaults(
 def test_search_patient_by_nhs_number_sends_expected_headers(
     route_requests_get: dict[str, Any],
 ) -> None:
+    """
+    Verifies that search_patient_by_nhs_number forwards the expected HTTP headers,
+    including Authorization, end-user ODS header, Accept, and caller-provided
+    X-Request-ID / X-Correlation-ID values.
+    """
     client = PdsSearch(
         auth_token="test-token",  # noqa S106 # test token hardcoded
         end_user_org_ods="A12345",
@@ -144,6 +154,11 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
 def test_search_patient_by_nhs_number_generates_request_id(
     route_requests_get: dict[str, Any],
 ) -> None:
+    """
+    Verifies that when no request_id is provided by the caller, PdsSearch generates
+    an X-Request-ID and includes it in the outbound request (the stub validates the
+    header format in strict mode).
+    """
     client = PdsSearch(
         auth_token="test-token",  # noqa S106 # test token hardcoded
         end_user_org_ods="A12345",
@@ -165,6 +180,11 @@ def test_search_patient_by_nhs_number_not_found_returns_none(
     stub: PdsFhirApiStub,
     route_requests_get: dict[str, Any],
 ) -> None:
+    """
+    Verifies that when the downstream PDS endpoint returns 404 (patient not found),
+    the client handles the HTTP error path and returns None rather than propagating
+    an exception to the caller.
+    """
     client = PdsSearch(
         auth_token="test-token",  # noqa S106 # test token hardcoded
         end_user_org_ods="A12345",
@@ -181,6 +201,11 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     stub: PdsFhirApiStub,
     route_requests_get: dict[str, Any],
 ) -> None:
+    """
+    Verifies that gp_ods_code is extracted from the *current* generalPractitioner
+    record, where "current" is determined by identifier.period covering today's
+    date. Time is frozen via monkeypatch to ensure deterministic selection.
+    """
     monkeypatch.setattr(pds_search, "datetime", FrozenDateTime)
 
     stub.upsert_patient(
@@ -234,6 +259,11 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
 
 
 def test_find_current_record_with_today_override() -> None:
+    """
+    Verifies that find_current_record honours the explicit `today` override and
+    selects the first record whose identifier.period covers that date, returning
+    None when no record is current for the supplied date.
+    """
     records = cast(
         "ResultList",
         [
