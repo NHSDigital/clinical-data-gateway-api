@@ -291,7 +291,7 @@ class PdsSearch:
             return None
 
         names = cast("ResultList", patient.get("name", []))
-        name_obj = find_current_record(names)
+        name_obj = find_current_name_record(names)
 
         if name_obj is None:
             return None
@@ -318,9 +318,16 @@ def find_current_record(
     records: ResultList, today: date | None = None
 ) -> dict[str, ResultStructure] | None:
     """
-    records: list of dicts, each with period.start and period.end (ISO date strings).
-    today: optional date override (for testing); defaults to today's date.
-    Returns: the first dict whose period covers 'today', or None if no match.
+    generalPractitioner selection.
+
+    Each generalPractitioner record MUST contain:
+        - identifier.period.start (ISO date)
+        - identifier.period.end   (ISO date)
+
+        There may be zero records; if no record is current, return None.
+        Missing keys are treated as errors (KeyError), per contract.
+
+    Returns: the first dict whose identifier.period covers 'today', or None.
     """
     if today is None:
         # TODO: Do we need to do something about UTC here? Do we need to use local time?
@@ -328,7 +335,8 @@ def find_current_record(
         today = datetime.now(timezone.utc).date()
 
     for record in records:
-        periods = cast("dict[str, str]", record["period"])
+        identifier = cast("dict[str, ResultStructure]", record["identifier"])
+        periods = cast("dict[str, str]", identifier["period"])
         start_str = periods["start"]
         end_str = periods["end"]
 
@@ -337,6 +345,36 @@ def find_current_record(
         end = date.fromisoformat(end_str)
 
         # Inclusive range check
+        if start <= today <= end:
+            return record
+
+    return None
+
+
+def find_current_name_record(
+    records: ResultList, today: date | None = None
+) -> dict[str, ResultStructure] | None:
+    """
+    Patient.name[] selection.
+
+    Each name record MUST contain:
+    - period.start (ISO date)
+    - period.end   (ISO date)
+
+    Returns the first name record whose period covers 'today', else None.
+    Missing keys are treated as errors (KeyError), per contract.
+    """
+    if today is None:
+        today = datetime.now(timezone.utc).date()
+
+    for record in records:
+        periods = cast("dict[str, str]", record["period"])
+        start_str = periods["start"]
+        end_str = periods["end"]
+
+        start = date.fromisoformat(start_str)
+        end = date.fromisoformat(end_str)
+
         if start <= today <= end:
             return record
 

@@ -189,17 +189,32 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
         nhs_number="9000000017",
         patient={
             "resourceType": "Patient",
-            "name": [{"use": "official", "family": "Taylor", "given": ["Ben", "A."]}],
+            "name": [
+                {
+                    "use": "official",
+                    "family": "Taylor",
+                    "given": ["Ben", "A."],
+                    "period": {"start": "1900-01-01", "end": "9999-12-31"},
+                }
+            ],
             "generalPractitioner": [
                 # Not current on 2026-01-02
                 {
-                    "period": {"start": "2010-01-01", "end": "2012-01-01"},
-                    "identifier": {"value": "OLDGP"},
+                    "id": "1",
+                    "type": "Organization",
+                    "identifier": {
+                        "value": "OLDGP",
+                        "period": {"start": "2010-01-01", "end": "2012-01-01"},
+                    },
                 },
                 # Current on 2026-01-02
                 {
-                    "period": {"start": "2020-01-01", "end": "2030-01-01"},
-                    "identifier": {"value": "CURRGP"},
+                    "id": "2",
+                    "type": "Organization",
+                    "identifier": {
+                        "value": "CURRGP",
+                        "period": {"start": "2020-01-01", "end": "2030-01-01"},
+                    },
                 },
             ],
         },
@@ -222,8 +237,18 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
 
 def test_find_current_record_with_today_override() -> None:
     records = [
-        {"period": {"start": "2020-01-01", "end": "2020-12-31"}, "v": "a"},
-        {"period": {"start": "2021-01-01", "end": "2021-12-31"}, "v": "b"},
+        {
+            "identifier": {
+                "value": "a",
+                "period": {"start": "2020-01-01", "end": "2020-12-31"},
+            }
+        },
+        {
+            "identifier": {
+                "value": "b",
+                "period": {"start": "2021-01-01", "end": "2021-12-31"},
+            }
+        },
     ]
 
     assert find_current_record(records, today=date(2020, 6, 1)) == records[0]

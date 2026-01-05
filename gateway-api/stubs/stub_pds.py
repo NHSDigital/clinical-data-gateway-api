@@ -56,6 +56,7 @@ class PdsFhirApiStub:
                         "use": "official",
                         "family": "Smith",
                         "given": ["Jane"],
+                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
                     }
                 ],
                 "gender": "female",
