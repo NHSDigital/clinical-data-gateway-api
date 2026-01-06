@@ -6,8 +6,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-from requests import HTTPError, Response
-
 
 @dataclass(frozen=True)
 class StubResponse:
@@ -30,23 +28,6 @@ class PdsFhirApiStub:
     OpenAPI spec available from
     https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
     """
-
-    @staticmethod
-    def _http_404_error(url: str | None = None) -> HTTPError:
-        resp = Response()
-        resp.status_code = 404
-        if url is None:
-            resp.url = (
-                "https://example.test/personal-demographics/FHIR/R4/Patient/9900000001"
-            )
-        else:
-            resp.url = url
-        resp.reason = "Not Found"
-        return HTTPError(
-            f"404 Client Error: Not Found for url: {resp.url}", response=resp
-        )
-
-    NhsNumberErrors = [(9900000001, _http_404_error())]
 
     def __init__(self, strict_headers: bool = True) -> None:
         # strict_headers=True enforces X-Request-ID presence and UUID format.
@@ -138,10 +119,6 @@ class PdsFhirApiStub:
         Implements GET /Patient/{id}.
         """
         headers_out: dict[str, str] = {}
-
-        for nhsnum, err in self.NhsNumberErrors:
-            if nhs_number == str(nhsnum):
-                raise err
 
         # Header handling (mirroring behavior).
         if self.strict_headers:
