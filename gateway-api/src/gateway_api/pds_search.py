@@ -11,6 +11,10 @@ ResultStructure: TypeAlias = (
 ResultList: TypeAlias = list[dict[str, ResultStructure]]
 
 
+class ExternalServiceError(Exception):
+    pass
+
+
 @dataclass
 class SearchResults:
     """
@@ -142,8 +146,9 @@ class PdsSearch:
 
         try:
             response.raise_for_status()
-        except requests.HTTPError:
+        except requests.HTTPError as err:
             # TODO: This should log, or something
+            raise ExternalServiceError("PDS request failed") from err
             return None
 
         bundle = response.json()
@@ -239,9 +244,9 @@ class PdsSearch:
 
         try:
             response.raise_for_status()
-        except requests.HTTPError:
+        except requests.HTTPError as err:
             # TODO: This should log, or something
-            return None
+            raise ExternalServiceError("PDS request failed") from err
 
         bundle = response.json()
         return self._extract_single_search_result(bundle)
