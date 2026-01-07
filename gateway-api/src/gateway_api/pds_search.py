@@ -38,7 +38,8 @@ import requests
 ResultStructure: TypeAlias = (
     str | dict[str, "ResultStructure"] | list["ResultStructure"]
 )
-ResultList: TypeAlias = list[dict[str, ResultStructure]]
+ResultStructureDict: TypeAlias = dict[str, ResultStructure]
+ResultList: TypeAlias = list[ResultStructureDict]
 
 
 class ExternalServiceError(Exception):
@@ -209,7 +210,6 @@ class PdsSearch:
             # In production, failures surface here (4xx/5xx -> HTTPError).
             response.raise_for_status()
         except requests.HTTPError as err:
-            # TODO: add logging / structured error details if required.
             raise ExternalServiceError("PDS request failed") from err
 
         bundle = response.json()
@@ -286,7 +286,6 @@ class PdsSearch:
         try:
             response.raise_for_status()
         except requests.HTTPError as err:
-            # TODO: add logging / structured error details if required.
             raise ExternalServiceError("PDS request failed") from err
 
         bundle = response.json()
@@ -319,14 +318,14 @@ class PdsSearch:
         if gp is None:
             return None
 
-        identifier = cast("dict[str, ResultStructure]", gp.get("identifier", {}))
+        identifier = cast("ResultStructureDict", gp.get("identifier", {}))
         ods_code = str(identifier.get("value", None))
 
         # Avoid returning the literal string "None" if identifier.value is absent.
         return None if ods_code == "None" else ods_code
 
     def _extract_single_search_result(
-        self, bundle: dict[str, ResultStructure]
+        self, bundle: ResultStructureDict
     ) -> SearchResults | None:
         """
         Extract a single :class:`SearchResults` from a FHIR Bundle.
@@ -350,7 +349,7 @@ class PdsSearch:
         # (search by a human can return more, but presumably we count as an application)
         # See MaxResults parameter in the PDS OpenAPI spec.
         entry = entries[0]
-        patient = cast("dict[str, ResultStructure]", entry.get("resource", {}))
+        patient = cast("ResultStructureDict", entry.get("resource", {}))
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
@@ -380,7 +379,7 @@ class PdsSearch:
 
 def find_current_record(
     records: ResultList, today: date | None = None
-) -> dict[str, ResultStructure] | None:
+) -> ResultStructureDict | None:
     """
     Select the current record from a ``generalPractitioner`` list.
 
@@ -406,7 +405,7 @@ def find_current_record(
         today = datetime.now(timezone.utc).date()
 
     for record in records:
-        identifier = cast("dict[str, ResultStructure]", record["identifier"])
+        identifier = cast("ResultStructureDict", record["identifier"])
         periods = cast("dict[str, str]", identifier["period"])
         start_str = periods["start"]
         end_str = periods["end"]
@@ -422,7 +421,7 @@ def find_current_record(
 
 def find_current_name_record(
     records: ResultList, today: date | None = None
-) -> dict[str, ResultStructure] | None:
+) -> ResultStructureDict | None:
     """
     Select the current record from a ``Patient.name`` list.
 

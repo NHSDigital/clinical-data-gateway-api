@@ -136,9 +136,9 @@ class PdsFhirApiStub:
         nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
-        authorization: str | None = None,  # noqa: F841  (ignored in stub)
-        role_id: str | None = None,  # noqa: F841  (ignored in stub)
-        end_user_org_ods: str | None = None,  # noqa: F841  (ignored in stub)
+        authorization: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
+        role_id: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
+        end_user_org_ods: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
     ) -> StubResponse:
         """
         Implements ``GET /Patient/{id}``.
@@ -254,7 +254,7 @@ class PdsFhirApiStub:
         """
         return True
 
-        # digits = [int(c) for c in nhs_number]
+        # digits = [int(c) for c in nhs_number] # NOSONAR S125 (May be wanted later)
         # total = sum(digits[i] * (10 - i) for i in range(9))  # weights 10..2
         # remainder = total % 11
         # check = 11 - remainder
