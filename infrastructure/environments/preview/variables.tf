@@ -6,7 +6,7 @@ variable "branch_name" {
 variable "base_domain" {
   description = "The base domain for the preview environment."
   type        = string
-  default     = "aws.astrosoc.org"
+  default     = "dev.endpoints.clinical-data-gateway.national.nhs.uk"
 }
 
 variable "image_tag" {
