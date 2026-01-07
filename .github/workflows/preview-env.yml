@@ -28,7 +28,7 @@ jobs:
       cancel-in-progress: true
 
     env:
-      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS_ROLE_ARN }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
 
     steps:
       - name: Checkout repo
