@@ -21,5 +21,5 @@ gateway-api/test-artefacts/
 
 # Any environment files
 **/.env
-
-**.terraform.lock.hcl
+**/.DS_Store
+**/.terraform.lock.hcl
