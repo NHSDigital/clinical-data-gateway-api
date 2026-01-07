@@ -1,3 +1,9 @@
+"""
+In-memory PDS FHIR R4 API stub.
+
+The stub does **not** implement the full PDS API surface, nor full FHIR validation.
+"""
+
 from __future__ import annotations
 
 import re
@@ -9,6 +15,14 @@ from typing import Any
 
 @dataclass(frozen=True)
 class StubResponse:
+    """
+    Minimal response object returned by :class:`PdsFhirApiStub`.
+
+    :param status_code: HTTP-like status code for the response.
+    :param headers: HTTP-like response headers.
+    :param json: Parsed JSON response body.
+    """
+
     status_code: int
     headers: dict[str, str]
     json: dict[str, Any]
@@ -16,26 +30,34 @@ class StubResponse:
 
 class PdsFhirApiStub:
     """
-    Minimal in-memory stub for the PDS FHIR API, implementing only GET /Patient/{id}.
+    Minimal in-memory stub for the PDS FHIR API, implementing only ``GET /Patient/{id}``
 
-    Contract elements modelled from the OpenAPI spec:
-        - Path: /Patient/{id}
-        - id is the patient's NHS number (10 digits)
-        - X-Request-ID is mandatory and mirrored back in a response header
-        - X-Correlation-ID is optional and mirrored back if supplied
-        - ETag follows W/"<version>" and corresponds to Patient.meta.versionId
+    Contract elements modelled from the PDS OpenAPI spec:
 
-    OpenAPI spec available from
-    https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
+    * ``/Patient/{id}`` where ``id`` is the patient's NHS number (10 digits)
+    * ``X-Request-ID`` is mandatory (in strict mode) and echoed back as ``X-Request-Id``
+    * ``X-Correlation-ID`` is optional and echoed back as ``X-Correlation-Id``
+        if supplied
+    * ``ETag`` follows ``W/"<version>"`` and corresponds to ``Patient.meta.versionId``
+
+    See:
+        https://github.com/NHSDigital/personal-demographics-service-api/blob/master/specification/personal-demographics.yaml
     """
 
     def __init__(self, strict_headers: bool = True) -> None:
-        # strict_headers=True enforces X-Request-ID presence and UUID format.
+        """
+        Create a new stub instance.
+
+        :param strict_headers: If ``True``, enforce presence and UUID format of
+            ``X-Request-ID``. If ``False``, header validation is relaxed.
+        """
         self.strict_headers = strict_headers
+
         # Internal store: nhs_number -> (patient_resource, version_id_int)
         self._patients: dict[str, tuple[dict[str, Any], int]] = {}
 
         # Seed a deterministic example matching the spec's id example.
+        # Tests may overwrite this record via upsert_patient.
         self.upsert_patient(
             nhs_number="9000000009",
             patient={
@@ -76,16 +98,17 @@ class PdsFhirApiStub:
         version_id: int = 1,
     ) -> None:
         """
-        Add/replace a patient in the stub store.
+        Insert or replace a patient record in the stub store.
 
-        Arguments
-        nhs_number: String NHS number, ten digits
-        patient: Dictionary containing details of existing patient to replace
-        version_id: Version of patient. Increment this if replacing a patient, at least
-                    if you want to be able to track it
-
+        :param nhs_number: NHS number as a 10-digit string.
+        :param patient: Patient resource dictionary. If ``None``, an empty Patient dict
+            is created and populated with required keys.
+        :param version_id: Version integer recorded into
+            ``patient["meta"]["versionId"]`` and used to generate the ETag on retrieval.
+        :return: ``None``.
+        :raises TypeError: If ``nhs_number`` is not a string.
+        :raises ValueError: If ``nhs_number`` is not 10 digits or fails validation.
         """
-
         try:
             nhsnum_match = re.fullmatch(r"(\d{10})", nhs_number)
         except TypeError as err:
@@ -97,13 +120,15 @@ class PdsFhirApiStub:
         if not self._is_valid_nhs_number(nhs_number):
             raise ValueError("NHS Number is not valid")
 
-        patient = dict(patient) if patient is not None else {}
+        if patient is None:
+            patient = {}
 
         patient.setdefault("resourceType", "Patient")
         patient["id"] = nhs_number
         patient.setdefault("meta", {})
         patient["meta"]["versionId"] = str(version_id)
         patient["meta"].setdefault("lastUpdated", self._now_fhir_instant())
+
         self._patients[nhs_number] = (patient, version_id)
 
     def get_patient(
@@ -111,16 +136,28 @@ class PdsFhirApiStub:
         nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
-        authorization: str | None = None,  # noqa F841 # Ignored in stub
-        role_id: str | None = None,  # noqa F841 # Ignored in stub
-        end_user_org_ods: str | None = None,  # noqa F841 # Ignored in stub
+        authorization: str | None = None,  # noqa: F841  (ignored in stub)
+        role_id: str | None = None,  # noqa: F841  (ignored in stub)
+        end_user_org_ods: str | None = None,  # noqa: F841  (ignored in stub)
     ) -> StubResponse:
         """
-        Implements GET /Patient/{id}.
+        Implements ``GET /Patient/{id}``.
+
+        :param nhs_number: The NHS number path parameter.
+        :param request_id: The ``X-Request-ID`` header value. Required
+            (and must be UUID) when ``strict_headers=True``.
+        :param correlation_id: Optional ``X-Correlation-ID`` header value.
+        :param authorization: Authorization header (ignored by the stub).
+        :param role_id: Role header (ignored by the stub).
+        :param end_user_org_ods: End-user ODS header (ignored by the stub).
+        :return: A :class:`StubResponse` representing either:
+            * ``200`` with Patient JSON
+            * ``404`` with OperationOutcome JSON
+            * ``400`` with OperationOutcome JSON (validation failures)
         """
         headers_out: dict[str, str] = {}
 
-        # Header handling (mirroring behavior).
+        # Header validation mirrors key behaviour enforced by the real service.
         if self.strict_headers:
             if not request_id:
                 return self._bad_request(
@@ -134,13 +171,14 @@ class PdsFhirApiStub:
                     request_id=request_id,
                     correlation_id=correlation_id,
                 )
+
+        # Echo trace headers back (note casing).
         if request_id:
             headers_out["X-Request-Id"] = request_id
         if correlation_id:
             headers_out["X-Correlation-Id"] = correlation_id
 
-        # Path parameter validation: 10 digits and valid NHS number.
-
+        # Path parameter validation: must be 10 digits and pass NHS-number validation.
         if not re.fullmatch(
             r"\d{10}", nhs_number or ""
         ) or not self._is_valid_nhs_number(nhs_number):
@@ -151,7 +189,7 @@ class PdsFhirApiStub:
                 display="Resource Id is invalid",
             )
 
-        # Lookup.
+        # Lookup: not present => 404 OperationOutcome.
         if nhs_number not in self._patients:
             return self._operation_outcome(
                 status_code=404,
@@ -172,6 +210,11 @@ class PdsFhirApiStub:
 
     @staticmethod
     def _now_fhir_instant() -> str:
+        """
+        Generate a FHIR instant timestamp in UTC with seconds precision.
+
+        :return: Timestamp string in the format ``YYYY-MM-DDTHH:MM:SSZ``.
+        """
         return (
             datetime.now(timezone.utc)
             .replace(microsecond=0)
@@ -181,6 +224,12 @@ class PdsFhirApiStub:
 
     @staticmethod
     def _is_uuid(value: str) -> bool:
+        """
+        Determine whether a string can be parsed as a UUID.
+
+        :param value: Candidate value.
+        :return: ``True`` if the value parses as a UUID, otherwise ``False``.
+        """
         try:
             uuid.UUID(value)
             return True
@@ -190,12 +239,21 @@ class PdsFhirApiStub:
     @staticmethod
     def _is_valid_nhs_number(nhs_number: str) -> bool:
         """
-        NHS number check-digit validation (mod 11).
-        Rejects cases where computed check digit is 10.
+        Validate an NHS number.
+
+        The intended logic is check-digit validation (mod 11), rejecting cases where the
+        computed check digit is 10.
+
+        :param nhs_number: NHS number string.
+        :return: ``True`` if considered valid.
+
+        .. note::
+            This stub currently returns ``True`` for all values to keep unit test data
+            setup lightweight. Uncomment the implementation below if stricter validation
+            is desired.
         """
-        # TODO: The AI did this. Check it's correct but also do we need this validation
-        # in the stub? In the mean time, just pass everything.
         return True
+
         # digits = [int(c) for c in nhs_number]
         # total = sum(digits[i] * (10 - i) for i in range(9))  # weights 10..2
         # remainder = total % 11
@@ -209,11 +267,20 @@ class PdsFhirApiStub:
     def _bad_request(
         self, message: str, *, request_id: str | None, correlation_id: str | None
     ) -> StubResponse:
+        """
+        Build a 400 OperationOutcome response.
+
+        :param message: Human-readable error message.
+        :param request_id: Optional request ID to echo back.
+        :param correlation_id: Optional correlation ID to echo back.
+        :return: A 400 :class:`StubResponse` containing an OperationOutcome.
+        """
         headers: dict[str, str] = {}
         if request_id:
             headers["X-Request-Id"] = request_id
         if correlation_id:
             headers["X-Correlation-Id"] = correlation_id
+
         return self._operation_outcome(
             status_code=400,
             headers=headers,
@@ -225,7 +292,15 @@ class PdsFhirApiStub:
     def _operation_outcome(
         *, status_code: int, headers: dict[str, str], spine_code: str, display: str
     ) -> StubResponse:
-        # Matches the example structure shown in the OpenAPI file.
+        """
+        Construct an OperationOutcome response body.
+
+        :param status_code: HTTP-like status code.
+        :param headers: Response headers.
+        :param spine_code: Spine error/warning code.
+        :param display: Human-readable display message.
+        :return: A :class:`StubResponse` containing an OperationOutcome JSON body.
+        """
         body = {
             "resourceType": "OperationOutcome",
             "issue": [

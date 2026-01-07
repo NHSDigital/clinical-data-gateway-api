@@ -1,9 +1,12 @@
-# tests/test_pds_search.py
+"""
+Unit tests for :mod:`gateway_api.pds_search`.
+"""
+
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date, datetime, timezone, tzinfo
+from datetime import date
 from typing import Any, cast
 from uuid import uuid4
 
@@ -11,7 +14,6 @@ import pytest
 import requests
 from stubs.stub_pds import PdsFhirApiStub
 
-import gateway_api.pds_search as pds_search
 from gateway_api.pds_search import (
     ExternalServiceError,
     PdsSearch,
@@ -22,28 +24,48 @@ from gateway_api.pds_search import (
 
 @dataclass
 class FakeResponse:
+    """
+    Minimal substitute for :class:`requests.Response` used by tests.
+
+    Only the methods accessed by :class:`gateway_api.pds_search.PdsSearch` are
+    implemented.
+
+    :param status_code: HTTP status code.
+    :param headers: Response headers.
+    :param _json: Parsed JSON body returned by :meth:`json`.
+    """
+
     status_code: int
     headers: dict[str, str]
     _json: dict[str, Any]
 
     def json(self) -> dict[str, Any]:
+        """
+        Return the response JSON body.
+
+        :return: Parsed JSON body.
+        """
         return self._json
 
     def raise_for_status(self) -> None:
-        if self.status_code >= 400:
+        """
+        Emulate :meth:`requests.Response.raise_for_status`.
+
+        :return: ``None``.
+        :raises requests.HTTPError: If the response status is not 200.
+        """
+        if self.status_code != 200:
             raise requests.HTTPError(f"{self.status_code} Error")
-
-
-class FrozenDateTime(datetime):
-    @classmethod
-    def now(cls, tz: tzinfo | None = None) -> FrozenDateTime:
-        return cast(
-            "FrozenDateTime", datetime(2026, 1, 2, 12, 0, 0, tzinfo=timezone.utc)
-        )
 
 
 @pytest.fixture
 def stub() -> PdsFhirApiStub:
+    """
+    Create a stub backend instance.
+
+    :return: A :class:`stubs.stub_pds.PdsFhirApiStub` with strict header validation
+        enabled.
+    """
     # Strict header validation helps ensure PdsSearch sends X-Request-ID correctly.
     return PdsFhirApiStub(strict_headers=True)
 
@@ -53,9 +75,15 @@ def mock_requests_get(
     monkeypatch: pytest.MonkeyPatch, stub: PdsFhirApiStub
 ) -> dict[str, Any]:
     """
-    Patch requests.get so that calls made by PdsSearch are routed into the stub.
+    Patch ``requests.get`` so calls are routed into :meth:`PdsFhirApiStub.get_patient`.
 
-    Returns a capture dict that records the last request made.
+    The fixture returns a "capture" dict recording the most recent request information.
+    This is used by header-related tests.
+
+    :param monkeypatch: Pytest monkeypatch fixture.
+    :param stub: Stub backend used to serve GET requests.
+    :return: A capture dictionary containing the last call details
+        (url/headers/params/timeout).
     """
     capture: dict[str, Any] = {}
 
@@ -65,19 +93,30 @@ def mock_requests_get(
         params: Any = None,
         timeout: Any = None,
     ) -> FakeResponse:
+        """
+        Replacement function for :func:`requests.get`.
+
+        :param url: URL passed by the client.
+        :param headers: Headers passed by the client.
+        :param params: Query parameters (recorded, not interpreted for
+            GET /Patient/{id}).
+        :param timeout: Timeout (recorded).
+        :return: A :class:`FakeResponse` whose behaviour mimics ``requests.Response``.
+        """
         headers = headers or {}
         capture["url"] = url
         capture["headers"] = dict(headers)
         capture["params"] = params
         capture["timeout"] = timeout
 
-        # Support only GET /Patient/{id} (as used by search_patient_by_nhs_number).
+        # The client under test is expected to call GET {base_url}/Patient/{id}.
         m = re.match(r"^(?P<base>.+)/Patient/(?P<nhs>\d+)$", url)
         if not m:
             raise AssertionError(f"Unexpected URL called by client: {url}")
 
         nhs_number = m.group("nhs")
 
+        # Route the "HTTP" request into the in-memory stub.
         stub_resp = stub.get_patient(
             nhs_number=nhs_number,
             request_id=headers.get("X-Request-ID"),
@@ -86,8 +125,7 @@ def mock_requests_get(
             end_user_org_ods=headers.get("NHSD-End-User-Organisation-ODS"),
         )
 
-        # pds_search.PdsSearch._extract_single_search_result expects a Bundle-like
-        # structure: {"entry": [{"resource": {...Patient...}}]}
+        # PdsSearch expects a Bundle-like structure on success in these tests.
         if stub_resp.status_code == 200:
             body = {"entry": [{"resource": stub_resp.json}]}
         else:
@@ -109,8 +147,15 @@ def _insert_basic_patient(
     general_practitioner: list[dict[str, Any]] | None = None,
 ) -> None:
     """
-    Helper to create a patient resource with a current name period, and an explicit
-    generalPractitioner list (defaulting to empty).
+    Insert a basic Patient record into the stub.
+
+    :param stub: Stub backend to insert into.
+    :param nhs_number: NHS number (10-digit string).
+    :param family: Family name for the Patient.name record.
+    :param given: Given names for the Patient.name record.
+    :param general_practitioner: Optional list stored under
+        ``Patient.generalPractitioner``.
+    :return: ``None``.
     """
     stub.upsert_patient(
         nhs_number=nhs_number,
@@ -135,8 +180,15 @@ def test_search_patient_by_nhs_number_get_patient_success(
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    GET /Patient/{nhs_number} returns 200 and the client extracts basic demographic
-    fields.
+    Verify ``GET /Patient/{nhs_number}`` returns 200 and demographics are extracted.
+
+    This test explicitly inserts the patient into the stub and asserts that the client
+    returns a populated :class:`gateway_api.pds_search.SearchResults`.
+
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture
+        (ensures patching is active).
+    :return: ``None``.
     """
     _insert_basic_patient(
         stub=stub,
@@ -147,7 +199,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
     )
 
     client = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106  (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -162,16 +214,25 @@ def test_search_patient_by_nhs_number_get_patient_success(
 
 
 def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
-    monkeypatch: pytest.MonkeyPatch,
     stub: PdsFhirApiStub,
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    If generalPractitioner exists but none are current for 'today', gp_ods_code is None
-    (patient still returned).
-    """
-    monkeypatch.setattr(pds_search, "datetime", FrozenDateTime)
+    Verify that ``gp_ods_code`` is ``None`` when no GP record is current.
 
+    The generalPractitioner list may be:
+    * empty
+    * non-empty with no current record
+    * non-empty with exactly one current record
+
+    This test covers the "non-empty, none current" case by
+    inserting only a historical GP record.
+
+    :param monkeypatch: Pytest monkeypatch fixture.
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture.
+    :return: ``None``.
+    """
     _insert_basic_patient(
         stub=stub,
         nhs_number="9000000018",
@@ -190,7 +251,7 @@ def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
     )
 
     client = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106  (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -209,8 +270,18 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    Client sends Authorization, ODS, Accept, X-Request-ID, and X-Correlation-ID headers
-    to the stubbed GET.
+    Verify that the client sends the expected headers to PDS.
+
+    Asserts that the request contains:
+    * Authorization header
+    * NHSD-End-User-Organisation-ODS header
+    * Accept header
+    * caller-provided X-Request-ID and X-Correlation-ID headers
+
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
+        headers.
+    :return: ``None``.
     """
     _insert_basic_patient(
         stub=stub,
@@ -221,7 +292,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     )
 
     client = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -249,8 +320,15 @@ def test_search_patient_by_nhs_number_generates_request_id(
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    When request_id is omitted, the client generates an X-Request-ID and sends it
-    (validated by strict stub).
+    Verify that the client generates an X-Request-ID when not provided.
+
+    The stub is in strict mode, so a missing or invalid X-Request-ID would cause a 400.
+    This test confirms a request ID is present and looks UUID-like.
+
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
+        headers.
+    :return: ``None``.
     """
     _insert_basic_patient(
         stub=stub,
@@ -261,7 +339,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
     )
 
     client = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -275,17 +353,23 @@ def test_search_patient_by_nhs_number_generates_request_id(
     assert len(headers["X-Request-ID"]) >= 32
 
 
-def test_search_patient_by_nhs_number_not_found_returns_none(
+def test_search_patient_by_nhs_number_not_found_raises_error(
     stub: PdsFhirApiStub,
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    If GET /Patient/{nhs_number} returns 404 from the stub, the client
-    raises an exception.
-    """
+    Verify that a 404 response results in :class:`ExternalServiceError`.
 
+    The stub returns a 404 OperationOutcome for unknown NHS numbers. The client calls
+    ``raise_for_status()``, which raises ``requests.HTTPError``; the client wraps that
+    into :class:`ExternalServiceError`.
+
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture.
+    :return: ``None``.
+    """
     pds = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -295,16 +379,21 @@ def test_search_patient_by_nhs_number_not_found_returns_none(
 
 
 def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
-    monkeypatch: pytest.MonkeyPatch,
     stub: PdsFhirApiStub,
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    When exactly one generalPractitioner is current, gp_ods_code is extracted
-    from identifier.value.
-    """
-    monkeypatch.setattr(pds_search, "datetime", FrozenDateTime)
+    Verify that a current GP record is selected and its ODS code returned.
 
+    The test inserts a patient with two GP records:
+    * one historical (not current)
+    * one current (period covers today)
+
+    :param monkeypatch: Pytest monkeypatch fixture.
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture.
+    :return: ``None``.
+    """
     stub.upsert_patient(
         nhs_number="9000000017",
         patient={
@@ -318,7 +407,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
                 }
             ],
             "generalPractitioner": [
-                # Not current on 2026-01-02
+                # Old
                 {
                     "id": "1",
                     "type": "Organization",
@@ -327,7 +416,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
                         "period": {"start": "2010-01-01", "end": "2012-01-01"},
                     },
                 },
-                # Current on 2026-01-02
+                # Current
                 {
                     "id": "2",
                     "type": "Organization",
@@ -342,7 +431,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     )
 
     client = PdsSearch(
-        auth_token="test-token",  # noqa S106 # test token hardcoded
+        auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
@@ -357,8 +446,9 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
 
 def test_find_current_record_with_today_override() -> None:
     """
-    find_current_record selects the record whose identifier.period includes the
-    supplied 'today' date.
+    Verify that ``find_current_record`` honours an explicit ``today`` value.
+
+    :return: ``None``.
     """
     records = cast(
         "ResultList",

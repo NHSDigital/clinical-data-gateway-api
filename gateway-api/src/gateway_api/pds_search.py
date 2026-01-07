@@ -1,3 +1,32 @@
+"""
+PDS (Personal Demographics Service) FHIR R4 patient lookup client.
+
+Terminology
+-----------
+
+FHIR elements such as ``Patient.name`` and ``Patient.generalPractitioner`` can contain
+multiple records, each valid for a specific time range (a FHIR ``Period``). This module
+selects the record that is *current* for a given date.
+
+Contracts enforced by the helper functions:
+
+* ``Patient.name[]`` records passed to :func:`find_current_name_record` must contain::
+
+    record["period"]["start"]
+    record["period"]["end"]
+
+* ``Patient.generalPractitioner[]`` records passed to :func:`find_current_record` must
+    contain::
+
+    record["identifier"]["period"]["start"]
+    record["identifier"]["period"]["end"]
+
+If required keys are missing, a ``KeyError`` is raised intentionally. This is treated as
+malformed upstream data (or malformed test fixtures) and should be corrected at source.
+"""
+
+from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -5,6 +34,7 @@ from typing import TypeAlias, cast
 
 import requests
 
+# Recursive JSON-like structure typing used for parsed FHIR bodies.
 ResultStructure: TypeAlias = (
     str | dict[str, "ResultStructure"] | list["ResultStructure"]
 )
@@ -12,17 +42,30 @@ ResultList: TypeAlias = list[dict[str, ResultStructure]]
 
 
 class ExternalServiceError(Exception):
-    pass
+    """
+    Raised when the downstream PDS request fails.
+
+    This module catches :class:`requests.HTTPError` thrown by
+    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
+    callers are not coupled to ``requests`` exception types.
+    """
 
 
 @dataclass
 class SearchResults:
     """
-    Represents a single patient search result with only the fields requested:
-    - Given name(s)
-    - Family name
-    - NHS Number
-    - Current general practitioner ODS code
+    A single extracted patient record.
+
+    Only a small subset of the PDS Patient fields are currently required by this
+    gateway. More will be added in later phases.
+
+    :param given_names: Given names from the *current* ``Patient.name`` record,
+        concatenated with spaces.
+    :param family_name: Family name from the *current* ``Patient.name`` record.
+    :param nhs_number: NHS number (``Patient.id``).
+    :param gp_ods_code: The ODS code of the *current* GP, extracted from
+        ``Patient.generalPractitioner[].identifier.value`` if a current GP record exists
+        otherwise ``None``.
     """
 
     given_names: str
@@ -33,9 +76,23 @@ class SearchResults:
 
 class PdsSearch:
     """
-    Simple client for PDS FHIR R4 patient search (GET /Patient).
+    Simple client for PDS FHIR R4 patient retrieval.
 
-    Usage:
+    The client currently supports one operation:
+
+    * :meth:`search_patient_by_nhs_number` - calls ``GET /Patient/{nhs_number}``
+
+    There is another operation implemented for searching by demographics:
+
+    * :meth:`search_patient_by_details` - calls ``GET /Patient`` with query parameters
+
+    ...but this is currently not fully tested. Its implementation may be finalised
+    in a later phase if it is required.
+
+    Both methods return a :class:`SearchResults` instance when a patient can be
+    extracted, otherwise ``None``.
+
+    **Usage example**::
 
         pds = PdsSearch(
             auth_token="YOUR_ACCESS_TOKEN",
@@ -43,19 +100,13 @@ class PdsSearch:
             base_url="https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4",
         )
 
-        result = pds.search_patient(
-            family="Smith",
-            given="John",
-            gender="male",
-            date_of_birth="1980-05-12",
-            postcode="SW1A1AA",
-        )
+        result = pds.search_patient_by_nhs_number(9000000009)
 
         if result:
             print(result)
     """
 
-    # Defaults – adjust as needed
+    # URLs for different PDS environments. Requires authentication to use live.
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4"
     PROD_URL = "https://api.service.nhs.uk/personal-demographics/FHIR/R4"
@@ -69,13 +120,14 @@ class PdsSearch:
         timeout: int = 10,
     ) -> None:
         """
-        :param auth_token: OAuth2 bearer token (without 'Bearer ' prefix)
-        :param end_user_org_ods: NHSD End User Organisation ODS code
-        :param base_url: Base URL for the PDS API (one of SANDBOX_URL / INT_URL /
-        PROD_URL)
-        :param nhsd_session_urid: Optional NHSD-Session-URID (for healthcare worker
-        access)
-        :param timeout: Default timeout in seconds for HTTP calls
+        Create a PDS client.
+
+        :param auth_token: OAuth2 bearer token (without the ``"Bearer "`` prefix).
+        :param end_user_org_ods: NHSD End User Organisation ODS code.
+        :param base_url: Base URL for the PDS API (one of :attr:`SANDBOX_URL`,
+            :attr:`INT_URL`, :attr:`PROD_URL`). Trailing slashes are stripped.
+        :param nhsd_session_urid: Optional ``NHSD-Session-URID`` header value.
+        :param timeout: Default timeout in seconds for HTTP calls.
         """
         self.auth_token = auth_token
         self.end_user_org_ods = end_user_org_ods
@@ -90,6 +142,11 @@ class PdsSearch:
     ) -> dict[str, str]:
         """
         Build mandatory and optional headers for a PDS request.
+
+        :param request_id: Optional ``X-Request-ID``. If not supplied a new UUID is
+                            generated.
+        :param correlation_id: Optional ``X-Correlation-ID`` for cross-system tracing.
+        :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
             "Authorization": f"Bearer {self.auth_token}",
@@ -98,9 +155,12 @@ class PdsSearch:
             "Accept": "application/fhir+json",
         }
 
+        # NHSD-Session-URID is required in some flows; include only if configured.
         if self.nhsd_session_urid:
             headers["NHSD-Session-URID"] = self.nhsd_session_urid
 
+        # Correlation ID is used to track the same request across multiple systems.
+        # Can be safely omitted, mirrored back in response if included.
         if correlation_id:
             headers["X-Correlation-ID"] = correlation_id
 
@@ -114,21 +174,22 @@ class PdsSearch:
         timeout: int | None = None,
     ) -> SearchResults | None:
         """
-        Does a PDS search for the patient with the given NHS number and returns
-        a SearchResults object with the matching details.
+        Retrieve a patient by NHS number.
 
-        :param nhs_number: NHS number to search PDS for
-        :type nhs_number: int
-        :param request_id: If set re-use this request ID (if retrying a request) rather
-            than generating a new one.
-        :type request_id: str | None
-        :param correlation_id: Optional transaction correlation ID across multiple
-            systems; mirrored back in response.
-        :type correlation_id: str | None
-        :param timeout: Description
-        :type timeout: int | None
-        :return: Description
-        :rtype: SearchResults | None
+        Calls ``GET /Patient/{nhs_number}``, expects a Bundle-like JSON response in the
+        shape used by the unit test stub (``{"entry": [{"resource": <Patient>}]}``),
+        then extracts a single :class:`SearchResults`.
+
+        :param nhs_number: NHS number to search for.
+        :param request_id: Optional request ID to reuse for retries; if not supplied a
+            UUID is generated.
+        :param correlation_id: Optional correlation ID for tracing.
+        :param timeout: Optional per-call timeout in seconds. If not provided,
+            :attr:`timeout` is used.
+        :return: A :class:`SearchResults` instance if a patient can be extracted,
+            otherwise ``None``.
+        :raises ExternalServiceError: If the HTTP request returns an error status and
+            ``raise_for_status()`` raises :class:`requests.HTTPError`.
         """
         headers = self._build_headers(
             request_id=request_id,
@@ -145,11 +206,11 @@ class PdsSearch:
         )
 
         try:
+            # In production, failures surface here (4xx/5xx -> HTTPError).
             response.raise_for_status()
         except requests.HTTPError as err:
-            # TODO: This should log, or something
+            # TODO: add logging / structured error details if required.
             raise ExternalServiceError("PDS request failed") from err
-            return None
 
         bundle = response.json()
         return self._extract_single_search_result(bundle)
@@ -163,43 +224,33 @@ class PdsSearch:
         postcode: str | None = None,
         email: str | None = None,
         phone: str | None = None,
-        # These options are exposed by the PDS API but we don't need them,
-        # at least for now
-        # fuzzy_match: bool = False,
-        # exact_match: bool = False,
-        # history: bool = False,
-        # max_results: Optional[int] = None,
         request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
     ) -> SearchResults | None:
         """
-        Perform a patient search using GET /Patient on the PDS FHIR R4 API.
+        Search for a patient using demographics.
 
-        Assumes that the search will return a single matching patient.
+        Calls ``GET /Patient`` with query parameters and extracts the first matching
+        patient from the Bundle.
 
-        Required:
-            family          Patient family name (surname)
-            given           Patient given name
-            gender          'male' | 'female' | 'other' | 'unknown'
-            date_of_birth   'YYYY-MM-DD' (exact match, wrapped as eqYYYY-MM-DD)
-
-        Optional:
-            postcode        Patient postcode (address-postalcode)
-            email           Patient email address
-            phone           Patient phone number
-            fuzzy_match     If True, sets _fuzzy-match=true
-            exact_match     If True, sets _exact-match=true
-            history         If True, sets _history=true
-            max_results     Integer 1–50
-            request_id      Override X-Request-ID (otherwise auto-generated UUID)
-            correlation_id  Optional X-Correlation-ID
-            timeout         Per-call timeout (defaults to client-level timeout)
-
-        Returns:
-            A single SearchResults instance if a patient is found, else None.
+        :param family: Patient family name (surname).
+        :param given: Patient given name.
+        :param gender: One of ``'male' | 'female' | 'other' | 'unknown'``.
+        :param date_of_birth: Date of birth in ``YYYY-MM-DD`` format. The query is sent
+            as ``birthdate=eqYYYY-MM-DD`` for exact matching.
+        :param postcode: Optional patient postcode; sent as ``address-postalcode``.
+        :param email: Optional patient email address.
+        :param phone: Optional patient phone number.
+        :param request_id: Optional request ID override.
+        :param correlation_id: Optional correlation ID.
+        :param timeout: Optional per-call timeout in seconds. If not provided,
+            :attr:`timeout` is used.
+        :return: A :class:`SearchResults` instance if a patient can be extracted,
+            otherwise ``None``.
+        :raises ExternalServiceError: If the HTTP request returns an error status and
+            ``raise_for_status()`` raises :class:`requests.HTTPError`.
         """
-
         headers = self._build_headers(
             request_id=request_id,
             correlation_id=correlation_id,
@@ -209,12 +260,12 @@ class PdsSearch:
             "family": family,
             "given": given,
             "gender": gender,
-            # Exact DOB match
+            # FHIR search "eq" prefix means exact match.
             "birthdate": f"eq{date_of_birth}",
         }
 
         if postcode:
-            # Use address-postalcode (address-postcode is deprecated)
+            # Use address-postalcode (address-postcode is deprecated).
             params["address-postalcode"] = postcode
 
         if email:
@@ -222,16 +273,6 @@ class PdsSearch:
 
         if phone:
             params["phone"] = phone
-
-        # # Optional flags
-        # if fuzzy_match:
-        #     params["_fuzzy-match"] = "true"
-        # if exact_match:
-        #     params["_exact-match"] = "true"
-        # if history:
-        #     params["_history"] = "true"
-        # if max_results is not None:
-        #     params["_max-results"] = max_results
 
         url = f"{self.base_url}/Patient"
 
@@ -245,7 +286,7 @@ class PdsSearch:
         try:
             response.raise_for_status()
         except requests.HTTPError as err:
-            # TODO: This should log, or something
+            # TODO: add logging / structured error details if required.
             raise ExternalServiceError("PDS request failed") from err
 
         bundle = response.json()
@@ -256,8 +297,20 @@ class PdsSearch:
     @staticmethod
     def _get_gp_ods_code(general_practitioners: ResultList) -> str | None:
         """
-        Extract the current general practitioner ODS code from
-        Patient.generalPractitioner[].identifier.value, if present.
+        Extract the current GP ODS code from ``Patient.generalPractitioner``.
+
+        This function implements the business rule:
+
+        * If the list is empty, return ``None``.
+        * If the list is non-empty and no record is current, return ``None``.
+        * If exactly one record is current, return its ``identifier.value``.
+
+        In future this may change to return the most recent record if none is current.
+
+        :param general_practitioners: List of ``generalPractitioner`` records from a
+            Patient resource.
+        :return: ODS code string if a current record exists, otherwise ``None``.
+        :raises KeyError: If a record is missing required ``identifier.period`` fields.
         """
         if len(general_practitioners) == 0:
             return None
@@ -269,45 +322,51 @@ class PdsSearch:
         identifier = cast("dict[str, ResultStructure]", gp.get("identifier", {}))
         ods_code = str(identifier.get("value", None))
 
-        return ods_code
+        # Avoid returning the literal string "None" if identifier.value is absent.
+        return None if ods_code == "None" else ods_code
 
     def _extract_single_search_result(
         self, bundle: dict[str, ResultStructure]
     ) -> SearchResults | None:
         """
-        Convert a FHIR Bundle from /Patient search into a single SearchResults
-        object by using the first entry. Returns None if there are no entries.
+        Extract a single :class:`SearchResults` from a FHIR Bundle.
+
+        The code assumes that the API returns either zero matches (empty entry list)
+        or a single match; if multiple entries are present, the first entry is used.
+
+        :param bundle: Parsed JSON body containing at minimum an ``entry`` list, where
+            the first entry contains a Patient resource under ``resource``.
+        :return: A populated :class:`SearchResults` if extraction succeeds, otherwise
+            ``None``.
+        :raises KeyError: If required fields for current record selection
+            (period fields) are missing in the evaluated structures.
         """
-        entries: ResultList = cast(
-            "ResultList", bundle.get("entry", [])
-        )  # entries["entry"] is definitely a list
+        entries: ResultList = cast("ResultList", bundle.get("entry", []))
         if not entries:
             return None
 
-        # Search can return multiple patients, except that for APIs it can only
-        # return one, so this is fine
+        # Use the first patient entry. Search by NHS number is unique. Search by
+        # demographics for an application is allowed to return max one entry from PDS.
+        # (search by a human can return more, but presumably we count as an application)
+        # See MaxResults parameter in the PDS OpenAPI spec.
         entry = entries[0]
         patient = cast("dict[str, ResultStructure]", entry.get("resource", {}))
 
         nhs_number = str(patient.get("id", "")).strip()
-
-        # Pretty sure NHS number has to be there
         if not nhs_number:
             return None
 
+        # Select current name record and extract names.
         names = cast("ResultList", patient.get("name", []))
         name_obj = find_current_name_record(names)
-
         if name_obj is None:
             return None
 
         given_names_list = cast("list[str]", name_obj.get("given", []))
         family_name = str(name_obj.get("family", "")) or ""
-
         given_names_str = " ".join(given_names_list).strip()
 
-        # TODO: What happens if the patient isn't registered with a GP so this is empty?
-        #  Probably not for Alpha
+        # Extract GP ODS code if a current GP record exists.
         gp_list = cast("ResultList", patient.get("generalPractitioner", []))
         gp_ods_code = self._get_gp_ods_code(gp_list)
 
@@ -323,20 +382,27 @@ def find_current_record(
     records: ResultList, today: date | None = None
 ) -> dict[str, ResultStructure] | None:
     """
-    generalPractitioner selection.
+    Select the current record from a ``generalPractitioner`` list.
 
-    Each generalPractitioner record MUST contain:
-        - identifier.period.start (ISO date)
-        - identifier.period.end   (ISO date)
+    A record is "current" if its ``identifier.period`` covers ``today`` (inclusive):
 
-        There may be zero records; if no record is current, return None.
-        Missing keys are treated as errors (KeyError), per contract.
+    ``start <= today <= end``
 
-    Returns: the first dict whose identifier.period covers 'today', or None.
+    The list may be in any of the following states:
+
+    * empty
+    * contains one or more records, none current
+    * contains one or more records, exactly one current
+
+    :param records: List of ``generalPractitioner`` records.
+    :param today: Optional override date, intended for deterministic tests.
+        If not supplied, the current UTC date is used.
+    :return: The first record whose ``identifier.period`` covers ``today``, or ``None``
+        if no record is current.
+    :raises KeyError: If required keys are missing for a record being evaluated.
+    :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
     """
     if today is None:
-        # TODO: Do we need to do something about UTC here? Do we need to use local time?
-        #  Don't worry for Alpha
         today = datetime.now(timezone.utc).date()
 
     for record in records:
@@ -345,11 +411,9 @@ def find_current_record(
         start_str = periods["start"]
         end_str = periods["end"]
 
-        # Parse ISO dates
         start = date.fromisoformat(start_str)
         end = date.fromisoformat(end_str)
 
-        # Inclusive range check
         if start <= today <= end:
             return record
 
@@ -360,14 +424,19 @@ def find_current_name_record(
     records: ResultList, today: date | None = None
 ) -> dict[str, ResultStructure] | None:
     """
-    Patient.name[] selection.
+    Select the current record from a ``Patient.name`` list.
 
-    Each name record MUST contain:
-    - period.start (ISO date)
-    - period.end   (ISO date)
+    A record is "current" if its ``period`` covers ``today`` (inclusive):
 
-    Returns the first name record whose period covers 'today', else None.
-    Missing keys are treated as errors (KeyError), per contract.
+    ``start <= today <= end``
+
+    :param records: List of ``Patient.name`` records.
+    :param today: Optional override date, intended for deterministic tests.
+        If not supplied, the current UTC date is used.
+    :return: The first name record whose ``period`` covers ``today``, or ``None`` if no
+        record is current.
+    :raises KeyError: If required keys (``period.start`` / ``period.end``) are missing.
+    :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
     """
     if today is None:
         today = datetime.now(timezone.utc).date()
