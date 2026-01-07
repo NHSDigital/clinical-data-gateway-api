@@ -18,6 +18,7 @@ from gateway_api.pds_search import (
     ExternalServiceError,
     PdsSearch,
     ResultList,
+    find_current_name_record,
     find_current_record,
 )
 
@@ -202,6 +203,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
+        nhsd_session_urid="test-urid",
     )
 
     result = client.search_patient_by_nhs_number(9000000009)
@@ -471,3 +473,101 @@ def test_find_current_record_with_today_override() -> None:
     assert find_current_record(records, today=date(2020, 6, 1)) == records[0]
     assert find_current_record(records, today=date(2021, 6, 1)) == records[1]
     assert find_current_record(records, today=date(2019, 6, 1)) is None
+
+
+def test_find_current_name_record_no_current_name() -> None:
+    """
+    Verify that ``find_current_name_record`` returns ``None`` when no current name
+    exists.
+
+    :return: ``None``.
+    """
+    records = cast(
+        "ResultList",
+        [
+            {
+                "use": "official",
+                "family": "Doe",
+                "given": ["John"],
+                "period": {"start": "2000-01-01", "end": "2010-12-31"},
+            },
+            {
+                "use": "official",
+                "family": "Smith",
+                "given": ["John"],
+                "period": {"start": "2011-01-01", "end": "2020-12-31"},
+            },
+        ],
+    )
+
+    assert find_current_name_record(records) is None
+
+
+def test_extract_single_search_result_invalid_bundle_raises_runtime_error() -> None:
+    """
+    Verify that ``PdsSearch._extract_single_search_result`` raises ``RuntimeError`` when
+    mandatory bundle/patient content is missing.
+
+    This test asserts that a ``RuntimeError`` is raised when:
+
+    * The bundle contains no entries (``entry`` is missing or empty).
+    * The first entry exists but the patient resource has no NHS number (missing/blank
+        ``id``).
+    * The first entry exists and has an NHS number, but the patient has no *current*
+        name record (i.e. no ``Patient.name`` period covers "today").
+    """
+    client = PdsSearch(
+        auth_token="test-token",  # noqa: S106 (test token hardcoded)
+        end_user_org_ods="A12345",
+        base_url="https://example.test/personal-demographics/FHIR/R4",
+    )
+
+    # 1) Bundle contains no entries.
+    bundle_no_entries: Any = {"entry": []}
+    with pytest.raises(RuntimeError):
+        client._extract_single_search_result(bundle_no_entries)  # noqa SLF001 (testing private method)
+
+    # 2) Entry exists but patient has no NHS number (Patient.id missing/blank).
+    bundle_missing_nhs_number: Any = {
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Patient",
+                    "name": [
+                        {
+                            "use": "official",
+                            "family": "Smith",
+                            "given": ["Jane"],
+                            "period": {"start": "1900-01-01", "end": "9999-12-31"},
+                        }
+                    ],
+                    "generalPractitioner": [],
+                }
+            }
+        ]
+    }
+    with pytest.raises(RuntimeError):
+        client._extract_single_search_result(bundle_missing_nhs_number)  # noqa SLF001 (testing private method)
+
+    # 3) Entry exists with NHS number, but no current name record.
+    bundle_no_current_name: Any = {
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Patient",
+                    "id": "9000000009",
+                    "name": [
+                        {
+                            "use": "official",
+                            "family": "Smith",
+                            "given": ["Jane"],
+                            "period": {"start": "1900-01-01", "end": "1900-12-31"},
+                        }
+                    ],
+                    "generalPractitioner": [],
+                }
+            }
+        ]
+    }
+    with pytest.raises(RuntimeError):
+        client._extract_single_search_result(bundle_no_current_name)  # noqa SLF001 (testing private method)

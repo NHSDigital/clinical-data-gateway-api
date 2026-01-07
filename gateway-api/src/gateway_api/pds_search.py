@@ -215,82 +215,6 @@ class PdsSearch:
         bundle = response.json()
         return self._extract_single_search_result(bundle)
 
-    def search_patient_by_details(
-        self,
-        family: str,
-        given: str,
-        gender: str,
-        date_of_birth: str,
-        postcode: str | None = None,
-        email: str | None = None,
-        phone: str | None = None,
-        request_id: str | None = None,
-        correlation_id: str | None = None,
-        timeout: int | None = None,
-    ) -> SearchResults | None:
-        """
-        Search for a patient using demographics.
-
-        Calls ``GET /Patient`` with query parameters and extracts the first matching
-        patient from the Bundle.
-
-        :param family: Patient family name (surname).
-        :param given: Patient given name.
-        :param gender: One of ``'male' | 'female' | 'other' | 'unknown'``.
-        :param date_of_birth: Date of birth in ``YYYY-MM-DD`` format. The query is sent
-            as ``birthdate=eqYYYY-MM-DD`` for exact matching.
-        :param postcode: Optional patient postcode; sent as ``address-postalcode``.
-        :param email: Optional patient email address.
-        :param phone: Optional patient phone number.
-        :param request_id: Optional request ID override.
-        :param correlation_id: Optional correlation ID.
-        :param timeout: Optional per-call timeout in seconds. If not provided,
-            :attr:`timeout` is used.
-        :return: A :class:`SearchResults` instance if a patient can be extracted,
-            otherwise ``None``.
-        :raises ExternalServiceError: If the HTTP request returns an error status and
-            ``raise_for_status()`` raises :class:`requests.HTTPError`.
-        """
-        headers = self._build_headers(
-            request_id=request_id,
-            correlation_id=correlation_id,
-        )
-
-        params: dict[str, str] = {
-            "family": family,
-            "given": given,
-            "gender": gender,
-            # FHIR search "eq" prefix means exact match.
-            "birthdate": f"eq{date_of_birth}",
-        }
-
-        if postcode:
-            # Use address-postalcode (address-postcode is deprecated).
-            params["address-postalcode"] = postcode
-
-        if email:
-            params["email"] = email
-
-        if phone:
-            params["phone"] = phone
-
-        url = f"{self.base_url}/Patient"
-
-        response = requests.get(
-            url,
-            headers=headers,
-            params=params,
-            timeout=timeout or self.timeout,
-        )
-
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as err:
-            raise ExternalServiceError("PDS request failed") from err
-
-        bundle = response.json()
-        return self._extract_single_search_result(bundle)
-
     # --------------- internal helpers for result extraction -----------------
 
     @staticmethod
@@ -342,7 +266,7 @@ class PdsSearch:
         """
         entries: ResultList = cast("ResultList", bundle.get("entry", []))
         if not entries:
-            return None
+            raise RuntimeError("PDS response contains no patient entries")
 
         # Use the first patient entry. Search by NHS number is unique. Search by
         # demographics for an application is allowed to return max one entry from PDS.
@@ -353,13 +277,13 @@ class PdsSearch:
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
-            return None
+            raise RuntimeError("PDS patient resource missing NHS number")
 
         # Select current name record and extract names.
         names = cast("ResultList", patient.get("name", []))
         name_obj = find_current_name_record(names)
         if name_obj is None:
-            return None
+            raise RuntimeError("PDS patient has no current name record")
 
         given_names_list = cast("list[str]", name_obj.get("given", []))
         family_name = str(name_obj.get("family", "")) or ""
