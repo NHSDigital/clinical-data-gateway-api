@@ -2,7 +2,7 @@ name: "Test stage"
 
 env:
   BASE_URL: "http://localhost:5000"
-  HOSTNAME: "localhost"
+  HOST: "localhost"
 
 on:
   workflow_call:

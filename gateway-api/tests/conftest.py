@@ -7,6 +7,11 @@ from typing import cast
 
 import pytest
 import requests
+from dotenv import find_dotenv, load_dotenv
+
+# Load environment variables from .env file in the workspace root
+# find_dotenv searches upward from current directory for .env file
+load_dotenv(find_dotenv())
 
 
 class Client:
@@ -59,7 +64,7 @@ def base_url() -> str:
 @pytest.fixture(scope="module")
 def hostname() -> str:
     """Retrieves the hostname of the currently deployed application."""
-    return _fetch_env_variable("HOSTNAME", str)
+    return _fetch_env_variable("HOST", str)
 
 
 def _fetch_env_variable[T](name: str, t: type[T]) -> T:

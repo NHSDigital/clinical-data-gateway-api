@@ -28,7 +28,7 @@ tests/
 > When running tests the following environment variables need to be provided:
 >
 > - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000.
-> - `HOSTNAME` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
+> - `HOST` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
 
 ### Install Dependencies (if not using Dev container)
 
@@ -189,7 +189,7 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 Shared fixtures in `tests/conftest.py` are available across all test types:
 
 - **`base_url`**: The base URL of the deployed Lambda function (from `BASE_URL` environment variable highlighted above)
-- **`hostname`**: The hostname of the deployed application (from `HOSTNAME` environment variable highlighted above)
+- **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
 - **`client`**: An HTTP client instance for sending requests to the APIs
 
 ## Test Reports
