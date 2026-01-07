@@ -44,7 +44,12 @@ publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
-	@$(docker) run --name gateway-api -p 5000:8080 -d localhost/gateway-api-image
+	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
+		echo "Starting using local docker network ..." ; \
+		$(docker) run --name gateway-api -p 5000:8080 --network gateway-local -d localhost/gateway-api-image ; \
+	else \
+		$(docker) run --name gateway-api -p 5000:8080 -d localhost/gateway-api-image ; \
+	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."

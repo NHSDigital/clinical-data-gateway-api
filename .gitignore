@@ -21,3 +21,4 @@ gateway-api/test-artefacts/
 
 # Any environment files
 **/.env
+**/.DS_Store

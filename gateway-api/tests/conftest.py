@@ -64,7 +64,7 @@ def base_url() -> str:
 @pytest.fixture(scope="module")
 def hostname() -> str:
     """Retrieves the hostname of the currently deployed application."""
-    return _fetch_env_variable("HOSTNAME", str)
+    return _fetch_env_variable("HOST", str)
 
 
 def _fetch_env_variable[T](name: str, t: type[T]) -> T:
