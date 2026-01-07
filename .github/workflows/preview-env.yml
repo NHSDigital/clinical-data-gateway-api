@@ -82,9 +82,15 @@ jobs:
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
 
-          docker build \
-            --tag "${ECR_URL}:${IMAGE_TAG}" \
-            .
+          # For now we are going to simply pull a test image from ECR and re-tag
+          # ready for pushing to the preview env repo.
+          # This is just so the pipeline can be tested while final build steps are worked out.
+          docker pull "${ECR_URL}:latest"
+          docker tag "${ECR_URL}:latest" "${ECR_URL}:${IMAGE_TAG}"
+
+          # docker build \
+          #   --tag "${ECR_URL}:${IMAGE_TAG}" \
+          #   .
 
       - name: Push Docker image to ECR
         if: github.event.action != 'closed'
