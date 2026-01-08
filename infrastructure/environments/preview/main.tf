@@ -42,7 +42,7 @@ locals {
   # e.g. "feature-123.dev.endpoints.clinical-data-gateway.national.nhs.uk"
   effective_host_name = "${var.branch_name}.${local.base_domain}"
 
-  branch_safe = replace(replace(var.branch_name, "/", "-"), " ", "-")
+  branch_safe    = replace(replace(var.branch_name, "/", "-"), " ", "-")
   log_group_name = "/ecs/preview/${local.branch_safe}"
 
   # Default image tag to branch_name if not provided
@@ -68,14 +68,14 @@ resource "aws_lb_target_group" "branch" {
   target_type = "ip"
   vpc_id      = local.vpc_id
 
-#   health_check {
-#     path                = "/"
-#     matcher             = "200-399"
-#     interval            = 30
-#     timeout             = 5
-#     unhealthy_threshold = 2
-#     healthy_threshold   = 2
-#   }
+  #   health_check {
+  #     path                = "/"
+  #     matcher             = "200-399"
+  #     interval            = 30
+  #     timeout             = 5
+  #     unhealthy_threshold = 2
+  #     healthy_threshold   = 2
+  #   }
 }
 
 resource "aws_lb_listener_rule" "branch" {
