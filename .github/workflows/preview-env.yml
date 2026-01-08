@@ -58,7 +58,7 @@ jobs:
               | tr -c 'a-z0-9._-' '-' \
               | sed -E 's/^[^a-z0-9]+//; s/[^a-z0-9]+$//'
           )
-          
+
           # Last resort fallback if everything got stripped
           if [ -z "$SANITIZED_BRANCH" ]; then
             SANITIZED_BRANCH="invalid-branch-name"
