@@ -39,7 +39,7 @@ locals {
   # Strip trailing dot if present
   base_domain = trimsuffix(var.base_domain, ".")
 
-  # e.g. "feature-123.aws.astrosoc.org"
+  # e.g. "feature-123.dev.endpoints.clinical-data-gateway.national.nhs.uk"
   effective_host_name = "${var.branch_name}.${local.base_domain}"
 
   branch_safe = replace(replace(var.branch_name, "/", "-"), " ", "-")
