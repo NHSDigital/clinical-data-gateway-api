@@ -16,10 +16,10 @@ from stubs.stub_pds import PdsFhirApiStub
 
 from gateway_api.pds_search import (
     ExternalServiceError,
-    PdsSearch,
+    PdsClient,
     ResultList,
+    find_current_gp,
     find_current_name_record,
-    find_current_record,
 )
 
 
@@ -28,7 +28,7 @@ class FakeResponse:
     """
     Minimal substitute for :class:`requests.Response` used by tests.
 
-    Only the methods accessed by :class:`gateway_api.pds_search.PdsSearch` are
+    Only the methods accessed by :class:`gateway_api.pds_search.PdsClient` are
     implemented.
 
     :param status_code: HTTP status code.
@@ -67,7 +67,7 @@ def stub() -> PdsFhirApiStub:
     :return: A :class:`stubs.stub_pds.PdsFhirApiStub` with strict header validation
         enabled.
     """
-    # Strict header validation helps ensure PdsSearch sends X-Request-ID correctly.
+    # Strict header validation helps ensure PdsClient sends X-Request-ID correctly.
     return PdsFhirApiStub(strict_headers=True)
 
 
@@ -126,11 +126,8 @@ def mock_requests_get(
             end_user_org_ods=headers.get("NHSD-End-User-Organisation-ODS"),
         )
 
-        # PdsSearch expects a Bundle-like structure on success in these tests.
-        if stub_resp.status_code == 200:
-            body = {"entry": [{"resource": stub_resp.json}]}
-        else:
-            body = stub_resp.json
+        # GET /Patient/{id} returns a single Patient resource on success.
+        body = stub_resp.json
 
         return FakeResponse(
             status_code=stub_resp.status_code, headers=stub_resp.headers, _json=body
@@ -199,7 +196,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
         general_practitioner=[],
     )
 
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -252,7 +249,7 @@ def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
         ],
     )
 
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -293,7 +290,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         general_practitioner=[],
     )
 
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -340,7 +337,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
         general_practitioner=[],
     )
 
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -370,7 +367,7 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     :param mock_requests_get: Patched ``requests.get`` fixture.
     :return: ``None``.
     """
-    pds = PdsSearch(
+    pds = PdsClient(
         auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -432,7 +429,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
         version_id=1,
     )
 
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
@@ -446,9 +443,9 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     assert result.gp_ods_code == "CURRGP"
 
 
-def test_find_current_record_with_today_override() -> None:
+def test_find_current_gp_with_today_override() -> None:
     """
-    Verify that ``find_current_record`` honours an explicit ``today`` value.
+    Verify that ``find_current_gp`` honours an explicit ``today`` value.
 
     :return: ``None``.
     """
@@ -470,9 +467,9 @@ def test_find_current_record_with_today_override() -> None:
         ],
     )
 
-    assert find_current_record(records, today=date(2020, 6, 1)) == records[0]
-    assert find_current_record(records, today=date(2021, 6, 1)) == records[1]
-    assert find_current_record(records, today=date(2019, 6, 1)) is None
+    assert find_current_gp(records, today=date(2020, 6, 1)) == records[0]
+    assert find_current_gp(records, today=date(2021, 6, 1)) == records[1]
+    assert find_current_gp(records, today=date(2019, 6, 1)) is None
 
 
 def test_find_current_name_record_no_current_name() -> None:
@@ -503,71 +500,59 @@ def test_find_current_name_record_no_current_name() -> None:
     assert find_current_name_record(records) is None
 
 
-def test_extract_single_search_result_invalid_bundle_raises_runtime_error() -> None:
+def test_extract_single_search_result_invalid_body_raises_runtime_error() -> None:
     """
-    Verify that ``PdsSearch._extract_single_search_result`` raises ``RuntimeError`` when
-    mandatory bundle/patient content is missing.
+    Verify that ``PdsClient._extract_single_search_result`` raises ``RuntimeError`` when
+    mandatory patient content is missing.
 
     This test asserts that a ``RuntimeError`` is raised when:
 
-    * The bundle contains no entries (``entry`` is missing or empty).
-    * The first entry exists but the patient resource has no NHS number (missing/blank
-        ``id``).
-    * The first entry exists and has an NHS number, but the patient has no *current*
-        name record (i.e. no ``Patient.name`` period covers "today").
+    * The body is a bundle containing no entries (``entry`` is empty).
+    * The body is a patient resource with no NHS number (missing/blank ``id``).
+    * The body is a patient resource with an NHS number,
+        but the patient has no *current*
     """
-    client = PdsSearch(
+    client = PdsClient(
         auth_token="test-token",  # noqa: S106 (test token hardcoded)
         end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
     # 1) Bundle contains no entries.
-    bundle_no_entries: Any = {"entry": []}
+    bundle_no_entries: Any = {"resourceType": "Bundle", "entry": []}
     with pytest.raises(RuntimeError):
         client._extract_single_search_result(bundle_no_entries)  # noqa SLF001 (testing private method)
 
-    # 2) Entry exists but patient has no NHS number (Patient.id missing/blank).
-    bundle_missing_nhs_number: Any = {
-        "entry": [
+    # 2) Patient has no NHS number (Patient.id missing/blank).
+    patient_missing_nhs_number: Any = {
+        "resourceType": "Patient",
+        "name": [
             {
-                "resource": {
-                    "resourceType": "Patient",
-                    "name": [
-                        {
-                            "use": "official",
-                            "family": "Smith",
-                            "given": ["Jane"],
-                            "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                        }
-                    ],
-                    "generalPractitioner": [],
-                }
+                "use": "official",
+                "family": "Smith",
+                "given": ["Jane"],
+                "period": {"start": "1900-01-01", "end": "9999-12-31"},
             }
-        ]
+        ],
+        "generalPractitioner": [],
     }
     with pytest.raises(RuntimeError):
-        client._extract_single_search_result(bundle_missing_nhs_number)  # noqa SLF001 (testing private method)
+        client._extract_single_search_result(patient_missing_nhs_number)  # noqa SLF001 (testing private method)
 
-    # 3) Entry exists with NHS number, but no current name record.
-    bundle_no_current_name: Any = {
-        "entry": [
+    # 3) Patient has NHS number, but no current name record.
+    patient_no_current_name: Any = {
+        "resourceType": "Patient",
+        "id": "9000000009",
+        "name": [
             {
-                "resource": {
-                    "resourceType": "Patient",
-                    "id": "9000000009",
-                    "name": [
-                        {
-                            "use": "official",
-                            "family": "Smith",
-                            "given": ["Jane"],
-                            "period": {"start": "1900-01-01", "end": "1900-12-31"},
-                        }
-                    ],
-                    "generalPractitioner": [],
-                }
+                "use": "official",
+                "family": "Smith",
+                "given": ["Jane"],
+                "period": {"start": "1900-01-01", "end": "1900-12-31"},
             }
-        ]
+        ],
+        "generalPractitioner": [],
     }
+
     with pytest.raises(RuntimeError):
-        client._extract_single_search_result(bundle_no_current_name)  # noqa SLF001 (testing private method)
+        client._extract_single_search_result(patient_no_current_name)  # noqa SLF001 (testing private method)

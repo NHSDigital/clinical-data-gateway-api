@@ -1,13 +1,6 @@
 """
 PDS (Personal Demographics Service) FHIR R4 patient lookup client.
 
-Terminology
------------
-
-FHIR elements such as ``Patient.name`` and ``Patient.generalPractitioner`` can contain
-multiple records, each valid for a specific time range (a FHIR ``Period``). This module
-selects the record that is *current* for a given date.
-
 Contracts enforced by the helper functions:
 
 * ``Patient.name[]`` records passed to :func:`find_current_name_record` must contain::
@@ -75,7 +68,7 @@ class SearchResults:
     gp_ods_code: str | None
 
 
-class PdsSearch:
+class PdsClient:
     """
     Simple client for PDS FHIR R4 patient retrieval.
 
@@ -95,7 +88,7 @@ class PdsSearch:
 
     **Usage example**::
 
-        pds = PdsSearch(
+        pds = PdsClient(
             auth_token="YOUR_ACCESS_TOKEN",
             end_user_org_ods="A12345",
             base_url="https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4",
@@ -177,9 +170,8 @@ class PdsSearch:
         """
         Retrieve a patient by NHS number.
 
-        Calls ``GET /Patient/{nhs_number}``, expects a Bundle-like JSON response in the
-        shape used by the unit test stub (``{"entry": [{"resource": <Patient>}]}``),
-        then extracts a single :class:`SearchResults`.
+        Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
+        resource on success, then extracts a single :class:`SearchResults`.
 
         :param nhs_number: NHS number to search for.
         :param request_id: Optional request ID to reuse for retries; if not supplied a
@@ -212,8 +204,8 @@ class PdsSearch:
         except requests.HTTPError as err:
             raise ExternalServiceError("PDS request failed") from err
 
-        bundle = response.json()
-        return self._extract_single_search_result(bundle)
+        body = response.json()
+        return self._extract_single_search_result(body)
 
     # --------------- internal helpers for result extraction -----------------
 
@@ -238,7 +230,7 @@ class PdsSearch:
         if len(general_practitioners) == 0:
             return None
 
-        gp = find_current_record(general_practitioners)
+        gp = find_current_gp(general_practitioners)
         if gp is None:
             return None
 
@@ -249,31 +241,39 @@ class PdsSearch:
         return None if ods_code == "None" else ods_code
 
     def _extract_single_search_result(
-        self, bundle: ResultStructureDict
+        self, body: ResultStructureDict
     ) -> SearchResults | None:
         """
-        Extract a single :class:`SearchResults` from a FHIR Bundle.
+        Extract a single :class:`SearchResults` from a Patient response.
 
-        The code assumes that the API returns either zero matches (empty entry list)
-        or a single match; if multiple entries are present, the first entry is used.
+        This helper accepts either:
+        * a single FHIR Patient resource (as returned by ``GET /Patient/{id}``), or
+        * a FHIR Bundle containing Patient entries (as typically returned by searches).
 
-        :param bundle: Parsed JSON body containing at minimum an ``entry`` list, where
-            the first entry contains a Patient resource under ``resource``.
+        For Bundle inputs, the code assumes either zero matches (empty entry list) or a
+        single match; if multiple entries are present, the first entry is used.
+        :param body: Parsed JSON body containing either a Patient resource or a Bundle
+            whose first entry contains a Patient resource under ``resource``.
         :return: A populated :class:`SearchResults` if extraction succeeds, otherwise
             ``None``.
-        :raises KeyError: If required fields for current record selection
-            (period fields) are missing in the evaluated structures.
         """
-        entries: ResultList = cast("ResultList", bundle.get("entry", []))
-        if not entries:
-            raise RuntimeError("PDS response contains no patient entries")
+        # Accept either:
+        # 1) Patient (GET /Patient/{id})
+        # 2) Bundle with Patient in entry[0].resource (search endpoints)
+        if str(body.get("resourceType", "")) == "Patient":
+            patient = body
+        else:
+            entries: ResultList = cast("ResultList", body.get("entry", []))
+            if not entries:
+                raise RuntimeError("PDS response contains no patient entries")
 
-        # Use the first patient entry. Search by NHS number is unique. Search by
-        # demographics for an application is allowed to return max one entry from PDS.
-        # (search by a human can return more, but presumably we count as an application)
-        # See MaxResults parameter in the PDS OpenAPI spec.
-        entry = entries[0]
-        patient = cast("ResultStructureDict", entry.get("resource", {}))
+            # Use the first patient entry. Search by NHS number is unique. Search by
+            # demographics for an application is allowed to return max one entry from
+            # PDS. Search by a human can return more, but presumably we count as an
+            # application.
+            # See MaxResults parameter in the PDS OpenAPI spec.
+            entry = entries[0]
+            patient = cast("ResultStructureDict", entry.get("resource", {}))
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
@@ -281,12 +281,12 @@ class PdsSearch:
 
         # Select current name record and extract names.
         names = cast("ResultList", patient.get("name", []))
-        name_obj = find_current_name_record(names)
-        if name_obj is None:
+        current_name = find_current_name_record(names)
+        if current_name is None:
             raise RuntimeError("PDS patient has no current name record")
 
-        given_names_list = cast("list[str]", name_obj.get("given", []))
-        family_name = str(name_obj.get("family", "")) or ""
+        given_names_list = cast("list[str]", current_name.get("given", []))
+        family_name = str(current_name.get("family", "")) or ""
         given_names_str = " ".join(given_names_list).strip()
 
         # Extract GP ODS code if a current GP record exists.
@@ -301,7 +301,7 @@ class PdsSearch:
         )
 
 
-def find_current_record(
+def find_current_gp(
     records: ResultList, today: date | None = None
 ) -> ResultStructureDict | None:
     """
