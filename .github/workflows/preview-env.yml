@@ -109,7 +109,7 @@ jobs:
 
       - name: Terraform init (apply)
         if: github.event.action != 'closed'
-        working-directory: preview
+        working-directory: infrastructure/environments/preview
         run: |
           terraform init \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
@@ -118,12 +118,11 @@ jobs:
 
       - name: Terraform apply preview env
         if: github.event.action != 'closed'
-        working-directory: preview
+        working-directory: infrastructure/environments/preview
         env:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
-          TF_VAR_base_domain: "aws.astrosoc.org"
         run: |
           terraform apply -auto-approve
 
@@ -131,7 +130,7 @@ jobs:
 
       - name: Terraform init (destroy)
         if: github.event.action == 'closed'
-        working-directory: preview
+        working-directory: infrastructure/environments/preview
         run: |
           terraform init \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
@@ -140,11 +139,10 @@ jobs:
 
       - name: Terraform destroy preview env
         if: github.event.action == 'closed'
-        working-directory: preview
+        working-directory: infrastructure/environments/preview
         env:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
-          TF_VAR_base_domain: "aws.astrosoc.org"
         run: |
           terraform destroy -auto-approve
