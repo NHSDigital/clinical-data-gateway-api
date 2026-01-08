@@ -52,9 +52,17 @@ jobs:
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
 
           # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
-          SANITIZED_BRANCH=$(echo "$RAW_BRANCH" \
-            | tr '[:upper:]' '[:lower:]' \
-            | tr -c 'a-z0-9._-' '-')
+          SANITIZED_BRANCH=$(
+            printf '%s' "$RAW_BRANCH" \
+              | tr '[:upper:]' '[:lower:]' \
+              | tr -c 'a-z0-9._-' '-' \
+              | sed -E 's/^[^a-z0-9]+//; s/[^a-z0-9]+$//'
+          )
+          
+          # Last resort fallback if everything got stripped
+          if [ -z "$SANITIZED_BRANCH" ]; then
+            SANITIZED_BRANCH="invalid-branch-name"
+          fi
 
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
           echo "branch_name=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
