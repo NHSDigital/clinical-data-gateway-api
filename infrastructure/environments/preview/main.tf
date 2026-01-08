@@ -133,6 +133,28 @@ resource "aws_iam_role" "task" {
   })
 }
 
+resource "aws_iam_role_policy" "task_exec_command" {
+  name = "ecs-preview-${var.branch_name}-exec-command"
+  role = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel",
+        "logs:DescribeLogGroups",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      Resource = "*"
+    }]
+  })
+}
+
 resource "aws_cloudwatch_log_group" "branch" {
   name              = local.log_group_name
   retention_in_days = var.log_retention_days
@@ -185,11 +207,12 @@ resource "aws_ecs_task_definition" "branch" {
 }
 
 resource "aws_ecs_service" "branch" {
-  name            = "preview-${var.branch_name}"
-  cluster         = data.aws_ecs_cluster.cluster.id
-  task_definition = aws_ecs_task_definition.branch.arn
-  desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+  name                   = "preview-${var.branch_name}"
+  cluster                = data.aws_ecs_cluster.cluster.id
+  task_definition        = aws_ecs_task_definition.branch.arn
+  desired_count          = var.desired_count
+  launch_type            = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets         = local.private_subnet_ids
