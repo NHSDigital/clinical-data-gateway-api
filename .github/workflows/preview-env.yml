@@ -109,7 +109,7 @@ jobs:
 
       - name: Terraform init (apply)
         if: github.event.action != 'closed'
-        working-directory: preview-env
+        working-directory: preview
         run: |
           terraform init \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
@@ -118,7 +118,7 @@ jobs:
 
       - name: Terraform apply preview env
         if: github.event.action != 'closed'
-        working-directory: preview-env
+        working-directory: preview
         env:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
@@ -131,7 +131,7 @@ jobs:
 
       - name: Terraform init (destroy)
         if: github.event.action == 'closed'
-        working-directory: preview-env
+        working-directory: preview
         run: |
           terraform init \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
@@ -140,7 +140,7 @@ jobs:
 
       - name: Terraform destroy preview env
         if: github.event.action == 'closed'
-        working-directory: preview-env
+        working-directory: preview
         env:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
