@@ -74,14 +74,7 @@ class PdsClient:
 
     * :meth:`search_patient_by_nhs_number` - calls ``GET /Patient/{nhs_number}``
 
-    There is another operation implemented for searching by demographics:
-
-    * :meth:`search_patient_by_details` - calls ``GET /Patient`` with query parameters
-
-    ...but this is currently not fully tested. Its implementation may be finalised
-    in a later phase if it is required.
-
-    Both methods return a :class:`SearchResults` instance when a patient can be
+    This method returns a :class:`SearchResults` instance when a patient can be
     extracted, otherwise ``None``.
 
     **Usage example**::
