@@ -539,20 +539,27 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
     with pytest.raises(RuntimeError):
         client._extract_single_search_result(patient_missing_nhs_number)  # noqa SLF001 (testing private method)
 
-    # 3) Patient has NHS number, but no current name record.
-    patient_no_current_name: Any = {
-        "resourceType": "Patient",
-        "id": "9000000009",
-        "name": [
+    # 3) Bundle entry exists with NHS number, but no current name record.
+    bundle_no_current_name: Any = {
+        "resourceType": "Bundle",
+        "entry": [
             {
-                "use": "official",
-                "family": "Smith",
-                "given": ["Jane"],
-                "period": {"start": "1900-01-01", "end": "1900-12-31"},
+                "resource": {
+                    "resourceType": "Patient",
+                    "id": "9000000009",
+                    "name": [
+                        {
+                            "use": "official",
+                            "family": "Smith",
+                            "given": ["Jane"],
+                            "period": {"start": "1900-01-01", "end": "1900-12-31"},
+                        }
+                    ],
+                    "generalPractitioner": [],
+                }
             }
         ],
-        "generalPractitioner": [],
     }
 
     with pytest.raises(RuntimeError):
-        client._extract_single_search_result(patient_no_current_name)  # noqa SLF001 (testing private method)
+        client._extract_single_search_result(bundle_no_current_name)  # noqa SLF001 (testing private method)
