@@ -23,16 +23,14 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from typing import TypeAlias, cast
+from typing import cast
 
 import requests
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
-ResultStructure: TypeAlias = (
-    str | dict[str, "ResultStructure"] | list["ResultStructure"]
-)
-ResultStructureDict: TypeAlias = dict[str, ResultStructure]
-ResultList: TypeAlias = list[ResultStructureDict]
+type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
+type ResultStructureDict = dict[str, ResultStructure]
+type ResultList = list[ResultStructureDict]
 
 
 class ExternalServiceError(Exception):
