@@ -18,8 +18,6 @@ from gateway_api.pds_search import (
     ExternalServiceError,
     PdsClient,
     ResultList,
-    find_current_gp,
-    find_current_name_record,
 )
 
 
@@ -449,6 +447,9 @@ def test_find_current_gp_with_today_override() -> None:
 
     :return: ``None``.
     """
+    pds = PdsClient("test-token", "A12345")
+    pds_ignore_dates = PdsClient("test-token", "A12345", ignore_dates=True)
+
     records = cast(
         "ResultList",
         [
@@ -467,9 +468,10 @@ def test_find_current_gp_with_today_override() -> None:
         ],
     )
 
-    assert find_current_gp(records, today=date(2020, 6, 1)) == records[0]
-    assert find_current_gp(records, today=date(2021, 6, 1)) == records[1]
-    assert find_current_gp(records, today=date(2019, 6, 1)) is None
+    assert pds.find_current_gp(records, today=date(2020, 6, 1)) == records[0]
+    assert pds.find_current_gp(records, today=date(2021, 6, 1)) == records[1]
+    assert pds.find_current_gp(records, today=date(2019, 6, 1)) is None
+    assert pds_ignore_dates.find_current_gp(records, today=date(2019, 6, 1)) is not None
 
 
 def test_find_current_name_record_no_current_name() -> None:
@@ -479,6 +481,9 @@ def test_find_current_name_record_no_current_name() -> None:
 
     :return: ``None``.
     """
+    pds = PdsClient("test-token", "A12345")
+    pds_ignore_date = PdsClient("test-token", "A12345", ignore_dates=True)
+
     records = cast(
         "ResultList",
         [
@@ -497,7 +502,8 @@ def test_find_current_name_record_no_current_name() -> None:
         ],
     )
 
-    assert find_current_name_record(records) is None
+    assert pds.find_current_name_record(records) is None
+    assert pds_ignore_date.find_current_name_record(records) is not None
 
 
 def test_extract_single_search_result_invalid_body_raises_runtime_error() -> None:

@@ -103,6 +103,7 @@ class PdsClient:
         base_url: str = SANDBOX_URL,
         nhsd_session_urid: str | None = None,
         timeout: int = 10,
+        ignore_dates: bool = False,
     ) -> None:
         """
         Create a PDS client.
@@ -113,12 +114,15 @@ class PdsClient:
             :attr:`INT_URL`, :attr:`PROD_URL`). Trailing slashes are stripped.
         :param nhsd_session_urid: Optional ``NHSD-Session-URID`` header value.
         :param timeout: Default timeout in seconds for HTTP calls.
+        :param ignore_dates: If ``True`` just get the most recent name or GP record,
+            ignoring the date ranges.
         """
         self.auth_token = auth_token
         self.end_user_org_ods = end_user_org_ods
         self.base_url = base_url.rstrip("/")
         self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
+        self.ignore_dates = ignore_dates
 
     def _build_headers(
         self,
@@ -134,11 +138,14 @@ class PdsClient:
         :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
-            "Authorization": f"Bearer {self.auth_token}",
             "X-Request-ID": request_id or str(uuid.uuid4()),
             "NHSD-End-User-Organisation-ODS": self.end_user_org_ods,
             "Accept": "application/fhir+json",
         }
+
+        # Trying to pass an auth token to the sandbox makes PDS unhappy
+        if self.base_url != self.SANDBOX_URL:
+            headers["Authorization"] = f"Bearer {self.auth_token}"
 
         # NHSD-Session-URID is required in some flows; include only if configured.
         if self.nhsd_session_urid:
@@ -200,8 +207,7 @@ class PdsClient:
 
     # --------------- internal helpers for result extraction -----------------
 
-    @staticmethod
-    def _get_gp_ods_code(general_practitioners: ResultList) -> str | None:
+    def _get_gp_ods_code(self, general_practitioners: ResultList) -> str | None:
         """
         Extract the current GP ODS code from ``Patient.generalPractitioner``.
 
@@ -221,7 +227,7 @@ class PdsClient:
         if len(general_practitioners) == 0:
             return None
 
-        gp = find_current_gp(general_practitioners)
+        gp = self.find_current_gp(general_practitioners)
         if gp is None:
             return None
 
@@ -272,7 +278,7 @@ class PdsClient:
 
         # Select current name record and extract names.
         names = cast("ResultList", patient.get("name", []))
-        current_name = find_current_name_record(names)
+        current_name = self.find_current_name_record(names)
         if current_name is None:
             raise RuntimeError("PDS patient has no current name record")
 
@@ -291,79 +297,88 @@ class PdsClient:
             gp_ods_code=gp_ods_code,
         )
 
+    def find_current_gp(
+        self, records: ResultList, today: date | None = None
+    ) -> ResultStructureDict | None:
+        """
+        Select the current record from a ``generalPractitioner`` list.
 
-def find_current_gp(
-    records: ResultList, today: date | None = None
-) -> ResultStructureDict | None:
-    """
-    Select the current record from a ``generalPractitioner`` list.
+        A record is "current" if its ``identifier.period`` covers ``today`` (inclusive):
 
-    A record is "current" if its ``identifier.period`` covers ``today`` (inclusive):
+        ``start <= today <= end``
 
-    ``start <= today <= end``
+        Or else if self.ignore_dates is True, the last record in the list is returned.
 
-    The list may be in any of the following states:
+        The list may be in any of the following states:
 
-    * empty
-    * contains one or more records, none current
-    * contains one or more records, exactly one current
+        * empty
+        * contains one or more records, none current
+        * contains one or more records, exactly one current
 
-    :param records: List of ``generalPractitioner`` records.
-    :param today: Optional override date, intended for deterministic tests.
-        If not supplied, the current UTC date is used.
-    :return: The first record whose ``identifier.period`` covers ``today``, or ``None``
-        if no record is current.
-    :raises KeyError: If required keys are missing for a record being evaluated.
-    :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
-    """
-    if today is None:
-        today = datetime.now(timezone.utc).date()
+        :param records: List of ``generalPractitioner`` records.
+        :param today: Optional override date, intended for deterministic tests.
+            If not supplied, the current UTC date is used.
+        :return: The first record whose ``identifier.period`` covers ``today``, or
+            ``None`` if no record is current.
+        :raises KeyError: If required keys are missing for a record being evaluated.
+        :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
+        """
+        if today is None:
+            today = datetime.now(timezone.utc).date()
 
-    for record in records:
-        identifier = cast("ResultStructureDict", record["identifier"])
-        periods = cast("dict[str, str]", identifier["period"])
-        start_str = periods["start"]
-        end_str = periods["end"]
+        if self.ignore_dates:
+            return records[-1]
 
-        start = date.fromisoformat(start_str)
-        end = date.fromisoformat(end_str)
+        for record in records:
+            identifier = cast("ResultStructureDict", record["identifier"])
+            periods = cast("dict[str, str]", identifier["period"])
+            start_str = periods["start"]
+            end_str = periods["end"]
 
-        if start <= today <= end:
-            return record
+            start = date.fromisoformat(start_str)
+            end = date.fromisoformat(end_str)
 
-    return None
+            if start <= today <= end:
+                return record
 
+        return None
 
-def find_current_name_record(
-    records: ResultList, today: date | None = None
-) -> ResultStructureDict | None:
-    """
-    Select the current record from a ``Patient.name`` list.
+    def find_current_name_record(
+        self, records: ResultList, today: date | None = None
+    ) -> ResultStructureDict | None:
+        """
+        Select the current record from a ``Patient.name`` list.
 
-    A record is "current" if its ``period`` covers ``today`` (inclusive):
+        A record is "current" if its ``period`` covers ``today`` (inclusive):
 
-    ``start <= today <= end``
+        ``start <= today <= end``
 
-    :param records: List of ``Patient.name`` records.
-    :param today: Optional override date, intended for deterministic tests.
-        If not supplied, the current UTC date is used.
-    :return: The first name record whose ``period`` covers ``today``, or ``None`` if no
-        record is current.
-    :raises KeyError: If required keys (``period.start`` / ``period.end``) are missing.
-    :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
-    """
-    if today is None:
-        today = datetime.now(timezone.utc).date()
+        Or else if self.ignore_dates is True, the last record in the list is returned.
 
-    for record in records:
-        periods = cast("dict[str, str]", record["period"])
-        start_str = periods["start"]
-        end_str = periods["end"]
+        :param records: List of ``Patient.name`` records.
+        :param today: Optional override date, intended for deterministic tests.
+            If not supplied, the current UTC date is used.
+        :return: The first name record whose ``period`` covers ``today``, or ``None`` if
+            no record is current.
+        :raises KeyError: If required keys (``period.start`` / ``period.end``) are
+            missing.
+        :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
+        """
+        if today is None:
+            today = datetime.now(timezone.utc).date()
 
-        start = date.fromisoformat(start_str)
-        end = date.fromisoformat(end_str)
+        if self.ignore_dates:
+            return records[-1]
 
-        if start <= today <= end:
-            return record
+        for record in records:
+            periods = cast("dict[str, str]", record["period"])
+            start_str = periods["start"]
+            end_str = periods["end"]
 
-    return None
+            start = date.fromisoformat(start_str)
+            end = date.fromisoformat(end_str)
+
+            if start <= today <= end:
+                return record
+
+        return None
