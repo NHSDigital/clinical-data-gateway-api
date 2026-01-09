@@ -18,7 +18,7 @@ variable "image_tag" {
 variable "container_port" {
   description = "The port on which the container listens."
   type        = number
-  default     = 80
+  default     = 8080
 }
 
 variable "desired_count" {

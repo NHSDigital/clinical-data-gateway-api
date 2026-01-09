@@ -65,20 +65,20 @@ locals {
 ############################
 
 resource "aws_lb_target_group" "branch" {
-  name        = trim(substr(replace(var.branch_name, ".", "-"), 0, 32), "-")
+  name        = trim(substr(replace(local.branch_safe, ".", "-"), 0, 32), "-")
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = local.vpc_id
 
-  #   health_check {
-  #     path                = "/"
-  #     matcher             = "200-399"
-  #     interval            = 30
-  #     timeout             = 5
-  #     unhealthy_threshold = 2
-  #     healthy_threshold   = 2
-  #   }
+  health_check {
+    path                = "/"
+    matcher             = "200-499"
+    interval            = 30
+    timeout             = 5
+    unhealthy_threshold = 2
+    healthy_threshold   = 2
+  }
 }
 
 resource "aws_lb_listener_rule" "branch" {

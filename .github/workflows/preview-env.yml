@@ -11,6 +11,7 @@ env:
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   CORE_STATE_KEY: "dev/terraform.tfstate"
   PREVIEW_STATE_PREFIX: "dev/preview/"
+  python_version: "3.14"
 
 jobs:
   preview:
@@ -85,21 +86,21 @@ jobs:
           fi
           echo "alb_rule_priority=$PRIORITY" >> $GITHUB_OUTPUT
 
+      - name: Setup Python project
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+
       - name: Build Docker image
         if: github.event.action != 'closed'
+        env:
+          PYTHON_VERSION: ${{ env.python_version }}
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
 
-          # For now we are going to simply pull a test image from ECR and re-tag
-          # ready for pushing to the preview env repo.
-          # This is just so the pipeline can be tested while final build steps are worked out.
-          docker pull "${ECR_URL}:latest"
-          docker tag "${ECR_URL}:latest" "${ECR_URL}:${IMAGE_TAG}"
-
-          # docker build \
-          #   --tag "${ECR_URL}:${IMAGE_TAG}" \
-          #   .
+          make build IMAGE_TAG="${IMAGE_TAG}" ECR_URL="${ECR_URL}"
 
       - name: Push Docker image to ECR
         if: github.event.action != 'closed'

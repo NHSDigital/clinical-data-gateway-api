@@ -64,9 +64,9 @@ ENV PATH="$PYENV_ROOT/bin:$PATH"
 
 # Install Python (via pyenv) and intialize it.
 RUN curl --proto "=https" -fsSL https://pyenv.run | bash && \
-/.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
-/.pyenv/bin/pyenv global ${PYTHON_VERSION} && \
-/.pyenv/bin/pyenv init -
+    /.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
+    /.pyenv/bin/pyenv global ${PYTHON_VERSION} && \
+    /.pyenv/bin/pyenv init -
 
 COPY /resources/.bashrc /root/.bashrc
 
@@ -79,17 +79,17 @@ WORKDIR /asdf
 
 # If we're running on an arm64 architecture download the arm64 executeable.
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \
-    echo "Installing ARM asdf executable..." ; \
-    wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \
-else \
-    echo "Installing x86 asdf executable..." ; \
-    wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-amd64.tar.gz"; \
-fi && \
+        echo "Installing ARM asdf executable..." && \
+        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \
+    else \
+        echo "Installing x86 asdf executable..." && \
+        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-amd64.tar.gz"; \
+    fi && \
+    tar -xvf asdf.tar.gz && \
 
-tar -xvf asdf.tar.gz && \
+    # Install editorconfig-checker to validate formatting.
+    mkdir /editorconfig
 
-# Install editorconfig-checker to validate formatting.
-mkdir /editorconfig
 WORKDIR /editorconfig
 
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \
@@ -112,34 +112,37 @@ WORKDIR /resources
 # Run install other development plugins via asdf.
 RUN bash "./install-asdf-plugins.sh"
 
-WORKDIR /workspace/clinical-data-gateway-api
+WORKDIR /workspaces/clinical-data-gateway-api
 
 # Install pipx and poetry
 ENV PIPX_BIN_DIR="/pipx/bin"
 ENV PIPX_HOME="/pipx/lib"
-RUN bash -c "source ~/.bashrc && pip install --root-user-action ignore pipx && pipx install poetry && pipx install ruff"
+RUN bash -c "source ~/.bashrc && \
+    pip install --root-user-action ignore pipx && \
+    pipx install poetry && \
+    pipx install ruff"
 ENV PATH="$PIPX_BIN_DIR:$PATH"
 
 # Create a virtual environment for development
-RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" \
+RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" && \
     # Install markdownlint-cli
-    && npm install -g --ignore-scripts markdownlint-cli \
-    && export PATH \
-    && addgroup dev \
+    npm install -g --ignore-scripts markdownlint-cli && \
+    export PATH && \
+    addgroup dev && \
 
     # Allow access to pyenv tools for dev users.
-    && chown -R root:dev /.pyenv \
-    && chmod -R g+w /.pyenv \
+    chown -R root:dev /.pyenv && \
+    chmod -R g+w /.pyenv && \
 
     # Allow access to asdf tools for dev users.
-    && chown -R root:dev /.asdf \
-    && chmod -R g+w /.asdf \
+    chown -R root:dev /.asdf && \
+    chmod -R g+w /.asdf && \
 
     # Create a new user based on the default vscode user.
-    && groupmod -n gateway-dev vscode \
-    && usermod -l gateway-dev -d /home/gateway-dev -m vscode \
-    && addgroup gateway-dev dev \
-    && addgroup gateway-dev wheel \
+    groupmod -n gateway-dev vscode && \
+    usermod -l gateway-dev -d /home/gateway-dev -m vscode && \
+    addgroup gateway-dev dev && \
+    addgroup gateway-dev wheel \
 
     # Change default shell to bash for gateway-dev user.
     && chsh -s /bin/bash gateway-dev
