@@ -592,3 +592,67 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
     assert result.nhs_number == "9000000009"
     assert result.given_names == ""
     assert result.family_name == ""
+
+
+def test_search_patient_by_nhs_number_ignore_dates_true_handles_missing_name_or_gp(
+    stub: PdsFhirApiStub,
+    mock_requests_get: dict[str, Any],
+) -> None:
+    """
+    Verify that when ignore_dates=True the client tolerates:
+    * no Patient.name records (names returned as empty strings)
+    * no Patient.generalPractitioner records (gp_ods_code returned as None)
+    """
+    # Case 1: Patient returned with no "name" field at all.
+    stub.upsert_patient(
+        nhs_number="9000000100",
+        patient={
+            "resourceType": "Patient",
+            # No "name"
+            "generalPractitioner": [],
+        },
+        version_id=1,
+    )
+
+    client = PdsClient(
+        auth_token="test-token",  # noqa: S106 (test token hardcoded)
+        end_user_org_ods="A12345",
+        base_url="https://example.test/personal-demographics/FHIR/R4",
+        ignore_dates=True,
+    )
+
+    result_no_name = client.search_patient_by_nhs_number(9000000100)
+
+    assert result_no_name is not None
+    assert result_no_name.nhs_number == "9000000100"
+    assert result_no_name.given_names == ""
+    assert result_no_name.family_name == ""
+    assert result_no_name.gp_ods_code is None
+
+    # Case 2: Patient returned with a name, but no "generalPractitioner" field at all.
+    # Also use an out-of-date period to demonstrate ignore_dates=True still selects
+    # a record.
+    stub.upsert_patient(
+        nhs_number="9000000101",
+        patient={
+            "resourceType": "Patient",
+            "name": [
+                {
+                    "use": "official",
+                    "family": "Jones",
+                    "given": ["Gwyneth"],
+                    "period": {"start": "1900-01-01", "end": "1900-12-31"},
+                }
+            ],
+            # No "generalPractitioner"
+        },
+        version_id=1,
+    )
+
+    result_no_gp = client.search_patient_by_nhs_number(9000000101)
+
+    assert result_no_gp is not None
+    assert result_no_gp.nhs_number == "9000000101"
+    assert result_no_gp.given_names == "Gwyneth"
+    assert result_no_gp.family_name == "Jones"
+    assert result_no_gp.gp_ods_code is None
