@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage: run-test.sh <test-type>
 # Where test-type is one of: unit, integration, contract, schema, acceptance
 
-if [ $# -ne 1 ]; then
+if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <test-type>"
   echo "Where test-type is one of: unit, integration, contract, schema, acceptance"
   exit 1
@@ -16,15 +16,15 @@ TEST_TYPE="$1"
 
 # Validate test type early
 if [[ ! "$TEST_TYPE" =~ ^(unit|integration|contract|schema|acceptance)$ ]]; then
-  echo "Error: Unknown test type '$TEST_TYPE'"
-  echo "Valid types are: unit, integration, contract, schema, acceptance"
+  echo "Error: Unknown test type '$TEST_TYPE'" >&2
+  echo "Valid types are: unit, integration, contract, schema, acceptance" >&2
   exit 1
 fi
 
 cd "$(git rev-parse --show-toplevel)"
 
 # Determine test path based on test type
-if [ "$TEST_TYPE" = "unit" ]; then
+if [[ "$TEST_TYPE" = "unit" ]]; then
   TEST_PATH="test_*.py src/*/test_*.py"
 else
   TEST_PATH="tests/${TEST_TYPE}/"
@@ -36,7 +36,7 @@ mkdir -p test-artefacts
 echo "Running ${TEST_TYPE} tests..."
 
 # Set coverage path based on test type
-if [ "$TEST_TYPE" = "unit" ]; then
+if [[ "$TEST_TYPE" = "unit" ]]; then
   COV_PATH="."
 else
   COV_PATH="src/gateway_api"

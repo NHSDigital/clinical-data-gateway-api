@@ -26,9 +26,8 @@ else \
     rm -r /resources/dev-certificates; \
 fi
 
-RUN apk update
-
-RUN apk add --no-cache --update bash \
+RUN apk update && \
+    apk add --no-cache --update bash \
     # Required to manage user permissions.
     doas \
     shadow \
@@ -63,14 +62,11 @@ RUN echo "permit :wheel" >> /etc/doas.conf \
 ENV PYENV_ROOT="/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 
-# Install Python (via pyenv)
-RUN curl -fsSL https://pyenv.run | bash
-
-RUN /.pyenv/bin/pyenv install ${PYTHON_VERSION}
-RUN /.pyenv/bin/pyenv global ${PYTHON_VERSION}
-
-# Initialise pyenv for use.
-RUN /.pyenv/bin/pyenv init -
+# Install Python (via pyenv) and intialize it.
+RUN curl --proto "=https" -fsSL https://pyenv.run | bash && \
+/.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
+/.pyenv/bin/pyenv global ${PYTHON_VERSION} && \
+/.pyenv/bin/pyenv init -
 
 COPY /resources/.bashrc /root/.bashrc
 
@@ -88,12 +84,12 @@ RUN if [ "$(uname -m)" = "aarch64" ] ; then \
 else \
     echo "Installing x86 asdf executable..." ; \
     wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-amd64.tar.gz"; \
-fi
+fi && \
 
-RUN tar -xvf asdf.tar.gz
+tar -xvf asdf.tar.gz && \
 
 # Install editorconfig-checker to validate formatting.
-RUN mkdir /editorconfig
+mkdir /editorconfig
 WORKDIR /editorconfig
 
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \

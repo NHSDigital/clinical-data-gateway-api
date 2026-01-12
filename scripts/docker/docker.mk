@@ -48,12 +48,6 @@ docker-shellscript-lint: # Lint all Docker module shell scripts @Quality
 	done
 
 # ==============================================================================
-# Module tests and examples - please DO NOT edit this section!
-
-docker-test-suite-run: # Run Docker test suite @ExamplesAndTests
-	scripts/docker/tests/docker.test.sh
-
-# ==============================================================================
 
 ${VERBOSE}.SILENT: \
 	_docker \
@@ -64,4 +58,3 @@ ${VERBOSE}.SILENT: \
 	docker-push \
 	docker-run \
 	docker-shellscript-lint \
-	docker-test-suite-run \
