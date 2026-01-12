@@ -200,7 +200,9 @@ class PdsClient:
             # In production, failures surface here (4xx/5xx -> HTTPError).
             response.raise_for_status()
         except requests.HTTPError as err:
-            raise ExternalServiceError("PDS request failed") from err
+            raise ExternalServiceError(
+                f"PDS request failed: {err.response.reason}"
+            ) from err
 
         body = response.json()
         return self._extract_single_search_result(body)
@@ -279,12 +281,14 @@ class PdsClient:
         # Select current name record and extract names.
         names = cast("ResultList", patient.get("name", []))
         current_name = self.find_current_name_record(names)
-        if current_name is None:
-            raise RuntimeError("PDS patient has no current name record")
 
-        given_names_list = cast("list[str]", current_name.get("given", []))
-        family_name = str(current_name.get("family", "")) or ""
-        given_names_str = " ".join(given_names_list).strip()
+        if current_name is not None:
+            given_names_list = cast("list[str]", current_name.get("given", []))
+            family_name = str(current_name.get("family", "")) or ""
+            given_names_str = " ".join(given_names_list).strip()
+        else:
+            given_names_str = ""
+            family_name = ""
 
         # Extract GP ODS code if a current GP record exists.
         gp_list = cast("ResultList", patient.get("generalPractitioner", []))
@@ -327,7 +331,10 @@ class PdsClient:
             today = datetime.now(timezone.utc).date()
 
         if self.ignore_dates:
-            return records[-1]
+            if len(records) > 0:
+                return records[-1]
+            else:
+                return None
 
         for record in records:
             identifier = cast("ResultStructureDict", record["identifier"])
@@ -368,7 +375,10 @@ class PdsClient:
             today = datetime.now(timezone.utc).date()
 
         if self.ignore_dates:
-            return records[-1]
+            if len(records) > 0:
+                return records[-1]
+            else:
+                return None
 
         for record in records:
             periods = cast("dict[str, str]", record["period"])

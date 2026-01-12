@@ -37,6 +37,7 @@ class FakeResponse:
     status_code: int
     headers: dict[str, str]
     _json: dict[str, Any]
+    reason: str = ""
 
     def json(self) -> dict[str, Any]:
         """
@@ -54,7 +55,10 @@ class FakeResponse:
         :raises requests.HTTPError: If the response status is not 200.
         """
         if self.status_code != 200:
-            raise requests.HTTPError(f"{self.status_code} Error")
+            err = requests.HTTPError(f"{self.status_code} Error")
+            # requests attaches a Response to HTTPError.response; the client expects it
+            err.response = self
+            raise err
 
 
 @pytest.fixture
@@ -126,9 +130,24 @@ def mock_requests_get(
 
         # GET /Patient/{id} returns a single Patient resource on success.
         body = stub_resp.json
+        # Populate a reason phrase so PdsClient can surface it in ExternalServiceError.
+        reason = ""
+        if stub_resp.status_code != 200:
+            # Try to use OperationOutcome display text if present.
+            issue0 = (stub_resp.json.get("issue") or [{}])[0]
+            details = issue0.get("details") or {}
+            coding0 = (details.get("coding") or [{}])[0]
+            reason = str(coding0.get("display") or "")
+        if not reason:
+            reason = {400: "Bad Request", 404: "Not Found"}.get(
+                stub_resp.status_code, ""
+            )
 
         return FakeResponse(
-            status_code=stub_resp.status_code, headers=stub_resp.headers, _json=body
+            status_code=stub_resp.status_code,
+            headers=stub_resp.headers,
+            _json=body,
+            reason=reason,
         )
 
     monkeypatch.setattr(requests, "get", _fake_get)
@@ -567,5 +586,9 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
         ],
     }
 
-    with pytest.raises(RuntimeError):
-        client._extract_single_search_result(bundle_no_current_name)  # noqa SLF001 (testing private method)
+    # No current name record is tolerated by PdsClient; names are returned as empty.
+    result = client._extract_single_search_result(bundle_no_current_name)  # noqa SLF001 (testing private method)
+    assert result is not None
+    assert result.nhs_number == "9000000009"
+    assert result.given_names == ""
+    assert result.family_name == ""
