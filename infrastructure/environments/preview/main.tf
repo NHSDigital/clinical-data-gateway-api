@@ -42,8 +42,11 @@ locals {
   # e.g. "feature-123.dev.endpoints.clinical-data-gateway.national.nhs.uk"
   effective_host_name = "${var.branch_name}.${local.base_domain}"
 
-  branch_safe    = replace(replace(var.branch_name, "/", "-"), " ", "-")
-  log_group_name = "/ecs/preview/${local.branch_safe}"
+  branch_after_feature = startswith(var.branch_name, "feature-") ? substr(var.branch_name, length("feature-"), length(var.branch_name) - length("feature-")) : var.branch_name
+  branch_after_bug     = startswith(local.branch_after_feature, "bug-") ? substr(local.branch_after_feature, length("bug-"), length(local.branch_after_feature) - length("bug-")) : local.branch_after_feature
+  branch_source        = length(local.branch_after_bug) > 0 ? local.branch_after_bug : var.branch_name
+  branch_safe          = replace(replace(local.branch_source, "/", "-"), " ", "-")
+  log_group_name       = "/ecs/preview/${local.branch_safe}"
 
   # Default image tag to branch_name if not provided
   effective_image_tag = length(var.image_tag) > 0 ? var.image_tag : var.branch_name
@@ -62,20 +65,20 @@ locals {
 ############################
 
 resource "aws_lb_target_group" "branch" {
-  name        = trim(substr(replace(var.branch_name, ".", "-"), 0, 32), "-")
+  name        = trim(substr(replace(local.branch_safe, ".", "-"), 0, 32), "-")
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = local.vpc_id
 
-  #   health_check {
-  #     path                = "/"
-  #     matcher             = "200-399"
-  #     interval            = 30
-  #     timeout             = 5
-  #     unhealthy_threshold = 2
-  #     healthy_threshold   = 2
-  #   }
+  health_check {
+    path                = "/"
+    matcher             = "200-499"
+    interval            = 30
+    timeout             = 5
+    unhealthy_threshold = 2
+    healthy_threshold   = 2
+  }
 }
 
 resource "aws_lb_listener_rule" "branch" {

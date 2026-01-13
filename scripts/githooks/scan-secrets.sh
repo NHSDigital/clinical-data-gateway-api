@@ -52,6 +52,10 @@ function get-cmd-to-run() {
     "staged-changes")
       cmd="protect --source $dir --verbose --staged"
       ;;
+    *)
+      echo "Unknown check value: '$check'. Expected one of whole-history, last-commit, staged-changes." >&2
+      exit 126
+      ;;
   esac
   # Include base line file if it exists
   if [[ -f "$dir/scripts/config/.gitleaks-baseline.json" ]]; then

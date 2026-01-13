@@ -9,6 +9,15 @@ docker := doas docker
 else
 docker := docker
 endif
+
+IMAGE_REPOSITORY ?= localhost/gateway-api-image
+IMAGE_TAG ?= latest
+
+ifdef ECR_URL
+IMAGE_REPOSITORY := ${ECR_URL}
+endif
+
+IMAGE_NAME := ${IMAGE_REPOSITORY}:${IMAGE_TAG}
 # ==============================================================================
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
@@ -25,7 +34,7 @@ build-gateway-api: dependencies
 	@poetry run mypy --no-namespace-packages .
 	@echo "Packaging dependencies..."
 	@poetry build --format=wheel
-	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api"
+	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api" --platform musllinux_1_1_x86_64 --only-binary=:all:
 	# Copy main file separately as it is not included within the package.
 	@cp lambda_handler.py ./target/gateway-api/
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
@@ -36,9 +45,9 @@ build-gateway-api: dependencies
 
 .PHONY: build
 build: build-gateway-api # Build the project artefact @Pipeline
-	@echo "Building Docker image using Docker. Utilising python version: ${PYTHON_VERSION} ..."
-	@$(docker) buildx build --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t localhost/gateway-api-image infrastructure/images/gateway-api
-	@echo "Docker image 'gateway-api-image' built successfully!"
+	@echo "Building Docker x86 image using Docker. Utilising python version: ${PYTHON_VERSION} ..."
+	@$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} -t ${IMAGE_NAME} infrastructure/images/gateway-api
+	@echo "Docker image '${IMAGE_NAME}' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
@@ -46,9 +55,9 @@ publish: # Publish the project artefact @Pipeline
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
 	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --name gateway-api -p 5000:8080 --network gateway-local -d localhost/gateway-api-image ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \
 	else \
-		$(docker) run --name gateway-api -p 5000:8080 -d localhost/gateway-api-image ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -d ${IMAGE_NAME} ; \
 	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
