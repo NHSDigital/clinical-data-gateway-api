@@ -62,7 +62,7 @@ locals {
 ############################
 
 resource "aws_lb_target_group" "branch" {
-  name        = substr(replace(local.effective_host_name, ".", "-"), 0, 32)
+  name        = trim(substr(replace(var.branch_name, ".", "-"), 0, 32), "-")
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
@@ -179,7 +179,7 @@ resource "aws_ecs_task_definition" "branch" {
   task_role_arn      = aws_iam_role.task.arn
 
   runtime_platform {
-    cpu_architecture        = "ARM64"
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
 

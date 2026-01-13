@@ -55,8 +55,9 @@ jobs:
           SANITIZED_BRANCH=$(
             printf '%s' "$RAW_BRANCH" \
               | tr '[:upper:]' '[:lower:]' \
-              | tr -c 'a-z0-9._-' '-' \
-              | sed -E 's/^[^a-z0-9]+//; s/[^a-z0-9]+$//'
+              | tr '._' '-' \
+              | tr -c 'a-z0-9-' '-' \
+              | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
           )
 
           # Last resort fallback if everything got stripped

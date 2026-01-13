@@ -7,14 +7,13 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">3.13,<4.0.0"
-dependencies = [
-]
 
 [tool.poetry.dependencies]
 clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.1.0" }
 
 [tool.poetry]
-packages = [{include = "gateway_api", from = "src"}]
+packages = [{include = "gateway_api", from = "src"},
+            {include = "stubs", from = "stubs"}]
 
 [tool.coverage.run]
 relative_files = true
