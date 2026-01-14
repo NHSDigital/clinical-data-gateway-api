@@ -53,12 +53,16 @@ class GPProviderClient:
             provider_endpoint (str): The FHIR API endpoint for the provider.
             provider_asid (str): The ASID for the provider.
             consumer_asid (str): The ASID for the consumer.
+
+        methods:
+            access_structured_record: fetch structured patient record
+            from GPProvider FHIR API.
         """
         self.provider_endpoint = provider_endpoint
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
 
-    def get_structured_record(self) -> Response:
+    def access_structured_record(self) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
 
@@ -67,11 +71,11 @@ class GPProviderClient:
         returns:
             dict: The response from the GPProvider FHIR API.
         """
-        response = requests.get(
+        response = requests.post(
             self.provider_endpoint,
             headers={
-                "Provider-ASID": self.provider_asid,
-                "Consumer-ASID": self.consumer_asid,
+                "SSP-To": self.provider_asid,  # alias here to match GP connect header
+                "SSP-From": self.consumer_asid,  # alias here to match GP connect header
             },
             timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
         )
