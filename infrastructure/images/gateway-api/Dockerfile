@@ -7,6 +7,7 @@ COPY resources/ /resources
 WORKDIR /resources/build/gateway-api
 
 ENV PYTHONPATH=/resources/build/gateway-api
+ENV FLASK_HOST="0.0.0.0"
 
 ENTRYPOINT ["python"]
 CMD ["gateway_api/app.py"]
