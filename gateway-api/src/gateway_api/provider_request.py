@@ -18,3 +18,68 @@ Usage:
     returns the response from the provider FHIR API.
 
 """
+
+# imports
+import requests
+
+
+# definitions
+class ExternalServiceError(Exception):
+    """
+    Raised when the downstream PDS request fails.
+
+    This module catches :class:`requests.HTTPError` thrown by
+    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
+    callers are not coupled to ``requests`` exception types.
+    """
+
+
+class GPProviderClient:
+    """
+    A simple client for GPProvider FHIR GP System.
+    """
+
+    def __init__(
+        self,
+        provider_endpoint: str,
+        provider_asid: str,
+        consumer_asid: str,
+    ) -> None:
+        """
+        Create a GPProviderClient instance.
+
+        Args:
+            provider_endpoint (str): The FHIR API endpoint for the provider.
+            provider_asid (str): The ASID for the provider.
+            consumer_asid (str): The ASID for the consumer.
+        """
+        self.provider_endpoint = provider_endpoint
+        self.provider_asid = provider_asid
+        self.consumer_asid = consumer_asid
+
+    def get_structured_record(self) -> requests.Response:
+        """
+        Fetch a structured patient record from the GPProvider FHIR API.
+
+        Args:
+            parameters (dict): The parameters resource to send in the request.
+        returns:
+            dict: The response from the GPProvider FHIR API.
+        """
+        response = requests.get(
+            self.provider_endpoint,
+            headers={
+                "Provider-ASID": self.provider_asid,
+                "Consumer-ASID": self.consumer_asid,
+            },
+            timeout=5,
+        )
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as err:
+            raise ExternalServiceError(
+                f"GPProvider FHIR API request failed:{err.response.reason}"
+            ) from err
+
+        return response
