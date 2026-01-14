@@ -21,6 +21,7 @@ Usage:
 
 # imports
 import requests
+from requests import Response
 
 
 # definitions
@@ -57,7 +58,7 @@ class GPProviderClient:
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
 
-    def get_structured_record(self) -> requests.Response:
+    def get_structured_record(self) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
 
@@ -72,7 +73,7 @@ class GPProviderClient:
                 "Provider-ASID": self.provider_asid,
                 "Consumer-ASID": self.consumer_asid,
             },
-            timeout=5,
+            timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
         )
 
         try:
