@@ -34,9 +34,8 @@ build-gateway-api: dependencies
 	@poetry run mypy --no-namespace-packages .
 	@echo "Packaging dependencies..."
 	@poetry build --format=wheel
-	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api" --platform musllinux_1_1_x86_64 --only-binary=:all:
+	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api" --platform musllinux_1_2_x86_64 --only-binary=:all:
 	# Copy main file separately as it is not included within the package.
-	@cp lambda_handler.py ./target/gateway-api/
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/

@@ -19,7 +19,7 @@ class TestHelloWorld:
     def test_hello_world_content_type(self, client: Client) -> None:
         """Test that the response has the correct content type."""
         response = client.send("world")
-        assert "text/plain" in response.headers["Content-Type"]
+        assert "application/json" in response.headers["Content-Type"]
 
     def test_nonexistent_returns_error(self, client: Client) -> None:
         """Test that non-existent routes return 404."""

@@ -36,7 +36,7 @@ class TestConsumerContract:
                     "headers": {"Content-Type": "application/json"},
                     "body": "Hello, World!",
                 },
-                content_type="text/plain;charset=utf-8",
+                content_type="application/json",
             )
         )
 
