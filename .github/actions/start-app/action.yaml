@@ -1,0 +1,50 @@
+name: "Start local app"
+description: "Start Flask app that will handle requests"
+inputs:
+  deploy-command:
+    description: "Command to start app"
+    required: false
+    default: "make deploy"
+  health-path:
+    description: "Health probe path to POST"
+    required: false
+    default: "/2015-03-31/functions/function/invocations"
+  max-seconds:
+    description: "Maximum seconds to wait for readiness"
+    required: false
+    default: "60"
+python-version:
+    description: "Python version to install"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: "Start app"
+      shell: bash
+      env:
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: |
+        set -euo pipefail
+        echo "Starting app: '${{ inputs.deploy-command }}'"
+        nohup ${{ inputs.deploy-command }} >/tmp/app.log 2>&1 &
+        echo $! > /tmp/app.pid
+        echo "PID: $(cat /tmp/app.pid)"
+    - name: "Wait for app to be ready"
+      shell: bash
+      run: |
+        set -euo pipefail
+        BASE_URL="${BASE_URL:-http://localhost:5000}"
+        HEALTH_URL="${BASE_URL}${{ inputs.health-path }}"
+        MAX="${{ inputs.max-seconds }}"
+        echo "Waiting for app at ${HEALTH_URL} (max ${MAX}s)..."
+        for i in $(seq 1 "${MAX}"); do
+          if curl -sSf -X POST "${HEALTH_URL}" -d '{}' >/dev/null; then
+            echo "App is ready"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "App did not become ready in time"
+        echo "---- recent app log ----"
+        tail -n 200 /tmp/app.log || true
+        exit 1
