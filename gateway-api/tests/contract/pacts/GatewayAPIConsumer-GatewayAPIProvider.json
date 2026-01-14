@@ -16,33 +16,73 @@
       "type": "Synchronous/HTTP"
     },
     {
-      "description": "a request for the hello world message",
+      "description": "a request for structured record",
       "pending": false,
       "request": {
         "body": {
           "content": {
-            "payload": "World"
+            "parameter": [
+              {
+                "name": "patientNHSNumber",
+                "valueIdentifier": {
+                  "system": "https://fhir.nhs.uk/Id/nhs-number",
+                  "value": "9999999999"
+                }
+              }
+            ],
+            "resourceType": "Parameters"
           },
-          "contentType": "application/json",
+          "contentType": "application/fhir+json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "application/json"
+            "application/fhir+json"
           ]
         },
         "method": "POST",
-        "path": "/2015-03-31/functions/function/invocations"
+        "path": "/patient/$gpc.getstructuredrecord"
       },
       "response": {
         "body": {
-          "content": "{\"statusCode\": 200, \"headers\": {\"Content-Type\": \"application/json\"}, \"body\": \"Hello, World!\"}",
-          "contentType": "text/plain;charset=utf-8",
+          "content": {
+            "entry": [
+              {
+                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+                "resource": {
+                  "birthDate": "1985-04-12",
+                  "gender": "male",
+                  "id": "9999999999",
+                  "identifier": [
+                    {
+                      "system": "https://fhir.nhs.uk/Id/nhs-number",
+                      "value": "9999999999"
+                    }
+                  ],
+                  "name": [
+                    {
+                      "family": "Doe",
+                      "given": [
+                        "John"
+                      ],
+                      "use": "official"
+                    }
+                  ],
+                  "resourceType": "Patient"
+                }
+              }
+            ],
+            "id": "example-patient-bundle",
+            "resourceType": "Bundle",
+            "timestamp": "2026-01-12T10:00:00Z",
+            "type": "collection"
+          },
+          "contentType": "application/fhir+json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "text/plain;charset=utf-8"
+            "application/fhir+json"
           ]
         },
         "status": 200
