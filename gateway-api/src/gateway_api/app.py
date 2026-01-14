@@ -1,3 +1,4 @@
+import os
 from typing import Any, TypedDict
 
 from flask import Flask, request
@@ -48,4 +49,7 @@ def health_check() -> APIMResponse[dict[str, Any]]:
 
 
 if __name__ == "__main__":
-    app.run(host="gateway-api", port=8080)
+    host = os.getenv("FLASK_HOST")
+    if host is None:
+        raise RuntimeError("FLASK_HOST environment variable is not set.")
+    app.run(host=host, port=8080)

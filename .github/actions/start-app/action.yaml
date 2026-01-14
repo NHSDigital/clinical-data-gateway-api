@@ -13,9 +13,9 @@ inputs:
     description: "Maximum seconds to wait for readiness"
     required: false
     default: "60"
-python-version:
-    description: "Python version to install"
-    required: true
+  python-version:
+      description: "Python version to install"
+      required: true
 runs:
   using: "composite"
   steps:
