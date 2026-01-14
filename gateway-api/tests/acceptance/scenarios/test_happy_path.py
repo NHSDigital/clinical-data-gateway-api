@@ -4,16 +4,16 @@ Provides the scenario bindings for the hello world feature file.
 
 from pytest_bdd import scenario
 
-from tests.acceptance.steps.hello_world_steps import *  # noqa: F403,S2208 - Required to import all hello world steps.
+from tests.acceptance.steps.happy_path import *  # noqa: F403,S2208 - Required to import all happy path steps.
 
 
-@scenario("hello_world.feature", "Get hello world message")
-def test_hello_world() -> None:
+@scenario("happy_path.feature", "Get structured record request")
+def test_structured_record_request() -> None:
     # No body required here as this method simply provides a binding to the BDD step
     pass
 
 
-@scenario("hello_world.feature", "Accessing a non-existent endpoint returns a 404")
+@scenario("happy_path.feature", "Accessing a non-existent endpoint returns a 404")
 def test_nonexistent_route() -> None:
     # No body required here as this method simply provides a binding to the BDD step
     pass
