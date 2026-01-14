@@ -1,13 +1,16 @@
 """Unit tests for the Flask app endpoints."""
 
+from collections.abc import Generator
+
 import pytest
+from flask import Flask
 from flask.testing import FlaskClient
 
 from gateway_api.app import app
 
 
 @pytest.fixture
-def client() -> FlaskClient:
+def client() -> Generator[FlaskClient[Flask], None, None]:
     """Create a Flask test client."""
     app.config["TESTING"] = True
     with app.test_client() as client:
@@ -18,7 +21,7 @@ class TestGreetEndpoint:
     """Unit tests for the greet_endpoint function."""
 
     def test_greet_endpoint_returns_greeting_for_valid_name(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that greet_endpoint returns a greeting for a valid name."""
         response = client.post(
@@ -34,7 +37,7 @@ class TestGreetEndpoint:
         assert data["body"].endswith("!")
 
     def test_greet_endpoint_returns_400_when_payload_missing(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that greet_endpoint returns 400 when payload is missing."""
         response = client.post(
@@ -49,7 +52,7 @@ class TestGreetEndpoint:
         assert data["headers"]["Content-Type"] == "application/json"
 
     def test_greet_endpoint_returns_400_when_name_is_empty(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that greet_endpoint returns 400 when name is empty."""
         response = client.post(
@@ -64,7 +67,7 @@ class TestGreetEndpoint:
         assert data["headers"]["Content-Type"] == "application/json"
 
     def test_greet_endpoint_returns_404_for_nonexistent_user(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that greet_endpoint returns 404 for nonexistent user."""
         response = client.post(
@@ -80,7 +83,7 @@ class TestGreetEndpoint:
         assert data["headers"]["Content-Type"] == "application/json"
 
     def test_greet_endpoint_returns_400_when_name_is_none(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that greet_endpoint returns 400 when name is None."""
         response = client.post(
@@ -99,7 +102,7 @@ class TestHealthCheck:
     """Unit tests for the health_check function."""
 
     def test_health_check_returns_200_and_healthy_status(
-        self, client: FlaskClient
+        self, client: FlaskClient[Flask]
     ) -> None:
         """Test that health_check returns 200 with healthy status."""
         response = client.get("/health")
@@ -110,7 +113,9 @@ class TestHealthCheck:
         assert data["body"]["status"] == "healthy"
         assert data["headers"]["Content-Type"] == "application/json"
 
-    def test_health_check_only_accepts_get_method(self, client: FlaskClient) -> None:
+    def test_health_check_only_accepts_get_method(
+        self, client: FlaskClient[Flask]
+    ) -> None:
         """Test that health_check only accepts GET method."""
         response = client.post("/health")
         assert response.status_code == 405  # Method Not Allowed
