@@ -14,30 +14,42 @@ from gateway_api.provider_request import GPProviderClient
 
 # fixtures
 @pytest.fixture
-def mock_request_get(monkeypatch: pytest.MonkeyPatch) -> Response:
+def mock_request_post(monkeypatch: pytest.MonkeyPatch) -> None:
     """
-    Patch requests.get method so calls are routed here.
+    Patch requests.post method so calls are routed here.
     """
-    response = Response()
-    response.status_code = 200
 
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
-    return response
+    def _fake_post(
+        url: str,
+        headers: dict[str, str],  # TODO: define a class 'GPConnectHeaders' for this
+        timeout: int,
+    ) -> Response:
+        """A fake requests.post implementation."""
+
+        # replace with stub
+        response = Response()
+        response.status_code = 200
+
+        # stub_response = stub.accessRecordStructured()
+
+        return response
+
+    monkeypatch.setattr(requests, "post", _fake_post)
 
 
 # pseudo-code for tests:
-# makes valid requests to stub provider and checks responses
+# makes valid requests to stub provider and checks responses using a capture
 
-# (throws if not 200 OK)
 
 # returns what is received from stub provider (if valid)
 
+# (throws if not 200 OK)
 # ~~throws if invalid response from stub provider~~
 
 
 # receives 200 OK from example.com for valid request
-def test_valid_gpprovider_request_get_200(
-    mock_request_get: Response,
+def test_valid_gpprovider_access_structured_record_post_200(
+    mock_request_post: Response,
 ) -> None:
     """
     Verify that a valid request to the GPProvider returns a 200 OK response.
@@ -54,7 +66,7 @@ def test_valid_gpprovider_request_get_200(
     )
 
     # Act
-    result = client.get_structured_record()
+    result = client.access_structured_record()
 
     # Assert
     assert result.status_code == 200
