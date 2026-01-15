@@ -20,6 +20,7 @@ Usage:
 """
 
 # imports
+
 import requests
 from requests import Response
 
@@ -62,7 +63,32 @@ class GpProviderClient:
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
 
-    def access_structured_record(self) -> Response:
+    def _build_headers(self, trace_id: str) -> dict[str, str]:
+        """
+        Build the headers required for the GPProvider FHIR API request.
+
+        Args:
+            provider_asid (str): The ASID for the provider.
+            consumer_asid (str): The ASID for the consumer.
+
+        Returns:
+            dict: Headers for the request.
+        """
+        return {
+            "Content-Type": "application/fhir+json",
+            "Accept": "application/fhir+json",
+            "Ssp-InteractionID": "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1",  # noqa: E501 this is standard InteractionID for accessRecordStructured
+            "Ssp-To": self.provider_asid,
+            "Ssp-From": self.consumer_asid,
+            "Ssp-TraceID": trace_id,
+        }
+
+    def access_structured_record(
+        self,
+        # body: str # forwarded from consumer
+        trace_id: str,  # from consumer header
+        # nhsnumber: str, # from request
+    ) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
 
@@ -71,12 +97,12 @@ class GpProviderClient:
         returns:
             dict: The response from the GPProvider FHIR API.
         """
+
+        headers = self._build_headers(trace_id)
+
         response = requests.post(
             self.provider_endpoint,
-            headers={
-                "Ssp-To": self.provider_asid,  # alias here to match GP connect header
-                "Ssp-From": self.consumer_asid,  # alias here to match GP connect header
-            },
+            headers=headers,
             timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
         )
 
