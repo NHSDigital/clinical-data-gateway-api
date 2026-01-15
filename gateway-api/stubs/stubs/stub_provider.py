@@ -38,7 +38,7 @@ demographic data for a single patient.
 
 """
 
-from typing import Any
+from requests import Response
 
 
 class GPProviderStub:
@@ -50,7 +50,7 @@ class GPProviderStub:
 
     def __init__(self) -> None:
         """Create a GPProviderStub instance."""
-        # Seed a deterministic example matching the spec's id example stubResponse
+        # Seed an example matching the spec's id example stubResponse
         # FHIR/STU3 Patient resource with only administrative data based on Example 2
         # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
         self.patient_bundle = {
@@ -95,11 +95,15 @@ class GPProviderStub:
             ],
         }
 
-    def access_record_structured(self) -> dict[str, Any]:
+    def access_record_structured(self) -> Response:
         """
         Simulate accessRecordStructured operation of GPConnect FHIR API.
 
         returns:
-            dict: The stub patient bundle.
+            Response: The stub patient bundle wrapped in a Response object.
         """
-        return self.patient_bundle
+
+        response = Response()
+        response.status_code = 200
+
+        return response

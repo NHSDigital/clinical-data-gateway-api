@@ -74,8 +74,8 @@ class GPProviderClient:
         response = requests.post(
             self.provider_endpoint,
             headers={
-                "SSP-To": self.provider_asid,  # alias here to match GP connect header
-                "SSP-From": self.consumer_asid,  # alias here to match GP connect header
+                "Ssp-To": self.provider_asid,  # alias here to match GP connect header
+                "Ssp-From": self.consumer_asid,  # alias here to match GP connect header
             },
             timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
         )
