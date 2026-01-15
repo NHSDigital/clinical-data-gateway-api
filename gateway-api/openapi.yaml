@@ -9,6 +9,138 @@ servers:
   - url: http://localhost:5000
     description: Local development server
 paths:
+  /patient/$gpc.getstructuredrecord:
+    post:
+      summary: Get structured record
+      description: Returns a FHIR Bundle containing patient structured record
+      operationId: getStructuredRecord
+      parameters:
+      - in: header
+        name: Content-Type
+        schema:
+          type: string
+          enum: [application/json]
+        required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resourceType:
+                  type: string
+                  example: "Parameters"
+                parameter:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "patientNHSNumber"
+                      valueIdentifier:
+                        type: object
+                        properties:
+                          system:
+                            type: string
+                            example: "https://fhir.nhs.uk/Id/nhs-number"
+                          value:
+                            type: string
+                            example: "9999999999"
+      responses:
+        '200':
+          description: Successful response
+          parameters:
+          - in: header
+            name: Content-Type
+            schema:
+              type: string
+              enum: [application/json]
+            required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    description: Status code of the interaction
+                    example: 200
+                  headers:
+                    type: object
+                    properties:
+                      Content-Type:
+                        type: string
+                        example: "application/json"
+                  body:
+                    type: object
+                    description: FHIR Bundle containing patient data
+                    properties:
+                      resourceType:
+                        type: string
+                        example: "Bundle"
+                      id:
+                        type: string
+                        example: "example-patient-bundle"
+                      type:
+                        type: string
+                        example: "collection"
+                      timestamp:
+                        type: string
+                        format: date-time
+                        example: "2026-01-12T10:00:00Z"
+                      entry:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fullUrl:
+                              type: string
+                              example: "urn:uuid:123e4567-e89b-12d3-a456-426614174000"
+                            resource:
+                              type: object
+                              properties:
+                                resourceType:
+                                  type: string
+                                  example: "Patient"
+                                id:
+                                  type: string
+                                  example: "9999999999"
+                                identifier:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      system:
+                                        type: string
+                                        example: "https://fhir.nhs.uk/Id/nhs-number"
+                                      value:
+                                        type: string
+                                        example: "9999999999"
+                                name:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      use:
+                                        type: string
+                                        example: "official"
+                                      family:
+                                        type: string
+                                        example: "Doe"
+                                      given:
+                                        type: array
+                                        items:
+                                          type: string
+                                        example: ["John"]
+                                gender:
+                                  type: string
+                                  example: "male"
+                                birthDate:
+                                  type: string
+                                  format: date
+                                  example: "1985-04-12"
   /2015-03-31/functions/function/invocations:
     post:
       summary: Get hello world message

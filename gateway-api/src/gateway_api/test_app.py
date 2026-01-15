@@ -17,6 +17,41 @@ def client() -> Generator[FlaskClient[Flask], None, None]:
         yield client
 
 
+class TestGetStructuredRecord:
+    """Unit tests for the get_structured_record function."""
+
+    def test_get_structured_record_returns_200_with_bundle(
+        self, client: FlaskClient[Flask]
+    ) -> None:
+        """Test that get_structured_record returns 200 with a bundle."""
+        body = {
+            "resourceType": "Parameters",
+            "parameter": [
+                {
+                    "name": "patientNHSNumber",
+                    "valueIdentifier": {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9999999999",
+                    },
+                },
+            ],
+        }
+        response = client.post("/patient/$gpc.getstructuredrecord", json=body)
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert isinstance(data, dict)
+        assert data.get("resourceType") == "Bundle"
+        assert data.get("id") == "example-patient-bundle"
+        assert data.get("type") == "collection"
+        assert "entry" in data
+        assert isinstance(data["entry"], list)
+        assert len(data["entry"]) > 0
+        assert data["entry"][0]["resource"]["resourceType"] == "Patient"
+        assert data["entry"][0]["resource"]["id"] == "9999999999"
+        assert data["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
+
+
 class TestGreetEndpoint:
     """Unit tests for the greet_endpoint function."""
 
