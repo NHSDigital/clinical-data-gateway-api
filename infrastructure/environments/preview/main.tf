@@ -42,11 +42,13 @@ locals {
   # e.g. "feature-123.dev.endpoints.clinical-data-gateway.national.nhs.uk"
   effective_host_name = "${var.branch_name}.${local.base_domain}"
 
-  branch_after_feature = startswith(var.branch_name, "feature-") ? substr(var.branch_name, length("feature-"), length(var.branch_name) - length("feature-")) : var.branch_name
-  branch_after_bug     = startswith(local.branch_after_feature, "bug-") ? substr(local.branch_after_feature, length("bug-"), length(local.branch_after_feature) - length("bug-")) : local.branch_after_feature
-  branch_source        = length(local.branch_after_bug) > 0 ? local.branch_after_bug : var.branch_name
-  branch_safe          = replace(replace(local.branch_source, "/", "-"), " ", "-")
-  log_group_name       = "/ecs/preview/${local.branch_safe}"
+  branch_after_feature   = startswith(var.branch_name, "feature-") ? substr(var.branch_name, length("feature-"), length(var.branch_name) - length("feature-")) : var.branch_name
+  branch_after_bug       = startswith(local.branch_after_feature, "bug-") ? substr(local.branch_after_feature, length("bug-"), length(local.branch_after_feature) - length("bug-")) : local.branch_after_feature
+  branch_source          = length(local.branch_after_bug) > 0 ? local.branch_after_bug : var.branch_name
+  branch_safe            = replace(replace(local.branch_source, "/", "-"), " ", "-")
+  branch_alb_rule_suffix = trim(substr(replace(local.branch_safe, ".", "-"), 0, 32), "-")
+  branch_role_suffix     = trim(substr(replace(local.branch_safe, ".", "-"), 0, 52), "-")
+  log_group_name         = "/ecs/preview/${local.branch_safe}"
 
   # Default image tag to branch_name if not provided
   effective_image_tag = length(var.image_tag) > 0 ? var.image_tag : var.branch_name
@@ -65,7 +67,7 @@ locals {
 ############################
 
 resource "aws_lb_target_group" "branch" {
-  name        = trim(substr(replace(local.branch_safe, ".", "-"), 0, 32), "-")
+  name        = local.branch_alb_rule_suffix
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
@@ -102,7 +104,7 @@ resource "aws_lb_listener_rule" "branch" {
 ############################
 
 resource "aws_iam_role" "execution" {
-  name = "ecs-preview-${var.branch_name}-exec"
+  name = "ecs-pr-${local.branch_role_suffix}-exec"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -122,7 +124,7 @@ resource "aws_iam_role_policy_attachment" "execution_policy" {
 }
 
 resource "aws_iam_role" "task" {
-  name = "ecs-preview-${var.branch_name}-task"
+  name = "ecs-pr-${local.branch_role_suffix}-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -137,7 +139,7 @@ resource "aws_iam_role" "task" {
 }
 
 resource "aws_iam_role_policy" "task_exec_command" {
-  name = "ecs-preview-${var.branch_name}-exec-command"
+  name = "ecs-pr-${local.branch_role_suffix}-cmd"
   role = aws_iam_role.task.id
 
   policy = jsonencode({
@@ -172,7 +174,7 @@ data "aws_ecs_cluster" "cluster" {
 }
 
 resource "aws_ecs_task_definition" "branch" {
-  family                   = "preview-${var.branch_name}"
+  family                   = "pr-${var.branch_name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.cpu
@@ -210,7 +212,7 @@ resource "aws_ecs_task_definition" "branch" {
 }
 
 resource "aws_ecs_service" "branch" {
-  name                   = "preview-${var.branch_name}"
+  name                   = "pr-${var.branch_name}"
   cluster                = data.aws_ecs_cluster.cluster.id
   task_definition        = aws_ecs_task_definition.branch.arn
   desired_count          = var.desired_count
