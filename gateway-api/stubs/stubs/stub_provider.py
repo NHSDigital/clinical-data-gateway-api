@@ -105,5 +105,7 @@ class GpProviderStub:
 
         response = Response()
         response.status_code = 200
+        # this is not prefered but may suffice for first implementaion of the stub
+        response._content = str.encode(str(self.patient_bundle))  # noqa: SLF001
 
         return response

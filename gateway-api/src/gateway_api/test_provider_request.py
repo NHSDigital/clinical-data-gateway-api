@@ -54,9 +54,6 @@ def mock_request_post(
 
 
 # pseudo-code for tests:
-# Test: makes valid requests to stub provider and checks responses using a capture
-
-# Test: returns what is received from stub provider (if valid)
 
 # Test: (throws if not 200 OK)
 # Test: ~~throws if invalid response from stub provider~~
@@ -136,3 +133,34 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     # Assert
     assert result.status_code == 200
     assert captured_body == request_body
+
+
+# Test: returns what is received from stub provider (if valid)
+def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
+    mock_request_post: dict[str, Any],
+    stub: GpProviderStub,
+) -> None:
+    """
+    Verify that a request to the GPProvider returns the same response
+    as provided by the stub provider.
+    """
+    # Arrange
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://invalid.com"
+    trace_id = "some_uuid_value"
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+    )
+
+    expected_response = stub.access_record_structured()
+
+    # Act
+    result = client.access_structured_record(trace_id, "body")
+
+    # Assert
+    assert result.status_code == expected_response.status_code
+    assert result.content == expected_response.content
