@@ -6,6 +6,7 @@ Unit tests for :mod:`gateway_api.provider_request`.
 import pytest
 import requests
 from requests import Response
+from stubs.stub_provider import GPProviderStub
 
 from gateway_api.provider_request import GPProviderClient
 
@@ -14,7 +15,12 @@ from gateway_api.provider_request import GPProviderClient
 
 # fixtures
 @pytest.fixture
-def mock_request_post(monkeypatch: pytest.MonkeyPatch) -> None:
+def stub() -> GPProviderStub:
+    return GPProviderStub()
+
+
+@pytest.fixture
+def mock_request_post(monkeypatch: pytest.MonkeyPatch, stub: GPProviderStub) -> None:
     """
     Patch requests.post method so calls are routed here.
     """
@@ -26,20 +32,15 @@ def mock_request_post(monkeypatch: pytest.MonkeyPatch) -> None:
     ) -> Response:
         """A fake requests.post implementation."""
 
-        # replace with stub
-        response = Response()
-        response.status_code = 200
+        stub_response = stub.access_record_structured()
 
-        # stub_response = stub.accessRecordStructured()
-
-        return response
+        return stub_response
 
     monkeypatch.setattr(requests, "post", _fake_post)
 
 
 # pseudo-code for tests:
 # makes valid requests to stub provider and checks responses using a capture
-
 
 # returns what is received from stub provider (if valid)
 
@@ -50,6 +51,7 @@ def mock_request_post(monkeypatch: pytest.MonkeyPatch) -> None:
 # receives 200 OK from example.com for valid request
 def test_valid_gpprovider_access_structured_record_post_200(
     mock_request_post: Response,
+    stub: GPProviderStub,
 ) -> None:
     """
     Verify that a valid request to the GPProvider returns a 200 OK response.
@@ -57,7 +59,7 @@ def test_valid_gpprovider_access_structured_record_post_200(
     # Arrange
     provider_asid = "200000001154"
     consumer_asid = "200000001152"
-    provider_endpoint = "http://invalid.com"  # this will be monkeypatched in real tests
+    provider_endpoint = "http://invalid.com"
 
     client = GPProviderClient(
         provider_endpoint=provider_endpoint,
