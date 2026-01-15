@@ -16,6 +16,80 @@
       "type": "Synchronous/HTTP"
     },
     {
+      "description": "a request for structured record",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "parameter": [
+              {
+                "name": "patientNHSNumber",
+                "valueIdentifier": {
+                  "system": "https://fhir.nhs.uk/Id/nhs-number",
+                  "value": "9999999999"
+                }
+              }
+            ],
+            "resourceType": "Parameters"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/patient/$gpc.getstructuredrecord"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "entry": [
+              {
+                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+                "resource": {
+                  "birthDate": "1985-04-12",
+                  "gender": "male",
+                  "id": "9999999999",
+                  "identifier": [
+                    {
+                      "system": "https://fhir.nhs.uk/Id/nhs-number",
+                      "value": "9999999999"
+                    }
+                  ],
+                  "name": [
+                    {
+                      "family": "Doe",
+                      "given": [
+                        "John"
+                      ],
+                      "use": "official"
+                    }
+                  ],
+                  "resourceType": "Patient"
+                }
+              }
+            ],
+            "id": "example-patient-bundle",
+            "resourceType": "Bundle",
+            "timestamp": "2026-01-12T10:00:00Z",
+            "type": "collection"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
       "description": "a request for the hello world message",
       "pending": false,
       "request": {

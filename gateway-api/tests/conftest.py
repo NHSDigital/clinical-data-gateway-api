@@ -21,7 +21,28 @@ class Client:
         self._lambda_url = lambda_url
         self._timeout = timeout.total_seconds()
 
-    def send(self, data: str) -> requests.Response:
+    def get_structured_record(self, nhs_number: str) -> requests.Response:
+        """
+        Send a request to the get_structured_record endpoint with the given NHS number.
+        """
+        payload = json.dumps(
+            {
+                "resourceType": "Parameters",
+                "parameter": [
+                    {
+                        "name": "patientNHSNumber",
+                        "valueIdentifier": {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": nhs_number,
+                        },
+                    },
+                ],
+            }
+        )
+        url = f"{self._lambda_url}/patient/$gpc.getstructuredrecord"
+        return self._send(url=url, payload=payload)
+
+    def send(self, message: str) -> requests.Response:
         """
         Send a request to the APIs with some given parameters.
         Args:
@@ -29,7 +50,9 @@ class Client:
         Returns:
             Response object from the request
         """
-        return self._send(data=data, include_payload=True)
+        payload = json.dumps({"payload": message})
+        url = f"{self._lambda_url}/2015-03-31/functions/function/invocations"
+        return self._send(url=url, payload=payload)
 
     def send_without_payload(self) -> requests.Response:
         """
@@ -37,14 +60,14 @@ class Client:
         Returns:
             Response object from the request
         """
-        return self._send(data=None, include_payload=False)
+        empty_payload = json.dumps({})
+        url = f"{self._lambda_url}/2015-03-31/functions/function/invocations"
+        return self._send(url=url, payload=empty_payload)
 
-    def _send(self, data: str | None, include_payload: bool) -> requests.Response:
-        json_data = {"payload": data} if include_payload else {}
-
+    def _send(self, url: str, payload: str) -> requests.Response:
         return requests.post(
-            f"{self._lambda_url}/2015-03-31/functions/function/invocations",
-            data=json.dumps(json_data),
+            url=url,
+            data=payload,
             timeout=self._timeout,
         )
 
