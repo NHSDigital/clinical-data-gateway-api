@@ -85,8 +85,8 @@ class GpProviderClient:
 
     def access_structured_record(
         self,
-        # body: str # forwarded from consumer
         trace_id: str,  # from consumer header
+        body: str,  # forwarded from consumer_request
         # nhsnumber: str, # from request
     ) -> Response:
         """
@@ -103,6 +103,7 @@ class GpProviderClient:
         response = requests.post(
             self.provider_endpoint,
             headers=headers,
+            data=body,
             timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
         )
 

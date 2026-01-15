@@ -32,16 +32,18 @@ def mock_request_post(
     The fixture returns a "capture" dict recording the most recent request header
     information. This is used by header-related tests.
     """
-    capture: dict[str, dict[str, str]] = {}
+    capture: dict[str, Any] = {}
 
     def _fake_post(
         url: str,
-        headers: dict[str, str],  # TODO: define a class 'GPConnectHeaders' for this
+        headers: dict[str, str],
+        data: str,
         timeout: int,
     ) -> Response:
         """A fake requests.post implementation."""
 
         capture["headers"] = dict(headers)
+        capture["data"] = data
 
         stub_response = stub.access_record_structured()
 
@@ -58,6 +60,9 @@ def mock_request_post(
 
 # Test: (throws if not 200 OK)
 # Test: ~~throws if invalid response from stub provider~~
+
+# Test: the expected headers are returned - this would be testing the behaviour of the
+# (stub) provider so not in scope here
 
 
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
@@ -88,7 +93,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-InteractionID": ars_InteractionID,
     }
     # Act
-    result = client.access_structured_record(trace_id=trace_id)
+    result = client.access_structured_record(trace_id, "body")
 
     # Extract
     captured_headers = mock_request_post["headers"]
@@ -99,5 +104,35 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
     assert result.status_code == 200
 
 
-# Test: the expected headers are returned - this would be testing the behaviour of the
-# (stub) provider so not in scope here
+# Test: makes request with correct body
+def test_valid_gpprovider_access_structured_record_with_correct_body_200(
+    mock_request_post: dict[str, Any],
+    stub: GpProviderStub,
+) -> None:
+    """
+    Verify that a request to the GPProvider is made with the correct body,
+    and receives a 200 OK response.
+    """
+    # Arrange
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://invalid.com"
+    trace_id = "some_uuid_value"
+
+    request_body = "some_FHIR_request_params"
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+    )
+
+    # Act
+    result = client.access_structured_record(trace_id, request_body)
+
+    # Extract
+    captured_body = mock_request_post["data"]
+
+    # Assert
+    assert result.status_code == 200
+    assert captured_body == request_body
