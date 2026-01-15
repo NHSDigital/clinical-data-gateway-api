@@ -35,7 +35,7 @@ class ExternalServiceError(Exception):
     """
 
 
-class GPProviderClient:
+class GpProviderClient:
     """
     A simple client for GPProvider FHIR GP System.
     """

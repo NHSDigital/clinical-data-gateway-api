@@ -6,21 +6,21 @@ Unit tests for :mod:`gateway_api.provider_request`.
 import pytest
 import requests
 from requests import Response
-from stubs.stub_provider import GPProviderStub
+from stubs.stub_provider import GpProviderStub
 
-from gateway_api.provider_request import GPProviderClient
+from gateway_api.provider_request import GpProviderClient
 
 # definitions
 
 
 # fixtures
 @pytest.fixture
-def stub() -> GPProviderStub:
-    return GPProviderStub()
+def stub() -> GpProviderStub:
+    return GpProviderStub()
 
 
 @pytest.fixture
-def mock_request_post(monkeypatch: pytest.MonkeyPatch, stub: GPProviderStub) -> None:
+def mock_request_post(monkeypatch: pytest.MonkeyPatch, stub: GpProviderStub) -> None:
     """
     Patch requests.post method so calls are routed here.
     """
@@ -51,7 +51,7 @@ def mock_request_post(monkeypatch: pytest.MonkeyPatch, stub: GPProviderStub) -> 
 # receives 200 OK from example.com for valid request
 def test_valid_gpprovider_access_structured_record_post_200(
     mock_request_post: Response,
-    stub: GPProviderStub,
+    stub: GpProviderStub,
 ) -> None:
     """
     Verify that a valid request to the GPProvider returns a 200 OK response.
@@ -59,9 +59,9 @@ def test_valid_gpprovider_access_structured_record_post_200(
     # Arrange
     provider_asid = "200000001154"
     consumer_asid = "200000001152"
-    provider_endpoint = "http://invalid.com"
+    provider_endpoint = "https://invalid.com"
 
-    client = GPProviderClient(
+    client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,

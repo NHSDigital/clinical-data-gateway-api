@@ -41,7 +41,7 @@ demographic data for a single patient.
 from requests import Response
 
 
-class GPProviderStub:
+class GpProviderStub:
     """
     A minimal in-memory stub for a Provider GP System FHIR API,
     implementing only accessRecordStructured to read basic
