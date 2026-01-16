@@ -33,5 +33,6 @@ Syft
 Terraform
 toolchain
 Trufflehog
+usebruno
 VMs
 [Vv]scode
