@@ -19,7 +19,7 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.stub_provider import GpProviderStub
 
-from gateway_api.provider_request import GpProviderClient
+from gateway_api.provider_request import ExternalServiceError, GpProviderClient
 
 ars_interactionId = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
 
@@ -196,3 +196,45 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
     assert result.status_code == expected_response.status_code
     assert result.content == expected_response.content
+
+
+def test_access_structured_record_raises_external_service_error(
+    mock_request_post: dict[str, Any],
+    stub: GpProviderStub,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that the `access_structured_record` method raises an `ExternalServiceError`
+    when the GPProvider FHIR API request fails with an HTTP error.
+    """
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://invalid.com"
+    trace_id = "some_uuid_value"
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+    )
+
+    # Simulate an error response from the stub
+    def _fake_post_error(
+        url: str,
+        headers: CaseInsensitiveDict[str],
+        data: str,
+        timeout: int,
+    ) -> Response:
+        response = Response()
+        response.status_code = 500
+        response._content = b"Internal Server Error"  # noqa: SLF001 TODO: push this back into the stub?
+        response.reason = "Internal Server Error"
+        return response
+
+    monkeypatch.setattr(requests, "post", _fake_post_error)
+
+    with pytest.raises(
+        ExternalServiceError,
+        match="GPProvider FHIR API request failed:Internal Server Error",
+    ):
+        client.access_structured_record(trace_id, "body")
