@@ -38,7 +38,15 @@ demographic data for a single patient.
 
 """
 
-from requests import Response
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class StubResponse:
+    """A stub response object representing a minimal FHIR + JSON response."""
+
+    status_code: int
+    content: str
 
 
 class GpProviderStub:
@@ -95,7 +103,7 @@ class GpProviderStub:
             ],
         }
 
-    def access_record_structured(self) -> Response:
+    def access_record_structured(self) -> StubResponse:
         """
         Simulate accessRecordStructured operation of GPConnect FHIR API.
 
@@ -103,9 +111,9 @@ class GpProviderStub:
             Response: The stub patient bundle wrapped in a Response object.
         """
 
-        response = Response()
-        response.status_code = 200
-        # this is not prefered but may suffice for first implementaion of the stub
-        response._content = str.encode(str(self.patient_bundle))  # noqa: SLF001
+        stub_response = StubResponse(
+            status_code=200,
+            content=str(self.patient_bundle),
+        )
 
-        return response
+        return stub_response
