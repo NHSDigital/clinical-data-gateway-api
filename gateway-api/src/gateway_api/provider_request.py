@@ -24,8 +24,13 @@ Usage:
 import requests
 from requests import Response
 
-
 # definitions
+ars_interactionId = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
+ars_fhir_base = "/FHIR/STU3"
+ars_fhir_operation = "$gpc.getstructuredrecord"
+timeout = None  # TODO: None used for quicker dev, adjust as needed
+
+
 class ExternalServiceError(Exception):
     """
     Raised when the downstream PDS request fails.
@@ -77,7 +82,7 @@ class GpProviderClient:
         return {
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json",
-            "Ssp-InteractionID": "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1",  # noqa: E501 this is standard InteractionID for accessRecordStructured
+            "Ssp-InteractionID": ars_interactionId,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
             "Ssp-TraceID": trace_id,
@@ -101,10 +106,10 @@ class GpProviderClient:
         headers = self._build_headers(trace_id)
 
         response = requests.post(
-            self.provider_endpoint,
+            self.provider_endpoint + ars_fhir_base + "/patient/" + ars_fhir_operation,
             headers=headers,
             data=body,
-            timeout=None,  # noqa: S113 quicker dev cycle; adjust as needed
+            timeout=timeout,
         )
 
         try:

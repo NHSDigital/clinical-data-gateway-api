@@ -14,7 +14,7 @@ from stubs.stub_provider import GpProviderStub
 from gateway_api.provider_request import GpProviderClient
 
 # definitions
-ars_InteractionID = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
+ars_interactionId = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
 
 
 # fixtures
@@ -45,6 +45,7 @@ def mock_request_post(
 
         capture["headers"] = dict(headers)
         capture["data"] = data
+        capture["url"] = url
 
         return stub.access_record_structured()
 
@@ -61,6 +62,42 @@ def mock_request_post(
 # (stub) provider so not in scope here
 
 
+# Test: make request to correct URL
+def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
+    mock_request_post: dict[str, Any],
+    stub: GpProviderStub,
+) -> None:
+    """
+    Verify that a request to the GPProvider is made to the correct URL,
+    and receives a 200 OK response.
+    """
+    # Arrange
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://invalid.com"
+    trace_id = "some_uuid_value"
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+    )
+
+    # Act
+    result = client.access_structured_record(trace_id, "body")
+
+    # Extract
+    captured_url = mock_request_post.get("url", provider_endpoint)
+
+    # Assert
+    assert (
+        captured_url
+        == provider_endpoint + "/FHIR/STU3/patient/$gpc.getstructuredrecord"
+    )
+    assert result.status_code == 200
+
+
+# Test: makes request with correct headers
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
     stub: GpProviderStub,
@@ -86,7 +123,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
-        "Ssp-InteractionID": ars_InteractionID,
+        "Ssp-InteractionID": ars_interactionId,
     }
     # Act
     result = client.access_structured_record(trace_id, "body")
