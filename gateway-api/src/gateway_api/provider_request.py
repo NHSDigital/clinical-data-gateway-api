@@ -1,22 +1,25 @@
 """
 Module: gateway_api.provider_request
 
-This module contains the GPProvider class, which provides a
-simple client for GPProvider FHIR GP System.
-The GPProvider class has a sigle method to get_structure_record which
-can be used to fetch patient records from a GPProvider FHIR API endpoint.
+This module contains the GpProviderClient class, which provides a
+simple client for interacting with the GPProvider FHIR GP System.
+
+The GpProviderClient class includes methods to fetch structured patient
+records from a GPProvider FHIR API endpoint.
+
 Usage:
+    Instantiate a GpProviderClient with:
+        - provider_endpoint: The FHIR API endpoint for the provider.
+        - provider_asid: The ASID for the provider.
+        - consumer_asid: The ASID for the consumer.
 
-    instantiate a GPProvider with:
-            provider_endpoint
-            provider_ASID
-            consumer_ASID
+    Use the `access_structured_record` method to fetch a structured patient record:
+        Parameters:
+            - trace_id (str): A unique identifier for the request.
+            - body (str): The request body in FHIR format.
 
-    method get_structured_record with (may add optional parameters later):
-        Parameters: parameters resource
-
-    returns the response from the provider FHIR API.
-
+    Returns:
+        The response from the provider FHIR API.
 """
 
 # imports
@@ -28,22 +31,34 @@ from requests import Response
 ars_interactionId = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
 ars_fhir_base = "/FHIR/STU3"
 ars_fhir_operation = "$gpc.getstructuredrecord"
-timeout = None  # TODO: None used for quicker dev, adjust as needed
+timeout = None  # None used for quicker dev, adjust as needed
 
 
 class ExternalServiceError(Exception):
     """
-    Raised when the downstream PDS request fails.
+    Exception raised when the downstream GPProvider FHIR API request fails.
 
-    This module catches :class:`requests.HTTPError` thrown by
-    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
-    callers are not coupled to ``requests`` exception types.
+    This exception wraps :class:`requests.HTTPError` thrown by
+    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError``
+    to decouple callers from the underlying ``requests`` library exception types.
     """
 
 
 class GpProviderClient:
     """
-    A simple client for GPProvider FHIR GP System.
+    A client for interacting with the GPProvider FHIR GP System.
+
+    This class provides methods to interact with the GPProvider FHIR API,
+    including fetching structured patient records.
+
+    Attributes:
+        provider_endpoint (str): The FHIR API endpoint for the provider.
+        provider_asid (str): The ASID for the provider.
+        consumer_asid (str): The ASID for the consumer.
+
+    Methods:
+        access_structured_record(trace_id: str, body: str) -> Response:
+            Fetch a structured patient record from the GPProvider FHIR API.
     """
 
     def __init__(
@@ -73,11 +88,12 @@ class GpProviderClient:
         Build the headers required for the GPProvider FHIR API request.
 
         Args:
-            provider_asid (str): The ASID for the provider.
-            consumer_asid (str): The ASID for the consumer.
+            trace_id (str): A unique identifier for the request.
 
         Returns:
-            dict: Headers for the request.
+            dict[str, str]: A dictionary containing the headers for the request,
+            including content type, interaction ID, and ASIDs for the provider
+            and consumer.
         """
         return {
             "Content-Type": "application/fhir+json",
@@ -90,17 +106,21 @@ class GpProviderClient:
 
     def access_structured_record(
         self,
-        trace_id: str,  # from consumer header
-        body: str,  # forwarded from consumer_request
-        # nhsnumber: str, # from request
+        trace_id: str,
+        body: str,
     ) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
 
         Args:
-            parameters (dict): The parameters resource to send in the request.
-        returns:
-            dict: The response from the GPProvider FHIR API.
+            trace_id (str): A unique identifier for the request, passed in the headers.
+            body (str): The request body in FHIR format.
+
+        Returns:
+            Response: The response from the GPProvider FHIR API.
+
+        Raises:
+            ExternalServiceError: If the API request fails with an HTTP error.
         """
 
         headers = self._build_headers(trace_id)
