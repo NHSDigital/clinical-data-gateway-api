@@ -17,23 +17,6 @@ from gateway_api.provider_request import GpProviderClient
 ars_InteractionID = "urn:nhs:names:services:gpconnect:structured:fhir:operation:gpc.getstructuredrecord-1"  # noqa: E501 this is standard InteractionID for accessRecordStructured
 
 
-class FakeResponse(Response):
-    """A fake requests.Response object for testing."""
-
-    def __init__(
-        self,
-        status_code: int,
-        _content: bytes,
-        headers: CaseInsensitiveDict[str],
-        reason: str,
-    ) -> None:
-        """Create a FakeResponse instance."""
-        self.status_code = status_code
-        self.headers = CaseInsensitiveDict(headers)
-        self._content = _content
-        self.reason = reason
-
-
 # fixtures
 @pytest.fixture
 def stub() -> GpProviderStub:
@@ -57,21 +40,13 @@ def mock_request_post(
         headers: CaseInsensitiveDict[str],
         data: str,
         timeout: int,
-    ) -> FakeResponse:
+    ) -> Response:
         """A fake requests.post implementation."""
 
         capture["headers"] = dict(headers)
         capture["data"] = data
 
-        stub_response = stub.access_record_structured()
-        fake_response = FakeResponse(
-            status_code=stub_response.status_code,
-            _content=stub_response.content.encode(),
-            headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-            reason="OK",
-        )
-
-        return fake_response
+        return stub.access_record_structured()
 
     monkeypatch.setattr(requests, "post", _fake_post)
     return capture
@@ -187,4 +162,4 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
     # Assert
     assert result.status_code == expected_response.status_code
-    assert result.content == expected_response.content.encode()
+    assert result.content == expected_response.content

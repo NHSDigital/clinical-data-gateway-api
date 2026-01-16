@@ -38,15 +38,29 @@ demographic data for a single patient.
 
 """
 
+import json
 from dataclasses import dataclass
 
+from requests import Response
+from requests.structures import CaseInsensitiveDict
 
-@dataclass(frozen=True)
-class StubResponse:
+
+@dataclass()
+class StubResponse(Response):
     """A stub response object representing a minimal FHIR + JSON response."""
 
-    status_code: int
-    content: str
+    def __init__(
+        self,
+        status_code: int,
+        _content: bytes,
+        headers: CaseInsensitiveDict[str],
+        reason: str,
+    ) -> None:
+        """Create a FakeResponse instance."""
+        self.status_code = status_code
+        self._content = _content
+        self.headers = CaseInsensitiveDict(headers)
+        self.reason = reason
 
 
 class GpProviderStub:
@@ -113,7 +127,9 @@ class GpProviderStub:
 
         stub_response = StubResponse(
             status_code=200,
-            content=str(self.patient_bundle),
+            headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
+            reason="OK",
+            _content=json.dumps(self.patient_bundle).encode("utf-8"),
         )
 
         return stub_response
