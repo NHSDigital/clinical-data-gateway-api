@@ -1,7 +1,8 @@
 # tests/test_common.py
 
 import pytest
-from src.gateway_api.common import common
+
+from gateway_api.common import common
 
 
 @pytest.mark.parametrize(
@@ -12,7 +13,7 @@ from src.gateway_api.common import common
         9434765919,  # int input supported
     ],
 )
-def test_validate_nhs_number_valid(value):
+def test_validate_nhs_number_valid(value: str) -> None:
     assert common.validate_nhs_number(value) is True
 
 
@@ -25,5 +26,5 @@ def test_validate_nhs_number_valid(value):
         "abc",  # no digits after stripping
     ],
 )
-def test_validate_nhs_number_invalid_length_or_non_numeric(value):
+def test_validate_nhs_number_invalid_length_or_non_numeric(value: str) -> None:
     assert common.validate_nhs_number(value) is False

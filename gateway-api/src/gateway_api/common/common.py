@@ -1,6 +1,8 @@
 import re
 from dataclasses import dataclass
 
+type json_str = str
+
 
 @dataclass
 class FlaskResponse:
