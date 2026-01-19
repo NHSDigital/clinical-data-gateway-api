@@ -198,7 +198,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
     Verify ``GET /Patient/{nhs_number}`` returns 200 and demographics are extracted.
 
     This test explicitly inserts the patient into the stub and asserts that the client
-    returns a populated :class:`gateway_api.pds_search.SearchResults`.
+    returns a populated :class:`gateway_api.pds_search.PdsSearchResults`.
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture
