@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     import requests
 
 from gateway_api.common.common import FlaskResponse, json_str, validate_nhs_number
-from gateway_api.pds_search import PdsClient, SearchResults
+from gateway_api.pds_search import PdsClient, PdsSearchResults
 
 
 class DownstreamServiceError(RuntimeError):
@@ -105,9 +105,9 @@ class Controller:
     def __init__(
         self,
         pds_base_url: str = PdsClient.SANDBOX_URL,
+        sds_base_url: str = "https://example.invalid/sds",
         nhsd_session_urid: str | None = None,
         timeout: int = 10,
-        sds_base_url: str = "https://example.invalid/sds",
     ) -> None:
         self.pds_base_url = pds_base_url
         self.sds_base_url = sds_base_url
@@ -164,7 +164,9 @@ class Controller:
             timeout=self.timeout,
         )
 
-        pds_result: SearchResults | None = pds.search_patient_by_nhs_number(nhs_number)
+        pds_result: PdsSearchResults | None = pds.search_patient_by_nhs_number(
+            nhs_number
+        )
 
         if pds_result is None:
             raise RequestError(
