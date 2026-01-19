@@ -1,1 +1,17 @@
+anesth(esia|etic|etist)
+anonymiz(e|ed|ing|ation)
+artifact
+authoriz(e|ation|ed|ing)
+behavior
+catalog
+cent(er|ers|ered)
+color
+favor
+label(ing|er)
+meter
+model(ing|er)
+organiz(e|ation|ed|ing)
+optimiz(e|ation|ed|ing)
+pediatr(ic|ics|ician)
 python
+travel(ing|er)
