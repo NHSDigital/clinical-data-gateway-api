@@ -22,6 +22,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
 
     # One job per branch at a time
     concurrency:
@@ -136,8 +137,18 @@ jobs:
         run: |
           terraform apply -auto-approve
 
-      # ---------- DESTROY (PR closed) ----------
+      - name: Capture preview TF outputs
+        if: github.event.action != 'closed'
+        id: tf-output
+        working-directory: infrastructure/environments/preview
+        run: |
+          terraform output -json > tf-output.json
+          URL=$(jq -r '.url.value' tf-output.json)
+          TG=$(jq -r '.target_group_arn.value' tf-output.json)
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+          echo "target_group=$TG" >> $GITHUB_OUTPUT
 
+      # ---------- DESTROY (PR closed) ----------
       - name: Terraform init (destroy)
         if: github.event.action == 'closed'
         working-directory: infrastructure/environments/preview
@@ -156,3 +167,17 @@ jobs:
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
         run: |
           terraform destroy -auto-approve
+
+      - name: Comment function name on PR
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const alb = '${{ steps.tf-output.outputs.target_group }}';
+            const url = '${{ steps.tf-output.outputs.preview_url }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `ALB Target: \`${alb}\`\nPreview URL: ${url}`
+            });
