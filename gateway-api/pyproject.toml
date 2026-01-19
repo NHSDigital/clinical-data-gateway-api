@@ -15,7 +15,8 @@ types-flask = "^1.1.6"
 
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"},
-            {include = "stubs", from = "stubs"}]
+            {include = "stubs", from = "stubs"},
+            {include = "fhir", from = "src"}]
 
 [tool.coverage.run]
 relative_files = true

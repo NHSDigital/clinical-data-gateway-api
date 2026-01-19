@@ -1,8 +1,10 @@
 import os
 from typing import Any, TypedDict
 
+from fhir import Bundle
 from flask import Flask, request
 
+from gateway_api.get_structed_record.request import GetStructuredRecordRequest
 from gateway_api.handler import User, greet
 
 app = Flask(__name__)
@@ -16,76 +18,11 @@ class APIMResponse[T](TypedDict):
     body: T
 
 
-class Identifier(TypedDict):
-    """FHIR Identifier type."""
-
-    system: str
-    value: str
-
-
-class HumanName(TypedDict):
-    """FHIR HumanName type."""
-
-    use: str
-    family: str
-    given: list[str]
-
-
-class Patient(TypedDict):
-    """FHIR Patient resource."""
-
-    resourceType: str
-    id: str
-    identifier: list[Identifier]
-    name: list[HumanName]
-    gender: str
-    birthDate: str
-
-
-class BundleEntry(TypedDict):
-    """FHIR Bundle entry."""
-
-    fullUrl: str
-    resource: Patient
-
-
-class Bundle(TypedDict):
-    """FHIR Bundle resource."""
-
-    resourceType: str
-    id: str
-    type: str
-    timestamp: str
-    entry: list[BundleEntry]
-
-
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Bundle:
     """Endpoint to get structured record, replicating lambda handler functionality."""
-    bundle: Bundle = {
-        "resourceType": "Bundle",
-        "id": "example-patient-bundle",
-        "type": "collection",
-        "timestamp": "2026-01-12T10:00:00Z",
-        "entry": [
-            {
-                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
-                "resource": {
-                    "resourceType": "Patient",
-                    "id": "9999999999",
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9999999999",
-                        }
-                    ],
-                    "name": [{"use": "official", "family": "Doe", "given": ["John"]}],
-                    "gender": "male",
-                    "birthDate": "1985-04-12",
-                },
-            }
-        ],
-    }
+    get_structured_record_request = GetStructuredRecordRequest(request)
+    bundle = get_structured_record_request.fulfil()
     return bundle
 
 
