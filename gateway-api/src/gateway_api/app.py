@@ -4,6 +4,7 @@ from typing import Any, TypedDict
 from fhir import Bundle
 from flask import Flask, request
 
+from gateway_api.get_structed_record.handler import GetStructuredRecordHandler
 from gateway_api.get_structed_record.request import GetStructuredRecordRequest
 from gateway_api.handler import User, greet
 
@@ -22,8 +23,8 @@ class APIMResponse[T](TypedDict):
 def get_structured_record() -> Bundle:
     """Endpoint to get structured record, replicating lambda handler functionality."""
     get_structured_record_request = GetStructuredRecordRequest(request)
-    bundle = get_structured_record_request.fulfil()
-    return bundle
+    response = GetStructuredRecordHandler.handle(get_structured_record_request)
+    return response
 
 
 @app.route("/2015-03-31/functions/function/invocations", methods=["POST"])
