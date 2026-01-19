@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+
+__all__ = ["json"]  # Make mypy happy in tests
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
