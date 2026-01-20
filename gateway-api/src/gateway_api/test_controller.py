@@ -295,6 +295,16 @@ def test__coerce_nhs_number_to_int_rejects_when_validator_returns_false(
         _coerce_nhs_number_to_int("9434765919")  # noqa: SLF001 (testing private member)
 
 
+def test__coerce_nhs_number_to_int_accepts_integer_value() -> None:
+    """
+    Ensure ``_coerce_nhs_number_to_int`` accepts an integer input
+    and returns it unchanged.
+
+    :returns: None
+    """
+    assert _coerce_nhs_number_to_int(9434765919) == 9434765919  # noqa: SLF001
+
+
 def test_call_gp_connect_returns_404_when_pds_patient_not_found(
     patched_deps: Any,
 ) -> None:
