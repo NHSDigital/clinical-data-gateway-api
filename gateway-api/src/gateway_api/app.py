@@ -1,5 +1,5 @@
 import os
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from fhir import Bundle
 from flask import Flask, request
@@ -17,6 +17,10 @@ class APIMResponse[T](TypedDict):
     statusCode: int
     headers: dict[str, str]
     body: T
+
+
+class HealthCheckResponse(TypedDict):
+    status: str
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
@@ -54,9 +58,9 @@ def _with_default_headers[T](status_code: int, body: T) -> APIMResponse[T]:
 
 
 @app.route("/health", methods=["GET"])
-def health_check() -> APIMResponse[dict[str, Any]]:
+def health_check() -> HealthCheckResponse:
     """Health check endpoint."""
-    return _with_default_headers(status_code=200, body={"status": "healthy"})
+    return {"status": "healthy"}
 
 
 if __name__ == "__main__":

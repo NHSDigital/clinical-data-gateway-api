@@ -144,19 +144,12 @@ class TestHealthCheck:
 
         assert response.status_code == 200
         data = response.get_json()
-        assert data["statusCode"] == 200
-        assert data["body"]["status"] == "healthy"
-        assert data["headers"]["Content-Type"] == "application/json"
+        assert data["status"] == "healthy"
 
+    @pytest.mark.parametrize("method", ["POST", "PUT", "DELETE", "PATCH"])
     def test_health_check_only_accepts_get_method(
-        self, client: FlaskClient[Flask]
+        self, client: FlaskClient[Flask], method: str
     ) -> None:
         """Test that health_check only accepts GET method."""
-        response = client.post("/health")
-        assert response.status_code == 405  # Method Not Allowed
-
-        response = client.put("/health")
-        assert response.status_code == 405
-
-        response = client.delete("/health")
+        response = client.open("/health", method=method)
         assert response.status_code == 405
