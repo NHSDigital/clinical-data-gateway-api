@@ -31,7 +31,7 @@ def make_request_body(nhs_number: str = "9434765919") -> json_str:
 
     :param nhs_number: NHS number to embed in the request body.
     :returns: JSON string payload suitable for
-        :meth:`gateway_api.controller.Controller.call_gp_connect`.
+        :meth:`gateway_api.controller.Controller.call_gp_provider`.
     """
     # Controller expects a JSON string containing an "nhs-number" field.
     return std_json.dumps({"nhs-number": nhs_number})
@@ -47,7 +47,7 @@ def make_headers(
     :param ods_from: Value for the ``Ods-from`` header (consumer ODS code).
     :param trace_id: Value for the ``X-Request-ID`` header (trace/correlation ID).
     :returns: Header dictionary suitable for
-        :meth:`gateway_api.controller.Controller.call_gp_connect`.
+        :meth:`gateway_api.controller.Controller.call_gp_provider`.
     """
     # Controller expects these headers:
     # - Ods-from (consumer ODS)
@@ -164,9 +164,9 @@ class FakeSdsClient:
         return self._org_details_by_ods.get(ods_code)
 
 
-class FakeGpConnectClient:
+class FakeGpProviderClient:
     """
-    Test double for :class:`gateway_api.controller.GpConnectClient`.
+    Test double for :class:`gateway_api.controller.GpProviderClient`.
 
     The controller instantiates this class and calls ``access_structured_record``.
     Tests configure the returned HTTP response using class-level attributes.
@@ -191,7 +191,7 @@ class FakeGpConnectClient:
         :param provider_asid: Provider ASID passed by the controller.
         :param consumer_asid: Consumer ASID passed by the controller.
         """
-        FakeGpConnectClient.last_init = {
+        FakeGpProviderClient.last_init = {
             "provider_endpoint": provider_endpoint,
             "provider_asid": provider_asid,
             "consumer_asid": consumer_asid,
@@ -212,20 +212,20 @@ class FakeGpConnectClient:
         :returns: A configured :class:`requests.Response`, or ``None`` if
             ``return_none`` is set.
         """
-        FakeGpConnectClient.last_call = {
+        FakeGpProviderClient.last_call = {
             "trace_id": trace_id,
             "body": body,
             "nhsnumber": nhsnumber,
         }
 
-        if FakeGpConnectClient.return_none:
+        if FakeGpProviderClient.return_none:
             return None
 
         resp = Response()
-        resp.status_code = FakeGpConnectClient.response_status_code
-        resp._content = FakeGpConnectClient.response_body  # noqa: SLF001
+        resp.status_code = FakeGpProviderClient.response_status_code
+        resp._content = FakeGpProviderClient.response_body  # noqa: SLF001
         resp.encoding = "utf-8"
-        resp.headers.update(FakeGpConnectClient.response_headers)
+        resp.headers.update(FakeGpProviderClient.response_headers)
         resp.url = "https://example.invalid/fake"
         return resp
 
@@ -241,7 +241,7 @@ def patched_deps(monkeypatch: pytest.MonkeyPatch) -> None:
     # Patch dependency classes in the *module* namespace that Controller uses.
     monkeypatch.setattr(controller_module, "PdsClient", FakePdsClient)
     monkeypatch.setattr(controller_module, "SdsClient", FakeSdsClient)
-    monkeypatch.setattr(controller_module, "GpConnectClient", FakeGpConnectClient)
+    monkeypatch.setattr(controller_module, "GpProviderClient", FakeGpProviderClient)
 
 
 def _make_controller() -> Controller:
@@ -305,7 +305,7 @@ def test__coerce_nhs_number_to_int_accepts_integer_value() -> None:
     assert _coerce_nhs_number_to_int(9434765919) == 9434765919  # noqa: SLF001
 
 
-def test_call_gp_connect_returns_404_when_pds_patient_not_found(
+def test_call_gp_provider_returns_404_when_pds_patient_not_found(
     patched_deps: Any,
 ) -> None:
     """
@@ -317,13 +317,13 @@ def test_call_gp_connect_returns_404_when_pds_patient_not_found(
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_connect(body, headers, "token-abc")
+    r = c.call_gp_provider(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "No PDS patient found for NHS number" in (r.data or "")
 
 
-def test_call_gp_connect_returns_404_when_gp_ods_code_missing(
+def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -345,13 +345,13 @@ def test_call_gp_connect_returns_404_when_gp_ods_code_missing(
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_connect(body, headers, "token-abc")
+    r = c.call_gp_provider(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current provider ODS code" in (r.data or "")
 
 
-def test_call_gp_connect_returns_404_when_sds_returns_none_for_provider(
+def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -378,13 +378,13 @@ def test_call_gp_connect_returns_404_when_sds_returns_none_for_provider(
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_connect(body, headers, "token-abc")
+    r = c.call_gp_provider(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert r.data == "No SDS org found for provider ODS code A12345"
 
 
-def test_call_gp_connect_returns_404_when_sds_provider_asid_blank(
+def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -414,18 +414,18 @@ def test_call_gp_connect_returns_404_when_sds_provider_asid_blank(
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_connect(body, headers, "token-abc")
+    r = c.call_gp_provider(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current ASID" in (r.data or "")
 
 
-def test_call_gp_connect_returns_502_when_gp_connect_returns_none(
+def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
-    If GP Connect returns no response object, the controller should return 502.
+    If GP provider returns no response object, the controller should return 502.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
@@ -450,22 +450,22 @@ def test_call_gp_connect_returns_502_when_gp_connect_returns_none(
     monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
     monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
 
-    FakeGpConnectClient.return_none = True
+    FakeGpProviderClient.return_none = True
 
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_connect(body, headers, "token-abc")
+    r = c.call_gp_provider(body, headers, "token-abc")
 
     assert r.status_code == 502
-    assert r.data == "GP Connect service error"
+    assert r.data == "GP provider service error"
     assert r.headers is None
 
     # reset for other tests
-    FakeGpConnectClient.return_none = False
+    FakeGpProviderClient.return_none = False
 
 
-def test_call_gp_connect_constructs_pds_client_with_expected_kwargs(
+def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
     patched_deps: Any,
 ) -> None:
     """
@@ -476,7 +476,7 @@ def test_call_gp_connect_constructs_pds_client_with_expected_kwargs(
     body = make_request_body("9434765919")
     headers = make_headers(ods_from="ORG1", trace_id="trace-123")
 
-    _ = c.call_gp_connect(body, headers, "token-abc")  # will stop at PDS None => 404
+    _ = c.call_gp_provider(body, headers, "token-abc")  # will stop at PDS None => 404
 
     assert FakePdsClient.last_init is not None
     assert FakePdsClient.last_init["auth_token"] == "token-abc"  # noqa: S105
@@ -486,7 +486,7 @@ def test_call_gp_connect_constructs_pds_client_with_expected_kwargs(
     assert FakePdsClient.last_init["timeout"] == 3
 
 
-def test_call_gp_connect_returns_400_when_request_body_not_valid_json(
+def test_call_gp_provider_returns_400_when_request_body_not_valid_json(
     patched_deps: Any,
 ) -> None:
     """
@@ -495,13 +495,13 @@ def test_call_gp_connect_returns_400_when_request_body_not_valid_json(
     c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_connect("{", headers, "token-abc")
+    r = c.call_gp_provider("{", headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Request body must be valid JSON with an "nhs-number" field'
 
 
-def test_call_gp_connect_returns_400_when_request_body_is_not_an_object(
+def test_call_gp_provider_returns_400_when_request_body_is_not_an_object(
     patched_deps: Any,
 ) -> None:
     """
@@ -510,13 +510,13 @@ def test_call_gp_connect_returns_400_when_request_body_is_not_an_object(
     c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_connect('["9434765919"]', headers, "token-abc")
+    r = c.call_gp_provider('["9434765919"]', headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Request body must be a JSON object with an "nhs-number" field'
 
 
-def test_call_gp_connect_returns_400_when_request_body_missing_nhs_number(
+def test_call_gp_provider_returns_400_when_request_body_missing_nhs_number(
     patched_deps: Any,
 ) -> None:
     """
@@ -525,13 +525,13 @@ def test_call_gp_connect_returns_400_when_request_body_missing_nhs_number(
     c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_connect("{}", headers, "token-abc")
+    r = c.call_gp_provider("{}", headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Missing required field "nhs-number" in JSON request body'
 
 
-def test_call_gp_connect_returns_400_when_nhs_number_not_coercible(
+def test_call_gp_provider_returns_400_when_nhs_number_not_coercible(
     patched_deps: Any,
 ) -> None:
     """
@@ -540,13 +540,13 @@ def test_call_gp_connect_returns_400_when_nhs_number_not_coercible(
     c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_connect(std_json.dumps({"nhs-number": "ABC"}), headers, "token-abc")
+    r = c.call_gp_provider(std_json.dumps({"nhs-number": "ABC"}), headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Could not coerce NHS number "ABC" to an integer'
 
 
-def test_call_gp_connect_returns_400_when_missing_ods_from_header(
+def test_call_gp_provider_returns_400_when_missing_ods_from_header(
     patched_deps: Any,
 ) -> None:
     """
@@ -555,13 +555,13 @@ def test_call_gp_connect_returns_400_when_missing_ods_from_header(
     c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_connect(body, {"X-Request-ID": "trace-123"}, "token-abc")
+    r = c.call_gp_provider(body, {"X-Request-ID": "trace-123"}, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Missing required header "Ods-from"'
 
 
-def test_call_gp_connect_returns_400_when_ods_from_is_whitespace(
+def test_call_gp_provider_returns_400_when_ods_from_is_whitespace(
     patched_deps: Any,
 ) -> None:
     """
@@ -570,7 +570,7 @@ def test_call_gp_connect_returns_400_when_ods_from_is_whitespace(
     c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_connect(
+    r = c.call_gp_provider(
         body, {"Ods-from": "   ", "X-Request-ID": "trace-123"}, "token-abc"
     )
 
@@ -578,7 +578,7 @@ def test_call_gp_connect_returns_400_when_ods_from_is_whitespace(
     assert r.data == 'Missing required header "Ods-from"'
 
 
-def test_call_gp_connect_returns_400_when_missing_x_request_id(
+def test_call_gp_provider_returns_400_when_missing_x_request_id(
     patched_deps: Any,
 ) -> None:
     """
@@ -587,13 +587,13 @@ def test_call_gp_connect_returns_400_when_missing_x_request_id(
     c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_connect(body, {"Ods-from": "ORG1"}, "token-abc")
+    r = c.call_gp_provider(body, {"Ods-from": "ORG1"}, "token-abc")
 
     assert r.status_code == 400
     assert r.data == "Missing required header: X-Request-ID"
 
 
-def test_call_gp_connect_returns_404_when_sds_provider_endpoint_blank(
+def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -620,13 +620,13 @@ def test_call_gp_connect_returns_404_when_sds_provider_endpoint_blank(
     monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
     monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
 
-    r = c.call_gp_connect(make_request_body("9434765919"), make_headers(), "token-abc")
+    r = c.call_gp_provider(make_request_body("9434765919"), make_headers(), "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current endpoint" in (r.data or "")
 
 
-def test_call_gp_connect_returns_404_when_sds_returns_none_for_consumer(
+def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -656,7 +656,7 @@ def test_call_gp_connect_returns_404_when_sds_returns_none_for_consumer(
     monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
     monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
 
-    r = c.call_gp_connect(
+    r = c.call_gp_provider(
         make_request_body("9434765919"), make_headers(ods_from="ORG1"), "token-abc"
     )
 
@@ -664,7 +664,7 @@ def test_call_gp_connect_returns_404_when_sds_returns_none_for_consumer(
     assert r.data == "No SDS org found for consumer ODS code ORG1"
 
 
-def test_call_gp_connect_returns_404_when_sds_consumer_asid_blank(
+def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -694,7 +694,7 @@ def test_call_gp_connect_returns_404_when_sds_consumer_asid_blank(
     monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
     monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
 
-    r = c.call_gp_connect(
+    r = c.call_gp_provider(
         make_request_body("9434765919"), make_headers(ods_from="ORG1"), "token-abc"
     )
 
@@ -702,12 +702,12 @@ def test_call_gp_connect_returns_404_when_sds_consumer_asid_blank(
     assert "did not contain a current ASID" in (r.data or "")
 
 
-def test_call_gp_connect_passthroughs_non_200_gp_connect_response(
+def test_call_gp_provider_passthroughs_non_200_gp_provider_response(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """
-    Validate that non-200 responses from GP Connect are passed through.
+    Validate that non-200 responses from GP provider are passed through.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
@@ -732,17 +732,17 @@ def test_call_gp_connect_passthroughs_non_200_gp_connect_response(
     monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
     monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
 
-    FakeGpConnectClient.response_status_code = 404
-    FakeGpConnectClient.response_body = b"Not Found"
-    FakeGpConnectClient.response_headers = {
+    FakeGpProviderClient.response_status_code = 404
+    FakeGpProviderClient.response_body = b"Not Found"
+    FakeGpProviderClient.response_headers = {
         "Content-Type": "text/plain",
-        "X-Downstream": "gp-connect",
+        "X-Downstream": "gp-provider",
     }
 
-    r = c.call_gp_connect(make_request_body("9434765919"), make_headers(), "token-abc")
+    r = c.call_gp_provider(make_request_body("9434765919"), make_headers(), "token-abc")
 
     assert r.status_code == 404
     assert r.data == "Not Found"
     assert r.headers is not None
     assert r.headers.get("Content-Type") == "text/plain"
-    assert r.headers.get("X-Downstream") == "gp-connect"
+    assert r.headers.get("X-Downstream") == "gp-provider"
