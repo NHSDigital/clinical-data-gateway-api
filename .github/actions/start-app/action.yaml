@@ -8,7 +8,7 @@ inputs:
   health-path:
     description: "Health probe path to POST"
     required: false
-    default: "/2015-03-31/functions/function/invocations"
+    default: "/health"
   max-seconds:
     description: "Maximum seconds to wait for readiness"
     required: false
@@ -38,7 +38,7 @@ runs:
         MAX="${{ inputs.max-seconds }}"
         echo "Waiting for app at ${HEALTH_URL} (max ${MAX}s)..."
         for i in $(seq 1 "${MAX}"); do
-          if curl -sSf -X POST "${HEALTH_URL}" -d '{}' >/dev/null; then
+          if curl -sSf -X GET "${HEALTH_URL}" >/dev/null; then
             echo "App is ready"
             exit 0
           fi
