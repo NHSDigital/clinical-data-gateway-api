@@ -98,14 +98,14 @@ class SdsClient:
         )
 
 
-class GpConnectClient:
+class GpProviderClient:
     """
-    Stub GP Connect client for obtaining patient records.
+    Stub GP provider client for obtaining patient records.
 
     Replace this with the real one once it's implemented.
     """
 
-    SANDBOX_URL = "https://example.invalid/gpconnect"
+    SANDBOX_URL = "https://example.invalid/gpprovider"
 
     def __init__(
         self,
@@ -114,7 +114,7 @@ class GpConnectClient:
         consumer_asid: str,
     ) -> None:
         """
-        Create a GP Connect client.
+        Create a GP provider client.
 
         :param provider_endpoint: Provider endpoint obtained from SDS.
         :param provider_asid: Provider ASID obtained from SDS.
@@ -131,7 +131,7 @@ class GpConnectClient:
         nhsnumber: str,  # NOSONAR S1172 (ignore in stub)
     ) -> requests.Response | None:
         """
-        Retrieve a patient's structured record from GP Connect.
+        Retrieve a patient's structured record from GP provider.
 
         This stub just returns None, the real thing will be more interesting!
 
@@ -146,13 +146,13 @@ class GpConnectClient:
 
 class Controller:
     """
-    Orchestrates calls to PDS -> SDS -> GP Connect.
+    Orchestrates calls to PDS -> SDS -> GP provider.
 
     Entry point:
-        - ``call_gp_connect(request_body_json, headers, auth_token) -> FlaskResponse``
+        - ``call_gp_provider(request_body_json, headers, auth_token) -> FlaskResponse``
     """
 
-    gp_connect_client: GpConnectClient | None
+    gp_provider_client: GpProviderClient | None
 
     def __init__(
         self,
@@ -173,7 +173,7 @@ class Controller:
         self.sds_base_url = sds_base_url
         self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
-        self.gp_connect_client = None
+        self.gp_provider_client = None
 
     def _get_details_from_body(self, request_body: json_str) -> int:
         """
@@ -335,7 +335,7 @@ class Controller:
 
         return consumer_asid, provider_asid, provider_endpoint
 
-    def call_gp_connect(
+    def call_gp_provider(
         self,
         request_body: json_str,
         headers: dict[str, str],
@@ -353,7 +353,7 @@ class Controller:
         1) Call PDS to obtain the patient's GP (provider) ODS code.
         2) Call SDS using provider ODS to obtain provider ASID + provider endpoint.
         3) Call SDS using consumer ODS to obtain consumer ASID.
-        4) Call GP Connect to obtain patient records.
+        4) Call GP provider to obtain patient records.
 
         :param request_body: Raw JSON request body.
         :param headers: HTTP headers from the request.
@@ -395,25 +395,25 @@ class Controller:
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
 
-        # Call GP Connect with correct parameters
-        self.gp_connect_client = GpConnectClient(
+        # Call GP provider with correct parameters
+        self.gp_provider_client = GpProviderClient(
             provider_endpoint=provider_endpoint,
             provider_asid=provider_asid,
             consumer_asid=consumer_asid,
         )
 
-        response = self.gp_connect_client.access_structured_record(
+        response = self.gp_provider_client.access_structured_record(
             trace_id=trace_id,
             body=request_body,
             nhsnumber=str(nhs_number),
         )
 
-        # If we get a None from GP Connect, that means that either the service did not
-        # respond or we didn't make the request to the service in the first place.
+        # If we get a None from the GP provider, that means that either the service did
+        # not respond or we didn't make the request to the service in the first place.
         # Therefore a None is a 502, any real response just pass straight back.
         return FlaskResponse(
             status_code=response.status_code if response is not None else 502,
-            data=response.text if response is not None else "GP Connect service error",
+            data=response.text if response is not None else "GP provider service error",
             headers=dict(response.headers) if response is not None else None,
         )
 
