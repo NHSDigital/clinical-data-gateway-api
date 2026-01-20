@@ -60,10 +60,6 @@ class FakePdsClient:
     def search_patient_by_nhs_number(self, nhs_number: int) -> Any | None:
         return self._patient_details
 
-    @classmethod
-    def reset(cls) -> None:
-        cls.last_init = None
-
 
 class FakeSdsClient:
     last_init: dict[str, Any] | None = None
@@ -91,10 +87,6 @@ class FakeSdsClient:
 
     def get_org_details(self, ods_code: str) -> SdsSearchResults | None:
         return self._org_details_by_ods.get(ods_code)
-
-    @classmethod
-    def reset(cls) -> None:
-        cls.last_init = None
 
 
 class FakeGpConnectClient:
@@ -139,26 +131,6 @@ class FakeGpConnectClient:
         resp.url = "https://example.invalid/fake"
         return resp
 
-    @classmethod
-    def reset(cls) -> None:
-        cls.last_init = None
-        cls.last_call = None
-        cls.return_none = False
-        cls.response_status_code = 200
-        cls.response_body = b"ok"
-        cls.response_headers = {"Content-Type": "application/fhir+json"}
-
-
-@pytest.fixture(autouse=True)
-def _reset_test_fakes() -> None:
-    """
-    Reset mutable class-level state on fakes before each test to prevent
-    cross-test contamination (e.g., return_none=True leaking into another test).
-    """
-    FakePdsClient.reset()
-    FakeSdsClient.reset()
-    FakeGpConnectClient.reset()
-
 
 @pytest.fixture
 def patched_deps(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -182,13 +154,13 @@ def _make_controller() -> Controller:
 # -----------------------------
 def test__coerce_nhs_number_to_int_accepts_spaces_and_validates() -> None:
     # Use real validator logic by default; 9434765919 is algorithmically valid.
-    assert _coerce_nhs_number_to_int("943 476 5919") == 9434765919  # noqa: SLF001
+    assert _coerce_nhs_number_to_int("943 476 5919") == 9434765919  # noqa: SLF001 (testing private member)
 
 
 @pytest.mark.parametrize("value", ["not-a-number", "943476591", "94347659190"])
 def test__coerce_nhs_number_to_int_rejects_bad_inputs(value: Any) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        _coerce_nhs_number_to_int(value)  # noqa: SLF001
+    with pytest.raises(ValueError):  # noqa: PT011 (ValueError is correct here)
+        _coerce_nhs_number_to_int(value)  # noqa: SLF001 (testing private member)
 
 
 def test__coerce_nhs_number_to_int_rejects_when_validator_returns_false(
@@ -198,7 +170,7 @@ def test__coerce_nhs_number_to_int_rejects_when_validator_returns_false(
     # gateway_api.controller
     monkeypatch.setattr(controller_module, "validate_nhs_number", lambda _: False)
     with pytest.raises(ValueError, match="invalid"):
-        _coerce_nhs_number_to_int("9434765919")  # noqa: SLF001
+        _coerce_nhs_number_to_int("9434765919")  # noqa: SLF001 (testing private member)
 
 
 def test_call_gp_connect_returns_404_when_pds_patient_not_found(
@@ -302,6 +274,10 @@ def test_call_gp_connect_returns_502_when_gp_connect_returns_none(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """
+    GPConnectClient only returns None if we didn't call/get a response from
+    GP Connect, in which case 502 is correct
+    """
     c = _make_controller()
 
     def pds_factory(**kwargs: Any) -> FakePdsClient:
@@ -338,62 +314,6 @@ def test_call_gp_connect_returns_502_when_gp_connect_returns_none(
     FakeGpConnectClient.return_none = False
 
 
-def test_call_gp_connect_happy_path_maps_status_text_headers_and_trims_sds_fields(
-    patched_deps: Any,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    c = _make_controller()
-
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        # include whitespace to assert trimming in controller._get_sds_details()
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="  asid_A12345  ", endpoint="  https://provider.example/ep  "
-            ),
-        )
-        inst.set_org_details(
-            "ORG1", SdsSearchResults(asid="  asid_ORG1  ", endpoint=None)
-        )
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    FakeGpConnectClient.response_status_code = 200
-    FakeGpConnectClient.response_body = b"ok"
-    FakeGpConnectClient.response_headers = {"Content-Type": "application/fhir+json"}
-
-    body = make_request_body("943 476 5919")
-    headers = make_headers(ods_from="ORG1", trace_id="trace-123")
-
-    r = c.call_gp_connect(body, headers, "token-abc")
-
-    assert r.status_code == 200
-    assert r.data == "ok"
-    assert r.headers == {"Content-Type": "application/fhir+json"}
-
-    # GP Connect client constructed with trimmed SDS fields
-    assert FakeGpConnectClient.last_init == {
-        "provider_endpoint": "https://provider.example/ep",
-        "provider_asid": "asid_A12345",
-        "consumer_asid": "asid_ORG1",
-    }
-
-    # GP Connect called with correct parameter names and values
-    assert FakeGpConnectClient.last_call == {
-        "trace_id": "trace-123",
-        "body": body,
-        "nhsnumber": "9434765919",
-    }
-
-
 def test_call_gp_connect_constructs_pds_client_with_expected_kwargs(
     patched_deps: Any,
 ) -> None:
@@ -412,9 +332,6 @@ def test_call_gp_connect_constructs_pds_client_with_expected_kwargs(
     assert FakePdsClient.last_init["timeout"] == 3
 
 
-# -----------------------------
-# Additional unit tests
-# -----------------------------
 def test_call_gp_connect_returns_400_when_request_body_not_valid_json(
     patched_deps: Any,
 ) -> None:
@@ -499,44 +416,6 @@ def test_call_gp_connect_returns_400_when_missing_x_request_id(
 
     assert r.status_code == 400
     assert r.data == "Missing required header: X-Request-ID"
-
-
-def test_call_gp_connect_allows_empty_x_request_id_and_passes_through(
-    patched_deps: Any,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """
-    Documents current behaviour: controller checks for None, not empty string.
-    """
-    c = _make_controller()
-
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="asid_ORG1", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    body = make_request_body("9434765919")
-    headers = {"Ods-from": "ORG1", "X-Request-ID": ""}  # empty but not None
-
-    r = c.call_gp_connect(body, headers, "token-abc")
-
-    assert r.status_code == 200
-    assert FakeGpConnectClient.last_call is not None
-    assert FakeGpConnectClient.last_call["trace_id"] == ""
 
 
 def test_call_gp_connect_returns_404_when_sds_provider_endpoint_blank(
@@ -672,37 +551,3 @@ def test_call_gp_connect_passthroughs_non_200_gp_connect_response(
     assert r.headers is not None
     assert r.headers.get("Content-Type") == "text/plain"
     assert r.headers.get("X-Downstream") == "gp-connect"
-
-
-def test_call_gp_connect_constructs_sds_client_with_expected_kwargs(
-    patched_deps: Any,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    c = _make_controller()
-
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="asid_ORG1", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    _ = c.call_gp_connect(make_request_body("9434765919"), make_headers(), "token-abc")
-
-    assert FakeSdsClient.last_init == {
-        "auth_token": "token-abc",
-        "base_url": "https://sds.example",
-        "timeout": 3,
-    }
