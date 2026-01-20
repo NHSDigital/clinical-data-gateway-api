@@ -89,6 +89,50 @@ def expected_response_payload() -> Bundle:
     }
 
 
+@pytest.fixture
+def simple_request_payload() -> Parameters:
+    return {
+        "resourceType": "Parameters",
+        "parameter": [
+            {
+                "name": "patientNHSNumber",
+                "valueIdentifier": {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "9999999999",
+                },
+            },
+        ],
+    }
+
+
+@pytest.fixture
+def expected_response_payload() -> Bundle:
+    return {
+        "resourceType": "Bundle",
+        "id": "example-patient-bundle",
+        "type": "collection",
+        "timestamp": "2026-01-12T10:00:00Z",
+        "entry": [
+            {
+                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+                "resource": {
+                    "resourceType": "Patient",
+                    "id": "9999999999",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9999999999",
+                        }
+                    ],
+                    "name": [{"use": "official", "family": "Doe", "given": ["John"]}],
+                    "gender": "male",
+                    "birthDate": "1985-04-12",
+                },
+            }
+        ],
+    }
+
+
 @pytest.fixture(scope="module")
 def client(base_url: str) -> Client:
     """Create a test client for the application."""
