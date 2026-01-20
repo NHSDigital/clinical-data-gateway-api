@@ -141,48 +141,22 @@ paths:
                                   type: string
                                   format: date
                                   example: "1985-04-12"
-  /2015-03-31/functions/function/invocations:
-    post:
-      summary: Get hello world message
-      description: Returns a simple hello world message
-      operationId: postHelloWorld
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                payload:
-                  type: string
-                  description: The payload to be processed
-                  example: "Alex"
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: healthCheck
       responses:
         '200':
-          description: Successful response
+          description: Service is healthy
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status_code:
-                    type: integer
-                    description: Status code of the interaction
-                  body:
+                  status:
                     type: string
-                    description: The output of the interaction
-                  errorMessage:
-                    type: string
-                    description: Any error messages relating to errors encountered with the interaction
-                  errorType:
-                    type: string
-                    description: The type of error encountered during the interaction, if an error has occurred
-                  requestId:
-                    type: string
-                    format: uuid
-                    description: The unique request ID for the interaction
-                  stacktrace:
-                    type: array
-                    items:
-                      type: string
-                    description: The stack trace of the error, if an error has occurred
+                    example: "healthy"
+                required:
+                  - status
+

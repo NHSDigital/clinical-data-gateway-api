@@ -88,46 +88,6 @@
         "status": 200
       },
       "type": "Synchronous/HTTP"
-    },
-    {
-      "description": "a request for the hello world message",
-      "pending": false,
-      "request": {
-        "body": {
-          "content": {
-            "payload": "World"
-          },
-          "contentType": "application/json",
-          "encoded": false
-        },
-        "headers": {
-          "Content-Type": [
-            "application/json"
-          ]
-        },
-        "method": "POST",
-        "path": "/2015-03-31/functions/function/invocations"
-      },
-      "response": {
-        "body": {
-          "content": {
-            "body": "Hello, World!",
-            "headers": {
-              "Content-Type": "application/json"
-            },
-            "statusCode": 200
-          },
-          "contentType": "application/json",
-          "encoded": false
-        },
-        "headers": {
-          "Content-Type": [
-            "application/json"
-          ]
-        },
-        "status": 200
-      },
-      "type": "Synchronous/HTTP"
     }
   ],
   "metadata": {

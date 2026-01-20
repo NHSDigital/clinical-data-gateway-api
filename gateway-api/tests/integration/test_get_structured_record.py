@@ -33,7 +33,7 @@ class TestGetStructuredRecord:
         assert response.json() == expected_response_payload
 
     def test_happy_path_content_type(
-        self, client: Client, simple_request_payload: Bundle
+        self, client: Client, simple_request_payload: Parameters
     ) -> None:
         """Test that the response has the correct content type."""
         response = client.send_to_get_structured_record_endpoint(
