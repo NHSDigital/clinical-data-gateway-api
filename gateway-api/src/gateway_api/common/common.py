@@ -22,8 +22,6 @@ class FlaskResponse:
     :param headers: Response headers, if any.
     """
 
-    # TODO: Un-ai all these docstrings
-
     status_code: int
     data: str | None = None
     headers: dict[str, str] | None = None
