@@ -1,30 +1,44 @@
+"""
+Shared lightweight types and helpers used across the gateway API.
+"""
+
 import re
 from dataclasses import dataclass
 
+# This project uses JSON request/response bodies as strings in the controller layer.
+# The alias is used to make intent clearer in function signatures.
 type json_str = str
 
 
 @dataclass
 class FlaskResponse:
+    """
+    Lightweight response container returned by controller entry points.
+
+    This mirrors the minimal set of fields used by the surrounding web framework.
+
+    :param status_code: HTTP status code for the response (e.g., 200, 400, 404).
+    :param data: Response body as text, if any.
+    :param headers: Response headers, if any.
+    """
+
+    # TODO: Un-ai all these docstrings
+
     status_code: int
     data: str | None = None
     headers: dict[str, str] | None = None
 
 
 def validate_nhs_number(value: str | int) -> bool:
-    # TODO: Un-AI all these docstrings
     """
     Validate an NHS number using the NHS modulus-11 check digit algorithm.
 
-    Algorithm summary:
-        - NHS number is 10 digits: d1..d9 + check digit d10
-        - Compute: total = d1*10 + d2*9 + ... + d9*2
-        - remainder = total % 11
-        - check = 11 - remainder
-        - If check == 11 => check digit must be 0
-        - If check == 10 => check digit must be 10 (impossible as digit) => invalid
-        - If remainder == 1 => check would be 10 => invalid
-        - Else check digit must match d10
+    The input may be a string or integer. Any non-digit separators in string
+    inputs (spaces, hyphens, etc.) are ignored.
+
+    :param value: NHS number as a string or integer. Non-digit characters
+        are ignored when a string is provided.
+    :returns: ``True`` if the number is a valid NHS number, otherwise ``False``.
     """
     str_value = str(value)  # Just in case they passed an integer
     digits = re.sub(r"\D", "", str_value or "")
