@@ -130,7 +130,9 @@ class Controller:
                 message='Request body must be valid JSON with an "nhs-number" field',
             ) from None
 
-        if not hasattr(body, "getitem"):  # Must be a dict-like object
+        if not (
+            hasattr(body, "__getitem__") and hasattr(body, "get")
+        ):  # Must be a dict-like object
             raise RequestError(
                 status_code=400,
                 message='Request body must be a JSON object with an "nhs-number" field',
@@ -312,9 +314,9 @@ class Controller:
         )
 
         return FlaskResponse(
-            status_code=response.status_code if response else 502,
-            data=response.text if response else "GP Connect service error",
-            headers=dict(response.headers) if response else None,
+            status_code=response.status_code if response is not None else 502,
+            data=response.text if response is not None else "GP Connect service error",
+            headers=dict(response.headers) if response is not None else None,
         )
 
 
