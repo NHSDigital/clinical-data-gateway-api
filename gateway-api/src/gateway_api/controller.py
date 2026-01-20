@@ -214,9 +214,7 @@ class Controller:
         except ValueError:
             raise RequestError(
                 status_code=400,
-                message=(
-                    f'Could not coerce NHS number "{nhs_number_value}" to an integer'
-                ),
+                message=f'Could not cast NHS number "{nhs_number_value}" to an integer',
             ) from None
 
         return nhs_number_int
