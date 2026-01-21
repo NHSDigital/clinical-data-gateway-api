@@ -18,8 +18,11 @@ class HealthCheckResponse(TypedDict):
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Response:
-    get_structured_record_request = GetStructuredRecordRequest(request)
-    GetStructuredRecordHandler.handle(get_structured_record_request)
+    try:
+        get_structured_record_request = GetStructuredRecordRequest(request)
+        GetStructuredRecordHandler.handle(get_structured_record_request)
+    except Exception as e:
+        get_structured_record_request.set_negative_response(str(e))
     return get_structured_record_request.build_response()
 
 

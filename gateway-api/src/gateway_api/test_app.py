@@ -22,21 +22,11 @@ def client() -> Generator[FlaskClient[Flask], None, None]:
 
 class TestGetStructuredRecord:
     def test_get_structured_record_returns_200_with_bundle(
-        self, client: FlaskClient[Flask]
+        self, client: FlaskClient[Flask], simple_request_payload: "Parameters"
     ) -> None:
-        body: Parameters = {
-            "resourceType": "Parameters",
-            "parameter": [
-                {
-                    "name": "patientNHSNumber",
-                    "valueIdentifier": {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9999999999",
-                    },
-                },
-            ],
-        }
-        response = client.post("/patient/$gpc.getstructuredrecord", json=body)
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord", json=simple_request_payload
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -50,6 +40,22 @@ class TestGetStructuredRecord:
         assert data["entry"][0]["resource"]["resourceType"] == "Patient"
         assert data["entry"][0]["resource"]["id"] == "9999999999"
         assert data["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
+
+    def test_get_structured_record_handles_exception(
+        self,
+        client: FlaskClient[Flask],
+        monkeypatch: pytest.MonkeyPatch,
+        simple_request_payload: "Parameters",
+    ) -> None:
+        monkeypatch.setattr(
+            "gateway_api.get_structed_record.GetStructuredRecordHandler.handle",
+            Exception(),
+        )
+
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord", json=simple_request_payload
+        )
+        assert response.status_code == 500
 
 
 class TestHealthCheck:
