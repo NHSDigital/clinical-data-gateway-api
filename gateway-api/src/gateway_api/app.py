@@ -14,6 +14,7 @@ app = Flask(__name__)
 
 class HealthCheckResponse(TypedDict):
     status: str
+    version: str
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
@@ -29,14 +30,23 @@ def get_structured_record() -> Response:
 @app.route("/health", methods=["GET"])
 def health_check() -> HealthCheckResponse:
     """Health check endpoint."""
-    return {"status": "healthy"}
+    version: str = "unkonwn"
+
+    commit_version: str | None = os.getenv("COMMIT_VERSION")
+    build_date: str | None = os.getenv("BUILD_DATE")
+    if commit_version and build_date:
+        version = f"{build_date}.{commit_version}"
+
+    return {"status": "healthy", "version": version}
 
 
 if __name__ == "__main__":
     host = os.getenv("FLASK_HOST")
-    port = os.getenv("FLASK_PORT")
     if host is None:
         raise RuntimeError("FLASK_HOST environment variable is not set.")
+    port = os.getenv("FLASK_PORT")
     if port is None:
         raise RuntimeError("FLASK_PORT environment variable is not set.")
+    print(f"Starting Gateway API on {host}:{port}")
+    print(f"Version: {os.getenv('COMMIT_VERSION')}")
     app.run(host=host, port=int(port))
