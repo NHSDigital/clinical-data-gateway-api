@@ -1,7 +1,6 @@
 import os
 from typing import TypedDict
 
-from fhir import Bundle
 from flask import Flask, request
 from flask.wrappers import Response
 
