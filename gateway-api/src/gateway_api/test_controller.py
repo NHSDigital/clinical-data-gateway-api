@@ -543,7 +543,7 @@ def test_call_gp_provider_returns_400_when_nhs_number_not_coercible(
     r = c.call_gp_provider(std_json.dumps({"nhs-number": "ABC"}), headers, "token-abc")
 
     assert r.status_code == 400
-    assert r.data == 'Could not coerce NHS number "ABC" to an integer'
+    assert r.data == 'Could not cast NHS number "ABC" to an integer'
 
 
 def test_call_gp_provider_returns_400_when_missing_ods_from_header(
