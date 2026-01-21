@@ -13,6 +13,9 @@ from gateway_api.app import app, get_app_host, get_app_port
 if TYPE_CHECKING:
     from fhir.parameters import Parameters
 
+if TYPE_CHECKING:
+    from fhir.parameters import Parameters
+
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask], None, None]:
