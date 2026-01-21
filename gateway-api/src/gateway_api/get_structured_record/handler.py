@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fhir import Bundle
 
-from gateway_api.get_structed_record.request import GetStructuredRecordRequest
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 
 class GetStructuredRecordHandler:

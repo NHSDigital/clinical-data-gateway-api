@@ -4,7 +4,7 @@ from typing import TypedDict
 from flask import Flask, request
 from flask.wrappers import Response
 
-from gateway_api.get_structed_record import (
+from gateway_api.get_structured_record import (
     GetStructuredRecordHandler,
     GetStructuredRecordRequest,
 )

@@ -48,7 +48,7 @@ class TestGetStructuredRecord:
         simple_request_payload: "Parameters",
     ) -> None:
         monkeypatch.setattr(
-            "gateway_api.get_structed_record.GetStructuredRecordHandler.handle",
+            "gateway_api.get_structured_record.GetStructuredRecordHandler.handle",
             Exception(),
         )
 
