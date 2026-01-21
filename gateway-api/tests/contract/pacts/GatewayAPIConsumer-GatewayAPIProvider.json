@@ -32,12 +32,12 @@
             ],
             "resourceType": "Parameters"
           },
-          "contentType": "application/json",
+          "contentType": "application/fhir+json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "application/json"
+            "application/fhir+json"
           ]
         },
         "method": "POST",
@@ -77,12 +77,12 @@
             "timestamp": "2026-01-12T10:00:00Z",
             "type": "collection"
           },
-          "contentType": "application/json",
+          "contentType": "application/fhir+json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "application/json"
+            "application/fhir+json"
           ]
         },
         "status": 200
