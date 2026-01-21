@@ -19,12 +19,12 @@ paths:
         name: Content-Type
         schema:
           type: string
-          enum: [application/json]
+          enum: [application/fhir+json]
         required: true
       requestBody:
         required: true
         content:
-          application/json:
+          application/fhir+json:
             schema:
               type: object
               properties:
@@ -56,10 +56,10 @@ paths:
             name: Content-Type
             schema:
               type: string
-              enum: [application/json]
+              enum: [application/fhir+json]
             required: true
           content:
-            application/json:
+            application/fhir+json:
               schema:
                 type: object
                 properties:
@@ -72,7 +72,7 @@ paths:
                     properties:
                       Content-Type:
                         type: string
-                        example: "application/json"
+                        example: "application/fhir+json"
                   body:
                     type: object
                     description: FHIR Bundle containing patient data
@@ -150,7 +150,7 @@ paths:
         '200':
           description: Service is healthy
           content:
-            application/json:
+            application/fhir+json:
               schema:
                 type: object
                 properties:

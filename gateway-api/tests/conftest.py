@@ -27,7 +27,7 @@ class Client:
         Send a request to the get_structured_record endpoint with the given NHS number.
         """
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/fhir+json"}
         return requests.post(
             url=url,
             data=payload,

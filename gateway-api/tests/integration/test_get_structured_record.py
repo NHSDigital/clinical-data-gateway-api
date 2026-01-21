@@ -37,4 +37,4 @@ class TestGetStructuredRecord:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
         )
-        assert "application/json" in response.headers["Content-Type"]
+        assert "application/fhir+json" in response.headers["Content-Type"]
