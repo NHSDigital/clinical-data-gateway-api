@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING
+import json
 
-from flask.wrappers import Request
-
-if TYPE_CHECKING:
-    from fhir import Parameters
+from fhir import OperationOutcome, Parameters
+from fhir.bundle import Bundle
+from fhir.operation_outcome import OperationOutcomeIssue
+from flask.wrappers import Request, Response
 
 
 class GetStructuredRecordRequest:
@@ -15,6 +15,8 @@ class GetStructuredRecordRequest:
         self._http_request = request
         self._headers = request.headers
         self._request_body: Parameters = request.get_json()
+        self._response_body: Bundle | OperationOutcome | None = None
+        self._status_code: int | None = None
 
     @property
     def trace_id(self) -> str:
@@ -35,3 +37,27 @@ class GetStructuredRecordRequest:
     def provider_asid(self) -> str:
         provider_asid: str = self._headers["Ssp-to"]
         return provider_asid
+
+    def build_response(self) -> Response:
+        return Response(
+            response=json.dumps(self._response_body),
+            status=self._status_code,
+            mimetype="application/fhir+json",
+        )
+
+    def set_positive_response(self, bundle: Bundle) -> None:
+        self._status_code = 200
+        self._response_body = bundle
+
+    def set_negative_response(self, error: str) -> None:
+        self._status_code = 500
+        self._response_body = OperationOutcome(
+            resourceType="OperationOutcome",
+            issue=[
+                OperationOutcomeIssue(
+                    severity="error",
+                    code="exception",
+                    diagnostics=error,
+                )
+            ],
+        )

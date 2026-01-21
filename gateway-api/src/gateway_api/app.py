@@ -1,8 +1,8 @@
 import os
 from typing import TypedDict
 
-from fhir import Bundle
 from flask import Flask, request
+from flask.wrappers import Response
 
 from gateway_api.get_structed_record import (
     GetStructuredRecordHandler,
@@ -17,10 +17,10 @@ class HealthCheckResponse(TypedDict):
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
-def get_structured_record() -> Bundle:
+def get_structured_record() -> Response:
     get_structured_record_request = GetStructuredRecordRequest(request)
-    response = GetStructuredRecordHandler.handle(get_structured_record_request)
-    return response
+    GetStructuredRecordHandler.handle(get_structured_record_request)
+    return get_structured_record_request.build_response()
 
 
 @app.route("/health", methods=["GET"])

@@ -1,11 +1,14 @@
-from fhir import Bundle
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fhir import Bundle
 
 from gateway_api.get_structed_record.request import GetStructuredRecordRequest
 
 
 class GetStructuredRecordHandler:
     @classmethod
-    def handle(cls, request: GetStructuredRecordRequest) -> Bundle:
+    def handle(cls, request: GetStructuredRecordRequest) -> None:
         bundle: Bundle = {
             "resourceType": "Bundle",
             "id": "example-patient-bundle",
@@ -32,4 +35,4 @@ class GetStructuredRecordHandler:
                 }
             ],
         }
-        return bundle
+        request.set_positive_response(bundle)
