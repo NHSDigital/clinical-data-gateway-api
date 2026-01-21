@@ -1,6 +1,5 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
-import json
 import os
 from datetime import timedelta
 from typing import cast
@@ -44,35 +43,6 @@ class Client:
         """
         url = f"{self.base_url}/health"
         return requests.get(url=url, timeout=self._timeout)
-
-    def send(self, message: str) -> requests.Response:
-        """
-        Send a request to the APIs with some given parameters.
-        Args:
-            data: The data to send in the request payload
-        Returns:
-            Response object from the request
-        """
-        payload = json.dumps({"payload": message})
-        url = f"{self.base_url}/2015-03-31/functions/function/invocations"
-        return self._send(url=url, payload=payload)
-
-    def send_without_payload(self) -> requests.Response:
-        """
-        Send a request to the APIs without a payload.
-        Returns:
-            Response object from the request
-        """
-        empty_payload = json.dumps({})
-        url = f"{self.base_url}/2015-03-31/functions/function/invocations"
-        return self._send(url=url, payload=empty_payload)
-
-    def _send(self, url: str, payload: str) -> requests.Response:
-        return requests.post(
-            url=url,
-            data=payload,
-            timeout=self._timeout,
-        )
 
 
 @pytest.fixture

@@ -7,6 +7,10 @@ if TYPE_CHECKING:
 
 
 class GetStructuredRecordRequest:
+    interaction_id: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
+    resource: str = "patient"
+    fhir_operation: str = "$gpc.getstructuredrecord"
+
     def __init__(self, request: Request) -> None:
         self._http_request = request
         self._headers = request.headers
@@ -24,10 +28,10 @@ class GetStructuredRecordRequest:
 
     @property
     def consumer_asid(self) -> str:
-        consumer_asid: str = self._headers["X-Consumer-ASID"]
+        consumer_asid: str = self._headers["Ssp-from"]
         return consumer_asid
 
     @property
     def provider_asid(self) -> str:
-        provider_asid: str = self._headers["X-Provider-ASID"]
+        provider_asid: str = self._headers["Ssp-to"]
         return provider_asid

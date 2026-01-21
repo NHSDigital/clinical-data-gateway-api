@@ -9,8 +9,6 @@ from tests.conftest import Client
 
 
 class TestGetStructuredRecord:
-    """Test suite for the hello world endpoint."""
-
     def test_happy_path_returns_200(
         self, client: Client, simple_request_payload: Parameters
     ) -> None:

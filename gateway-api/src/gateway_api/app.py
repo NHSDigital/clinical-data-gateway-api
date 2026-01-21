@@ -4,8 +4,10 @@ from typing import TypedDict
 from fhir import Bundle
 from flask import Flask, request
 
-from gateway_api.get_structed_record.handler import GetStructuredRecordHandler
-from gateway_api.get_structed_record.request import GetStructuredRecordRequest
+from gateway_api.get_structed_record import (
+    GetStructuredRecordHandler,
+    GetStructuredRecordRequest,
+)
 
 app = Flask(__name__)
 
@@ -29,6 +31,9 @@ def health_check() -> HealthCheckResponse:
 
 if __name__ == "__main__":
     host = os.getenv("FLASK_HOST")
+    port = os.getenv("FLASK_PORT")
     if host is None:
         raise RuntimeError("FLASK_HOST environment variable is not set.")
-    app.run(host=host, port=8080)
+    if port is None:
+        raise RuntimeError("FLASK_PORT environment variable is not set.")
+    app.run(host=host, port=int(port))

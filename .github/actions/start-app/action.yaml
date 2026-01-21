@@ -6,7 +6,7 @@ inputs:
     required: false
     default: "make deploy"
   health-path:
-    description: "Health probe path to POST"
+    description: "Health check path"
     required: false
     default: "/health"
   max-seconds:
@@ -26,7 +26,7 @@ runs:
       run: |
         set -euo pipefail
         echo "Starting app: '${{ inputs.deploy-command }}'"
-        nohup ${{ inputs.deploy-command }} >/tmp/app.log 2>&1 &
+        nohup ${{ inputs.deploy-command }} > /tmp/app.log 2>&1 &
         echo $! > /tmp/app.pid
         echo "PID: $(cat /tmp/app.pid)"
     - name: "Wait for app to be ready"

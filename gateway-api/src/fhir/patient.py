@@ -7,8 +7,6 @@ from fhir.identifier import Identifier
 
 
 class Patient(TypedDict):
-    """FHIR Patient resource."""
-
     resourceType: str
     id: str
     identifier: list[Identifier]

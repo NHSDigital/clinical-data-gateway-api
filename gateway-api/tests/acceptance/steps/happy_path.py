@@ -1,4 +1,4 @@
-"""Step definitions for Gateway API hello world feature."""
+"""Step definitions for Gateway API happy path feature."""
 
 import json
 from datetime import timedelta
@@ -61,12 +61,6 @@ def check_status_code(response_context: ResponseContext, expected_status: int) -
 def check_response_contains(
     response_context: ResponseContext, expected_response_payload: Bundle
 ) -> None:
-    """Verify the response contains the expected text.
-
-    Args:
-        context: Behave context containing the response
-        expected_text: Text that should be in the response
-    """
     assert response_context.response, "Response has not been set."
     assert response_context.response.json() == expected_response_payload, (
         "Expected response payload does not match actual response payload."

@@ -1,6 +1,7 @@
 """Unit tests for the Flask app endpoints."""
 
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 from flask import Flask
@@ -8,23 +9,22 @@ from flask.testing import FlaskClient
 
 from gateway_api.app import app
 
+if TYPE_CHECKING:
+    from fhir.parameters import Parameters
+
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask], None, None]:
-    """Create a Flask test client."""
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
 
 class TestGetStructuredRecord:
-    """Unit tests for the get_structured_record function."""
-
     def test_get_structured_record_returns_200_with_bundle(
         self, client: FlaskClient[Flask]
     ) -> None:
-        """Test that get_structured_record returns 200 with a bundle."""
-        body = {
+        body: Parameters = {
             "resourceType": "Parameters",
             "parameter": [
                 {
@@ -53,12 +53,9 @@ class TestGetStructuredRecord:
 
 
 class TestHealthCheck:
-    """Unit tests for the health_check function."""
-
     def test_health_check_returns_200_and_healthy_status(
         self, client: FlaskClient[Flask]
     ) -> None:
-        """Test that health_check returns 200 with healthy status."""
         response = client.get("/health")
 
         assert response.status_code == 200
