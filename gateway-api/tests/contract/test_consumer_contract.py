@@ -167,14 +167,14 @@ class TestConsumerContract:
                 },
                 content_type="application/json",
             )
-            .with_header("Content-Type", "application/json")
+            .with_header("Content-Type", "application/fhir+json")
             .with_request(
                 method="POST",
                 path="/patient/$gpc.getstructuredrecord",
             )
             .will_respond_with(status=200)
-            .with_body(expected_bundle, content_type="application/json")
-            .with_header("Content-Type", "application/json")
+            .with_body(expected_bundle, content_type="application/fhir+json")
+            .with_header("Content-Type", "application/fhir+json")
         )
 
         # Start the mock server and execute the test
@@ -196,7 +196,7 @@ class TestConsumerContract:
                         ],
                     }
                 ),
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/fhir+json"},
                 timeout=10,
             )
 

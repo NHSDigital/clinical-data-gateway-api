@@ -150,7 +150,7 @@ paths:
         '200':
           description: Service is healthy
           content:
-            application/json:
+            application/fhir+json:
               schema:
                 type: object
                 properties:
