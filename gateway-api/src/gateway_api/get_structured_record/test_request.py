@@ -1,0 +1,57 @@
+import pytest
+from flask import Request
+
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+
+
+class MockRequest:
+    def __init__(self, headers: dict[str, str]) -> None:
+        self.headers = headers
+
+    def get_json(self) -> dict[str, str]:
+        return {}
+
+
+@pytest.fixture
+def mock_request_with_headers() -> MockRequest:
+    headers = {
+        "Ssp-TraceID": "test-trace-id",
+        "Ssp-from": "test-consumer-asid",
+        "Ssp-to": "test-provider-asid",
+    }
+    return MockRequest(headers)
+
+
+class TestGetStructuredRecordRequest:
+    def test_trace_id_is_pulled_from_ssp_traceid_header(
+        self, mock_request_with_headers: Request
+    ) -> None:
+        get_structured_record_request = GetStructuredRecordRequest(
+            request=mock_request_with_headers
+        )
+
+        actual = get_structured_record_request.trace_id
+        expected = "test-trace-id"
+        assert actual == expected
+
+    def test_consumer_asid_is_pulled_from_ssp_from_header(
+        self, mock_request_with_headers: Request
+    ) -> None:
+        get_structured_record_request = GetStructuredRecordRequest(
+            request=mock_request_with_headers
+        )
+
+        actual = get_structured_record_request.consumer_asid
+        expected = "test-consumer-asid"
+        assert actual == expected
+
+    def test_provider_asid_is_pulled_from_ssp_to_header(
+        self, mock_request_with_headers: Request
+    ) -> None:
+        get_structured_record_request = GetStructuredRecordRequest(
+            request=mock_request_with_headers
+        )
+
+        actual = get_structured_record_request.provider_asid
+        expected = "test-provider-asid"
+        assert actual == expected
