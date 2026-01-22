@@ -1,25 +1,27 @@
 import pytest
+from fhir.parameters import Parameters
 from flask import Request
 
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 
 class MockRequest:
-    def __init__(self, headers: dict[str, str]) -> None:
+    def __init__(self, headers: dict[str, str], body: Parameters) -> None:
         self.headers = headers
+        self.body = body
 
     def get_json(self) -> dict[str, str]:
         return {}
 
 
 @pytest.fixture
-def mock_request_with_headers() -> MockRequest:
+def mock_request_with_headers(simple_request_payload: Parameters) -> MockRequest:
     headers = {
         "Ssp-TraceID": "test-trace-id",
         "Ssp-from": "test-consumer-asid",
         "Ssp-to": "test-provider-asid",
     }
-    return MockRequest(headers)
+    return MockRequest(headers, simple_request_payload)
 
 
 class TestGetStructuredRecordRequest:
@@ -54,4 +56,15 @@ class TestGetStructuredRecordRequest:
 
         actual = get_structured_record_request.provider_asid
         expected = "test-provider-asid"
+        assert actual == expected
+
+    def test_nhs_number_is_pulled_from_request_body(
+        self, mock_request_with_headers: Request
+    ) -> None:
+        get_structured_record_request = GetStructuredRecordRequest(
+            request=mock_request_with_headers
+        )
+
+        actual = get_structured_record_request.nhs_number
+        expected = "9999999999"
         assert actual == expected
