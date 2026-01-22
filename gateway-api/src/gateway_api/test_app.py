@@ -1,5 +1,6 @@
 """Unit tests for the Flask app endpoints."""
 
+import os
 from collections.abc import Generator
 from typing import TYPE_CHECKING
 
@@ -7,7 +8,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from gateway_api.app import app
+from gateway_api.app import app, get_app_host, get_app_port
 
 if TYPE_CHECKING:
     from fhir.parameters import Parameters
@@ -18,6 +19,32 @@ def client() -> Generator[FlaskClient[Flask], None, None]:
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
+
+
+class TestAppInitialization:
+    def test_get_app_host_returns_set_host_name(self) -> None:
+        os.environ["FLASK_HOST"] = "host_is_set"
+
+        actual = get_app_host()
+        assert actual == "host_is_set"
+
+    def test_get_app_host_raises_runtime_error_if_host_name_not_set(self) -> None:
+        del os.environ["FLASK_HOST"]
+
+        with pytest.raises(RuntimeError):
+            _ = get_app_host()
+
+    def test_get_app_port_returns_set_port_number(self) -> None:
+        os.environ["FLASK_PORT"] = "8080"
+
+        actual = get_app_port()
+        assert actual == 8080
+
+    def test_get_app_port_raises_runtime_error_if_port_not_set(self) -> None:
+        del os.environ["FLASK_PORT"]
+
+        with pytest.raises(RuntimeError):
+            _ = get_app_port()
 
 
 class TestGetStructuredRecord:

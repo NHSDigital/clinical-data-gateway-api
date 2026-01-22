@@ -20,6 +20,20 @@ class HealthCheckResponse(TypedDict):
     version: str
 
 
+def get_app_host() -> str:
+    host = os.getenv("FLASK_HOST")
+    if host is None:
+        raise RuntimeError("FLASK_HOST environment variable is not set.")
+    return host
+
+
+def get_app_port() -> int:
+    port = os.getenv("FLASK_PORT")
+    if port is None:
+        raise RuntimeError("FLASK_PORT environment variable is not set.")
+    return int(port)
+
+
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Response:
     try:
@@ -44,12 +58,8 @@ def health_check() -> HealthCheckResponse:
 
 
 if __name__ == "__main__":
-    host = os.getenv("FLASK_HOST")
-    if host is None:
-        raise RuntimeError("FLASK_HOST environment variable is not set.")
-    port = os.getenv("FLASK_PORT")
-    if port is None:
-        raise RuntimeError("FLASK_PORT environment variable is not set.")
+    host = get_app_host()
+    port = get_app_port()
     print(f"Starting Gateway API on {host}:{port}")
     print(f"Version: {os.getenv('COMMIT_VERSION')}")
-    app.run(host=host, port=int(port))
+    app.run(host=host, port=port)
