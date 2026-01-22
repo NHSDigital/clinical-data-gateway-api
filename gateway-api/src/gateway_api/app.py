@@ -10,6 +10,9 @@ from gateway_api.get_structured_record import (
 )
 
 app = Flask(__name__)
+# This is a RESTful API, behind the proxy on APIM, which itself handles CSRF.
+# We shall not handle CSRF
+app.config["WTF_CSRF_ENABLED"] = False
 
 
 class HealthCheckResponse(TypedDict):
