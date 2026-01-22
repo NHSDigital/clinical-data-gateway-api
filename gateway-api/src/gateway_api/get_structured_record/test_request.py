@@ -56,3 +56,14 @@ class TestGetStructuredRecordRequest:
         actual = get_structured_record_request.nhs_number
         expected = "9999999999"
         assert actual == expected
+
+    def test_nhs_number_is_pulled_from_request_body(
+        self, mock_request_with_headers: Request
+    ) -> None:
+        get_structured_record_request = GetStructuredRecordRequest(
+            request=mock_request_with_headers
+        )
+
+        actual = get_structured_record_request.nhs_number
+        expected = "9999999999"
+        assert actual == expected
