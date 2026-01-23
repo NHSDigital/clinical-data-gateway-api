@@ -1,30 +1,8 @@
-terraform {
-  required_version = ">= 1.4.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-
-  # Typically you'll set a different key per branch in CI (e.g. dev/preview/<branch>.tfstate)
-  backend "s3" {
-    bucket = "cds-cdg-dev-tfstate-900119715266"
-    key    = "dev/preview/branch_name.tfstate"
-    region = "eu-west-2"
-  }
-}
-
-provider "aws" {
-  region = "eu-west-2"
-}
-
-data "aws_region" "current" {}
-
 ############################
 # 1. Import core outputs
 ############################
+
+data "aws_region" "current" {}
 
 data "terraform_remote_state" "core" {
   backend = "s3"
@@ -218,6 +196,7 @@ resource "aws_ecs_service" "branch" {
   desired_count          = var.desired_count
   launch_type            = "FARGATE"
   enable_execute_command = true
+  force_new_deployment   = true
 
   network_configuration {
     subnets         = local.private_subnet_ids
@@ -230,11 +209,5 @@ resource "aws_ecs_service" "branch" {
     container_port   = var.container_port
   }
 
-  lifecycle {
-    ignore_changes = [task_definition]
-  }
-
   depends_on = [aws_lb_listener_rule.branch]
 }
-
-
