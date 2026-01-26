@@ -18,8 +18,7 @@ class MockRequest:
 def mock_request_with_headers(valid_simple_request_payload: Parameters) -> MockRequest:
     headers = {
         "Ssp-TraceID": "test-trace-id",
-        "Ssp-from": "test-consumer-asid",
-        "Ssp-to": "test-provider-asid",
+        "ODS-from": "test-ods",
     }
     return MockRequest(headers, valid_simple_request_payload)
 
@@ -43,19 +42,8 @@ class TestGetStructuredRecordRequest:
             request=mock_request_with_headers
         )
 
-        actual = get_structured_record_request.consumer_asid
-        expected = "test-consumer-asid"
-        assert actual == expected
-
-    def test_provider_asid_is_pulled_from_ssp_to_header(
-        self, mock_request_with_headers: Request
-    ) -> None:
-        get_structured_record_request = GetStructuredRecordRequest(
-            request=mock_request_with_headers
-        )
-
-        actual = get_structured_record_request.provider_asid
-        expected = "test-provider-asid"
+        actual = get_structured_record_request.ods_from
+        expected = "test-ods"
         assert actual == expected
 
     def test_nhs_number_is_pulled_from_request_body(

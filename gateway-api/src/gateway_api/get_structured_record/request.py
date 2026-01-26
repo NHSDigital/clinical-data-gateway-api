@@ -29,14 +29,9 @@ class GetStructuredRecordRequest:
         return nhs_number
 
     @property
-    def consumer_asid(self) -> str:
-        consumer_asid: str = self._headers["Ssp-from"]
-        return consumer_asid
-
-    @property
-    def provider_asid(self) -> str:
-        provider_asid: str = self._headers["Ssp-to"]
-        return provider_asid
+    def ods_from(self) -> str:
+        ods_from: str = self._headers["ODS-from"]
+        return ods_from
 
     def build_response(self) -> Response:
         return Response(
