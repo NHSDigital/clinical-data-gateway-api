@@ -49,10 +49,10 @@ class TestAppInitialization:
 
 class TestGetStructuredRecord:
     def test_get_structured_record_returns_200_with_bundle(
-        self, client: FlaskClient[Flask], simple_request_payload: "Parameters"
+        self, client: FlaskClient[Flask], valid_simple_request_payload: "Parameters"
     ) -> None:
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=simple_request_payload
+            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
         )
 
         assert response.status_code == 200
@@ -72,7 +72,7 @@ class TestGetStructuredRecord:
         self,
         client: FlaskClient[Flask],
         monkeypatch: pytest.MonkeyPatch,
-        simple_request_payload: "Parameters",
+        valid_simple_request_payload: "Parameters",
     ) -> None:
         monkeypatch.setattr(
             "gateway_api.get_structured_record.GetStructuredRecordHandler.handle",
@@ -80,7 +80,7 @@ class TestGetStructuredRecord:
         )
 
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=simple_request_payload
+            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
         )
         assert response.status_code == 500
 

@@ -15,13 +15,13 @@ class MockRequest:
 
 
 @pytest.fixture
-def mock_request_with_headers(simple_request_payload: Parameters) -> MockRequest:
+def mock_request_with_headers(valid_simple_request_payload: Parameters) -> MockRequest:
     headers = {
         "Ssp-TraceID": "test-trace-id",
         "Ssp-from": "test-consumer-asid",
         "Ssp-to": "test-provider-asid",
     }
-    return MockRequest(headers, simple_request_payload)
+    return MockRequest(headers, valid_simple_request_payload)
 
 
 class TestGetStructuredRecordRequest:

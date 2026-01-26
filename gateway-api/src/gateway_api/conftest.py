@@ -5,7 +5,7 @@ from fhir.parameters import Parameters
 
 
 @pytest.fixture
-def simple_request_payload() -> Parameters:
+def valid_simple_request_payload() -> Parameters:
     return {
         "resourceType": "Parameters",
         "parameter": [
