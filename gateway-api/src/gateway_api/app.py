@@ -57,7 +57,6 @@ def health_check() -> HealthCheckResponse:
 
 
 if __name__ == "__main__":
-    host = get_app_host()
-    port = get_app_port()
+    host, port = get_app_host(), get_app_port()
     print(f"Version: {os.getenv('COMMIT_VERSION')}")
     app.run(host=host, port=port)
