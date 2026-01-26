@@ -4,7 +4,7 @@ Feature: Gateway API Hello World
   So that I can verify it responds correctly to valid and invalid requests
 
   Background: The API is running
-    Given the API is running new
+    Given the API is running
 
   Scenario: Get structured record request
     When I send a valid Parameters resource to the endpoint

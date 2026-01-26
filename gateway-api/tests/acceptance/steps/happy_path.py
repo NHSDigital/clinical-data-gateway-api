@@ -12,7 +12,7 @@ from tests.acceptance.conftest import ResponseContext
 from tests.conftest import Client
 
 
-@given("the API is running new")
+@given("the API is running")
 def check_api_is_running(client: Client) -> None:
     response = client.send_health_check()
     assert response.status_code == 200
