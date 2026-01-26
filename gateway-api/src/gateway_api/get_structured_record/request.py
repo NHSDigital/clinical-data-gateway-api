@@ -7,9 +7,9 @@ from flask.wrappers import Request, Response
 
 
 class GetStructuredRecordRequest:
-    interaction_id: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
-    resource: str = "patient"
-    fhir_operation: str = "$gpc.getstructuredrecord"
+    INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
+    RESOURCE: str = "patient"
+    FHIR_OPERATION: str = "$gpc.getstructuredrecord"
 
     def __init__(self, request: Request) -> None:
         self._http_request = request
