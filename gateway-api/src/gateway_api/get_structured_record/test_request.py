@@ -35,7 +35,7 @@ class TestGetStructuredRecordRequest:
         expected = "test-trace-id"
         assert actual == expected
 
-    def test_consumer_asid_is_pulled_from_ssp_from_header(
+    def test_ods_is_pulled_from_ssp_from_header(
         self, mock_request_with_headers: Request
     ) -> None:
         get_structured_record_request = GetStructuredRecordRequest(
