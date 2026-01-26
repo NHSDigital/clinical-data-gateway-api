@@ -10,8 +10,8 @@ class MockRequest:
         self.headers = headers
         self.body = body
 
-    def get_json(self) -> dict[str, str]:
-        return {}
+    def get_json(self) -> Parameters:
+        return self.body
 
 
 @pytest.fixture
