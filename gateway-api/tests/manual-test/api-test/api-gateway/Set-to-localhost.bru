@@ -1,0 +1,20 @@
+meta {
+  name: Set to localhost
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://pokeapi.co/api/v2/pokemon/garchomp
+  body: none
+  auth: inherit
+}
+
+script:pre-request {
+  bru.setEnvVar('environment', 'localhost:8080');
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

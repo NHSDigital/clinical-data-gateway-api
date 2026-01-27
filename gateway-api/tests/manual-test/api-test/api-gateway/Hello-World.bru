@@ -1,0 +1,69 @@
+meta {
+  name: Hello-World
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:5000/2015-03-31/functions/function/invocations
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {"payload": "world"}
+}
+
+body:text {
+  {
+  }
+}
+
+tests {
+  test("should return success", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("should return hello world response", function () {
+    const body = res.getBody();
+
+    expect(body.statusCode).to.equal(200);
+    expect(body.headers["Content-Type"]).to.equal("application/json");
+    expect(body.body).to.equal("Hello, world!");
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+example {
+  name: Example 200 Response
+
+  request: {
+    url: http://127.0.0.1:5000/2015-03-31/functions/function/invocations
+    method: POST
+    mode: text
+    body:json: {
+      {"payload": "world"}
+    }
+
+    body:text: {
+      {"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": "Hello, world!"}
+    }
+  }
+
+  response: {
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: text
+      content: '''
+
+      '''
+      }
+  }
+}
