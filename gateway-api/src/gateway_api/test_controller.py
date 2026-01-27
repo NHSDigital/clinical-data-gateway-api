@@ -286,28 +286,6 @@ class sds_factory:
         return self.inst
 
 
-# def sds_factory(
-#     org1: SdsSetup | None, org2: SdsSetup | None, **kwargs: Any
-# ) -> FakeSdsClient:
-#     inst = FakeSdsClient(**kwargs)
-#     if org1 is not None:
-#         inst.set_org_details(
-#             org1.ods_code,
-#             SdsSearchResults(
-#                 asid=org1.search_results.asid, endpoint=org1.search_results.endpoint
-#             ),
-#         )
-#
-#     if org2 is not None:
-#         inst.set_org_details(
-#             org2.ods_code,
-#             SdsSearchResults(
-#                 asid=org2.search_results.asid, endpoint=org2.search_results.endpoint
-#             ),
-#         )
-#     return inst
-
-
 class pds_factory:
     """
     Factory to create a :class:`FakePdsClient` pre-configured with patient details.
@@ -332,12 +310,6 @@ class pds_factory:
         self.inst = FakePdsClient(**kwargs)
         self.inst.set_patient_details(_make_pds_result(self.ods_code))
         return self.inst
-
-
-# def pds_factory(ods_code: str, **kwargs: Any) -> FakePdsClient:
-#     inst = FakePdsClient(**kwargs)
-#     inst.set_patient_details(_make_pds_result(ods_code))
-#     return inst
 
 
 @pytest.fixture

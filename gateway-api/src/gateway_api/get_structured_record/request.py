@@ -5,6 +5,8 @@ from fhir.bundle import Bundle
 from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
 
+from gateway_api.common.common import FlaskResponse
+
 
 class GetStructuredRecordRequest:
     INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
@@ -33,6 +35,10 @@ class GetStructuredRecordRequest:
         ods_from: str = self._headers["ODS-from"]
         return ods_from
 
+    @property
+    def request_body(self) -> str:
+        return json.dumps(self._request_body)
+
     def build_response(self) -> Response:
         return Response(
             response=json.dumps(self._response_body),
@@ -44,8 +50,8 @@ class GetStructuredRecordRequest:
         self._status_code = 200
         self._response_body = bundle
 
-    def set_negative_response(self, error: str) -> None:
-        self._status_code = 500
+    def set_negative_response(self, error: str, status_code: int = 500) -> None:
+        self._status_code = status_code
         self._response_body = OperationOutcome(
             resourceType="OperationOutcome",
             issue=[
@@ -56,3 +62,20 @@ class GetStructuredRecordRequest:
                 )
             ],
         )
+
+    def set_response_from_flaskresponse(self, flask_response: FlaskResponse) -> None:
+        if flask_response.data:
+            self._status_code = flask_response.status_code
+            try:
+                self._response_body = json.loads(flask_response.data)
+            except json.JSONDecodeError as err:
+                self.set_negative_response(f"Failed to decode response body: {err}")
+            except Exception as err:
+                self.set_negative_response(
+                    f"Unexpected error decoding response body: {err}"
+                )
+        else:
+            self.set_negative_response(
+                error="No response body received",
+                status_code=flask_response.status_code,
+            )

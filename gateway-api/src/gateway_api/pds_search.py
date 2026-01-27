@@ -160,7 +160,7 @@ class PdsClient:
 
     def search_patient_by_nhs_number(
         self,
-        nhs_number: int,
+        nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
