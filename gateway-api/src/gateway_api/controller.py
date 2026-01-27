@@ -9,12 +9,12 @@ import json
 __all__ = ["json"]  # Make mypy happy in tests
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import requests
 
-from gateway_api.common.common import FlaskResponse, json_str, validate_nhs_number
+from gateway_api.common.common import FlaskResponse, coerce_nhs_number_to_int, json_str
 from gateway_api.pds_search import PdsClient, PdsSearchResults
 
 
@@ -128,7 +128,6 @@ class GpProviderClient:
         self,
         trace_id: str,  # NOSONAR S1172 (ignore in stub)
         body: json_str,  # NOSONAR S1172 (ignore in stub)
-        nhsnumber: str,  # NOSONAR S1172 (ignore in stub)
     ) -> requests.Response | None:
         """
         Retrieve a patient's structured record from GP provider.
@@ -175,6 +174,87 @@ class Controller:
         self.timeout = timeout
         self.gp_provider_client = None
 
+    def run(
+        self,
+        request_body: json_str,
+        headers: dict[str, str],
+        auth_token: str,
+    ) -> FlaskResponse:
+        """
+        Controller entry point
+
+        Expects a JSON request body containing an ``"nhs-number"`` field.
+        Also expects HTTP headers (from Flask) and extracts:
+        - ``Ods-from`` as the consumer organisation ODS code
+        - ``X-Request-ID`` as the trace/correlation ID
+
+        Orchestration steps:
+        1) Call PDS to obtain the patient's GP (provider) ODS code.
+        2) Call SDS using provider ODS to obtain provider ASID + provider endpoint.
+        3) Call SDS using consumer ODS to obtain consumer ASID.
+        4) Call GP provider to obtain patient records.
+
+        :param request_body: Raw JSON request body.
+        :param headers: HTTP headers from the request.
+        :param auth_token: Authorization token used for downstream services.
+        :returns: A :class:`~gateway_api.common.common.FlaskResponse` representing the
+            outcome.
+        """
+        try:
+            nhs_number = self._get_details_from_body(request_body)
+        except RequestError as err:
+            return FlaskResponse(
+                status_code=err.status_code,
+                data=str(err),
+            )
+
+        # Extract consumer ODS from headers
+        consumer_ods = headers.get("Ods-from", "").strip()
+        if not consumer_ods:
+            return FlaskResponse(
+                status_code=400,
+                data='Missing required header "Ods-from"',
+            )
+
+        trace_id = headers.get("X-Request-ID")
+        if trace_id is None:
+            return FlaskResponse(
+                status_code=400, data="Missing required header: X-Request-ID"
+            )
+
+        try:
+            provider_ods = self._get_pds_details(auth_token, consumer_ods, nhs_number)
+        except RequestError as err:
+            return FlaskResponse(status_code=err.status_code, data=str(err))
+
+        try:
+            consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
+                auth_token, consumer_ods, provider_ods
+            )
+        except RequestError as err:
+            return FlaskResponse(status_code=err.status_code, data=str(err))
+
+        # Call GP provider with correct parameters
+        self.gp_provider_client = GpProviderClient(
+            provider_endpoint=provider_endpoint,
+            provider_asid=provider_asid,
+            consumer_asid=consumer_asid,
+        )
+
+        response = self.gp_provider_client.access_structured_record(
+            trace_id=trace_id,
+            body=request_body,
+        )
+
+        # If we get a None from the GP provider, that means that either the service did
+        # not respond or we didn't make the request to the service in the first place.
+        # Therefore a None is a 502, any real response just pass straight back.
+        return FlaskResponse(
+            status_code=response.status_code if response is not None else 502,
+            data=response.text if response is not None else "GP provider service error",
+            headers=dict(response.headers) if response is not None else None,
+        )
+
     def _get_details_from_body(self, request_body: json_str) -> int:
         """
         Parse request JSON and extract the NHS number as an integer.
@@ -190,16 +270,15 @@ class Controller:
         except (TypeError, json.JSONDecodeError):
             raise RequestError(
                 status_code=400,
-                message='Request body must be valid JSON with an "nhs-number" field',
+                message="Request body must be valid JSON",
             ) from None
 
-        # Guard: require "dict-like" semantics without relying on isinstance checks.
         if not (
             hasattr(body, "__getitem__") and hasattr(body, "get")
         ):  # Must be a dict-like object
             raise RequestError(
                 status_code=400,
-                message='Request body must be a JSON object with an "nhs-number" field',
+                message="JSON structure must be an object/dictionary",
             ) from None
 
         nhs_number_value = body.get("nhs-number")
@@ -210,7 +289,7 @@ class Controller:
             ) from None
 
         try:
-            nhs_number_int = _coerce_nhs_number_to_int(nhs_number_value)
+            nhs_number_int = coerce_nhs_number_to_int(nhs_number_value)
         except ValueError:
             raise RequestError(
                 status_code=400,
@@ -332,117 +411,3 @@ class Controller:
             )
 
         return consumer_asid, provider_asid, provider_endpoint
-
-    def call_gp_provider(
-        self,
-        request_body: json_str,
-        headers: dict[str, str],
-        auth_token: str,
-    ) -> FlaskResponse:
-        """
-        Controller entry point
-
-        Expects a JSON request body containing an ``"nhs-number"`` field.
-        Also expects HTTP headers (from Flask) and extracts:
-        - ``Ods-from`` as the consumer organisation ODS code
-        - ``X-Request-ID`` as the trace/correlation ID
-
-        Orchestration steps:
-        1) Call PDS to obtain the patient's GP (provider) ODS code.
-        2) Call SDS using provider ODS to obtain provider ASID + provider endpoint.
-        3) Call SDS using consumer ODS to obtain consumer ASID.
-        4) Call GP provider to obtain patient records.
-
-        :param request_body: Raw JSON request body.
-        :param headers: HTTP headers from the request.
-        :param auth_token: Authorization token used for downstream services.
-        :returns: A :class:`~gateway_api.common.common.FlaskResponse` representing the
-            outcome.
-        """
-        try:
-            nhs_number = self._get_details_from_body(request_body)
-        except RequestError as err:
-            return FlaskResponse(
-                status_code=err.status_code,
-                data=str(err),
-            )
-
-        # Extract consumer ODS from headers
-        consumer_ods = headers.get("Ods-from", "").strip()
-        if not consumer_ods:
-            return FlaskResponse(
-                status_code=400,
-                data='Missing required header "Ods-from"',
-            )
-
-        trace_id = headers.get("X-Request-ID")
-        if trace_id is None:
-            return FlaskResponse(
-                status_code=400, data="Missing required header: X-Request-ID"
-            )
-
-        try:
-            provider_ods = self._get_pds_details(auth_token, consumer_ods, nhs_number)
-        except RequestError as err:
-            return FlaskResponse(status_code=err.status_code, data=str(err))
-
-        try:
-            consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-                auth_token, consumer_ods, provider_ods
-            )
-        except RequestError as err:
-            return FlaskResponse(status_code=err.status_code, data=str(err))
-
-        # Call GP provider with correct parameters
-        self.gp_provider_client = GpProviderClient(
-            provider_endpoint=provider_endpoint,
-            provider_asid=provider_asid,
-            consumer_asid=consumer_asid,
-        )
-
-        response = self.gp_provider_client.access_structured_record(
-            trace_id=trace_id,
-            body=request_body,
-            nhsnumber=str(nhs_number),
-        )
-
-        # If we get a None from the GP provider, that means that either the service did
-        # not respond or we didn't make the request to the service in the first place.
-        # Therefore a None is a 502, any real response just pass straight back.
-        return FlaskResponse(
-            status_code=response.status_code if response is not None else 502,
-            data=response.text if response is not None else "GP provider service error",
-            headers=dict(response.headers) if response is not None else None,
-        )
-
-
-def _coerce_nhs_number_to_int(value: str | int) -> int:
-    """
-    Coerce an NHS number to an integer with basic validation.
-
-    Notes:
-    - NHS numbers are 10 digits.
-    - Input may include whitespace (e.g., ``"943 476 5919"``).
-
-    :param value: NHS number value, as a string or integer.
-    :returns: The coerced NHS number as an integer.
-    :raises ValueError: If the NHS number is non-numeric, the wrong length, or fails
-        validation.
-    """
-    try:
-        stripped = cast("str", value).strip().replace(" ", "")
-    except AttributeError:
-        nhs_number_int = cast("int", value)
-    else:
-        if not stripped.isdigit():
-            raise ValueError("NHS number must be numeric")
-        nhs_number_int = int(stripped)
-
-    if len(str(nhs_number_int)) != 10:
-        # If you need to accept test numbers of different length, relax this.
-        raise ValueError("NHS number must be 10 digits")
-
-    if not validate_nhs_number(nhs_number_int):
-        raise ValueError("NHS number is invalid")
-
-    return nhs_number_int

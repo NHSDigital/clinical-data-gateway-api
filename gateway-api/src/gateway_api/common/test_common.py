@@ -2,45 +2,47 @@
 Unit tests for :mod:`gateway_api.common.common`.
 """
 
+from typing import Any
+
+import pytest
+
 from gateway_api.common import common
 
 
-def test_validate_nhs_number_accepts_valid_number_with_separators() -> None:
+@pytest.mark.parametrize(
+    ("nhs_number", "expected"),
+    [
+        ("9434765919", True),  # Just a number
+        ("943 476 5919", True),  # Spaces are permitted
+        ("987-654-3210", True),  # Hyphens are permitted
+        (9434765919, True),  # Integer input is permitted
+        ("", False),  # Empty string is invalid
+        ("943476591", False),  # 9 digits
+        ("94347659190", False),  # 11 digits
+        ("9434765918", False),  # wrong check digit
+        ("NOT_A_NUMBER", False),  # non-numeric
+        ("943SOME_LETTERS4765919", False),  # non-numeric in a valid NHS number
+    ],
+)
+def test_validate_nhs_number(nhs_number: str | int, expected: bool) -> None:
     """
     Validate that separators (spaces, hyphens) are ignored and valid numbers pass.
     """
-    assert common.validate_nhs_number("943 476 5919") is True
-    assert common.validate_nhs_number("943-476-5919") is True
-    assert common.validate_nhs_number(9434765919) is True
+    assert common.validate_nhs_number(nhs_number) is expected
 
 
-def test_validate_nhs_number_rejects_wrong_length_and_bad_check_digit() -> None:
-    """Validate that incorrect lengths and invalid check digits are rejected."""
-    assert common.validate_nhs_number("") is False
-    assert common.validate_nhs_number("943476591") is False  # 9 digits
-    assert common.validate_nhs_number("94347659190") is False  # 11 digits
-    assert common.validate_nhs_number("9434765918") is False  # wrong check digit
-
-
-def test_validate_nhs_number_returns_false_for_non_ten_digits_and_non_numeric() -> None:
-    """
-    validate_nhs_number should return False when:
-    - The number of digits is not exactly 10.
-    - The input is not numeric.
-
-    Notes:
-    - The implementation strips non-digit characters before validation, so a fully
-        non-numeric input becomes an empty digit string and is rejected.
-    """
-    # Not ten digits after stripping -> False
-    assert common.validate_nhs_number("123456789") is False
-    assert common.validate_nhs_number("12345678901") is False
-
-    # Not numeric -> False (becomes 0 digits after stripping)
-    assert common.validate_nhs_number("NOT_A_NUMBER") is False
-
-
-def test_validate_nhs_number_check_edge_cases_10_and_11() -> None:
+@pytest.mark.parametrize(
+    ("nhs_number", "expected"),
+    [
+        # All zeros => weighted sum 0 => remainder 0 => check 11 => mapped to 0 => valid
+        ("0000000000", True),
+        # First 9 digits produce remainder 1 => check 10 => invalid
+        ("0000000060", False),
+    ],
+)
+def test_validate_nhs_number_check_edge_cases_10_and_11(
+    nhs_number: str | int, expected: bool
+) -> None:
     """
     validate_nhs_number should behave correctly when the computed ``check`` value
     is 10 or 11.
@@ -52,9 +54,33 @@ def test_validate_nhs_number_check_edge_cases_10_and_11() -> None:
     """
     # All zeros => weighted sum 0 => remainder 0 => check 11 => mapped to 0 => valid
     # with check digit 0
-    assert common.validate_nhs_number("0000000000") is True
+    assert common.validate_nhs_number(nhs_number) is expected
 
-    # First nine digits produce remainder 1 => check 10 => invalid regardless of
-    # final digit
-    # Choose d9=6 and others 0: total = 6*2 = 12 => 12 % 11 = 1 => check = 10
-    assert common.validate_nhs_number("0000000060") is False
+
+def test__coerce_nhs_number_to_int_accepts_spaces_and_validates() -> None:
+    """
+    Validate that whitespace separators are accepted and the number is validated.
+    """
+    # Use real validator logic by default; 9434765919 is algorithmically valid.
+    assert common.coerce_nhs_number_to_int("943 476 5919") == 9434765919
+
+
+@pytest.mark.parametrize("value", ["not-a-number", "943476591", "94347659190"])
+def test__coerce_nhs_number_to_int_rejects_bad_inputs(value: Any) -> None:
+    """
+    Validate that non-numeric and incorrect-length values are rejected.
+
+    :param value: Parameterized input value.
+    """
+    with pytest.raises(ValueError):  # noqa: PT011 (ValueError is correct here)
+        common.coerce_nhs_number_to_int(value)
+
+
+def test__coerce_nhs_number_to_int_accepts_integer_value() -> None:
+    """
+    Ensure ``_coerce_nhs_number_to_int`` accepts an integer input
+    and returns it unchanged.
+
+    :returns: None
+    """
+    assert common.coerce_nhs_number_to_int(9434765919) == 9434765919
