@@ -9,7 +9,6 @@ env:
   AWS_ACCOUNT_ID: "900119715266"
   ECR_REPOSITORY_NAME: "whoami"
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
-  CORE_STATE_KEY: "dev/terraform.tfstate"
   PREVIEW_STATE_PREFIX: "dev/preview/"
   python_version: "3.14"
 
@@ -79,7 +78,6 @@ jobs:
           echo "tf_state_key=$TF_STATE_KEY" >> $GITHUB_OUTPUT
 
           # ALB listener rule priority - derive from PR number (must be unique per listener)
-          # You can tweak this formula if you like.
           if [ -n "${{ github.event.number }}" ]; then
             PRIORITY=$(( 1000 + ${{ github.event.number }} ))
           else
@@ -135,7 +133,8 @@ jobs:
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
         run: |
-          terraform apply -auto-approve
+          terraform apply \
+            -auto-approve
 
       - name: Capture preview TF outputs
         if: github.event.action != 'closed'
@@ -143,10 +142,29 @@ jobs:
         working-directory: infrastructure/environments/preview
         run: |
           terraform output -json > tf-output.json
+
           URL=$(jq -r '.url.value' tf-output.json)
-          TG=$(jq -r '.target_group_arn.value' tf-output.json)
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
+
+          TG=$(jq -r '.target_group_arn.value' tf-output.json)
           echo "target_group=$TG" >> $GITHUB_OUTPUT
+
+          ECS_SERVICE=$(jq -r '.ecs_service_name.value' tf-output.json)
+          echo "ecs_service=$ECS_SERVICE" >> $GITHUB_OUTPUT
+
+          ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
+          echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
+
+      # ---------- Ensure re-deployment (PR updated) ----------
+      - name: Force ECS service redeployment
+        if: github.event.action == 'synchronize'
+        id: await-redeployment
+        run: |
+          aws ecs update-service \
+            --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
+            --service ${{ steps.tf-output.outputs.ecs_service }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
 
       # ---------- DESTROY (PR closed) ----------
       - name: Terraform init (destroy)
@@ -168,6 +186,15 @@ jobs:
         run: |
           terraform destroy -auto-approve
 
+      # ---------- Wait on AWS tasks and notify ----------
+      - name: Await deployment completion
+        if: github.event.action != 'closed'
+        run: |
+          aws ecs wait services-stable \
+          --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
+          --services ${{ steps.tf-output.outputs.ecs_service }} \
+          --region ${{ env.AWS_REGION }}
+
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
@@ -175,9 +202,43 @@ jobs:
           script: |
             const alb = '${{ steps.tf-output.outputs.target_group }}';
             const url = '${{ steps.tf-output.outputs.preview_url }}';
+            const cluster = '${{ steps.tf-output.outputs.ecs_cluster }}';
+            const service = '${{ steps.tf-output.outputs.ecs_service }}';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = context.issue.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+
+            for (const comment of comments) {
+              const isBot = comment.user?.login === 'github-actions[bot]';
+              const isPreviewUpdate = comment.body?.includes('Deployment Complete');
+
+              if (isBot && isPreviewUpdate) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+              }
+            }
+
+            const lines = [
+              '**Deployment Complete**',
+              `- Preview URL: [${url}](${url})`,
+              `- ECS Cluster: \`${cluster}\``,
+              `- ECS Service: \`${service}\``,
+              `- ALB Target: \`${alb}\``,
+            ];
+
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `ALB Target: \`${alb}\`\nPreview URL: ${url}`
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: lines.join('\n'),
             });
