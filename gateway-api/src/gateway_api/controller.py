@@ -5,15 +5,18 @@ Controller layer for orchestrating calls to external services
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from gateway_api.provider_request import GpProviderClient
+
+if TYPE_CHECKING:
+    from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 __all__ = ["json"]  # Make mypy happy in tests
 
 from dataclasses import dataclass
-from typing import Any
 
-from gateway_api.common.common import FlaskResponse, coerce_nhs_number_to_int, json_str
+from gateway_api.common.common import FlaskResponse
 from gateway_api.pds_search import PdsClient, PdsSearchResults
 
 
@@ -128,19 +131,12 @@ class Controller:
         self.timeout = timeout
         self.gp_provider_client = None
 
-    def run(
-        self,
-        request_body: json_str,
-        headers: dict[str, str],
-        auth_token: str,
-    ) -> FlaskResponse:
+    def run(self, request: GetStructuredRecordRequest) -> FlaskResponse:
         """
         Controller entry point
 
-        Expects a JSON request body containing an ``"nhs-number"`` field.
-        Also expects HTTP headers (from Flask) and extracts:
-        - ``Ods-from`` as the consumer organisation ODS code
-        - ``X-Request-ID`` as the trace/correlation ID
+        Expects a GetStructuredRecordRequest instance that contains the header and body
+        details of the HTTP request received
 
         Orchestration steps:
         1) Call PDS to obtain the patient's GP (provider) ODS code.
@@ -148,42 +144,34 @@ class Controller:
         3) Call SDS using consumer ODS to obtain consumer ASID.
         4) Call GP provider to obtain patient records.
 
-        :param request_body: Raw JSON request body.
-        :param headers: HTTP headers from the request.
-        :param auth_token: Authorization token used for downstream services.
+        :param request: A GetStructuredRecordRequest instance.
         :returns: A :class:`~gateway_api.common.common.FlaskResponse` representing the
             outcome.
         """
-        try:
-            nhs_number = self._get_details_from_body(request_body)
-        except RequestError as err:
-            return FlaskResponse(
-                status_code=err.status_code,
-                data=str(err),
-            )
+        auth_token = self.get_auth_token()
 
-        # Extract consumer ODS from headers
-        consumer_ods = headers.get("Ods-from", "").strip()
-        if not consumer_ods:
+        if not request.ods_from:
             return FlaskResponse(
                 status_code=400,
                 data='Missing required header "Ods-from"',
             )
 
-        trace_id = headers.get("X-Request-ID")
+        trace_id = request.trace_id
         if trace_id is None:
             return FlaskResponse(
-                status_code=400, data="Missing required header: X-Request-ID"
+                status_code=400, data="Missing required header: Ssp-TraceID"
             )
 
         try:
-            provider_ods = self._get_pds_details(auth_token, consumer_ods, nhs_number)
+            provider_ods = self._get_pds_details(
+                auth_token, request.ods_from, request.nhs_number
+            )
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
 
         try:
             consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-                auth_token, consumer_ods, provider_ods
+                auth_token, request.ods_from, provider_ods
             )
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
@@ -197,7 +185,7 @@ class Controller:
 
         response = self.gp_provider_client.access_structured_record(
             trace_id=trace_id,
-            body=request_body,
+            body=request.request_body,
         )
 
         # If we get a None from the GP provider, that means that either the service did
@@ -209,58 +197,27 @@ class Controller:
             headers=dict(response.headers) if response is not None else None,
         )
 
-    def _get_details_from_body(self, request_body: json_str) -> int:
+    def get_auth_token(self) -> str:
         """
-        Parse request JSON and extract the NHS number as an integer.
+        Retrieve the authorization token.
 
-        :param request_body: JSON request body containing an ``"nhs-number"`` field.
-        :returns: NHS number as an integer.
-        :raises RequestError: If the request body is invalid, missing fields, or
-            contains an invalid NHS number.
+        This is a placeholder implementation. Replace with actual logic to obtain
+        the auth token as needed.
+
+        :returns: Authorization token as a string.
         """
-        # Extract NHS number from request body
-        try:
-            body: Any = json.loads(request_body)
-        except (TypeError, json.JSONDecodeError):
-            raise RequestError(
-                status_code=400,
-                message="Request body must be valid JSON",
-            ) from None
-
-        if not (
-            hasattr(body, "__getitem__") and hasattr(body, "get")
-        ):  # Must be a dict-like object
-            raise RequestError(
-                status_code=400,
-                message="JSON structure must be an object/dictionary",
-            ) from None
-
-        nhs_number_value = body.get("nhs-number")
-        if nhs_number_value is None:
-            raise RequestError(
-                status_code=400,
-                message='Missing required field "nhs-number" in JSON request body',
-            ) from None
-
-        try:
-            nhs_number_int = coerce_nhs_number_to_int(nhs_number_value)
-        except ValueError:
-            raise RequestError(
-                status_code=400,
-                message=f'Could not cast NHS number "{nhs_number_value}" to an integer',
-            ) from None
-
-        return nhs_number_int
+        # Placeholder implementation
+        return "PLACEHOLDER_AUTH_TOKEN"
 
     def _get_pds_details(
-        self, auth_token: str, consumer_ods: str, nhs_number: int
+        self, auth_token: str, consumer_ods: str, nhs_number: str
     ) -> str:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
 
         :param auth_token: Authorization token to use for PDS.
         :param consumer_ods: Consumer organisation ODS code (from request headers).
-        :param nhs_number: NHS number (already coerced to an integer).
+        :param nhs_number: NHS number
         :returns: Provider ODS code (GP ODS code).
         :raises RequestError: If the patient cannot be found or has no provider ODS code
         """
