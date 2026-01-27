@@ -6,13 +6,12 @@ from __future__ import annotations
 
 import json
 
+from gateway_api.provider_request import GpProviderClient
+
 __all__ = ["json"]  # Make mypy happy in tests
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    import requests
+from typing import Any
 
 from gateway_api.common.common import FlaskResponse, coerce_nhs_number_to_int, json_str
 from gateway_api.pds_search import PdsClient, PdsSearchResults
@@ -96,51 +95,6 @@ class SdsClient:
         return SdsSearchResults(
             asid=f"asid_{ods_code}", endpoint="https://example-provider.org/endpoint"
         )
-
-
-class GpProviderClient:
-    """
-    Stub GP provider client for obtaining patient records.
-
-    Replace this with the real one once it's implemented.
-    """
-
-    SANDBOX_URL = "https://example.invalid/gpprovider"
-
-    def __init__(
-        self,
-        provider_endpoint: str,  # Obtain from ODS
-        provider_asid: str,
-        consumer_asid: str,
-    ) -> None:
-        """
-        Create a GP provider client.
-
-        :param provider_endpoint: Provider endpoint obtained from SDS.
-        :param provider_asid: Provider ASID obtained from SDS.
-        :param consumer_asid: Consumer ASID obtained from SDS.
-        """
-        self.provider_endpoint = provider_endpoint
-        self.provider_asid = provider_asid
-        self.consumer_asid = consumer_asid
-
-    def access_structured_record(
-        self,
-        trace_id: str,  # NOSONAR S1172 (ignore in stub)
-        body: json_str,  # NOSONAR S1172 (ignore in stub)
-    ) -> requests.Response | None:
-        """
-        Retrieve a patient's structured record from GP provider.
-
-        This stub just returns None, the real thing will be more interesting!
-
-        :param trace_id: Correlation/trace identifier for request tracking.
-        :param body: Original request body.
-        :param nhsnumber: NHS number as a string.
-        :returns: A ``requests.Response`` if the call was made, otherwise ``None``.
-        """
-        # Placeholder implementation
-        return None
 
 
 class Controller:
