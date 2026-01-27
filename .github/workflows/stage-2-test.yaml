@@ -68,8 +68,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda"
-        uses: ./.github/actions/start-local-lambda
+      - name: "Start app"
+        uses: ./.github/actions/start-app
         with:
           python-version: ${{ inputs.python_version }}
       - name: "Run contract tests"
@@ -98,8 +98,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda"
-        uses: ./.github/actions/start-local-lambda
+      - name: "Start app"
+        uses: ./.github/actions/start-app
         with:
           python-version: ${{ inputs.python_version }}
       - name: "Run schema validation tests"
@@ -128,8 +128,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda"
-        uses: ./.github/actions/start-local-lambda
+      - name: "Start app"
+        uses: ./.github/actions/start-app
         with:
           python-version: ${{ inputs.python_version }}
       - name: "Run integration test"
@@ -158,8 +158,8 @@ jobs:
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
-      - name: "Start local Lambda"
-        uses: ./.github/actions/start-local-lambda
+      - name: "Start app"
+        uses: ./.github/actions/start-app
         with:
           python-version: ${{ inputs.python_version }}
           max-seconds: 90
