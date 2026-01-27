@@ -5,6 +5,7 @@ Unit tests for :mod:`gateway_api.controller`.
 from __future__ import annotations
 
 import json as std_json
+from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
@@ -15,7 +16,6 @@ import gateway_api.controller as controller_module
 from gateway_api.controller import (
     Controller,
     SdsSearchResults,
-    _coerce_nhs_number_to_int,
 )
 
 if TYPE_CHECKING:
@@ -201,22 +201,16 @@ class FakeGpProviderClient:
         self,
         trace_id: str,
         body: json_str,
-        nhsnumber: str,
     ) -> Response | None:
         """
         Return either a configured :class:`requests.Response` or ``None``.
 
         :param trace_id: Trace identifier from request headers.
         :param body: JSON request body.
-        :param nhsnumber: NHS number as a string.
         :returns: A configured :class:`requests.Response`, or ``None`` if
             ``return_none`` is set.
         """
-        FakeGpProviderClient.last_call = {
-            "trace_id": trace_id,
-            "body": body,
-            "nhsnumber": nhsnumber,
-        }
+        FakeGpProviderClient.last_call = {"trace_id": trace_id, "body": body}
 
         if FakeGpProviderClient.return_none:
             return None
@@ -228,6 +222,122 @@ class FakeGpProviderClient:
         resp.headers.update(FakeGpProviderClient.response_headers)
         resp.url = "https://example.invalid/fake"
         return resp
+
+
+@dataclass
+class SdsSetup:
+    """
+    Helper dataclass to hold SDS setup data for tests.
+    """
+
+    ods_code: str
+    search_results: SdsSearchResults
+
+
+class sds_factory:
+    """
+    Factory to create a :class:`FakeSdsClient` pre-configured with up to two
+    organisations.
+
+    Used in tests to set up SDS responses for provider and consumer orgs.
+    """
+
+    def __init__(
+        self,
+        org1: SdsSetup | None = None,
+        org2: SdsSetup | None = None,
+    ) -> None:
+        """
+        Construct the fake SDS client and configure org details.
+
+        :param org1: First organisation to configure, or ``None``.
+        :param org2: Second organisation to configure, or ``None``.
+        :param kwargs: Additional keyword arguments passed to
+            :class:`FakeSdsClient`.
+        """
+        self.org1 = org1
+        self.org2 = org2
+        # TODO: Fix factory class docstrings
+
+    def __call__(self, **kwargs: Any) -> FakeSdsClient:
+        """
+        Return the configured fake SDS client.
+
+        :returns: Configured :class:`FakeSdsClient` instance.
+        """
+        self.inst = FakeSdsClient(**kwargs)
+        if self.org1 is not None:
+            self.inst.set_org_details(
+                self.org1.ods_code,
+                SdsSearchResults(
+                    asid=self.org1.search_results.asid,
+                    endpoint=self.org1.search_results.endpoint,
+                ),
+            )
+
+        if self.org2 is not None:
+            self.inst.set_org_details(
+                self.org2.ods_code,
+                SdsSearchResults(
+                    asid=self.org2.search_results.asid,
+                    endpoint=self.org2.search_results.endpoint,
+                ),
+            )
+        return self.inst
+
+
+# def sds_factory(
+#     org1: SdsSetup | None, org2: SdsSetup | None, **kwargs: Any
+# ) -> FakeSdsClient:
+#     inst = FakeSdsClient(**kwargs)
+#     if org1 is not None:
+#         inst.set_org_details(
+#             org1.ods_code,
+#             SdsSearchResults(
+#                 asid=org1.search_results.asid, endpoint=org1.search_results.endpoint
+#             ),
+#         )
+#
+#     if org2 is not None:
+#         inst.set_org_details(
+#             org2.ods_code,
+#             SdsSearchResults(
+#                 asid=org2.search_results.asid, endpoint=org2.search_results.endpoint
+#             ),
+#         )
+#     return inst
+
+
+class pds_factory:
+    """
+    Factory to create a :class:`FakePdsClient` pre-configured with patient details.
+    """
+
+    def __init__(self, ods_code: str | None) -> None:
+        """
+        Construct the fake PDS client and configure patient details.
+
+        :param ods_code: Provider ODS code to set on the patient details.
+        :param kwargs: Additional keyword arguments passed to
+            :class:`FakePdsClient`.
+        """
+        self.ods_code = ods_code
+
+    def __call__(self, **kwargs: Any) -> FakePdsClient:
+        """
+        Return the configured fake PDS client.
+
+        :returns: Configured :class:`FakePdsClient` instance.
+        """
+        self.inst = FakePdsClient(**kwargs)
+        self.inst.set_patient_details(_make_pds_result(self.ods_code))
+        return self.inst
+
+
+# def pds_factory(ods_code: str, **kwargs: Any) -> FakePdsClient:
+#     inst = FakePdsClient(**kwargs)
+#     inst.set_patient_details(_make_pds_result(ods_code))
+#     return inst
 
 
 @pytest.fixture
@@ -244,7 +354,8 @@ def patched_deps(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(controller_module, "GpProviderClient", FakeGpProviderClient)
 
 
-def _make_controller() -> Controller:
+@pytest.fixture
+def controller() -> Controller:
     """
     Construct a controller instance configured for unit tests.
 
@@ -261,63 +372,67 @@ def _make_controller() -> Controller:
 # -----------------------------
 # Unit tests
 # -----------------------------
-def test__coerce_nhs_number_to_int_accepts_spaces_and_validates() -> None:
-    """
-    Validate that whitespace separators are accepted and the number is validated.
-    """
-    # Use real validator logic by default; 9434765919 is algorithmically valid.
-    assert _coerce_nhs_number_to_int("943 476 5919") == 9434765919  # noqa: SLF001 (testing private member)
 
 
-@pytest.mark.parametrize("value", ["not-a-number", "943476591", "94347659190"])
-def test__coerce_nhs_number_to_int_rejects_bad_inputs(value: Any) -> None:
-    """
-    Validate that non-numeric and incorrect-length values are rejected.
-
-    :param value: Parameterized input value.
-    """
-    with pytest.raises(ValueError):  # noqa: PT011 (ValueError is correct here)
-        _coerce_nhs_number_to_int(value)  # noqa: SLF001 (testing private member)
-
-
-def test__coerce_nhs_number_to_int_rejects_when_validator_returns_false(
+def test_call_gp_provider_returns_200_on_success(
+    patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
-    Validate that a failing NHS number validator causes coercion to fail.
-
-    :param monkeypatch: pytest monkeypatch fixture.
+    On successful end-to-end call, the controller should return 200 with
+    expected body/headers.
     """
-    # _coerce_nhs_number_to_int calls validate_nhs_number imported into
-    # gateway_api.controller
-    monkeypatch.setattr(controller_module, "validate_nhs_number", lambda _: False)
-    with pytest.raises(ValueError, match="invalid"):
-        _coerce_nhs_number_to_int("9434765919")  # noqa: SLF001 (testing private member)
+    # TODO: OK, this works. Repeat it sixteen more times (or get the AI to do it)
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="asid_A12345", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="ORG1",
+        search_results=SdsSearchResults(asid="asid_ORG1", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-def test__coerce_nhs_number_to_int_accepts_integer_value() -> None:
-    """
-    Ensure ``_coerce_nhs_number_to_int`` accepts an integer input
-    and returns it unchanged.
+    FakeGpProviderClient.response_status_code = 200
+    FakeGpProviderClient.response_body = b'{"resourceType":"Bundle"}'
+    FakeGpProviderClient.response_headers = {
+        "Content-Type": "application/fhir+json",
+        "X-Downstream": "gp-provider",
+    }
 
-    :returns: None
-    """
-    assert _coerce_nhs_number_to_int(9434765919) == 9434765919  # noqa: SLF001
+    body = make_request_body("9434765919")
+    headers = make_headers()
+
+    r = controller.run(body, headers, "token-abc")
+
+    assert r.status_code == 200
+    assert r.data == '{"resourceType":"Bundle"}'
+    assert r.headers is not None
+    assert r.headers.get("Content-Type") == "application/fhir+json"
+    assert r.headers.get("X-Downstream") == "gp-provider"
 
 
 def test_call_gp_provider_returns_404_when_pds_patient_not_found(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If PDS returns no patient record, the controller should return 404.
     """
-    c = _make_controller()
 
-    # PDS returns None by default
+    # No users added to the PDS stub, so a request for this user will get nothing
+    # back from "PDS". The controller should return 404 with the given error.
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_provider(body, headers, "token-abc")
+    r = controller.run(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "No PDS patient found for NHS number" in (r.data or "")
@@ -326,26 +441,20 @@ def test_call_gp_provider_returns_404_when_pds_patient_not_found(
 def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If PDS returns a patient without a provider (GP) ODS code, return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
-
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        # missing gp_ods_code should be a PDS error
-        inst.set_patient_details(_make_pds_result(""))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
+    pds = pds_factory(ods_code="")
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
 
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_provider(body, headers, "token-abc")
+    r = controller.run(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current provider ODS code" in (r.data or "")
@@ -354,31 +463,23 @@ def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
 def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If SDS returns no provider org details, the controller should return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds = sds_factory()
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        # Do NOT set provider org details => None
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_provider(body, headers, "token-abc")
+    r = controller.run(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert r.data == "No SDS org found for provider ODS code A12345"
@@ -387,34 +488,29 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
 def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If provider ASID is blank/whitespace, the controller should return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="   ", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds = sds_factory(org1=sds_org1)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(asid="   ", endpoint="https://provider.example/ep"),
-        )
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_provider(body, headers, "token-abc")
+    r = controller.run(body, headers, "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current ASID" in (r.data or "")
@@ -423,39 +519,35 @@ def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
 def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If GP provider returns no response object, the controller should return 502.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="asid_A12345", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="ORG1",
+        search_results=SdsSearchResults(asid="asid_ORG1", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="asid_ORG1", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
     FakeGpProviderClient.return_none = True
 
     body = make_request_body("9434765919")
     headers = make_headers()
 
-    r = c.call_gp_provider(body, headers, "token-abc")
+    r = controller.run(body, headers, "token-abc")
 
     assert r.status_code == 502
     assert r.data == "GP provider service error"
@@ -467,16 +559,16 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
 
 def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     Validate that the controller constructs the PDS client with expected kwargs.
     """
-    c = _make_controller()
 
     body = make_request_body("9434765919")
     headers = make_headers(ods_from="ORG1", trace_id="trace-123")
 
-    _ = c.call_gp_provider(body, headers, "token-abc")  # will stop at PDS None => 404
+    _ = controller.run(body, headers, "token-abc")  # will stop at PDS None => 404
 
     assert FakePdsClient.last_init is not None
     assert FakePdsClient.last_init["auth_token"] == "token-abc"  # noqa: S105
@@ -488,44 +580,44 @@ def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
 
 def test_call_gp_provider_returns_400_when_request_body_not_valid_json(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the request body is invalid JSON, the controller should return 400.
     """
-    c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_provider("{", headers, "token-abc")
+    r = controller.run("{", headers, "token-abc")
 
     assert r.status_code == 400
-    assert r.data == 'Request body must be valid JSON with an "nhs-number" field'
+    assert r.data == "Request body must be valid JSON"
 
 
 def test_call_gp_provider_returns_400_when_request_body_is_not_an_object(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the request body JSON is not an expected type of object (e.g., list), return 400.
     """
-    c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_provider('["9434765919"]', headers, "token-abc")
+    r = controller.run('["9434765919"]', headers, "token-abc")
 
     assert r.status_code == 400
-    assert r.data == 'Request body must be a JSON object with an "nhs-number" field'
+    assert r.data == "JSON structure must be an object/dictionary"
 
 
 def test_call_gp_provider_returns_400_when_request_body_missing_nhs_number(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the request body omits ``"nhs-number"``, return 400.
     """
-    c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_provider("{}", headers, "token-abc")
+    r = controller.run("{}", headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Missing required field "nhs-number" in JSON request body'
@@ -533,14 +625,14 @@ def test_call_gp_provider_returns_400_when_request_body_missing_nhs_number(
 
 def test_call_gp_provider_returns_400_when_nhs_number_not_coercible(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If ``"nhs-number"`` cannot be coerced/validated, return 400.
     """
-    c = _make_controller()
     headers = make_headers()
 
-    r = c.call_gp_provider(std_json.dumps({"nhs-number": "ABC"}), headers, "token-abc")
+    r = controller.run(std_json.dumps({"nhs-number": "ABC"}), headers, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Could not cast NHS number "ABC" to an integer'
@@ -548,14 +640,14 @@ def test_call_gp_provider_returns_400_when_nhs_number_not_coercible(
 
 def test_call_gp_provider_returns_400_when_missing_ods_from_header(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the required ``Ods-from`` header is missing, return 400.
     """
-    c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_provider(body, {"X-Request-ID": "trace-123"}, "token-abc")
+    r = controller.run(body, {"X-Request-ID": "trace-123"}, "token-abc")
 
     assert r.status_code == 400
     assert r.data == 'Missing required header "Ods-from"'
@@ -563,14 +655,14 @@ def test_call_gp_provider_returns_400_when_missing_ods_from_header(
 
 def test_call_gp_provider_returns_400_when_ods_from_is_whitespace(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the ``Ods-from`` header is whitespace-only, return 400.
     """
-    c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_provider(
+    r = controller.run(
         body, {"Ods-from": "   ", "X-Request-ID": "trace-123"}, "token-abc"
     )
 
@@ -580,14 +672,14 @@ def test_call_gp_provider_returns_400_when_ods_from_is_whitespace(
 
 def test_call_gp_provider_returns_400_when_missing_x_request_id(
     patched_deps: Any,
+    controller: Controller,
 ) -> None:
     """
     If the required ``X-Request-ID`` header is missing, return 400.
     """
-    c = _make_controller()
     body = make_request_body("9434765919")
 
-    r = c.call_gp_provider(body, {"Ods-from": "ORG1"}, "token-abc")
+    r = controller.run(body, {"Ods-from": "ORG1"}, "token-abc")
 
     assert r.status_code == 400
     assert r.data == "Missing required header: X-Request-ID"
@@ -596,31 +688,28 @@ def test_call_gp_provider_returns_400_when_missing_x_request_id(
 def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If provider endpoint is blank/whitespace, the controller should return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(asid="asid_A12345", endpoint="   "),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="ORG1",
+        search_results=SdsSearchResults(asid="asid_ORG1", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345", SdsSearchResults(asid="asid_A12345", endpoint="   ")
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="asid_ORG1", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    r = c.call_gp_provider(make_request_body("9434765919"), make_headers(), "token-abc")
+    r = controller.run(make_request_body("9434765919"), make_headers(), "token-abc")
 
     assert r.status_code == 404
     assert "did not contain a current endpoint" in (r.data or "")
@@ -629,34 +718,26 @@ def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
 def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If SDS returns no consumer org details, the controller should return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="asid_A12345", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds = sds_factory(org1=sds_org1)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        # No consumer org details
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    r = c.call_gp_provider(
+    r = controller.run(
         make_request_body("9434765919"), make_headers(ods_from="ORG1"), "token-abc"
     )
 
@@ -667,34 +748,30 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
 def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     If consumer ASID is blank/whitespace, the controller should return 404.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="asid_A12345", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="ORG1",
+        search_results=SdsSearchResults(asid="   ", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="   ", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
-
-    r = c.call_gp_provider(
+    r = controller.run(
         make_request_body("9434765919"), make_headers(ods_from="ORG1"), "token-abc"
     )
 
@@ -705,32 +782,28 @@ def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
 def test_call_gp_provider_passthroughs_non_200_gp_provider_response(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
 ) -> None:
     """
     Validate that non-200 responses from GP provider are passed through.
 
     :param monkeypatch: pytest monkeypatch fixture.
     """
-    c = _make_controller()
+    pds = pds_factory(ods_code="A12345")
+    sds_org1 = SdsSetup(
+        ods_code="A12345",
+        search_results=SdsSearchResults(
+            asid="asid_A12345", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="ORG1",
+        search_results=SdsSearchResults(asid="asid_ORG1", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    def pds_factory(**kwargs: Any) -> FakePdsClient:
-        inst = FakePdsClient(**kwargs)
-        inst.set_patient_details(_make_pds_result("A12345"))
-        return inst
-
-    def sds_factory(**kwargs: Any) -> FakeSdsClient:
-        inst = FakeSdsClient(**kwargs)
-        inst.set_org_details(
-            "A12345",
-            SdsSearchResults(
-                asid="asid_A12345", endpoint="https://provider.example/ep"
-            ),
-        )
-        inst.set_org_details("ORG1", SdsSearchResults(asid="asid_ORG1", endpoint=None))
-        return inst
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds_factory)
-    monkeypatch.setattr(controller_module, "SdsClient", sds_factory)
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
 
     FakeGpProviderClient.response_status_code = 404
     FakeGpProviderClient.response_body = b"Not Found"
@@ -739,7 +812,7 @@ def test_call_gp_provider_passthroughs_non_200_gp_provider_response(
         "X-Downstream": "gp-provider",
     }
 
-    r = c.call_gp_provider(make_request_body("9434765919"), make_headers(), "token-abc")
+    r = controller.run(make_request_body("9434765919"), make_headers(), "token-abc")
 
     assert r.status_code == 404
     assert r.data == "Not Found"
