@@ -150,28 +150,28 @@ class Controller:
         """
         auth_token = self.get_auth_token()
 
-        if not request.ods_from:
+        if not request.ods_from.strip():
             return FlaskResponse(
                 status_code=400,
                 data='Missing required header "Ods-from"',
             )
 
-        trace_id = request.trace_id
-        if trace_id is None:
+        trace_id = request.trace_id.strip()
+        if not trace_id:
             return FlaskResponse(
                 status_code=400, data="Missing required header: Ssp-TraceID"
             )
 
         try:
             provider_ods = self._get_pds_details(
-                auth_token, request.ods_from, request.nhs_number
+                auth_token, request.ods_from.strip(), request.nhs_number
             )
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
 
         try:
             consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-                auth_token, request.ods_from, provider_ods
+                auth_token, request.ods_from.strip(), provider_ods
             )
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
