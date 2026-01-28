@@ -10,6 +10,8 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
+from flask import Flask
+from flask import request as flask_request
 from requests import Response
 
 import gateway_api.controller as controller_module
@@ -17,6 +19,7 @@ from gateway_api.controller import (
     Controller,
     SdsSearchResults,
 )
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
     from gateway_api.common.common import json_str
@@ -341,31 +344,76 @@ def controller() -> Controller:
     )
 
 
+@pytest.fixture
+def get_structured_record_request(
+    request: pytest.FixtureRequest,
+) -> GetStructuredRecordRequest:
+    app = Flask(__name__)
+
+    # Pass two dicts to this fixture that give dicts to add to
+    # header and body respectively.
+    header_update, body_update = request.param
+
+    headers = {
+        "Ssp-TraceID": "3d7f2a6e-0f4e-4af3-9b7b-2a3d5f6a7b8c",
+        "ODS-from": "CONSUMER",
+    }
+
+    headers.update(header_update)
+
+    body = {
+        "resourceType": "Parameters",
+        "parameter": [
+            {
+                "valueIdentifier": {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "9999999999",
+                },
+            }
+        ],
+    }
+
+    body.update(body_update)
+
+    with app.test_request_context(
+        path="/patient/$gpc.getstructuredrecord",
+        method="POST",
+        headers=headers,
+        json=body,
+    ):
+        return GetStructuredRecordRequest(flask_request)
+
+
 # -----------------------------
 # Unit tests
 # -----------------------------
 
 
+@pytest.mark.parametrize(
+    "get_structured_record_request",
+    [({}, {})],
+    indirect=["get_structured_record_request"],
+)
 def test_call_gp_provider_returns_200_on_success(
     patched_deps: Any,
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
+    get_structured_record_request: GetStructuredRecordRequest,
 ) -> None:
     """
     On successful end-to-end call, the controller should return 200 with
     expected body/headers.
     """
-    # TODO: OK, this works. Repeat it sixteen more times (or get the AI to do it)
-    pds = pds_factory(ods_code="A12345")
+    pds = pds_factory(ods_code="PROVIDER")
     sds_org1 = SdsSetup(
-        ods_code="A12345",
+        ods_code="PROVIDER",
         search_results=SdsSearchResults(
-            asid="asid_A12345", endpoint="https://provider.example/ep"
+            asid="asid_PROV", endpoint="https://provider.example/ep"
         ),
     )
     sds_org2 = SdsSetup(
-        ods_code="ORG1",
-        search_results=SdsSearchResults(asid="asid_ORG1", endpoint=None),
+        ods_code="CONSUMER",
+        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
     )
     sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
@@ -379,16 +427,25 @@ def test_call_gp_provider_returns_200_on_success(
         "X-Downstream": "gp-provider",
     }
 
-    body = make_request_body("9434765919")
-    headers = make_headers()
+    r = controller.run(get_structured_record_request)
 
-    r = controller.run(body, headers, "token-abc")
-
+    # Check that response from GP provider was passed through.
     assert r.status_code == 200
-    assert r.data == '{"resourceType":"Bundle"}'
-    assert r.headers is not None
-    assert r.headers.get("Content-Type") == "application/fhir+json"
-    assert r.headers.get("X-Downstream") == "gp-provider"
+    assert r.data == FakeGpProviderClient.response_body.decode("utf-8")
+    assert r.headers == FakeGpProviderClient.response_headers
+
+    # Check that GP provider was initialised correctly
+    assert FakeGpProviderClient.last_init == {
+        "provider_endpoint": "https://provider.example/ep",
+        "provider_asid": "asid_PROV",
+        "consumer_asid": "asid_CONS",
+    }
+
+    # Check that we passed the trace ID and body to the provider
+    assert FakeGpProviderClient.last_call == {
+        "trace_id": get_structured_record_request.trace_id,
+        "body": get_structured_record_request.request_body,
+    }
 
 
 def test_call_gp_provider_returns_404_when_pds_patient_not_found(
