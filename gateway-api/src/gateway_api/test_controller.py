@@ -21,6 +21,8 @@ from gateway_api.controller import (
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from gateway_api.common.common import json_str
 
 
@@ -221,6 +223,16 @@ def controller() -> Controller:
         nhsd_session_urid="session-123",
         timeout=3,
     )
+
+
+@pytest.fixture
+def gp_provider_returns_none() -> Generator[None, None, None]:
+    """
+    Configure FakeGpProviderClient to return None and reset after the test.
+    """
+    FakeGpProviderClient.return_none = True
+    yield
+    FakeGpProviderClient.return_none = False
 
 
 @pytest.fixture
@@ -438,6 +450,7 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
+    gp_provider_returns_none: None,
 ) -> None:
     """
     If GP provider returns no response object, the controller should return 502.
@@ -458,16 +471,11 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    FakeGpProviderClient.return_none = True
-
     r = controller.run(get_structured_record_request)
 
     assert r.status_code == 502
     assert r.data == "GP provider service error"
     assert r.headers is None
-
-    # reset for other tests
-    FakeGpProviderClient.return_none = False
 
 
 @pytest.mark.parametrize(
