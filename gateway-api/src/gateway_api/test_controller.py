@@ -25,29 +25,6 @@ if TYPE_CHECKING:
 
 
 # -----------------------------
-# Helpers for request test data
-# -----------------------------
-# def make_request_body(nhs_number: str = "9434765919") -> json_str:
-#     """
-#     Legacy helper (previous controller signature) retained for backwards compatibility
-#     with older tests. New tests use GetStructuredRecordRequest fixture.
-#     """
-#     return std_json.dumps({"nhs-number": nhs_number})
-
-
-# TODO: Remove this and the one above
-# def make_headers(
-#     ods_from: str = "ORG1",
-#     trace_id: str = "trace-123",
-# ) -> dict[str, str]:
-#     """
-#     Legacy helper (previous controller signature) retained for backwards compatibility
-#     with older tests. New tests use GetStructuredRecordRequest fixture.
-#     """
-#     return {"Ods-from": ods_from, "X-Request-ID": trace_id}
-
-
-# -----------------------------
 # Fake downstream dependencies
 # -----------------------------
 def _make_pds_result(gp_ods_code: str | None) -> Any:
@@ -490,7 +467,6 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     assert r.headers is None
 
     # reset for other tests
-    # TODO: Do we need this? Really?
     FakeGpProviderClient.return_none = False
 
 
