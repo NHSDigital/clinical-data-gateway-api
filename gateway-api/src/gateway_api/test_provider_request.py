@@ -47,7 +47,7 @@ def mock_request_post(
         url: str,
         headers: CaseInsensitiveDict[str],
         data: str,
-        timeout: int,
+        timeout: int,  # NOQA ARG001 (unused in stub)
     ) -> Response:
         """A fake requests.post implementation."""
 
@@ -66,7 +66,6 @@ def mock_request_post(
 
 def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
     mock_request_post: dict[str, Any],
-    stub: GpProviderStub,
 ) -> None:
     """
     Test that the `access_structured_record` method constructs the correct URL
@@ -99,7 +98,6 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
-    stub: GpProviderStub,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct headers
@@ -138,7 +136,6 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
 
 def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     mock_request_post: dict[str, Any],
-    stub: GpProviderStub,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct body
@@ -169,7 +166,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
 
 
 def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
-    mock_request_post: dict[str, Any],
+    mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
     stub: GpProviderStub,
 ) -> None:
     """
@@ -199,9 +196,7 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 
 def test_access_structured_record_raises_external_service_error(
-    mock_request_post: dict[str, Any],
-    stub: GpProviderStub,
-    monkeypatch: pytest.MonkeyPatch,
+    mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Test that the `access_structured_record` method raises an `ExternalServiceError`
