@@ -58,7 +58,10 @@ class FakePdsClient:
     def set_patient_details(self, value: Any) -> None:
         self._patient_details = value
 
-    def search_patient_by_nhs_number(self, nhs_number: int) -> Any | None:
+    def search_patient_by_nhs_number(
+        self,
+        nhs_number: int,  # noqa: ARG002 (unused in fake)
+    ) -> Any | None:
         return self._patient_details
 
 
@@ -286,7 +289,7 @@ def get_structured_record_request(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_200_on_success(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -345,7 +348,7 @@ def test_call_gp_provider_returns_200_on_success(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_pds_patient_not_found(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
 ) -> None:
@@ -365,7 +368,7 @@ def test_call_gp_provider_returns_404_when_pds_patient_not_found(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -388,7 +391,7 @@ def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -414,7 +417,7 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -446,11 +449,11 @@ def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
-    gp_provider_returns_none: None,
+    gp_provider_returns_none: None,  # NOQA ARG001 (Fixture handling setup/teardown)
 ) -> None:
     """
     If GP provider returns no response object, the controller should return 502.
@@ -484,8 +487,7 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
-    patched_deps: Any,
-    monkeypatch: pytest.MonkeyPatch,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
 ) -> None:
@@ -508,7 +510,7 @@ def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_404_message_includes_nhs_number_from_request_body(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
 ) -> None:
@@ -528,7 +530,7 @@ def test_call_gp_provider_404_message_includes_nhs_number_from_request_body(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_400_when_ods_from_is_empty(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
 ) -> None:
@@ -547,7 +549,7 @@ def test_call_gp_provider_returns_400_when_ods_from_is_empty(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_passes_empty_trace_id_through_to_gp_provider(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -583,7 +585,7 @@ def test_call_gp_provider_passes_empty_trace_id_through_to_gp_provider(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -613,7 +615,7 @@ def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -645,7 +647,7 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -681,7 +683,7 @@ def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
     indirect=["get_structured_record_request"],
 )
 def test_call_gp_provider_passthroughs_non_200_gp_provider_response(
-    patched_deps: Any,
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     monkeypatch: pytest.MonkeyPatch,
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,

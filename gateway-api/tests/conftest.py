@@ -151,7 +151,10 @@ def hostname() -> str:
     return _fetch_env_variable("HOST", str)
 
 
-def _fetch_env_variable[T](name: str, t: type[T]) -> T:
+def _fetch_env_variable[T](
+    name: str,
+    t: type[T],  # NOQA ARG001 This is actually used for type hinting
+) -> T:
     value = os.getenv(name)
     if not value:
         raise ValueError(f"{name} environment variable is not set.")

@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from gateway_api.common.common import validate_nhs_number
+
 
 @dataclass(frozen=True)
 class StubResponse:
@@ -136,9 +138,9 @@ class PdsFhirApiStub:
         nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
-        authorization: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
-        role_id: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
-        end_user_org_ods: str | None = None,  # noqa: F841 # NOSONAR S1172 (ignored in stub)
+        authorization: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+        role_id: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+        end_user_org_ods: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
     ) -> StubResponse:
         """
         Implements ``GET /Patient/{id}``.
@@ -237,32 +239,21 @@ class PdsFhirApiStub:
             return False
 
     @staticmethod
-    def _is_valid_nhs_number(nhs_number: str) -> bool:
+    def _is_valid_nhs_number(nhs_number: str, strict_validation: bool = False) -> bool:
         """
         Validate an NHS number.
 
         The intended logic is check-digit validation (mod 11), rejecting cases where the
         computed check digit is 10.
 
-        :param nhs_number: NHS number string.
-        :return: ``True`` if considered valid.
-
         .. note::
-            This stub currently returns ``True`` for all values to keep unit test data
-            setup lightweight. Uncomment the implementation below if stricter validation
+            By default this stub currently returns ``True`` for all values to keep unit
+            test data setup lightweight. Set strict_validation if stricter validation
             is desired.
         """
+        if strict_validation:
+            return validate_nhs_number(nhs_number)
         return True
-
-        # digits = [int(c) for c in nhs_number] # NOSONAR S125 (May be wanted later)
-        # total = sum(digits[i] * (10 - i) for i in range(9))  # weights 10..2
-        # remainder = total % 11
-        # check = 11 - remainder
-        # if check == 11:
-        #     check = 0
-        # if check == 10:
-        #     return False
-        # return digits[9] == check
 
     def _bad_request(
         self, message: str, *, request_id: str | None, correlation_id: str | None

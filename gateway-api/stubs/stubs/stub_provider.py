@@ -103,7 +103,7 @@ class GpProviderStub:
     def access_record_structured(
         self,
         trace_id: str,
-        body: str,  # NOSONAR S1172: unused parameter maintains method signature in stub
+        body: str,  # NOQA ARG002 # NOSONAR S1172: unused parameter maintains method signature in stub
     ) -> StubResponse:
         """
         Simulate accessRecordStructured operation of GPConnect FHIR API.

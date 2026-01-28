@@ -192,7 +192,7 @@ def _insert_basic_patient(
 
 def test_search_patient_by_nhs_number_get_patient_success(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify ``GET /Patient/{nhs_number}`` returns 200 and demographics are extracted.
@@ -220,7 +220,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
         nhsd_session_urid="test-urid",
     )
 
-    result = client.search_patient_by_nhs_number(9000000009)
+    result = client.search_patient_by_nhs_number("9000000009")
 
     assert result is not None
     assert result.nhs_number == "9000000009"
@@ -231,7 +231,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
 
 def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that ``gp_ods_code`` is ``None`` when no GP record is current.
@@ -272,7 +272,7 @@ def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000018)
+    result = client.search_patient_by_nhs_number("9000000018")
 
     assert result is not None
     assert result.nhs_number == "9000000018"
@@ -317,7 +317,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     corr_id = "corr-123"
 
     result = client.search_patient_by_nhs_number(
-        9000000009,
+        "9000000009",
         request_id=req_id,
         correlation_id=corr_id,
     )
@@ -360,7 +360,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000009)
+    result = client.search_patient_by_nhs_number("9000000009")
     assert result is not None
 
     headers = mock_requests_get["headers"]
@@ -370,8 +370,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
 
 
 def test_search_patient_by_nhs_number_not_found_raises_error(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that a 404 response results in :class:`ExternalServiceError`.
@@ -391,12 +390,12 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     )
 
     with pytest.raises(ExternalServiceError):
-        pds.search_patient_by_nhs_number(9900000001)
+        pds.search_patient_by_nhs_number("9900000001")
 
 
 def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that a current GP record is selected and its ODS code returned.
@@ -452,7 +451,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000017)
+    result = client.search_patient_by_nhs_number("9000000017")
     assert result is not None
     assert result.nhs_number == "9000000017"
     assert result.family_name == "Taylor"
