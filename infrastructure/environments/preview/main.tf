@@ -52,8 +52,8 @@ resource "aws_lb_target_group" "branch" {
   vpc_id      = local.vpc_id
 
   health_check {
-    path                = "/"
-    matcher             = "200-499"
+    path                = "/health"
+    matcher             = "200-299"
     interval            = 30
     timeout             = 5
     unhealthy_threshold = 2
