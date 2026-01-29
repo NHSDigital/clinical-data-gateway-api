@@ -189,6 +189,7 @@ jobs:
 
       - name: Apply proxygen details
         if: github.event.action != 'closed'
+        working-directory: proxygen
         run: |
           cp settings.yaml $HOME/.proxygen/settings.yaml
 
