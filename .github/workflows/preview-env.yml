@@ -249,41 +249,66 @@ jobs:
           --services ${{ steps.tf-output.outputs.ecs_service }} \
           --region ${{ env.AWS_REGION }}
 
-      # - name: Smoke test preview URL
-      #   if: github.event.action != 'closed'
-      #   id: smoke-test
-      #   env:
-      #     PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
-      #   run: |
-      #     if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
-      #       echo "Preview URL missing"
-      #       echo "http_status=missing" >> "$GITHUB_OUTPUT"
-      #       echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
-      #       exit 0
-      #     fi
+      - name: Get mTLS certs for testing
+        if: github.event.action != 'closed'
+        id: mtls-certs
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+            /cds/gateway/dev/mtls/client1-key-secret
+            /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
 
-      #     # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
-      #     STATUS=$(curl --silent --output /tmp/preview.headers --write-out '%{http_code}' --head --max-time 30 "$PREVIEW_URL" || true)
+      - name: Smoke test preview URL
+        if: github.event.action != 'closed'
+        id: smoke-test
+        env:
+          PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
+        run: |
+          if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
+            echo "Preview URL missing"
+            echo "http_status=missing" >> "$GITHUB_OUTPUT"
+            echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      #     if [ "$STATUS" = "404" ]; then
-      #       echo "Preview responded with expected 404"
-      #       echo "http_status=404" >> "$GITHUB_OUTPUT"
-      #       echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
-      #       exit 0
-      #     fi
+          # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+          STATUS=$(curl \
+                      --cert /tmp/client1-cert.pem \
+                      --key /tmp/client1-key.pem \
+                      --silent \
+                      --output /tmp/preview.headers \
+                      --write-out '%{http_code}' \
+                      --head \
+                      --max-time 30 "$PREVIEW_URL"/health || true)
+          rm -f /tmp/client1-key.pem
+          rm -f /tmp/client1-cert.pem
 
-      #     if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-      #       echo "Preview responded with status $STATUS"
-      #       echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-      #       echo "http_result=success" >> "$GITHUB_OUTPUT"
-      #       exit 0
-      #     fi
+          if [ "$STATUS" = "404" ]; then
+            echo "Preview responded with expected 404"
+            echo "http_status=404" >> "$GITHUB_OUTPUT"
+            echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      #     echo "Preview responded with unexpected status $STATUS"
-      #     cat /tmp/preview.headers
-      #     echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-      #     echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
-      #     exit 0
+          if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "Preview responded with status $STATUS"
+            echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+            echo "http_result=success" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Preview responded with unexpected status $STATUS"
+          if [ -f /tmp/preview.headers ]; then
+            echo "Response headers:"
+            cat /tmp/preview.headers
+          fi
+
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
@@ -331,7 +356,7 @@ jobs:
 
             const lines = [
               '**Deployment Complete**',
-              `- Preview URL: [${url}](${url})`,
+              `- Preview URL: [${url}](${url}) — [Health endpoint](${url}/health)`,
               `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
               `- ECS Cluster: \`${cluster}\``,
               `- ECS Service: \`${service}\``,
@@ -344,3 +369,18 @@ jobs:
               issue_number: issueNumber,
               body: lines.join('\n'),
             });
+
+      # ---------- Security scanning ----------
+      - name: Trivy filesystem scan
+        if: github.event.action != 'closed'
+        uses: nhs-england-tools/trivy-action/image-scan@3456c1657a37d500027fd782e6b08911725392da
+        with:
+          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+          artifact-name: trivy-scan-${{ steps.meta.outputs.branch_name }}
+
+      - name: Generate SBOM
+        uses: nhs-england-tools/trivy-action/sbom-scan@3456c1657a37d500027fd782e6b08911725392da
+        if: github.event.action != 'closed'
+        with:
+          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+          artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
