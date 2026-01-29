@@ -170,6 +170,12 @@ jobs:
 
           yq eval '.x-nhsd-apim.target.url = env(PREVIEW_URL) | .x-nhsd-apim.target.security.secret = env(MTLS_SECRET_KEY)' -i openapi.yaml
 
+      - name: Install proxygen-cli
+        if: github.event.action != 'closed'
+        run: |
+          pip install proxygen-cli
+          proxygen --version
+
       # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
         if: github.event.action == 'synchronize'
