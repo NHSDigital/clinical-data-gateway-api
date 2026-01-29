@@ -1,0 +1,13 @@
+x-nhsd-apim:
+  monitoring: true
+  access:
+  - title: User Restricted
+    grants:
+      nhs-cis2-aal3: []
+  target:
+    type: external
+    healthcheck: /health
+    url: <preview-endpoint-url>
+    security:
+      type: mtls
+      secret: <replace-with-secret-name>

@@ -1,0 +1,32 @@
+headers {
+  Ssp-TraceID: test-teace-id
+  ODS-from: test-ods-code
+}
+
+auth {
+  mode: oauth2
+}
+
+auth:oauth2 {
+  grant_type: authorization_code
+  callback_url: https://www.example.com/callback
+  authorization_url: https://internal-dev.api.service.nhs.uk/oauth2-mock/authorize
+  access_token_url: https://internal-dev.api.service.nhs.uk/oauth2-mock/token
+  refresh_token_url:
+  client_id: {{process.env.CLIENT_ID}}
+  client_secret: {{process.env.CLIENT_SECRET}}
+  scope:
+  state: {{$guid}}
+  pkce: false
+  credentials_placement: body
+  credentials_id: Mock Auth Token
+  token_placement: header
+  token_header_prefix: Bearer
+  auto_fetch_token: true
+  auto_refresh_token: false
+}
+
+vars:pre-request {
+  apigee_env: internal-dev
+  proxy_base_path: clinical-data-gateway-api-poc-pr-{{process.env.PR_NUMBER}}
+}

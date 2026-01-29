@@ -155,6 +155,35 @@ jobs:
           ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
           echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
 
+      - name: Get proxygen machine user details
+        id: proxygen-machine-user
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: /cds/gateway/dev/proxygen/proxygen-key-secret
+          name-transformation: lowercase
+
+      - name: Deploy preview API proxy
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/proxy/deploy-proxy
+        with:
+          mtls-secret-name: ${{ vars.PREVIEW_ENV_MTLS_SECRET_NAME}}
+          target-url: ${{ steps.tf-output.outputs.preview_url }}
+          proxy-base-path: 'clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
+          proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
+          proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
+          proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
+          proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
+
+      - name: Tear down preview API proxy
+        if: github.event.action == 'closed'
+        uses: ./.github/actions/proxy/tear-down-proxy
+        with:
+          proxy-base-path: 'clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
+          proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
+          proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
+          proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
+          proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
+
       # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
         if: github.event.action == 'synchronize'
@@ -263,6 +292,7 @@ jobs:
           script: |
             const alb = '${{ steps.tf-output.outputs.target_group }}';
             const url = '${{ steps.tf-output.outputs.preview_url }}';
+            const proxy_url = 'https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}';
             const cluster = '${{ steps.tf-output.outputs.ecs_cluster }}';
             const service = '${{ steps.tf-output.outputs.ecs_service }}';
             const owner = context.repo.owner;
@@ -303,7 +333,8 @@ jobs:
             const lines = [
               '**Deployment Complete**',
               `- Preview URL: [${url}](${url}) — [Health endpoint](${url}/health)`,
-              `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
+              `    - Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
+              `- Proxy URL: [${proxy_url}](${proxy_url})`,
               `- ECS Cluster: \`${cluster}\``,
               `- ECS Service: \`${service}\``,
               `- ALB Target: \`${alb}\``,
