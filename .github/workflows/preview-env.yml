@@ -155,6 +155,18 @@ jobs:
           ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
           echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
 
+      - name: Install yq for YAML template processing
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Inject secrets into openapi.yaml for deploying proxy
+        working-directory: gateway-api
+        run: |
+          cp openapi.template.yaml openapi.yaml
+
+          yq eval '.x-nhsd-apim.target.url = ${{ steps.tf-output.output.preview_url }} | .x-nhsd-apim.target.security.secret = ${{ secrets.MTLS_SECRET_KEY }}' -i openapi.yaml
+
       # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
         if: github.event.action == 'synchronize'
