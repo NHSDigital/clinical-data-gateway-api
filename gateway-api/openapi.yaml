@@ -10,15 +10,15 @@ servers:
     description: Local development server
 components:
   securitySchemes:
-    app-level3:
-      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level3
+    app-level0:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level0
 paths:
   /patient/$gpc.getstructuredrecord:
     post:
       summary: Get structured record
       description: Returns a FHIR Bundle containing patient structured record
       security:
-      - app-level3: []
+      - app-level0: []
       operationId: getStructuredRecord
       parameters:
       - in: header
@@ -152,7 +152,7 @@ paths:
       summary: Health check
       description: Returns the health status of the API
       security:
-      - app-level3: []
+      - app-level0: []
       operationId: healthCheck
       responses:
         '200':
@@ -173,11 +173,11 @@ x-nhsd-apim:
   access:
   - title: Application Restricted
     grants:
-      app-level3: []
+      app-level0: []
   target:
     type: external
     healthcheck: /health
-    url: https://feature-gpcapim-257-route-requests-from-apim-using-proxygen.dev.endpoints.clinical-data-gateway.national.nhs.uk/
+    url: <preview-endpoint-url>
     security:
       type: mtls
       secret: <replace-with-secret-name>
