@@ -9,6 +9,7 @@ from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
 )
 
+# hello
 app = Flask(__name__)
 
 
