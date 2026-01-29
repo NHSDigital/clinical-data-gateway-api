@@ -192,7 +192,7 @@ jobs:
         run: |
           printf "%s" "$_cds_gateway_dev_proxygen_proxygen_key_secret" > /tmp/proxygen_private_key.pem
 
-          proxygen credentials set private_key_path /tmp/proxygen_private_key.pem key_id "$PROXYGEN_KEY_ID" client_id clinical-data-gateway-api-poc-client
+          yes "" | proxygen credentials set private_key_path /tmp/proxygen_private_key.pem key_id "$PROXYGEN_KEY_ID" client_id clinical-data-gateway-api-poc-client
 
           rm -f /tmp/proxygen_private_key.pem
 
