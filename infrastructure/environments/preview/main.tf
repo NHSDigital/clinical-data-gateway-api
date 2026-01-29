@@ -209,9 +209,5 @@ resource "aws_ecs_service" "branch" {
     container_port   = var.container_port
   }
 
-  lifecycle {
-    ignore_changes = [task_definition]
-  }
-
   depends_on = [aws_lb_listener_rule.branch]
 }
