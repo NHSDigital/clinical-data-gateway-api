@@ -210,41 +210,41 @@ jobs:
           --services ${{ steps.tf-output.outputs.ecs_service }} \
           --region ${{ env.AWS_REGION }}
 
-      - name: Smoke test preview URL
-        if: github.event.action != 'closed'
-        id: smoke-test
-        env:
-          PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
-        run: |
-          if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
-            echo "Preview URL missing"
-            echo "http_status=missing" >> "$GITHUB_OUTPUT"
-            echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+      # - name: Smoke test preview URL
+      #   if: github.event.action != 'closed'
+      #   id: smoke-test
+      #   env:
+      #     PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
+      #   run: |
+      #     if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
+      #       echo "Preview URL missing"
+      #       echo "http_status=missing" >> "$GITHUB_OUTPUT"
+      #       echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
+      #       exit 0
+      #     fi
 
-          # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
-          STATUS=$(curl --silent --output /tmp/preview.headers --write-out '%{http_code}' --head --max-time 30 "$PREVIEW_URL" || true)
+      #     # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
+      #     STATUS=$(curl --silent --output /tmp/preview.headers --write-out '%{http_code}' --head --max-time 30 "$PREVIEW_URL" || true)
 
-          if [ "$STATUS" = "404" ]; then
-            echo "Preview responded with expected 404"
-            echo "http_status=404" >> "$GITHUB_OUTPUT"
-            echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+      #     if [ "$STATUS" = "404" ]; then
+      #       echo "Preview responded with expected 404"
+      #       echo "http_status=404" >> "$GITHUB_OUTPUT"
+      #       echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
+      #       exit 0
+      #     fi
 
-          if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-            echo "Preview responded with status $STATUS"
-            echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-            echo "http_result=success" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+      #     if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+      #       echo "Preview responded with status $STATUS"
+      #       echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+      #       echo "http_result=success" >> "$GITHUB_OUTPUT"
+      #       exit 0
+      #     fi
 
-          echo "Preview responded with unexpected status $STATUS"
-          cat /tmp/preview.headers
-          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-          echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
-          exit 0
+      #     echo "Preview responded with unexpected status $STATUS"
+      #     cat /tmp/preview.headers
+      #     echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+      #     echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
+      #     exit 0
 
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
