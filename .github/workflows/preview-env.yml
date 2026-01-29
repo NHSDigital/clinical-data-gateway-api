@@ -190,9 +190,13 @@ jobs:
       - name: Deploy preview API proxy
         if: github.event.action != 'closed'
         run: |
+          yes "" | proxygen credentials set
+          proxygen settings set api "clinical-data-gateway-api-poc"
+          proxygen settings set endpoint_url "https://proxygen.prod.api.platform.nhs.uk"
+          proxygen settings set spec_output_format "yaml"
+
           printf "%s" "$_cds_gateway_dev_proxygen_proxygen_key_secret" > /tmp/proxygen_private_key.pem
 
-          yes "" | proxygen credentials set
           proxygen credentials set private_key_path /tmp/proxygen_private_key.pem key_id "$PROXYGEN_KEY_ID" client_id clinical-data-gateway-api-poc-client
 
           rm -f /tmp/proxygen_private_key.pem
