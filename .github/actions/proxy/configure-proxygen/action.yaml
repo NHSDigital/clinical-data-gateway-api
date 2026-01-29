@@ -1,0 +1,41 @@
+name: Configure Proxygen
+description: Install yq for yaml, install proxygen-cli and configure the account
+
+inputs:
+  proxygen-key-secret:
+    description: 'Proxygen private key secret'
+    required: true
+  proxygen-key-id:
+    description: 'Proxygen key ID'
+    required: true
+  proxygen-api-name:
+    description: 'Proxygen API name'
+    required: true
+  proxygen-client-id:
+    description: 'Proxygen client ID'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install yq for YAML template processing
+      uses: mikefarah/yq@2be0094729a1006f61e8339ce9934bfb3cbb549f # v4.52.2
+
+    - name: Install Proxygen CLI
+      shell: bash
+      run: |
+        pip install proxygen-cli
+        proxygen --version
+
+    - name: Configure proxygen account details
+      shell: bash
+      working-directory: proxygen
+      run: |
+        cp settings.template.yaml $HOME/.proxygen/settings.yaml
+        yq eval '.api = "${{ inputs.proxygen-api-name }}"' -i $HOME/.proxygen/settings.yaml
+
+        printf "%s" "${{ inputs.proxygen-key-secret }}" > /tmp/proxygen_private_key.pem
+        cp credentials.template.yaml $HOME/.proxygen/credentials.yaml
+        yq eval '.private_key_path = "/tmp/proxygen_private_key.pem"' -i $HOME/.proxygen/credentials.yaml
+        yq eval '.key_id = "${{ inputs.proxygen-key-id }}"' -i $HOME/.proxygen/credentials.yaml
+        yq eval '.client_id = "${{ inputs.proxygen-client-id }}"' -i $HOME/.proxygen/credentials.yaml

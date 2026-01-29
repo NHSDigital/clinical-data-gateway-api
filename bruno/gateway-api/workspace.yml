@@ -1,0 +1,14 @@
+opencollection: 1.0.0
+info:
+  name: "gateway"
+  type: workspace
+
+collections:
+  - name: "steel_thread"
+    path: "collections\\steel_thread"
+  - name: "steel_thread"
+    path: "collections\\preview-env"
+
+specs:
+
+docs: ''
