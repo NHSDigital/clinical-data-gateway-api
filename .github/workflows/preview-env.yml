@@ -204,7 +204,7 @@ jobs:
           proxygen instance list
 
 
-      - name: Tear fown preview API proxy
+      - name: Tear down preview API proxy
         if: github.event.action == 'closed'
         run: |
           # TODO
