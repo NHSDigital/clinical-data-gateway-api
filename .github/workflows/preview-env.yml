@@ -197,7 +197,7 @@ jobs:
         if: github.event.action != 'closed'
         working-directory: gateway-api
         run: |
-          proxygen instance deploy internal-dev "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}" gateway-api/openapi.template.yaml --no-confirm
+          proxygen instance deploy internal-dev "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}" openapi.yaml --no-confirm
 
 
       - name: Tear down preview API proxy
