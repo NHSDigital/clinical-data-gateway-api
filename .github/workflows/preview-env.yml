@@ -37,7 +37,7 @@ jobs:
 
       # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        uses: aws-actions/configure-aws-credentials@a7a2c1125c67f40a1e95768f4e4a7d8f019f87af
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
