@@ -4,8 +4,8 @@ from typing import TypedDict
 from flask import Flask, request
 from flask.wrappers import Response
 
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
-    GetStructuredRecordHandler,
     GetStructuredRecordRequest,
 )
 
@@ -37,9 +37,12 @@ def get_app_port() -> int:
 def get_structured_record() -> Response:
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
-        GetStructuredRecordHandler.handle(get_structured_record_request)
+        controller = Controller()
+        flask_response = controller.run(request=get_structured_record_request)
+        get_structured_record_request.set_response_from_flaskresponse(flask_response)
     except Exception as e:
         get_structured_record_request.set_negative_response(str(e))
+
     return get_structured_record_request.build_response()
 
 
