@@ -313,6 +313,7 @@ jobs:
           script: |
             const alb = '${{ steps.tf-output.outputs.target_group }}';
             const url = '${{ steps.tf-output.outputs.preview_url }}';
+            const proxy_url = 'https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}';
             const cluster = '${{ steps.tf-output.outputs.ecs_cluster }}';
             const service = '${{ steps.tf-output.outputs.ecs_service }}';
             const owner = context.repo.owner;
@@ -353,6 +354,7 @@ jobs:
             const lines = [
               '**Deployment Complete**',
               `- Preview URL: [${url}](${url}) — [Health endpoint](${url}/health)`,
+              `- Proxy URL: [${proxy_url}](${proxy_url})`,
               `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
               `- ECS Cluster: \`${cluster}\``,
               `- ECS Service: \`${service}\``,
