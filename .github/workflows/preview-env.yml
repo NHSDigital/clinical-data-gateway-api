@@ -162,10 +162,13 @@ jobs:
 
       - name: Inject secrets into openapi.yaml for deploying proxy
         working-directory: gateway-api
+        env:
+          MTLS_SECRET_KEY: ${{ secrets.MTLS_SECRET_KEY }}
+          PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
         run: |
           cp openapi.template.yaml openapi.yaml
 
-          yq eval '.x-nhsd-apim.target.url = ${{ steps.tf-output.output.preview_url }} | .x-nhsd-apim.target.security.secret = ${{ secrets.MTLS_SECRET_KEY }}' -i openapi.yaml
+          yq eval '.x-nhsd-apim.target.url = env(PREVIEW_URL) | .x-nhsd-apim.target.security.secret = env(MTLS_SECRET_KEY)' -i openapi.yaml
 
       # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
