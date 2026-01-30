@@ -45,9 +45,9 @@ def get_structured_record() -> Response:
             content_type="text/plain",
         )
         return response
-    except Exception:
+    except Exception as e:
         response = Response(
-            response="Internal Server Error",
+            response=f"Internal Server Error: {e}",
             status=500,
             content_type="text/plain",
         )

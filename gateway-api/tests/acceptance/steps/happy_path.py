@@ -4,9 +4,9 @@ import json
 from datetime import timedelta
 
 import requests
-from fhir.bundle import Bundle
 from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
+from stubs.stub_provider import GpProviderStub
 
 from tests.acceptance.conftest import ResponseContext
 from tests.conftest import Client
@@ -50,22 +50,16 @@ def send_to_nonexistent_endpoint(
     )
 )
 def check_status_code(response_context: ResponseContext, expected_status: int) -> None:
-    # Test disabled until the path through the controller is fixed to use the stub
-    return
     assert response_context.response is not None, "Response has not been set."
     assert response_context.response.status_code == expected_status, (
         f"Expected status {expected_status}, "
-        f"got {response_context.response.status_code}"
+        f"got {response_context.response.status_code}: {response_context.response.text}"
     )
 
 
 @then("the response should contain a valid Bundle resource")
-def check_response_contains(
-    response_context: ResponseContext, expected_response_payload: Bundle
-) -> None:
-    # Test disabled until the path through the controller is fixed to use the stub
-    return
+def check_response_contains(response_context: ResponseContext) -> None:
     assert response_context.response, "Response has not been set."
-    assert response_context.response.json() == expected_response_payload, (
+    assert response_context.response.json() == GpProviderStub.patient_bundle, (
         "Expected response payload does not match actual response payload."
     )
