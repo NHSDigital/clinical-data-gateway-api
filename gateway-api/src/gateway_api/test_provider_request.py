@@ -218,18 +218,3 @@ def test_access_structured_record_raises_external_service_error(
         match="GPProvider FHIR API request failed:Bad Request",
     ):
         client.access_structured_record(trace_id, "body")
-
-
-def test_stubbed_post_function(stub: GpProviderStub) -> None:
-    """
-    Test the `_stubbed_post` function to ensure it routes to the stub provider.
-    """
-    trace_id = "test-trace-id"
-    body = "test-body"
-
-    # Call the `_stubbed_post` function
-    response = provider_request._stubbed_post(trace_id, body)  # noqa: SLF001 this is testing the private method
-
-    # Verify the response is as expected
-    assert response.status_code == 200
-    assert response.json() == stub.access_record_structured(trace_id, body).json()

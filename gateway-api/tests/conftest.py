@@ -22,16 +22,24 @@ class Client:
         self.base_url = base_url
         self._timeout = timeout.total_seconds()
 
-    def send_to_get_structured_record_endpoint(self, payload: str) -> requests.Response:
+    def send_to_get_structured_record_endpoint(
+        self, payload: str, headers: dict[str, str] | None = None
+    ) -> requests.Response:
         """
         Send a request to the get_structured_record endpoint with the given NHS number.
         """
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
-        headers = {"Content-Type": "application/fhir+json"}
+        default_headers = {
+            "Content-Type": "application/fhir+json",
+            "Ods-from": "test-ods-code",
+            "Ssp-TraceID": "test-trace-id",
+        }
+        if headers:
+            default_headers.update(headers)
         return requests.post(
             url=url,
             data=payload,
-            headers=headers,
+            headers=default_headers,
             timeout=self._timeout,
         )
 
@@ -54,13 +62,14 @@ def simple_request_payload() -> Parameters:
                 "name": "patientNHSNumber",
                 "valueIdentifier": {
                     "system": "https://fhir.nhs.uk/Id/nhs-number",
-                    "value": "9999999999",
+                    "value": "9000000009",
                 },
             },
         ],
     }
 
 
+# TODO: Pretty sure we don't need this any more
 @pytest.fixture
 def expected_response_payload() -> Bundle:
     return {

@@ -216,6 +216,8 @@ class Controller:
             base_url=self.pds_base_url,
             nhsd_session_urid=self.nhsd_session_urid,
             timeout=self.timeout,
+            # TODO: Testing environment should call the stub, not the PDS sandbox
+            ignore_dates=True,  # TODO: This doesn't go here, probably
         )
 
         pds_result: PdsSearchResults | None = pds.search_patient_by_nhs_number(

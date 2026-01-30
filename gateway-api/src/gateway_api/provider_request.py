@@ -25,8 +25,8 @@ Usage:
 from collections.abc import Callable
 from urllib.parse import urljoin
 
-from requests import HTTPError, Response
-from stubs.stub_provider import GpProviderStub
+from requests import HTTPError, Response, post
+from stubs.stub_provider import stub_post
 
 ARS_INTERACTION_ID = (
     "urn:nhs:names:services:gpconnect:structured"
@@ -37,18 +37,13 @@ FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
 
-# Direct all requests to the stub provider for steel threading in dev.
-# Replace with `from requests import post` for real requests.
-PostCallable = Callable[..., Response]
-_provider_stub = GpProviderStub()
-
-
-def _stubbed_post(trace_id: str, body: str) -> Response:
-    """A stubbed requests.post function that routes to the GPProviderStub."""
-    return _provider_stub.access_record_structured(trace_id, body)
-
-
-post: PostCallable = _stubbed_post
+# TODO: Put the environment variable check back in
+# if os.environ.get("STUB_PROVIDER", None):
+if True:  # NOSONAR S5797 (Yes, I know it's always true, this is temporary)
+    # Direct all requests to the stub provider for steel threading in dev.
+    # Replace with `from requests import post` for real requests.
+    PostCallable = Callable[..., Response]
+    post: PostCallable = stub_post  # type: ignore[no-redef]
 
 
 class ExternalServiceError(Exception):

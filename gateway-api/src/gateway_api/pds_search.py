@@ -91,6 +91,11 @@ class PdsClient:
             print(result)
     """
 
+    # TODO: This is hitting sandbox in the integration tests. Which is kind of fine
+    # because sandbox is returning sensible values for the nhs number we're using,
+    # but we don't really want to be making actual calls to real services in tests.
+    # Do what's been done for the provider service and make it hit the stub if an
+    # env var is set.
     # URLs for different PDS environments. Requires authentication to use live.
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4"

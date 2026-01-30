@@ -22,7 +22,9 @@ Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 """
 
 import json
+from typing import Any
 
+from gateway_api.common.common import json_str
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
@@ -51,54 +53,54 @@ class GpProviderStub:
     A minimal in-memory stub for a Provider GP System FHIR API,
     implementing only accessRecordStructured to read basic
     demographic data for a single patient.
+
+    Seeded with an example
+    FHIR/STU3 Patient resource with only administrative data based on Example 2
+    # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
     """
 
-    def __init__(self) -> None:
-        """Create a GPProviderStub instance which is seeded with an example
-        FHIR/STU3 Patient resource with only administrative data based on Example 2
-        # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
-        """
-        self.patient_bundle = {
-            "resourceType": "Bundle",
-            "type": "collection",
-            "meta": {
-                "profile": [
-                    "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
-                ]
-            },
-            "entry": [
-                {
-                    "resource": {
-                        "resourceType": "Patient",
-                        "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
-                        "meta": {
-                            "versionId": "1469448000000",
-                            "profile": [
-                                "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                            ],
-                        },
-                        "identifier": [
-                            {
-                                "system": "https://fhir.nhs.uk/Id/nhs-number",
-                                "value": "9999999999",
-                            }
+    # Example patient resource
+    patient_bundle = {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "meta": {
+            "profile": [
+                "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
+            ]
+        },
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Patient",
+                    "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                    "meta": {
+                        "versionId": "1469448000000",
+                        "profile": [
+                            "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
                         ],
-                        "active": True,
-                        "name": [
-                            {
-                                "use": "official",
-                                "text": "JACKSON Jane (Miss)",
-                                "family": "Jackson",
-                                "given": ["Jane"],
-                                "prefix": ["Miss"],
-                            }
-                        ],
-                        "gender": "female",
-                        "birthDate": "1952-05-31",
-                    }
+                    },
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9999999999",
+                        }
+                    ],
+                    "active": True,
+                    "name": [
+                        {
+                            "use": "official",
+                            "text": "JACKSON Jane (Miss)",
+                            "family": "Jackson",
+                            "given": ["Jane"],
+                            "prefix": ["Miss"],
+                        }
+                    ],
+                    "gender": "female",
+                    "birthDate": "1952-05-31",
                 }
-            ],
-        }
+            }
+        ],
+    }
 
     def access_record_structured(
         self,
@@ -132,3 +134,15 @@ class GpProviderStub:
             )
 
         return stub_response
+
+
+def stub_post(
+    url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+    headers: dict[str, Any],
+    data: json_str,
+    timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+) -> Response:
+    """A stubbed requests.post function that routes to the GPProviderStub."""
+    _provider_stub = GpProviderStub()
+    trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+    return _provider_stub.access_record_structured(trace_id, data)
