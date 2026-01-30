@@ -4,7 +4,6 @@ Shared lightweight types and helpers used across the gateway API.
 
 import re
 from dataclasses import dataclass
-from typing import cast
 
 # This project uses JSON request/response bodies as strings in the controller layer.
 # The alias is used to make intent clearer in function signatures.
@@ -62,35 +61,3 @@ def validate_nhs_number(value: str | int) -> bool:
         return False  # invalid NHS number
 
     return check == provided_check_digit
-
-
-def coerce_nhs_number_to_int(value: str | int) -> int:
-    """
-    Coerce an NHS number to an integer with basic validation.
-
-    Notes:
-    - NHS numbers are 10 digits.
-    - Input may include whitespace (e.g., ``"943 476 5919"``).
-
-    :param value: NHS number value, as a string or integer.
-    :returns: The coerced NHS number as an integer.
-    :raises ValueError: If the NHS number is non-numeric, the wrong length, or fails
-        validation.
-    """
-    try:
-        stripped = cast("str", value).strip().replace(" ", "")
-    except AttributeError:
-        nhs_number_int = cast("int", value)
-    else:
-        if not stripped.isdigit():
-            raise ValueError("NHS number must be numeric")
-        nhs_number_int = int(stripped)
-
-    if len(str(nhs_number_int)) != 10:
-        # If you need to accept test numbers of different length, relax this.
-        raise ValueError("NHS number must be 10 digits")
-
-    if not validate_nhs_number(nhs_number_int):
-        raise ValueError("NHS number is invalid")
-
-    return nhs_number_int

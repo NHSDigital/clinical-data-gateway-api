@@ -8,6 +8,10 @@ from flask.wrappers import Request, Response
 from gateway_api.common.common import FlaskResponse
 
 
+class RequestValidationError(Exception):
+    """Exception raised for errors in the request validation."""
+
+
 class GetStructuredRecordRequest:
     INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
     RESOURCE: str = "patient"
@@ -19,6 +23,9 @@ class GetStructuredRecordRequest:
         self._request_body: Parameters = request.get_json()
         self._response_body: Bundle | OperationOutcome | None = None
         self._status_code: int | None = None
+
+        # Validate required headers
+        self._validate_headers()
 
     @property
     def trace_id(self) -> str:
@@ -38,6 +45,21 @@ class GetStructuredRecordRequest:
     @property
     def request_body(self) -> str:
         return json.dumps(self._request_body)
+
+    def _validate_headers(self) -> None:
+        """Validate required headers are present and non-empty.
+
+        :raises RequestValidationError: If required headers are missing or empty.
+        """
+        trace_id = self._headers.get("Ssp-TraceID", "").strip()
+        if not trace_id:
+            raise RequestValidationError(
+                'Missing or empty required header "Ssp-TraceID"'
+            )
+
+        ods_from = self._headers.get("ODS-from", "").strip()
+        if not ods_from:
+            raise RequestValidationError('Missing or empty required header "ODS-from"')
 
     def build_response(self) -> Response:
         return Response(

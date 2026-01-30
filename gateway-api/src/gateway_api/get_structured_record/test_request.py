@@ -1,26 +1,34 @@
+import json
+
 import pytest
 from fhir.parameters import Parameters
 from flask import Request
+from werkzeug.test import EnvironBuilder
 
+from gateway_api.get_structured_record import RequestValidationError
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 
-class MockRequest:
-    def __init__(self, headers: dict[str, str], body: Parameters) -> None:
-        self.headers = headers
-        self.body = body
-
-    def get_json(self) -> Parameters:
-        return self.body
+def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:
+    """Create a proper Flask Request object with headers and JSON body."""
+    builder = EnvironBuilder(
+        method="POST",
+        path="/patient/$gpc.getstructuredrecord",
+        data=json.dumps(body),
+        content_type="application/fhir+json",
+        headers=headers,
+    )
+    env = builder.get_environ()
+    return Request(env)
 
 
 @pytest.fixture
-def mock_request_with_headers(valid_simple_request_payload: Parameters) -> MockRequest:
+def mock_request_with_headers(valid_simple_request_payload: Parameters) -> Request:
     headers = {
         "Ssp-TraceID": "test-trace-id",
         "ODS-from": "test-ods",
     }
-    return MockRequest(headers, valid_simple_request_payload)
+    return create_mock_request(headers, valid_simple_request_payload)
 
 
 class TestGetStructuredRecordRequest:

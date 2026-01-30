@@ -7,6 +7,7 @@ from flask.wrappers import Response
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
+    RequestValidationError,
 )
 
 app = Flask(__name__)
@@ -37,6 +38,22 @@ def get_app_port() -> int:
 def get_structured_record() -> Response:
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
+    except RequestValidationError as e:
+        response = Response(
+            response=str(e),
+            status=400,
+            content_type="text/plain",
+        )
+        return response
+    except Exception:
+        response = Response(
+            response="Internal Server Error",
+            status=500,
+            content_type="text/plain",
+        )
+        return response
+
+    try:
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
         get_structured_record_request.set_response_from_flaskresponse(flask_response)
