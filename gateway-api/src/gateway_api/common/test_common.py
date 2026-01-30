@@ -2,8 +2,6 @@
 Unit tests for :mod:`gateway_api.common.common`.
 """
 
-from typing import Any
-
 import pytest
 
 from gateway_api.common import common
@@ -55,32 +53,3 @@ def test_validate_nhs_number_check_edge_cases_10_and_11(
     # All zeros => weighted sum 0 => remainder 0 => check 11 => mapped to 0 => valid
     # with check digit 0
     assert common.validate_nhs_number(nhs_number) is expected
-
-
-def test__coerce_nhs_number_to_int_accepts_spaces_and_validates() -> None:
-    """
-    Validate that whitespace separators are accepted and the number is validated.
-    """
-    # Use real validator logic by default; 9434765919 is algorithmically valid.
-    assert common.coerce_nhs_number_to_int("943 476 5919") == 9434765919
-
-
-@pytest.mark.parametrize("value", ["not-a-number", "943476591", "94347659190"])
-def test__coerce_nhs_number_to_int_rejects_bad_inputs(value: Any) -> None:
-    """
-    Validate that non-numeric and incorrect-length values are rejected.
-
-    :param value: Parameterized input value.
-    """
-    with pytest.raises(ValueError):  # noqa: PT011 (ValueError is correct here)
-        common.coerce_nhs_number_to_int(value)
-
-
-def test__coerce_nhs_number_to_int_accepts_integer_value() -> None:
-    """
-    Ensure ``_coerce_nhs_number_to_int`` accepts an integer input
-    and returns it unchanged.
-
-    :returns: None
-    """
-    assert common.coerce_nhs_number_to_int(9434765919) == 9434765919

@@ -150,18 +150,6 @@ class Controller:
         """
         auth_token = self.get_auth_token()
 
-        if not request.ods_from.strip():
-            return FlaskResponse(
-                status_code=400,
-                data='Missing required header "Ods-from"',
-            )
-
-        trace_id = request.trace_id.strip()
-        if not trace_id:
-            return FlaskResponse(
-                status_code=400, data="Missing required header: Ssp-TraceID"
-            )
-
         try:
             provider_ods = self._get_pds_details(
                 auth_token, request.ods_from.strip(), request.nhs_number
@@ -184,7 +172,7 @@ class Controller:
         )
 
         response = self.gp_provider_client.access_structured_record(
-            trace_id=trace_id,
+            trace_id=request.trace_id,
             body=request.request_body,
         )
 

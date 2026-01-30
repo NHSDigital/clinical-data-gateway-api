@@ -9,11 +9,11 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from flask import Flask
 from flask import request as flask_request
 from requests import Response
 
 import gateway_api.controller as controller_module
+from gateway_api.app import app
 from gateway_api.controller import (
     Controller,
     SdsSearchResults,
@@ -242,8 +242,6 @@ def gp_provider_returns_none() -> Generator[None, None, None]:
 def get_structured_record_request(
     request: pytest.FixtureRequest,
 ) -> GetStructuredRecordRequest:
-    app = Flask(__name__)
-
     # Pass two dicts to this fixture that give dicts to add to
     # header and body respectively.
     header_update, body_update = request.param
@@ -522,61 +520,6 @@ def test_call_gp_provider_404_message_includes_nhs_number_from_request_body(
 
     assert r.status_code == 404
     assert r.data == "No PDS patient found for NHS number 1234567890"
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": ""}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_400_when_ods_from_is_empty(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If the required ``ODS-from`` header is empty/falsy, return 400.
-    """
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 400
-    assert r.data == 'Missing required header "Ods-from"'
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"Ssp-TraceID": ""}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_passes_empty_trace_id_through_to_gp_provider(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If Ssp-TraceID is present but empty, we get a 400
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
-    )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
-    )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 400
-    assert "Missing required header: Ssp-TraceID" in (r.data or "")
 
 
 @pytest.mark.parametrize(

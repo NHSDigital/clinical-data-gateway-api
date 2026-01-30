@@ -12,8 +12,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-from gateway_api.common.common import validate_nhs_number
-
 
 @dataclass(frozen=True)
 class StubResponse:
@@ -239,20 +237,16 @@ class PdsFhirApiStub:
             return False
 
     @staticmethod
-    def _is_valid_nhs_number(nhs_number: str, strict_validation: bool = False) -> bool:
+    def _is_valid_nhs_number(
+        nhs_number: str,  # NOQA: ARG004 We're just passing everything
+    ) -> bool:
         """
-        Validate an NHS number.
+        Validate an NHS number. We don't actually care if NHS numbers are valid in the
+        stub for now, so just returns True.
 
-        The intended logic is check-digit validation (mod 11), rejecting cases where the
-        computed check digit is 10.
-
-        .. note::
-            By default this stub currently returns ``True`` for all values to keep unit
-            test data setup lightweight. Set strict_validation if stricter validation
-            is desired.
+        If you do decide that you want to validate them in future, use the validator
+        in common.common.validate_nhs_number.
         """
-        if strict_validation:
-            return validate_nhs_number(nhs_number)
         return True
 
     def _bad_request(

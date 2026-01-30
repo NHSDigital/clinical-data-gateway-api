@@ -9,6 +9,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from gateway_api.app import app, get_app_host, get_app_port
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
@@ -56,15 +57,18 @@ class TestGetStructuredRecord:
         valid_simple_request_payload: "Parameters",
     ) -> None:
         """Test that successful controller response is returned correctly."""
-        from fhir.bundle import Bundle
+        from datetime import datetime, timezone
+        from typing import Any
 
-        # Mock the handler to set a successful response on the request object
-        mock_bundle = Bundle(
-            resourceType="Bundle",
-            id="example-patient-bundle",
-            type="collection",
-            timestamp="2026-01-01T00:00:00Z",
-            entry=[
+        from gateway_api.common.common import FlaskResponse
+
+        # Mock the controller to return a successful FlaskResponse with a Bundle
+        mock_bundle_data: Any = {
+            "resourceType": "Bundle",
+            "id": "example-patient-bundle",
+            "type": "collection",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "entry": [
                 {
                     "fullUrl": "http://example.com/Patient/9999999999",
                     "resource": {
@@ -81,18 +85,32 @@ class TestGetStructuredRecord:
                     },
                 }
             ],
-        )
+        }
 
-        def mock_handle(request: GetStructuredRecordRequest) -> None:  # noqa: ARG001
-            request.set_positive_response(mock_bundle)
+        def mock_run(
+            self: Controller,  # noqa: ARG001
+            request: GetStructuredRecordRequest,  # noqa: ARG001
+        ) -> FlaskResponse:
+            import json
+
+            return FlaskResponse(
+                status_code=200,
+                data=json.dumps(mock_bundle_data),
+                headers={"Content-Type": "application/fhir+json"},
+            )
 
         monkeypatch.setattr(
-            "gateway_api.get_structured_record.GetStructuredRecordHandler.handle",
-            mock_handle,
+            "gateway_api.controller.Controller.run",
+            mock_run,
         )
 
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+            },
         )
 
         assert response.status_code == 200
@@ -114,18 +132,30 @@ class TestGetStructuredRecord:
         monkeypatch: pytest.MonkeyPatch,
         valid_simple_request_payload: "Parameters",
     ) -> None:
-        """Test that exceptions during handler execution are caught and return 500."""
+        """
+        Test that exceptions during controller execution are caught and return 500.
+        """
 
-        def mock_handle_with_exception(request: GetStructuredRecordRequest) -> None:  # noqa: ARG001
+        # This is mocking the run method of the Controller
+        # and therefore self is a Controller
+        def mock_run_with_exception(
+            self: Controller,  # noqa: ARG001
+            request: GetStructuredRecordRequest,  # noqa: ARG001
+        ) -> None:
             raise ValueError("Test exception")
 
         monkeypatch.setattr(
-            "gateway_api.get_structured_record.GetStructuredRecordHandler.handle",
-            mock_handle_with_exception,
+            "gateway_api.controller.Controller.run",
+            mock_run_with_exception,
         )
 
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+            },
         )
         assert response.status_code == 500
 
