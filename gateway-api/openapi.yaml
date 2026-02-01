@@ -21,6 +21,16 @@ paths:
           type: string
           enum: [application/fhir+json]
         required: true
+      - in: header
+        name: Ods-from
+        schema:
+          type: string
+        required: true
+      - in: header
+        name: Ssp-TraceID
+        schema:
+          type: string
+        required: true
       requestBody:
         required: true
         content:
