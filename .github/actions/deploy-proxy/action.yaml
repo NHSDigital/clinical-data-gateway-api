@@ -1,0 +1,55 @@
+name: Deploy API Proxy
+description: Deploy the API Gateway proxy through Proxygen
+
+inputs:
+  mtls-secret-key:
+    description: 'mTLS secret key for the proxy'
+    required: true
+  target-url:
+    description: 'Target URL to which the proxy will forward requests'
+    required: true
+  proxy-base-path:
+    description: 'A unique base path for the proxy instance'
+    required: true
+  proxygen-key-secret:
+    description: 'Proxygen private key secret'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install yq for YAML template processing
+      shell: bash
+      run: |
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+
+    - name: Inject secrets into openapi.yaml for deploying proxy
+      shell: bash
+      working-directory: gateway-api
+      run: |
+        cp openapi.template.yaml openapi.yaml # TODO: separate out proxygen stanza and openapi spec and concat
+
+        yq eval '.x-nhsd-apim.target.url = ${{ inputs.target-url }} | .x-nhsd-apim.target.security.secret = ${{ inputs.mtls-secret-key }}' -i openapi.yaml
+
+    - name: Install proxygen-cli
+      shell: bash
+      run: |
+        pip install proxygen-cli
+        proxygen --version
+
+    - name: Apply proxy's proxygen details
+      shell: bash
+      working-directory: proxygen
+      run: |
+        cp settings.yaml $HOME/.proxygen/settings.yaml
+
+        printf "%s" "${{ inputs.proxygen-key-secret }}" > /tmp/proxygen_private_key.pem
+        cp credentials.template.yaml $HOME/.proxygen/credentials.yaml
+        yq eval '.private_key_path = "/tmp/proxygen_private_key.pem"' -i $HOME/.proxygen/credentials.yaml
+
+    - name: Deploy API proxy
+      shell: bash
+      working-directory: gateway-api
+      run: |
+        proxygen instance deploy internal-dev ${{ inputs.proxy-base-path }} openapi.yaml --no-confirm
