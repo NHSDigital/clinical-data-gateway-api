@@ -8,11 +8,17 @@ info:
 servers:
   - url: http://localhost:5000
     description: Local development server
+components:
+  securitySchemes:
+    app-level0:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level0
 paths:
   /patient/$gpc.getstructuredrecord:
     post:
       summary: Get structured record
       description: Returns a FHIR Bundle containing patient structured record
+      security:
+      - app-level0: []
       operationId: getStructuredRecord
       parameters:
       - in: header
@@ -145,6 +151,8 @@ paths:
     get:
       summary: Health check
       description: Returns the health status of the API
+      security:
+      - app-level0: []
       operationId: healthCheck
       responses:
         '200':
