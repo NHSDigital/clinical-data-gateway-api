@@ -28,7 +28,8 @@ runs:
       shell: bash
       working-directory: gateway-api
       run: |
-        cp openapi.template.yaml openapi.yaml # TODO: separate out proxygen stanza and openapi spec and concat
+        cp openapi.template.yaml openapi.yaml
+        # TODO: separate out proxygen stanza and openapi spec and concat
 
         yq eval '.x-nhsd-apim.target.url = ${{ inputs.target-url }} | .x-nhsd-apim.target.security.secret = ${{ inputs.mtls-secret-key }}' -i openapi.yaml
 
