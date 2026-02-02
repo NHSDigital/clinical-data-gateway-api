@@ -1,6 +1,6 @@
 import pytest
 
-from apim.get_auth_token import get_app_credentials, get_key_id
+from scripts.apim.get_auth_token import get_app_credentials, get_key_id
 
 
 class TestGetAuthToken:
