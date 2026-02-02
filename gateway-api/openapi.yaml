@@ -10,15 +10,15 @@ servers:
     description: Local development server
 components:
   securitySchemes:
-    app-level0:
-      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level0
+    app-level3:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/app-level3
 paths:
   /patient/$gpc.getstructuredrecord:
     post:
       summary: Get structured record
       description: Returns a FHIR Bundle containing patient structured record
       security:
-      - app-level0: []
+      - app-level3: []
       operationId: getStructuredRecord
       parameters:
       - in: header
