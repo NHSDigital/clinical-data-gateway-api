@@ -6,26 +6,35 @@ The stub does **not** implement the full PDS API surface, nor full FHIR validati
 
 from __future__ import annotations
 
+import json
 import re
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from requests import Response
+from requests.structures import CaseInsensitiveDict
 
-@dataclass(frozen=True)
-class StubResponse:
+
+def _create_response(
+    status_code: int,
+    headers: dict[str, str],
+    json_data: dict[str, Any],
+) -> Response:
     """
-    Minimal response object returned by :class:`PdsFhirApiStub`.
+    Create a :class:`requests.Response` object for the stub.
 
-    :param status_code: HTTP-like status code for the response.
-    :param headers: HTTP-like response headers.
-    :param json: Parsed JSON response body.
+    :param status_code: HTTP status code.
+    :param headers: Response headers dictionary.
+    :param json_data: JSON body data.
+    :return: A :class:`requests.Response` instance.
     """
-
-    status_code: int
-    headers: dict[str, str]
-    json: dict[str, Any]
+    response = Response()
+    response.status_code = status_code
+    response.headers = CaseInsensitiveDict(headers)
+    response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001
+    response.encoding = "utf-8"
+    return response
 
 
 class PdsFhirApiStub:
@@ -87,6 +96,35 @@ class PdsFhirApiStub:
             version_id=1,
         )
 
+        self.upsert_patient(
+            nhs_number="9999999999",
+            patient={
+                "resourceType": "Patient",
+                "id": "9999999999",
+                "meta": {
+                    "versionId": "1",
+                    "lastUpdated": "2020-01-01T00:00:00Z",
+                },
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9999999999",
+                    }
+                ],
+                "name": [
+                    {
+                        "use": "official",
+                        "family": "Jones",
+                        "given": ["Alice"],
+                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
+                    }
+                ],
+                "gender": "female",
+                "birthDate": "1980-01-01",
+            },
+            version_id=1,
+        )
+
     # ---------------------------
     # Public API for tests
     # ---------------------------
@@ -139,7 +177,7 @@ class PdsFhirApiStub:
         authorization: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
         role_id: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
         end_user_org_ods: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
-    ) -> StubResponse:
+    ) -> Response:
         """
         Implements ``GET /Patient/{id}``.
 
@@ -150,7 +188,7 @@ class PdsFhirApiStub:
         :param authorization: Authorization header (ignored by the stub).
         :param role_id: Role header (ignored by the stub).
         :param end_user_org_ods: End-user ODS header (ignored by the stub).
-        :return: A :class:`StubResponse` representing either:
+        :return: A :class:`requests.Response` representing either:
             * ``200`` with Patient JSON
             * ``404`` with OperationOutcome JSON
             * ``400`` with OperationOutcome JSON (validation failures)
@@ -202,7 +240,17 @@ class PdsFhirApiStub:
 
         # ETag mirrors the "W/\"<n>\"" shape and aligns to meta.versionId.
         headers_out["ETag"] = f'W/"{version_id}"'
-        return StubResponse(status_code=200, headers=headers_out, json=patient)
+        return _create_response(status_code=200, headers=headers_out, json_data=patient)
+
+    def get(
+        self,
+        url: str,
+        headers: dict[str, Any] | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+        params: dict[str, Any] | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+        timeout: int | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+    ) -> Response:
+        nhs_number = url.split("/")[-1]
+        return self.get_patient(nhs_number)
 
     # ---------------------------
     # Internal helpers
@@ -251,14 +299,14 @@ class PdsFhirApiStub:
 
     def _bad_request(
         self, message: str, *, request_id: str | None, correlation_id: str | None
-    ) -> StubResponse:
+    ) -> Response:
         """
         Build a 400 OperationOutcome response.
 
         :param message: Human-readable error message.
         :param request_id: Optional request ID to echo back.
         :param correlation_id: Optional correlation ID to echo back.
-        :return: A 400 :class:`StubResponse` containing an OperationOutcome.
+        :return: A 400 :class:`requests.Response` containing an OperationOutcome.
         """
         headers: dict[str, str] = {}
         if request_id:
@@ -276,7 +324,7 @@ class PdsFhirApiStub:
     @staticmethod
     def _operation_outcome(
         *, status_code: int, headers: dict[str, str], spine_code: str, display: str
-    ) -> StubResponse:
+    ) -> Response:
         """
         Construct an OperationOutcome response body.
 
@@ -284,7 +332,7 @@ class PdsFhirApiStub:
         :param headers: Response headers.
         :param spine_code: Spine error/warning code.
         :param display: Human-readable display message.
-        :return: A :class:`StubResponse` containing an OperationOutcome JSON body.
+        :return: A :class:`requests.Response` containing an OperationOutcome JSON body.
         """
         body = {
             "resourceType": "OperationOutcome",
@@ -305,4 +353,6 @@ class PdsFhirApiStub:
                 }
             ],
         }
-        return StubResponse(status_code=status_code, headers=dict(headers), json=body)
+        return _create_response(
+            status_code=status_code, headers=dict(headers), json_data=body
+        )

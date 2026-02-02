@@ -21,11 +21,13 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import cast
 
 import requests
+from stubs.stub_pds import PdsFhirApiStub
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
@@ -128,6 +130,15 @@ class PdsClient:
         self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
         self.ignore_dates = ignore_dates
+        self.stub = PdsFhirApiStub()
+
+        # TODO: Put this back to using the environment variable
+        # GetCallable allows both requests.get and stub.get (both return Response).
+        GetCallable = Callable[..., requests.Response]
+        # if os.environ.get("STUB_PDS", None):
+        self.get_method: GetCallable = self.stub.get
+        # else:
+        #     self.get_method: GetCallable = requests.get
 
     def _build_headers(
         self,
