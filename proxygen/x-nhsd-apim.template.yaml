@@ -1,0 +1,13 @@
+x-nhsd-apim:
+  monitoring: false
+  access:
+  - title: Application Restricted
+    grants:
+      app-level0: []
+  target:
+    type: external
+    healthcheck: /health
+    url: <preview-endpoint-url>
+    security:
+      type: mtls
+      secret: <replace-with-secret-name>
