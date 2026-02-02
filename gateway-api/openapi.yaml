@@ -147,23 +147,3 @@ paths:
                                   type: string
                                   format: date
                                   example: "1985-04-12"
-  /health:
-    get:
-      summary: Health check
-      description: Returns the health status of the API
-      security:
-      - app-level0: []
-      operationId: healthCheck
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "healthy"
-                required:
-                  - status

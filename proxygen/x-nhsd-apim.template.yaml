@@ -1,5 +1,5 @@
 x-nhsd-apim:
-  monitoring: false
+  monitoring: true
   access:
   - title: Application Restricted
     grants:
