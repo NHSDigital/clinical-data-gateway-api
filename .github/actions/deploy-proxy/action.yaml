@@ -18,34 +18,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install yq for YAML template processing
-      shell: bash
-      run: |
-        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
-
-    - name: Inject secrets into openapi.yaml for deploying proxy
-      shell: bash
-      run: |
-        cat gateway-api/openapi.yaml proxygen/x-nhsd-apim.template.yaml > /tmp/proxy-specification.yaml
-
-        yq eval '.x-nhsd-apim.target.url = "${{ inputs.target-url }}" | .x-nhsd-apim.target.security.secret = "${{ inputs.mtls-secret-key }}"' -i /tmp/proxy-specification.yaml
-
-    - name: Install proxygen-cli
-      shell: bash
-      run: |
-        pip install proxygen-cli
-        proxygen --version
-
-    - name: Apply proxy's proxygen details
-      shell: bash
-      working-directory: proxygen
-      run: |
-        cp settings.yaml $HOME/.proxygen/settings.yaml
-
-        printf "%s" "${{ inputs.proxygen-key-secret }}" > /tmp/proxygen_private_key.pem
-        cp credentials.template.yaml $HOME/.proxygen/credentials.yaml
-        yq eval '.private_key_path = "/tmp/proxygen_private_key.pem"' -i $HOME/.proxygen/credentials.yaml
+    - name: Setup Proxygen CLI
+      uses: ./.github/actions/setup-proxygen-cli
 
     - name: Deploy API proxy
       shell: bash

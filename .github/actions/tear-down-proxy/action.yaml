@@ -12,31 +12,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install yq for YAML template processing
-      shell: bash
-      run: |
-        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
-
-    - name: Install proxygen-cli
-      shell: bash
-      run: |
-        pip install proxygen-cli
-        proxygen --version
-
-    - name: Apply proxygen details
-      shell: bash
-      working-directory: proxygen
-      env:
-        PROXYGEN_KEY_SECRET: ${{ inputs.proxygen-key-secret }}
-      run: |
-        cp settings.yaml $HOME/.proxygen/settings.yaml
-
-        printf "%s" "$PROXYGEN_KEY_SECRET" > /tmp/proxygen_private_key.pem
-        cp credentials.template.yaml $HOME/.proxygen/credentials.yaml
-        yq eval '.private_key_path = "/tmp/proxygen_private_key.pem"' -i $HOME/.proxygen/credentials.yaml
+    - name: Setup Proxygen CLI
+      uses: ./.github/actions/setup-proxygen-cli
 
     - name: Tear down preview API proxy
       shell: bash
       run: |
-        proxygen instance delete internal-dev {{ inputs.proxy-base-path }} --no-confirm
+        proxygen instance delete internal-dev ${{ inputs.proxy-base-path }} --no-confirm
