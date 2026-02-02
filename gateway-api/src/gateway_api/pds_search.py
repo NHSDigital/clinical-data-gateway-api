@@ -205,7 +205,14 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
-        response = requests.get(
+        # response = requests.get(
+        #     url,
+        #     headers=headers,
+        #     params={},
+        #     timeout=timeout or self.timeout,
+        # )
+
+        response = self.get_method(
             url,
             headers=headers,
             params={},
