@@ -7,12 +7,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 import pytest
 import requests
 from stubs.stub_pds import PdsFhirApiStub
+
+if TYPE_CHECKING:
+    from requests.structures import CaseInsensitiveDict
 
 from gateway_api.pds_search import (
     ExternalServiceError,
@@ -30,12 +33,12 @@ class FakeResponse:
     implemented.
 
     :param status_code: HTTP status code.
-    :param headers: Response headers.
+    :param headers: Response headers (dict or CaseInsensitiveDict).
     :param _json: Parsed JSON body returned by :meth:`json`.
     """
 
     status_code: int
-    headers: dict[str, str]
+    headers: dict[str, str] | CaseInsensitiveDict[str]
     _json: dict[str, Any]
     reason: str = ""
 
@@ -129,12 +132,12 @@ def mock_requests_get(
         )
 
         # GET /Patient/{id} returns a single Patient resource on success.
-        body = stub_resp.json
+        body = stub_resp.json()
         # Populate a reason phrase so PdsClient can surface it in ExternalServiceError.
         reason = ""
         if stub_resp.status_code != 200:
             # Try to use OperationOutcome display text if present.
-            issue0 = (stub_resp.json.get("issue") or [{}])[0]
+            issue0 = (stub_resp.json().get("issue") or [{}])[0]
             details = issue0.get("details") or {}
             coding0 = (details.get("coding") or [{}])[0]
             reason = str(coding0.get("display") or "")

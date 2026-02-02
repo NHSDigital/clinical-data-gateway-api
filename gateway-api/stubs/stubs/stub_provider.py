@@ -29,23 +29,28 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 
-class StubResponse(Response):
-    """A stub response object representing a minimal FHIR + JSON response."""
+def _create_response(
+    status_code: int,
+    headers: dict[str, str] | CaseInsensitiveDict[str],
+    content: bytes,
+    reason: str = "",
+) -> Response:
+    """
+    Create a :class:`requests.Response` object for the stub.
 
-    def __init__(
-        self,
-        status_code: int,
-        _content: bytes,
-        headers: CaseInsensitiveDict[str],
-        reason: str,
-    ) -> None:
-        """Create a FakeResponse instance."""
-        super().__init__()
-        self.status_code = status_code
-        self._content = _content
-        self.headers = CaseInsensitiveDict(headers)
-        self.reason = reason
-        self.encoding = "utf-8"
+    :param status_code: HTTP status code.
+    :param headers: Response headers dictionary.
+    :param content: Response body as bytes.
+    :param reason: HTTP reason phrase (e.g., "OK", "Bad Request").
+    :return: A :class:`requests.Response` instance.
+    """
+    response = Response()
+    response.status_code = status_code
+    response.headers = CaseInsensitiveDict(headers)
+    response._content = content  # noqa: SLF001
+    response.reason = reason
+    response.encoding = "utf-8"
+    return response
 
 
 class GpProviderStub:
@@ -106,7 +111,7 @@ class GpProviderStub:
         self,
         trace_id: str,
         body: str,  # NOQA ARG002 # NOSONAR S1172: unused parameter maintains method signature in stub
-    ) -> StubResponse:
+    ) -> Response:
         """
         Simulate accessRecordStructured operation of GPConnect FHIR API.
 
@@ -114,23 +119,23 @@ class GpProviderStub:
             Response: The stub patient bundle wrapped in a Response object.
         """
 
-        stub_response = StubResponse(
+        stub_response = _create_response(
             status_code=200,
             headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
+            content=json.dumps(self.patient_bundle).encode("utf-8"),
             reason="OK",
-            _content=json.dumps(self.patient_bundle).encode("utf-8"),
         )
 
         if trace_id == "invalid for test":
-            return StubResponse(
+            return _create_response(
                 status_code=400,
                 headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-                reason="Bad Request",
-                _content=(
+                content=(
                     b'{"resourceType":"OperationOutcome","issue":['
                     b'{"severity":"error","code":"invalid",'
                     b'"diagnostics":"Invalid for testing"}]}'
                 ),
+                reason="Bad Request",
             )
 
         return stub_response
