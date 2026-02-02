@@ -24,27 +24,42 @@ class TestConsumerContract:
 
         expected_bundle = {
             "resourceType": "Bundle",
-            "id": "example-patient-bundle",
             "type": "collection",
-            "timestamp": "2026-01-12T10:00:00Z",
+            "meta": {
+                "profile": [
+                    "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
+                ]
+            },
             "entry": [
                 {
-                    "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
                     "resource": {
                         "resourceType": "Patient",
-                        "id": "9999999999",
+                        "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                        "meta": {
+                            "versionId": "1469448000000",
+                            "profile": [
+                                "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
+                            ],
+                        },
                         "identifier": [
                             {
                                 "system": "https://fhir.nhs.uk/Id/nhs-number",
                                 "value": "9999999999",
                             }
                         ],
+                        "active": True,
                         "name": [
-                            {"use": "official", "family": "Doe", "given": ["John"]}
+                            {
+                                "use": "official",
+                                "text": "JACKSON Jane (Miss)",
+                                "family": "Jackson",
+                                "given": ["Jane"],
+                                "prefix": ["Miss"],
+                            }
                         ],
-                        "gender": "male",
-                        "birthDate": "1985-04-12",
-                    },
+                        "gender": "female",
+                        "birthDate": "1952-05-31",
+                    }
                 }
             ],
         }
@@ -52,6 +67,13 @@ class TestConsumerContract:
         # Define the expected interaction
         (
             pact.upon_receiving("a request for structured record")
+            .with_request(
+                method="POST",
+                path="/patient/$gpc.getstructuredrecord",
+            )
+            .with_header("Content-Type", "application/fhir+json")
+            .with_header("ODS-from", "A12345")
+            .with_header("Ssp-TraceID", "trace-1234")
             .with_body(
                 {
                     "resourceType": "Parameters",
@@ -67,14 +89,9 @@ class TestConsumerContract:
                 },
                 content_type="application/fhir+json",
             )
-            .with_header("Content-Type", "application/fhir+json")
-            .with_request(
-                method="POST",
-                path="/patient/$gpc.getstructuredrecord",
-            )
             .will_respond_with(status=200)
-            .with_body(expected_bundle, content_type="application/fhir+json")
             .with_header("Content-Type", "application/fhir+json")
+            .with_body(expected_bundle, content_type="application/fhir+json")
         )
 
         # Start the mock server and execute the test
@@ -96,7 +113,11 @@ class TestConsumerContract:
                         ],
                     }
                 ),
-                headers={"Content-Type": "application/fhir+json"},
+                headers={
+                    "Content-Type": "application/fhir+json",
+                    "ODS-from": "A12345",
+                    "Ssp-TraceID": "trace-1234",
+                },
                 timeout=10,
             )
 
@@ -104,11 +125,16 @@ class TestConsumerContract:
             assert response.status_code == 200
             body = response.json()
             assert body["resourceType"] == "Bundle"
-            assert body["id"] == "example-patient-bundle"
             assert body["type"] == "collection"
             assert len(body["entry"]) == 1
             assert body["entry"][0]["resource"]["resourceType"] == "Patient"
-            assert body["entry"][0]["resource"]["id"] == "9999999999"
+            assert (
+                body["entry"][0]["resource"]["id"]
+                == "04603d77-1a4e-4d63-b246-d7504f8bd833"
+            )
+            assert (
+                body["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
+            )
 
         # Write the pact file after the test
         pact.write_file("tests/contract/pacts")

@@ -10,6 +10,7 @@ import json
 import re
 import uuid
 from datetime import datetime, timezone
+from http.client import responses as http_responses
 from typing import Any
 
 from requests import Response
@@ -34,6 +35,8 @@ def _create_response(
     response.headers = CaseInsensitiveDict(headers)
     response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001
     response.encoding = "utf-8"
+    # Set a reason phrase for HTTP error handling
+    response.reason = http_responses.get(status_code, "Unknown")
     return response
 
 
@@ -121,6 +124,16 @@ class PdsFhirApiStub:
                 ],
                 "gender": "female",
                 "birthDate": "1980-01-01",
+                "generalPractitioner": [
+                    {
+                        "id": "1",
+                        "type": "Organization",
+                        "identifier": {
+                            "value": "A12345",
+                            "period": {"start": "2020-01-01", "end": "9999-12-31"},
+                        },
+                    }
+                ],
             },
             version_id=1,
         )
@@ -245,12 +258,34 @@ class PdsFhirApiStub:
     def get(
         self,
         url: str,
-        headers: dict[str, Any] | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
+        headers: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
         timeout: int | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
     ) -> Response:
         nhs_number = url.split("/")[-1]
-        return self.get_patient(nhs_number)
+
+        # Extract headers for validation
+        request_id = None
+        correlation_id = None
+        authorization = None
+        role_id = None
+        end_user_org_ods = None
+
+        if headers:
+            request_id = headers.get("X-Request-ID")
+            correlation_id = headers.get("X-Correlation-ID")
+            authorization = headers.get("Authorization")
+            role_id = headers.get("NHSD-Session-URID")
+            end_user_org_ods = headers.get("NHSD-End-User-Organisation-ODS")
+
+        return self.get_patient(
+            nhs_number=nhs_number,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            authorization=authorization,
+            role_id=role_id,
+            end_user_org_ods=end_user_org_ods,
+        )
 
     # ---------------------------
     # Internal helpers

@@ -4,7 +4,6 @@ Unit tests for :mod:`gateway_api.pds_search`.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any, cast
@@ -81,7 +80,7 @@ def mock_requests_get(
     monkeypatch: pytest.MonkeyPatch, stub: PdsFhirApiStub
 ) -> dict[str, Any]:
     """
-    Patch ``requests.get`` so calls are routed into :meth:`PdsFhirApiStub.get_patient`.
+    Patch ``PdsFhirApiStub`` so the PdsClient uses the test stub fixture.
 
     The fixture returns a "capture" dict recording the most recent request information.
     This is used by header-related tests.
@@ -93,21 +92,23 @@ def mock_requests_get(
     """
     capture: dict[str, Any] = {}
 
-    def _fake_get(
+    # Wrap the stub's get method to capture call parameters
+    original_stub_get = stub.get
+
+    def _capturing_get(
         url: str,
         headers: dict[str, str] | None = None,
         params: Any = None,
         timeout: Any = None,
-    ) -> FakeResponse:
+    ) -> requests.Response:
         """
-        Replacement function for :func:`requests.get`.
+        Wrapper around stub.get that captures parameters.
 
         :param url: URL passed by the client.
         :param headers: Headers passed by the client.
-        :param params: Query parameters (recorded, not interpreted for
-            GET /Patient/{id}).
-        :param timeout: Timeout (recorded).
-        :return: A :class:`FakeResponse` whose behaviour mimics ``requests.Response``.
+        :param params: Query parameters.
+        :param timeout: Timeout.
+        :return: Response from the stub.
         """
         headers = headers or {}
         capture["url"] = url
@@ -115,45 +116,19 @@ def mock_requests_get(
         capture["params"] = params
         capture["timeout"] = timeout
 
-        # The client under test is expected to call GET {base_url}/Patient/{id}.
-        m = re.match(r"^(?P<base>.+)/Patient/(?P<nhs>\d+)$", url)
-        if not m:
-            raise AssertionError(f"Unexpected URL called by client: {url}")
+        return original_stub_get(url, headers, params, timeout)
 
-        nhs_number = m.group("nhs")
+    stub.get = _capturing_get  # type: ignore[method-assign]
 
-        # Route the "HTTP" request into the in-memory stub.
-        stub_resp = stub.get_patient(
-            nhs_number=nhs_number,
-            request_id=headers.get("X-Request-ID"),
-            correlation_id=headers.get("X-Correlation-ID"),
-            authorization=headers.get("Authorization"),
-            end_user_org_ods=headers.get("NHSD-End-User-Organisation-ODS"),
-        )
+    # Monkeypatch PdsFhirApiStub so PdsClient uses our test stub
+    import gateway_api.pds_search as pds_module
 
-        # GET /Patient/{id} returns a single Patient resource on success.
-        body = stub_resp.json()
-        # Populate a reason phrase so PdsClient can surface it in ExternalServiceError.
-        reason = ""
-        if stub_resp.status_code != 200:
-            # Try to use OperationOutcome display text if present.
-            issue0 = (stub_resp.json().get("issue") or [{}])[0]
-            details = issue0.get("details") or {}
-            coding0 = (details.get("coding") or [{}])[0]
-            reason = str(coding0.get("display") or "")
-        if not reason:
-            reason = {400: "Bad Request", 404: "Not Found"}.get(
-                stub_resp.status_code, ""
-            )
+    monkeypatch.setattr(
+        pds_module,
+        "PdsFhirApiStub",
+        lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
+    )
 
-        return FakeResponse(
-            status_code=stub_resp.status_code,
-            headers=stub_resp.headers,
-            _json=body,
-            reason=reason,
-        )
-
-    monkeypatch.setattr(requests, "get", _fake_get)
     return capture
 
 
