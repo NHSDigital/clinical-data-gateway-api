@@ -1,0 +1,66 @@
+name: "Run integration tests"
+description: "Run integration tests against a provided BASE_URL"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup Python project
+      uses: ./.github/actions/setup-python-project
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Run integration tests script
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base_url }}
+        AWS_REGION: ${{ inputs.aws_region }}
+        MTLS_SECRET_ID: ${{ inputs.mtls_secret_id }}
+        PREVIEW_MTLS_CERT: ${{ inputs.preview_mtls_cert }}
+        PREVIEW_MTLS_KEY: ${{ inputs.preview_mtls_key }}
+        TEST_COMMAND: ${{ inputs.test_target }}
+      run: |
+        # call the inline script so everything is visible in logs
+        set -euo pipefail
+
+        echo "Base URL: $BASE_URL"
+        # write repo-provided certs if present
+        if [ -n "${PREVIEW_MTLS_CERT:-}" ] && [ -n "${PREVIEW_MTLS_KEY:-}" ]; then
+          printf '%s\n' "$PREVIEW_MTLS_CERT" > /tmp/mtls_cert.pem
+          printf '%s\n' "$PREVIEW_MTLS_KEY"  > /tmp/mtls_key.pem
+          chmod 600 /tmp/mtls_cert.pem /tmp/mtls_key.pem
+          export MTLS_CERT_FILE=/tmp/mtls_cert.pem
+          export MTLS_KEY_FILE=/tmp/mtls_key.pem
+          echo "Wrote mTLS cert/key from inputs"
+        fi
+
+        # If an AWS Secrets Manager secret id is provided, fetch and write cert/key
+        if [ -n "${MTLS_SECRET_ID:-}" ]; then
+          echo "Fetching mTLS secret from Secrets Manager: $MTLS_SECRET_ID"
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$MTLS_SECRET_ID" --region "$AWS_REGION" --query SecretString --output text)
+          echo "$SECRET_JSON" > /tmp/secret.json
+          CERT=$(jq -r '.cert' /tmp/secret.json)
+          KEY=$(jq -r '.key' /tmp/secret.json)
+          printf '%s\n' "$CERT" > /tmp/mtls_cert.pem
+          printf '%s\n' "$KEY"  > /tmp/mtls_key.pem
+          chmod 600 /tmp/mtls_cert.pem /tmp/mtls_key.pem
+          export MTLS_CERT_FILE=/tmp/mtls_cert.pem
+          export MTLS_KEY_FILE=/tmp/mtls_key.pem
+          echo "Wrote mTLS cert/key from Secrets Manager secret"
+        fi
+
+        if [ -z "${BASE_URL:-}" ]; then
+          echo "ERROR: BASE_URL input is empty"
+          exit 2
+        fi
+
+        # Accepts a custom test command, otherwise default to make test-integration
+        if [ -n "${TEST_COMMAND:-}" ]; then
+          echo "Running test command: $TEST_TARGET"
+          eval "$TEST_COMMAND"
+        else
+          echo "Running make test-integration"
+          make test-integration
+        fi
