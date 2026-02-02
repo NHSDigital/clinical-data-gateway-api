@@ -36,11 +36,18 @@ class Client:
         }
         if headers:
             default_headers.update(headers)
+
+        # If the runner environment provides MTLS cert/key file paths, use them.
+        cert_file = os.getenv("MTLS_CERT_FILE")
+        key_file = os.getenv("MTLS_KEY_FILE")
+        cert = (cert_file, key_file) if cert_file and key_file else None
+
         return requests.post(
             url=url,
             data=payload,
             headers=default_headers,
             timeout=self._timeout,
+            cert=cert,
         )
 
     def send_health_check(self) -> requests.Response:

@@ -231,6 +231,17 @@ jobs:
           echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Run integration tests (preview environment)
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/run-integration-tests
+        with:
+          base_url: ${{ steps.tf-output.outputs.preview_url }}
+          aws_region: ${{ env.AWS_REGION }}
+          mtls_secret_id: ${{ secrets.PREVIEW_MTLS_SECRET_ID }}
+          python_version: ${{ env.python_version }}
+          test_command: make test-integration
+
+
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
