@@ -20,6 +20,10 @@ runs:
   steps:
     - name: Setup Proxygen CLI
       uses: ./.github/actions/setup-proxygen-cli
+      with:
+        mtls-secret-key: ${{ inputs.mtls-secret-key }}
+        target-url: ${{ inputs.target-url }}
+        proxygen-key-secret: ${{ inputs.proxygen-key-secret }}
 
     - name: Deploy API proxy
       shell: bash
