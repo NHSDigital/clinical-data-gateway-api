@@ -328,8 +328,8 @@ jobs:
             const lines = [
               '**Deployment Complete**',
               `- Preview URL: [${url}](${url}) — [Health endpoint](${url}/health)`,
+              `-- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
               `- Proxy URL: [${proxy_url}](${proxy_url})`,
-              `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
               `- ECS Cluster: \`${cluster}\``,
               `- ECS Service: \`${service}\``,
               `- ALB Target: \`${alb}\``,
