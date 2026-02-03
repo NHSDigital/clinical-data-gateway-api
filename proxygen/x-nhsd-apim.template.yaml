@@ -1,9 +1,9 @@
 x-nhsd-apim:
   monitoring: true
   access:
-  - title: Application Restricted
+  - title: User Restricted (hello)
     grants:
-      app-level0: []
+      nhs-cis2-aal3: []
   target:
     type: external
     healthcheck: /health
