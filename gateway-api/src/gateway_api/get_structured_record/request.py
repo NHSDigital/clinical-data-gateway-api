@@ -1,11 +1,14 @@
 import json
+from typing import TYPE_CHECKING
 
 from fhir import OperationOutcome, Parameters
-from fhir.bundle import Bundle
 from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
 
 from gateway_api.common.common import FlaskResponse
+
+if TYPE_CHECKING:
+    from fhir.bundle import Bundle
 
 
 class RequestValidationError(Exception):
@@ -67,10 +70,6 @@ class GetStructuredRecordRequest:
             status=self._status_code,
             mimetype="application/fhir+json",
         )
-
-    def set_positive_response(self, bundle: Bundle) -> None:
-        self._status_code = 200
-        self._response_body = bundle
 
     def set_negative_response(self, error: str, status_code: int = 500) -> None:
         self._status_code = status_code

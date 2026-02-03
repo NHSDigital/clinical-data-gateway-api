@@ -1,12 +1,17 @@
 import json
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from fhir.parameters import Parameters
 from flask import Request
 from werkzeug.test import EnvironBuilder
 
+from gateway_api.common.common import FlaskResponse
 from gateway_api.get_structured_record import RequestValidationError
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+
+if TYPE_CHECKING:
+    from fhir.bundle import Bundle
 
 
 def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:

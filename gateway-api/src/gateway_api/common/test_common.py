@@ -18,7 +18,7 @@ from gateway_api.common import common
         ("943476591", False),  # 9 digits
         ("94347659190", False),  # 11 digits
         ("9434765918", False),  # wrong check digit
-        ("NOT_A_NUMBER", False),  # non-numeric
+        ("NOT_A_NUMB", False),  # non-numeric
         ("943SOME_LETTERS4765919", False),  # non-numeric in a valid NHS number
     ],
 )

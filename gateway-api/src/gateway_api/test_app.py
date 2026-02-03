@@ -1,5 +1,6 @@
 """Unit tests for the Flask app endpoints."""
 
+import json
 import os
 from collections.abc import Generator
 from typing import TYPE_CHECKING
@@ -94,8 +95,6 @@ class TestGetStructuredRecord:
             self: Controller,  # noqa: ARG001
             request: GetStructuredRecordRequest,  # noqa: ARG001
         ) -> FlaskResponse:
-            import json
-
             return FlaskResponse(
                 status_code=200,
                 data=json.dumps(mock_bundle_data),
@@ -161,6 +160,46 @@ class TestGetStructuredRecord:
             },
         )
         assert response.status_code == 500
+
+    def test_get_structured_record_handles_request_validation_error(
+        self,
+        client: FlaskClient[Flask],
+        valid_simple_request_payload: "Parameters",
+    ) -> None:
+        """Test that RequestValidationError returns 400 with error message."""
+        # Create a request missing the required ODS-from header
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                # Missing "ODS-from" header to trigger RequestValidationError
+            },
+        )
+
+        assert response.status_code == 400
+        assert "text/plain" in response.content_type
+        assert b'Missing or empty required header "ODS-from"' in response.data
+
+    def test_get_structured_record_handles_unexpected_exception_during_init(
+        self,
+        client: FlaskClient[Flask],
+    ) -> None:
+        """Test that unexpected exceptions during request init return 500."""
+        # Send invalid JSON to trigger an exception during request processing
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            data="invalid json data",
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+                "Content-Type": "application/fhir+json",
+            },
+        )
+
+        assert response.status_code == 500
+        assert "text/plain" in response.content_type
+        assert b"Internal Server Error:" in response.data
 
 
 class TestHealthCheck:
