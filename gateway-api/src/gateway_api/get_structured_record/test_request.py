@@ -1,17 +1,11 @@
 import json
-from typing import TYPE_CHECKING, cast
 
 import pytest
 from fhir.parameters import Parameters
 from flask import Request
 from werkzeug.test import EnvironBuilder
 
-from gateway_api.common.common import FlaskResponse
-from gateway_api.get_structured_record import RequestValidationError
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-
-if TYPE_CHECKING:
-    from fhir.bundle import Bundle
 
 
 def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:
@@ -57,17 +51,6 @@ class TestGetStructuredRecordRequest:
 
         actual = get_structured_record_request.ods_from
         expected = "test-ods"
-        assert actual == expected
-
-    def test_nhs_number_is_pulled_from_request_body(
-        self, mock_request_with_headers: Request
-    ) -> None:
-        get_structured_record_request = GetStructuredRecordRequest(
-            request=mock_request_with_headers
-        )
-
-        actual = get_structured_record_request.nhs_number
-        expected = "9999999999"
         assert actual == expected
 
     def test_nhs_number_is_pulled_from_request_body(
