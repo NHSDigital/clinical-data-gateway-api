@@ -171,7 +171,7 @@ jobs:
           proxy-base-path: 'clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
           proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
           proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
-          proxygen-api-name: ${{ vars.PREVIEW_ENV_PROXYGEN_API_NAME }}
+          proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
 
       - name: Tear down preview API proxy
         if: github.event.action == 'closed'
