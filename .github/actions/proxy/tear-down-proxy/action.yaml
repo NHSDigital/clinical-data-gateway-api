@@ -1,0 +1,31 @@
+name: Tear Down API Proxy
+description: Delete the API proxy instance using Proxygen
+
+inputs:
+  proxy-base-path:
+    description: 'A unique base path for the proxy instance'
+    required: true
+  proxygen-key-secret:
+    description: 'Proxygen private key secret'
+    required: true
+  proxygen-key-id:
+    description: 'Proxygen key ID'
+    required: true
+  proxygen-api-name:
+    description: 'Proxygen API name'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure Proxygen
+      uses: ./.github/actions/proxy/configure-proxygen
+      with:
+        proxygen-key-secret: ${{ inputs.proxygen-key-secret }}
+        proxygen-key-id: ${{ inputs.proxygen-key-id }}
+        proxygen-api-name: ${{ inputs.proxygen-api-name }}
+
+    - name: Tear down preview API proxy
+      shell: bash
+      run: |
+        proxygen instance delete internal-dev ${{ inputs.proxy-base-path }} --no-confirm
