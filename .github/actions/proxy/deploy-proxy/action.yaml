@@ -29,7 +29,7 @@ runs:
       with:
         proxygen-key-secret: ${{ inputs.proxygen-key-secret }}
         proxygen-key-id: ${{ inputs.proxygen-key-id }}
-        proxygen-api-name: $${{ inputs.proxygen-api-name }}
+        proxygen-api-name: ${{ inputs.proxygen-api-name }}
 
     - name: Inject secrets into openapi.yaml for deploying proxy
       shell: bash
