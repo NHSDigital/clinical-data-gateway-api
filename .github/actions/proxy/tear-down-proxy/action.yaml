@@ -14,7 +14,7 @@ inputs:
   proxygen-api-name:
     description: 'Proxygen API name'
     required: true
-  progen-client-id:
+  proxygen-client-id:
     description: 'Proxygen client ID'
     required: true
 
