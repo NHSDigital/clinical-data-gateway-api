@@ -29,7 +29,7 @@ runs:
       working-directory: proxygen
       run: |
         cp settings.template.yaml $HOME/.proxygen/settings.yaml
-        yq eval '.api_name = "${{ inputs.proxygen-api-name }}"' -i $HOME/.proxygen/settings.yaml
+        yq eval '.api = "${{ inputs.proxygen-api-name }}"' -i $HOME/.proxygen/settings.yaml
 
         printf "%s" "${{ inputs.proxygen-key-secret }}" > /tmp/proxygen_private_key.pem
         cp credentials.template.yaml $HOME/.proxygen/credentials.yaml
