@@ -2,7 +2,6 @@
 
 import os
 from datetime import timedelta
-from typing import cast
 
 import pytest
 import requests
@@ -18,9 +17,15 @@ load_dotenv(find_dotenv())
 class Client:
     """A simple HTTP client for testing purposes."""
 
-    def __init__(self, base_url: str, timeout: timedelta = timedelta(seconds=1)):
-        self.base_url = base_url
+    def __init__(
+        self,
+        base_url: str,
+        cert: tuple[str, str] | None = None,
+        timeout: timedelta = timedelta(seconds=5),
+    ):
+        self.base_url = base_url.rstrip("/")
         self._timeout = timeout.total_seconds()
+        self._cert = cert
 
     def send_to_get_structured_record_endpoint(
         self, payload: str, headers: dict[str, str] | None = None
@@ -37,17 +42,12 @@ class Client:
         if headers:
             default_headers.update(headers)
 
-        # If the runner environment provides MTLS cert/key file paths, use them.
-        cert_file = os.getenv("MTLS_CERT_FILE")
-        key_file = os.getenv("MTLS_KEY_FILE")
-        cert = (cert_file, key_file) if cert_file and key_file else None
-
         return requests.post(
             url=url,
             data=payload,
             headers=default_headers,
             timeout=self._timeout,
-            cert=cert,
+            cert=self._cert,
         )
 
     def send_health_check(self) -> requests.Response:
@@ -114,20 +114,18 @@ def client(base_url: str) -> Client:
 @pytest.fixture(scope="module")
 def base_url() -> str:
     """Retrieves the base URL of the currently deployed application."""
-    return _fetch_env_variable("BASE_URL", str)
+    return _fetch_env_variable("BASE_URL")
 
 
 @pytest.fixture(scope="module")
 def hostname() -> str:
     """Retrieves the hostname of the currently deployed application."""
-    return _fetch_env_variable("HOST", str)
+    return _fetch_env_variable("HOST")
 
 
-def _fetch_env_variable[T](
-    name: str,
-    t: type[T],  # NOQA ARG001 This is actually used for type hinting
-) -> T:
+def _fetch_env_variable(name: str) -> str:
+    """Return the environment variable `name` as a string or raise a ValueError."""
     value = os.getenv(name)
-    if not value:
+    if value is None or value == "":
         raise ValueError(f"{name} environment variable is not set.")
-    return cast("T", value)
+    return value

@@ -1,35 +1,6 @@
 name: "Run integration tests"
 description: "Run integration tests against a provided BASE_URL"
 
-inputs:
-  base_url:
-    description: "Base URL to test against"
-    required: true
-  aws_region:
-    description: "AWS region for SecretsManager (optional)"
-    required: false
-    default: ""
-  mtls_secret_id:
-    description: "Secrets Manager secret id containing cert/key JSON (optional)"
-    required: false
-    default: ""
-  preview_mtls_cert:
-    description: "Client cert PEM content (optional, not recommended in repo secrets)"
-    required: false
-    default: ""
-  preview_mtls_key:
-    description: "Client key PEM content (optional, not recommended in repo secrets)"
-    required: false
-    default: ""
-  python_version:
-    description: "Python version for setup-python-project action"
-    required: false
-    default: "3.14"
-  test_command:
-    description: "Command to run tests (overrides default `make test-integration`)"
-    required: false
-    default: ""
-
 runs:
   using: "composite"
   steps:
@@ -47,41 +18,37 @@ runs:
         BASE_URL: ${{ inputs.base_url }}
         AWS_REGION: ${{ inputs.aws_region }}
         MTLS_SECRET_ID: ${{ inputs.mtls_secret_id }}
-        PREVIEW_MTLS_CERT_INPUT: ${{ inputs.preview_mtls_cert }}
-        PREVIEW_MTLS_KEY_INPUT: ${{ inputs.preview_mtls_key }}
-        TEST_COMMAND_INPUT: ${{ inputs.test_command }}
+        PREVIEW_MTLS_CERT: ${{ inputs.preview_mtls_cert }}
+        PREVIEW_MTLS_KEY: ${{ inputs.preview_mtls_key }}
+        TEST_COMMAND: ${{ inputs.test_target }}
       run: |
+        # call the inline script so everything is visible in logs
         set -euo pipefail
 
-        echo "Base URL: ${BASE_URL}"
-
-        # Allow secrets provided either through inputs OR directly present in the job environment.
-        # Common preview job uses names like _cds_gateway_dev_mtls_client1_key_public/_secret;
-        # prefer explicit inputs if provided, otherwise fall back to those env vars.
-        PREVIEW_MTLS_CERT="${PREVIEW_MTLS_CERT_INPUT:-${_cds_gateway_dev_mtls_client1_key_public:-}}"
-        PREVIEW_MTLS_KEY="${PREVIEW_MTLS_KEY_INPUT:-${_cds_gateway_dev_mtls_client1_key_secret:-}}"
-        MTLS_SECRET_ID="${MTLS_SECRET_ID:-}"
-
-        if [ -n "$PREVIEW_MTLS_CERT" ] && [ -n "$PREVIEW_MTLS_KEY" ]; then
-          echo "Writing mTLS cert/key from available inputs/env..."
+        echo "Base URL: $BASE_URL"
+        # write repo-provided certs if present
+        if [ -n "${PREVIEW_MTLS_CERT:-}" ] && [ -n "${PREVIEW_MTLS_KEY:-}" ]; then
           printf '%s\n' "$PREVIEW_MTLS_CERT" > /tmp/mtls_cert.pem
-          printf '%s\n' "$PREVIEW_MTLS_KEY" > /tmp/mtls_key.pem
+          printf '%s\n' "$PREVIEW_MTLS_KEY"  > /tmp/mtls_key.pem
           chmod 600 /tmp/mtls_cert.pem /tmp/mtls_key.pem
           export MTLS_CERT_FILE=/tmp/mtls_cert.pem
           export MTLS_KEY_FILE=/tmp/mtls_key.pem
-        elif [ -n "$MTLS_SECRET_ID" ]; then
-          echo "Fetching mTLS from Secrets Manager: $MTLS_SECRET_ID"
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$MTLS_SECRET_ID" --region "${AWS_REGION:-eu-west-2}" --query SecretString --output text)
+          echo "Wrote mTLS cert/key from inputs"
+        fi
+
+        # If an AWS Secrets Manager secret id is provided, fetch and write cert/key
+        if [ -n "${MTLS_SECRET_ID:-}" ]; then
+          echo "Fetching mTLS secret from Secrets Manager: $MTLS_SECRET_ID"
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$MTLS_SECRET_ID" --region "$AWS_REGION" --query SecretString --output text)
           echo "$SECRET_JSON" > /tmp/secret.json
           CERT=$(jq -r '.cert' /tmp/secret.json)
           KEY=$(jq -r '.key' /tmp/secret.json)
           printf '%s\n' "$CERT" > /tmp/mtls_cert.pem
-          printf '%s\n' "$KEY" > /tmp/mtls_key.pem
+          printf '%s\n' "$KEY"  > /tmp/mtls_key.pem
           chmod 600 /tmp/mtls_cert.pem /tmp/mtls_key.pem
           export MTLS_CERT_FILE=/tmp/mtls_cert.pem
           export MTLS_KEY_FILE=/tmp/mtls_key.pem
-        else
-          echo "No mTLS cert/key provided via inputs or Secrets Manager; proceeding without client cert."
+          echo "Wrote mTLS cert/key from Secrets Manager secret"
         fi
 
         if [ -z "${BASE_URL:-}" ]; then
@@ -89,11 +56,11 @@ runs:
           exit 2
         fi
 
-        # Decide which test command to run (supporting `test_command` input)
-        if [ -n "${TEST_COMMAND_INPUT:-}" ]; then
-          echo "Running custom test command: ${TEST_COMMAND_INPUT}"
-          eval "${TEST_COMMAND_INPUT}"
+        # Accepts a custom test command, otherwise default to make test-integration
+        if [ -n "${TEST_COMMAND:-}" ]; then
+          echo "Running test command: $TEST_TARGET"
+          eval "$TEST_COMMAND"
         else
-          echo "Running default: make test-integration"
+          echo "Running make test-integration"
           make test-integration
         fi

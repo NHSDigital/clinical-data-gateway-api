@@ -16,14 +16,13 @@ jobs:
   preview:
     name: Manage preview environment
     runs-on: ubuntu-latest
-
-    # Needed for OIDC → AWS (recommended)
+    outputs:
+      preview_url: ${{ steps.tf-output.outputs.preview_url }}
     permissions:
       id-token: write
       contents: read
       pull-requests: write
 
-    # One job per branch at a time
     concurrency:
       group: preview-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
@@ -35,7 +34,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
         with:
@@ -49,40 +47,16 @@ jobs:
       - name: Compute branch metadata
         id: meta
         run: |
-          # For PRs, head_ref is the source branch name
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-
-          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
-          SANITIZED_BRANCH=$(
-            printf '%s' "$RAW_BRANCH" \
-              | tr '[:upper:]' '[:lower:]' \
-              | tr '._' '-' \
-              | tr -c 'a-z0-9-' '-' \
-              | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
-          )
-
-          # Last resort fallback if everything got stripped
-          if [ -z "$SANITIZED_BRANCH" ]; then
-            SANITIZED_BRANCH="invalid-branch-name"
-          fi
-
+          SANITIZED_BRANCH=$(printf '%s' "$RAW_BRANCH" | tr '[:upper:]' '[:lower:]' | tr '._' '-' | tr -c 'a-z0-9-' '-' | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//')
+          if [ -z "$SANITIZED_BRANCH" ]; then SANITIZED_BRANCH="invalid-branch-name"; fi
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
           echo "branch_name=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
-
-          # ECR repo URL (must match core stack's ECR repo)
           ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}"
           echo "ecr_url=$ECR_URL" >> $GITHUB_OUTPUT
-
-          # Terraform state key for this preview env
           TF_STATE_KEY="${PREVIEW_STATE_PREFIX}${SANITIZED_BRANCH}.tfstate"
           echo "tf_state_key=$TF_STATE_KEY" >> $GITHUB_OUTPUT
-
-          # ALB listener rule priority - derive from PR number (must be unique per listener)
-          if [ -n "${{ github.event.number }}" ]; then
-            PRIORITY=$(( 1000 + ${{ github.event.number }} ))
-          else
-            PRIORITY=1999
-          fi
+          if [ -n "${{ github.event.number }}" ]; then PRIORITY=$(( 1000 + ${{ github.event.number }} )); else PRIORITY=1999; fi
           echo "alb_rule_priority=$PRIORITY" >> $GITHUB_OUTPUT
 
       - name: Setup Python project
@@ -98,7 +72,6 @@ jobs:
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
-
           make build IMAGE_TAG="${IMAGE_TAG}" ECR_URL="${ECR_URL}"
 
       - name: Push Docker image to ECR
@@ -106,15 +79,12 @@ jobs:
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
-
           docker push "${ECR_URL}:${IMAGE_TAG}"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.14.0
-
-      # ---------- APPLY (PR opened / updated) ----------
 
       - name: Terraform init (apply)
         if: github.event.action != 'closed'
@@ -132,9 +102,7 @@ jobs:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
-        run: |
-          terraform apply \
-            -auto-approve
+        run: terraform apply -auto-approve
 
       - name: Capture preview TF outputs
         if: github.event.action != 'closed'
@@ -142,31 +110,17 @@ jobs:
         working-directory: infrastructure/environments/preview
         run: |
           terraform output -json > tf-output.json
-
           URL=$(jq -r '.url.value' tf-output.json)
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
+          echo "target_group=$(jq -r '.target_group_arn.value' tf-output.json)" >> $GITHUB_OUTPUT
+          echo "ecs_service=$(jq -r '.ecs_service_name.value' tf-output.json)" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=$(jq -r '.ecs_cluster_name.value' tf-output.json)" >> $GITHUB_OUTPUT
 
-          TG=$(jq -r '.target_group_arn.value' tf-output.json)
-          echo "target_group=$TG" >> $GITHUB_OUTPUT
-
-          ECS_SERVICE=$(jq -r '.ecs_service_name.value' tf-output.json)
-          echo "ecs_service=$ECS_SERVICE" >> $GITHUB_OUTPUT
-
-          ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
-          echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
-
-      # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
         if: github.event.action == 'synchronize'
-        id: await-redeployment
         run: |
-          aws ecs update-service \
-            --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
-            --service ${{ steps.tf-output.outputs.ecs_service }} \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+          aws ecs update-service --cluster ${{ steps.tf-output.outputs.ecs_cluster }} --service ${{ steps.tf-output.outputs.ecs_service }} --force-new-deployment --region ${{ env.AWS_REGION }}
 
-      # ---------- DESTROY (PR closed) ----------
       - name: Terraform init (destroy)
         if: github.event.action == 'closed'
         working-directory: infrastructure/environments/preview
@@ -183,17 +137,22 @@ jobs:
           TF_VAR_branch_name: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
-        run: |
-          terraform destroy -auto-approve
+        run: terraform destroy -auto-approve
 
-      # ---------- Wait on AWS tasks and notify ----------
       - name: Await deployment completion
         if: github.event.action != 'closed'
         run: |
-          aws ecs wait services-stable \
-          --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
-          --services ${{ steps.tf-output.outputs.ecs_service }} \
-          --region ${{ env.AWS_REGION }}
+          aws ecs wait services-stable --cluster ${{ steps.tf-output.outputs.ecs_cluster }} --services ${{ steps.tf-output.outputs.ecs_service }} --region ${{ env.AWS_REGION }}
+
+      - name: Get mTLS certs for smoke test
+        if: github.event.action != 'closed'
+        id: mtls-certs
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+            /cds/gateway/dev/mtls/client1-key-secret
+            /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
 
       - name: Smoke test preview URL
         if: github.event.action != 'closed'
@@ -202,102 +161,193 @@ jobs:
           PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
         run: |
           if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
-            echo "Preview URL missing"
             echo "http_status=missing" >> "$GITHUB_OUTPUT"
             echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
-          STATUS=$(curl --silent --output /tmp/preview.headers --write-out '%{http_code}' --head --max-time 30 "$PREVIEW_URL" || true)
-
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+          STATUS=$(curl --cert /tmp/client1-cert.pem --key /tmp/client1-key.pem --silent --output /tmp/preview.headers --write-out '%{http_code}' --head --max-time 30 "$PREVIEW_URL"/health || true)
+          rm -f /tmp/client1-key.pem /tmp/client1-cert.pem
           if [ "$STATUS" = "404" ]; then
-            echo "Preview responded with expected 404"
-            echo "http_status=404" >> "$GITHUB_OUTPUT"
-            echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "http_status=404" >> "$GITHUB_OUTPUT"; echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"; exit 0
           fi
-
           if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-            echo "Preview responded with status $STATUS"
-            echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-            echo "http_result=success" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"; echo "http_result=success" >> "$GITHUB_OUTPUT"; exit 0
           fi
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"; echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
 
-          echo "Preview responded with unexpected status $STATUS"
-          cat /tmp/preview.headers
-          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
-          echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Run integration tests (preview environment)
-        if: github.event.action != 'closed'
-        uses: ./.github/actions/run-integration-tests
-        with:
-          base_url: ${{ steps.tf-output.outputs.preview_url }}
-          aws_region: ${{ env.AWS_REGION }}
-          mtls_secret_id: ${{ secrets.PREVIEW_MTLS_SECRET_ID }}
-          python_version: ${{ env.python_version }}
-          test_command: make test-integration
-
-
-      - name: Comment function name on PR
+      - name: Comment on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
-            const alb = '${{ steps.tf-output.outputs.target_group }}';
             const url = '${{ steps.tf-output.outputs.preview_url }}';
-            const cluster = '${{ steps.tf-output.outputs.ecs_cluster }}';
-            const service = '${{ steps.tf-output.outputs.ecs_service }}';
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const issueNumber = context.issue.number;
             const smokeStatus = '${{ steps.smoke-test.outputs.http_status }}' || 'n/a';
             const smokeResult = '${{ steps.smoke-test.outputs.http_result }}' || 'not-run';
-
-            const smokeLabels = {
-              success: ':white_check_mark: Passed',
-              'allowed-404': ':white_check_mark: Allowed 404',
-              'unexpected-status': ':x: Unexpected status',
-              'missing-url': ':x: Missing URL',
-            };
-
+            const smokeLabels = { success: '✅ Passed', 'allowed-404': '✅ Allowed 404', 'unexpected-status': '❌ Unexpected status', 'missing-url': '❌ Missing URL' };
             const smokeReadable = smokeLabels[smokeResult] ?? smokeResult;
+            const lines = ['**Deployment Complete**', `- Preview URL: [${url}](${url})`, `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})` ];
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: lines.join('\n') });
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              per_page: 100,
-            });
+      - name: Trivy filesystem scan
+        if: github.event.action != 'closed'
+        uses: nhs-england-tools/trivy-action/image-scan@3456c1657a37d500027fd782e6b08911725392da
+        with:
+          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+          artifact-name: trivy-scan-${{ steps.meta.outputs.branch_name }}
 
-            for (const comment of comments) {
-              const isBot = comment.user?.login === 'github-actions[bot]';
-              const isPreviewUpdate = comment.body?.includes('Deployment Complete');
+      - name: Generate SBOM
+        uses: nhs-england-tools/trivy-action/sbom-scan@3456c1657a37d500027fd782e6b08911725392da
+        if: github.event.action != 'closed'
+        with:
+          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+          artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
 
-              if (isBot && isPreviewUpdate) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-              }
-            }
+  test-contract:
+    name: "Contract tests"
+    needs: preview
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_URL: ${{ needs.preview.outputs.preview_url }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: "Get mTLS certs"
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+             /cds/gateway/dev/mtls/client1-key-secret
+             /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
+      - name: "Write cert files"
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+      - name: "Run contract tests"
+        run: make test-contract
 
-            const lines = [
-              '**Deployment Complete**',
-              `- Preview URL: [${url}](${url})`,
-              `- Smoke Test: ${smokeReadable} (HTTP ${smokeStatus})`,
-              `- ECS Cluster: \`${cluster}\``,
-              `- ECS Service: \`${service}\``,
-              `- ALB Target: \`${alb}\``,
-            ];
+  test-schema:
+    name: "Schema validation tests"
+    needs: preview
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_URL: ${{ needs.preview.outputs.preview_url }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: "Get mTLS certs"
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+             /cds/gateway/dev/mtls/client1-key-secret
+             /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
+      - name: "Write cert files"
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+      - name: "Run schema tests"
+        run: make test-schema
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: lines.join('\n'),
-            });
+  test-integration:
+    name: "Integration tests"
+    needs: preview
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_URL: ${{ needs.preview.outputs.preview_url }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: "Get mTLS certs"
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+             /cds/gateway/dev/mtls/client1-key-secret
+             /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
+      - name: "Write cert files"
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+      - name: "Run integration tests"
+        run: make test-integration
+
+  test-acceptance:
+    name: "Acceptance tests"
+    needs: preview
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_URL: ${{ needs.preview.outputs.preview_url }}
+      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Configure AWS credentials"
+        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: "Get mTLS certs"
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+             /cds/gateway/dev/mtls/client1-key-secret
+             /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
+      - name: "Write cert files"
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+      - name: "Run acceptance tests"
+        run: make test-acceptance
