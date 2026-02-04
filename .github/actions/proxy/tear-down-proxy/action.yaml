@@ -14,6 +14,9 @@ inputs:
   proxygen-api-name:
     description: 'Proxygen API name'
     required: true
+  progen-client-id:
+    description: 'Proxygen client ID'
+    required: true
 
 runs:
   using: composite
@@ -24,6 +27,7 @@ runs:
         proxygen-key-secret: ${{ inputs.proxygen-key-secret }}
         proxygen-key-id: ${{ inputs.proxygen-key-id }}
         proxygen-api-name: ${{ inputs.proxygen-api-name }}
+        proxygen-client-id: ${{ inputs.progen-client-id }}
 
     - name: Tear down preview API proxy
       shell: bash

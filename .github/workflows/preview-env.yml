@@ -172,6 +172,7 @@ jobs:
           proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
           proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
           proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
+          proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
 
       - name: Tear down preview API proxy
         if: github.event.action == 'closed'
@@ -181,6 +182,7 @@ jobs:
           proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
           proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
           proxygen-api-name: ${{ vars.PREVIEW_ENV_PROXYGEN_API_NAME }}
+          proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
 
       # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
