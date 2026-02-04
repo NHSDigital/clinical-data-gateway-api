@@ -201,6 +201,7 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
+        # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
         response = self.get_method(
             url,
             headers=headers,
