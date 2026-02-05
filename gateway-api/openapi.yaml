@@ -8,11 +8,17 @@ info:
 servers:
   - url: http://localhost:5000
     description: Local development server
+components:
+  securitySchemes:
+    nhs-cis2-aal3:
+      $ref: https://proxygen.ptl.api.platform.nhs.uk/components/securitySchemes/nhs-cis2-aal3
 paths:
   /patient/$gpc.getstructuredrecord:
     post:
       summary: Get structured record
       description: Returns a FHIR Bundle containing patient structured record
+      security:
+      - nhs-cis2-aal3: []
       operationId: getStructuredRecord
       parameters:
       - in: header
@@ -241,22 +247,3 @@ paths:
                         diagnostics:
                           type: string
                           example: "Internal server error"
-  /health:
-    get:
-      summary: Health check
-      description: Returns the health status of the API
-      operationId: healthCheck
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "healthy"
-                required:
-                  - status
-

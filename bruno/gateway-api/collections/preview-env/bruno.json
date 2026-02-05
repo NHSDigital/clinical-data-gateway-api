@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "preview-env",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

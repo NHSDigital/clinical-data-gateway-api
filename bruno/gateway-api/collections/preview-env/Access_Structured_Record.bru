@@ -1,0 +1,31 @@
+meta {
+  name: Access Record Structured
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://{{apigee_env}}.api.service.nhs.uk/{{proxy_base_path}}/patient/$gpc.getstructuredrecord
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "resourceType": "Parameters",
+    "parameter": [
+          {
+              "name": "patientNHSNumber",
+              "valueIdentifier": {
+                  "system": "https://fhir.nhs.uk/Id/nhs-number",
+                  "value": "9999999999"
+              }
+          }
+      ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
