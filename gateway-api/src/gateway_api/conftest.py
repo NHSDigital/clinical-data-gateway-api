@@ -53,4 +53,5 @@ def valid_headers() -> dict[str, str]:
     return {
         "Ssp-TraceID": "test-trace-id",
         "ODS-from": "test-ods",
+        "Content-type": "application/fhir+json",
     }
