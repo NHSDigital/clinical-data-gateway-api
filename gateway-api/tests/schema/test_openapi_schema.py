@@ -19,7 +19,7 @@ schema = from_dict(schema_dict)
 
 
 @schema.parametrize()
-def test_api_schema_compliance(case: Case, base_url: str) -> None:
+def test_api_schema_compliance(case: Case, base_url: str, mtls_cert: str) -> None:
     """Test API endpoints against the OpenAPI schema.
 
     Schemathesis automatically generates test cases with:
@@ -37,10 +37,14 @@ def test_api_schema_compliance(case: Case, base_url: str) -> None:
     Note: Server error checks are disabled because the API may return 500 errors
     when testing with randomly generated NHS numbers that don't exist in the PDS.
     """
-    # Call the API and validate the response against the schema
-    # Exclude not_a_server_error check as 500 responses are expected for
-    # non-existent patients
+
+    case.headers["Ods-from"] = "test-ods-code"
+    case.headers["Ssp-TraceID"] = "test-trace-id"
+
     case.call_and_validate(
         base_url=base_url,
         excluded_checks=[schemathesis.checks.not_a_server_error],
+        cert=mtls_cert,
+        verify=False,
+        timeout=30,
     )
