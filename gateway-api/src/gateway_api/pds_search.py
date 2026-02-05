@@ -21,16 +21,21 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import cast
 
 import requests
+from stubs.stub_pds import PdsFhirApiStub
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
 type ResultStructureDict = dict[str, ResultStructure]
 type ResultList = list[ResultStructureDict]
+
+# Type for stub get method
+type GetCallable = Callable[..., requests.Response]
 
 
 class ExternalServiceError(Exception):
@@ -44,7 +49,7 @@ class ExternalServiceError(Exception):
 
 
 @dataclass
-class SearchResults:
+class PdsSearchResults:
     """
     A single extracted patient record.
 
@@ -74,7 +79,7 @@ class PdsClient:
 
     * :meth:`search_patient_by_nhs_number` - calls ``GET /Patient/{nhs_number}``
 
-    This method returns a :class:`SearchResults` instance when a patient can be
+    This method returns a :class:`PdsSearchResults` instance when a patient can be
     extracted, otherwise ``None``.
 
     **Usage example**::
@@ -123,6 +128,13 @@ class PdsClient:
         self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
         self.ignore_dates = ignore_dates
+        self.stub = PdsFhirApiStub()
+
+        # TODO: Put this back to using the environment variable
+        # if os.environ.get("STUB_PDS", None):
+        self.get_method: GetCallable = self.stub.get
+        # else:
+        #     self.get_method: GetCallable = requests.get
 
     def _build_headers(
         self,
@@ -160,16 +172,16 @@ class PdsClient:
 
     def search_patient_by_nhs_number(
         self,
-        nhs_number: int,
+        nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
-    ) -> SearchResults | None:
+    ) -> PdsSearchResults | None:
         """
         Retrieve a patient by NHS number.
 
         Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
-        resource on success, then extracts a single :class:`SearchResults`.
+        resource on success, then extracts a single :class:`PdsSearchResults`.
 
         :param nhs_number: NHS number to search for.
         :param request_id: Optional request ID to reuse for retries; if not supplied a
@@ -177,7 +189,7 @@ class PdsClient:
         :param correlation_id: Optional correlation ID for tracing.
         :param timeout: Optional per-call timeout in seconds. If not provided,
             :attr:`timeout` is used.
-        :return: A :class:`SearchResults` instance if a patient can be extracted,
+        :return: A :class:`PdsSearchResults` instance if a patient can be extracted,
             otherwise ``None``.
         :raises ExternalServiceError: If the HTTP request returns an error status and
             ``raise_for_status()`` raises :class:`requests.HTTPError`.
@@ -189,7 +201,8 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
-        response = requests.get(
+        # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
+        response = self.get_method(
             url,
             headers=headers,
             params={},
@@ -241,9 +254,9 @@ class PdsClient:
 
     def _extract_single_search_result(
         self, body: ResultStructureDict
-    ) -> SearchResults | None:
+    ) -> PdsSearchResults | None:
         """
-        Extract a single :class:`SearchResults` from a Patient response.
+        Extract a single :class:`PdsSearchResults` from a Patient response.
 
         This helper accepts either:
         * a single FHIR Patient resource (as returned by ``GET /Patient/{id}``), or
@@ -253,7 +266,7 @@ class PdsClient:
         single match; if multiple entries are present, the first entry is used.
         :param body: Parsed JSON body containing either a Patient resource or a Bundle
             whose first entry contains a Patient resource under ``resource``.
-        :return: A populated :class:`SearchResults` if extraction succeeds, otherwise
+        :return: A populated :class:`PdsSearchResults` if extraction succeeds, otherwise
             ``None``.
         """
         # Accept either:
@@ -294,7 +307,7 @@ class PdsClient:
         gp_list = cast("ResultList", patient.get("generalPractitioner", []))
         gp_ods_code = self._get_gp_ods_code(gp_list)
 
-        return SearchResults(
+        return PdsSearchResults(
             given_names=given_names_str,
             family_name=family_name,
             nhs_number=nhs_number,

@@ -4,15 +4,17 @@ Unit tests for :mod:`gateway_api.pds_search`.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 import pytest
 import requests
 from stubs.stub_pds import PdsFhirApiStub
+
+if TYPE_CHECKING:
+    from requests.structures import CaseInsensitiveDict
 
 from gateway_api.pds_search import (
     ExternalServiceError,
@@ -30,12 +32,12 @@ class FakeResponse:
     implemented.
 
     :param status_code: HTTP status code.
-    :param headers: Response headers.
+    :param headers: Response headers (dict or CaseInsensitiveDict).
     :param _json: Parsed JSON body returned by :meth:`json`.
     """
 
     status_code: int
-    headers: dict[str, str]
+    headers: dict[str, str] | CaseInsensitiveDict[str]
     _json: dict[str, Any]
     reason: str = ""
 
@@ -78,7 +80,7 @@ def mock_requests_get(
     monkeypatch: pytest.MonkeyPatch, stub: PdsFhirApiStub
 ) -> dict[str, Any]:
     """
-    Patch ``requests.get`` so calls are routed into :meth:`PdsFhirApiStub.get_patient`.
+    Patch ``PdsFhirApiStub`` so the PdsClient uses the test stub fixture.
 
     The fixture returns a "capture" dict recording the most recent request information.
     This is used by header-related tests.
@@ -90,21 +92,23 @@ def mock_requests_get(
     """
     capture: dict[str, Any] = {}
 
-    def _fake_get(
+    # Wrap the stub's get method to capture call parameters
+    original_stub_get = stub.get
+
+    def _capturing_get(
         url: str,
         headers: dict[str, str] | None = None,
         params: Any = None,
         timeout: Any = None,
-    ) -> FakeResponse:
+    ) -> requests.Response:
         """
-        Replacement function for :func:`requests.get`.
+        Wrapper around stub.get that captures parameters.
 
         :param url: URL passed by the client.
         :param headers: Headers passed by the client.
-        :param params: Query parameters (recorded, not interpreted for
-            GET /Patient/{id}).
-        :param timeout: Timeout (recorded).
-        :return: A :class:`FakeResponse` whose behaviour mimics ``requests.Response``.
+        :param params: Query parameters.
+        :param timeout: Timeout.
+        :return: Response from the stub.
         """
         headers = headers or {}
         capture["url"] = url
@@ -112,45 +116,19 @@ def mock_requests_get(
         capture["params"] = params
         capture["timeout"] = timeout
 
-        # The client under test is expected to call GET {base_url}/Patient/{id}.
-        m = re.match(r"^(?P<base>.+)/Patient/(?P<nhs>\d+)$", url)
-        if not m:
-            raise AssertionError(f"Unexpected URL called by client: {url}")
+        return original_stub_get(url, headers, params, timeout)
 
-        nhs_number = m.group("nhs")
+    stub.get = _capturing_get  # type: ignore[method-assign]
 
-        # Route the "HTTP" request into the in-memory stub.
-        stub_resp = stub.get_patient(
-            nhs_number=nhs_number,
-            request_id=headers.get("X-Request-ID"),
-            correlation_id=headers.get("X-Correlation-ID"),
-            authorization=headers.get("Authorization"),
-            end_user_org_ods=headers.get("NHSD-End-User-Organisation-ODS"),
-        )
+    # Monkeypatch PdsFhirApiStub so PdsClient uses our test stub
+    import gateway_api.pds_search as pds_module
 
-        # GET /Patient/{id} returns a single Patient resource on success.
-        body = stub_resp.json
-        # Populate a reason phrase so PdsClient can surface it in ExternalServiceError.
-        reason = ""
-        if stub_resp.status_code != 200:
-            # Try to use OperationOutcome display text if present.
-            issue0 = (stub_resp.json.get("issue") or [{}])[0]
-            details = issue0.get("details") or {}
-            coding0 = (details.get("coding") or [{}])[0]
-            reason = str(coding0.get("display") or "")
-        if not reason:
-            reason = {400: "Bad Request", 404: "Not Found"}.get(
-                stub_resp.status_code, ""
-            )
+    monkeypatch.setattr(
+        pds_module,
+        "PdsFhirApiStub",
+        lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
+    )
 
-        return FakeResponse(
-            status_code=stub_resp.status_code,
-            headers=stub_resp.headers,
-            _json=body,
-            reason=reason,
-        )
-
-    monkeypatch.setattr(requests, "get", _fake_get)
     return capture
 
 
@@ -192,13 +170,13 @@ def _insert_basic_patient(
 
 def test_search_patient_by_nhs_number_get_patient_success(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify ``GET /Patient/{nhs_number}`` returns 200 and demographics are extracted.
 
     This test explicitly inserts the patient into the stub and asserts that the client
-    returns a populated :class:`gateway_api.pds_search.SearchResults`.
+    returns a populated :class:`gateway_api.pds_search.PdsSearchResults`.
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture
@@ -220,7 +198,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
         nhsd_session_urid="test-urid",
     )
 
-    result = client.search_patient_by_nhs_number(9000000009)
+    result = client.search_patient_by_nhs_number("9000000009")
 
     assert result is not None
     assert result.nhs_number == "9000000009"
@@ -231,7 +209,7 @@ def test_search_patient_by_nhs_number_get_patient_success(
 
 def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that ``gp_ods_code`` is ``None`` when no GP record is current.
@@ -272,7 +250,7 @@ def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000018)
+    result = client.search_patient_by_nhs_number("9000000018")
 
     assert result is not None
     assert result.nhs_number == "9000000018"
@@ -317,7 +295,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     corr_id = "corr-123"
 
     result = client.search_patient_by_nhs_number(
-        9000000009,
+        "9000000009",
         request_id=req_id,
         correlation_id=corr_id,
     )
@@ -360,7 +338,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000009)
+    result = client.search_patient_by_nhs_number("9000000009")
     assert result is not None
 
     headers = mock_requests_get["headers"]
@@ -370,8 +348,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
 
 
 def test_search_patient_by_nhs_number_not_found_raises_error(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that a 404 response results in :class:`ExternalServiceError`.
@@ -391,12 +368,12 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     )
 
     with pytest.raises(ExternalServiceError):
-        pds.search_patient_by_nhs_number(9900000001)
+        pds.search_patient_by_nhs_number("9900000001")
 
 
 def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
     stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
     Verify that a current GP record is selected and its ODS code returned.
@@ -452,7 +429,7 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    result = client.search_patient_by_nhs_number(9000000017)
+    result = client.search_patient_by_nhs_number("9000000017")
     assert result is not None
     assert result.nhs_number == "9000000017"
     assert result.family_name == "Taylor"
