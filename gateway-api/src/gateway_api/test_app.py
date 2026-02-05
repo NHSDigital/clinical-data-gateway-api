@@ -3,10 +3,10 @@
 import json
 import os
 from collections.abc import Generator
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
 
 import pytest
+from fhir.bundle import Bundle
+from fhir.parameters import Parameters
 from flask import Flask
 from flask.testing import FlaskClient
 
@@ -14,9 +14,6 @@ from gateway_api.app import app, get_app_host, get_app_port
 from gateway_api.common.common import FlaskResponse
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-
-if TYPE_CHECKING:
-    from fhir.parameters import Parameters
 
 
 @pytest.fixture
@@ -57,34 +54,10 @@ class TestGetStructuredRecord:
         self,
         client: FlaskClient[Flask],
         monkeypatch: pytest.MonkeyPatch,
-        valid_simple_request_payload: "Parameters",
+        valid_simple_request_payload: Parameters,
+        valid_simple_response_payload: Bundle,
     ) -> None:
         """Test that successful controller response is returned correctly."""
-
-        # Mock the controller to return a successful FlaskResponse with a Bundle
-        mock_bundle_data: Any = {
-            "resourceType": "Bundle",
-            "id": "example-patient-bundle",
-            "type": "collection",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "entry": [
-                {
-                    "fullUrl": "http://example.com/Patient/9999999999",
-                    "resource": {
-                        "name": [
-                            {"family": "Alice", "given": ["Johnson"], "use": "Ally"}
-                        ],
-                        "gender": "female",
-                        "birthDate": "1990-05-15",
-                        "resourceType": "Patient",
-                        "id": "9999999999",
-                        "identifier": [
-                            {"value": "9999999999", "system": "urn:nhs:numbers"}
-                        ],
-                    },
-                }
-            ],
-        }
 
         def mock_run(
             self: Controller,  # noqa: ARG001
@@ -92,7 +65,7 @@ class TestGetStructuredRecord:
         ) -> FlaskResponse:
             return FlaskResponse(
                 status_code=200,
-                data=json.dumps(mock_bundle_data),
+                data=json.dumps(valid_simple_response_payload),
                 headers={"Content-Type": "application/fhir+json"},
             )
 
