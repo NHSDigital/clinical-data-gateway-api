@@ -16,9 +16,6 @@ from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 if TYPE_CHECKING:
     from fhir.parameters import Parameters
 
-if TYPE_CHECKING:
-    from fhir.parameters import Parameters
-
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask], None, None]:
