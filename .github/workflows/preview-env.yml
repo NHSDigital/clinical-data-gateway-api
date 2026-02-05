@@ -17,13 +17,11 @@ jobs:
     name: Manage preview environment
     runs-on: ubuntu-latest
 
-    # Needed for OIDC → AWS (recommended)
     permissions:
       id-token: write
       contents: read
       pull-requests: write
 
-    # One job per branch at a time
     concurrency:
       group: preview-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
@@ -35,7 +33,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
-      # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
         with:
@@ -49,10 +46,7 @@ jobs:
       - name: Compute branch metadata
         id: meta
         run: |
-          # For PRs, head_ref is the source branch name
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-
-          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
           SANITIZED_BRANCH=$(
             printf '%s' "$RAW_BRANCH" \
               | tr '[:upper:]' '[:lower:]' \
@@ -60,24 +54,15 @@ jobs:
               | tr -c 'a-z0-9-' '-' \
               | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
           )
-
-          # Last resort fallback if everything got stripped
           if [ -z "$SANITIZED_BRANCH" ]; then
             SANITIZED_BRANCH="invalid-branch-name"
           fi
-
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
           echo "branch_name=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
-
-          # ECR repo URL (must match core stack's ECR repo)
           ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}"
           echo "ecr_url=$ECR_URL" >> $GITHUB_OUTPUT
-
-          # Terraform state key for this preview env
           TF_STATE_KEY="${PREVIEW_STATE_PREFIX}${SANITIZED_BRANCH}.tfstate"
           echo "tf_state_key=$TF_STATE_KEY" >> $GITHUB_OUTPUT
-
-          # ALB listener rule priority - derive from PR number (must be unique per listener)
           if [ -n "${{ github.event.number }}" ]; then
             PRIORITY=$(( 1000 + ${{ github.event.number }} ))
           else
@@ -98,7 +83,6 @@ jobs:
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
-
           make build IMAGE_TAG="${IMAGE_TAG}" ECR_URL="${ECR_URL}"
 
       - name: Push Docker image to ECR
@@ -106,15 +90,12 @@ jobs:
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.branch_name }}"
           ECR_URL="${{ steps.meta.outputs.ecr_url }}"
-
           docker push "${ECR_URL}:${IMAGE_TAG}"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.14.0
-
-      # ---------- APPLY (PR opened / updated) ----------
 
       - name: Terraform init (apply)
         if: github.event.action != 'closed'
@@ -133,8 +114,7 @@ jobs:
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
         run: |
-          terraform apply \
-            -auto-approve
+          terraform apply -auto-approve
 
       - name: Capture preview TF outputs
         if: github.event.action != 'closed'
@@ -142,18 +122,26 @@ jobs:
         working-directory: infrastructure/environments/preview
         run: |
           terraform output -json > tf-output.json
-
           URL=$(jq -r '.url.value' tf-output.json)
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
-
           TG=$(jq -r '.target_group_arn.value' tf-output.json)
           echo "target_group=$TG" >> $GITHUB_OUTPUT
-
           ECS_SERVICE=$(jq -r '.ecs_service_name.value' tf-output.json)
           echo "ecs_service=$ECS_SERVICE" >> $GITHUB_OUTPUT
-
           ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
           echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
+
+      - name: Compute preview host
+        id: set-host
+        if: github.event.action != 'closed'
+        run: |
+          PREVIEW_URL='${{ steps.tf-output.outputs.preview_url }}'
+          if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
+            echo "host=missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          HOST=$(printf '%s' "$PREVIEW_URL" | sed -E 's#^https?://##' | sed -E 's#/.*$##')
+          echo "host=${HOST}" >> "$GITHUB_OUTPUT"
 
       - name: Get proxygen machine user details
         id: proxygen-machine-user
@@ -184,7 +172,6 @@ jobs:
           proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
           proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
 
-      # ---------- Ensure re-deployment (PR updated) ----------
       - name: Force ECS service redeployment
         if: github.event.action == 'synchronize'
         id: await-redeployment
@@ -195,7 +182,6 @@ jobs:
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
-      # ---------- DESTROY (PR closed) ----------
       - name: Terraform init (destroy)
         if: github.event.action == 'closed'
         working-directory: infrastructure/environments/preview
@@ -215,14 +201,13 @@ jobs:
         run: |
           terraform destroy -auto-approve
 
-      # ---------- Wait on AWS tasks and notify ----------
       - name: Await deployment completion
         if: github.event.action != 'closed'
         run: |
           aws ecs wait services-stable \
-          --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
-          --services ${{ steps.tf-output.outputs.ecs_service }} \
-          --region ${{ env.AWS_REGION }}
+            --cluster ${{ steps.tf-output.outputs.ecs_cluster }} \
+            --services ${{ steps.tf-output.outputs.ecs_service }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Get mTLS certs for testing
         if: github.event.action != 'closed'
@@ -246,8 +231,6 @@ jobs:
             echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
           printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
           printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
           STATUS=$(curl \
@@ -285,6 +268,215 @@ jobs:
           echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Prepare mTLS cert files for tests
+        if: github.event.action != 'closed'
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+          chmod 600 /tmp/client1-key.pem /tmp/client1-cert.pem
+
+        # UNIT TESTS
+      - name: Run unit tests against preview
+        if: github.event.action != 'closed'
+        env:
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: |
+          make test-unit
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: unit-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+
+      - name: Check unit-tests.xml exists
+        id: check-unit
+        if: always()
+        run: |
+          TARGET="gateway-api/test-artefacts/unit-tests.xml"
+          echo "Checking for $TARGET"
+          if [ -f "$TARGET" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Found $TARGET"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Missing $TARGET" >&2
+            echo "Listing gateway-api/test-artefacts for debugging:"
+            ls -la gateway-api/test-artefacts || true
+          fi
+
+      - name: Publish unit test results to summary
+        if: ${{ always() && steps.check-unit.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/unit-tests.xml
+
+        # CONTRACT TESTS
+      - name: Run contract tests against proxy (no mTLS)
+        if: github.event.action != 'closed'
+        run: |
+          PROXY_URL="https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
+          HOST=$(printf '%s' "$PROXY_URL" | sed -E 's#^https?://##' | sed -E 's#/.*$##')
+          echo "Running contract tests against proxy"
+          HOST="${HOST}" BASE_URL="${PROXY_URL}" make test-contract
+
+      - name: Upload contract test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: contract-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+
+      - name: Check contract-tests.xml exists
+        id: check-contract
+        if: always()
+        run: |
+          TARGET="gateway-api/test-artefacts/contract-tests.xml"
+          echo "Checking for $TARGET"
+          if [ -f "$TARGET" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Found $TARGET"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Missing $TARGET" >&2
+            echo "Listing gateway-api/test-artefacts for debugging:"
+            ls -la gateway-api/test-artefacts || true
+          fi
+
+      - name: Publish contract test results to summary
+        if: ${{ always() && steps.check-contract.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/contract-tests.xml
+
+        # SCHEMA TESTS
+      - name: Run schema validation tests against preview
+        if: github.event.action != 'closed'
+        env:
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: |
+          make test-schema
+
+      - name: Upload schema test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: schema-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+
+      - name: Check schema-tests.xml exists
+        id: check-schema
+        if: always()
+        run: |
+          TARGET="gateway-api/test-artefacts/schema-tests.xml"
+          echo "Checking for $TARGET"
+          if [ -f "$TARGET" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Found $TARGET"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Missing $TARGET" >&2
+            echo "Listing gateway-api/test-artefacts for debugging:"
+            ls -la gateway-api/test-artefacts || true
+          fi
+
+      - name: Publish schema test results to summary
+        if: ${{ always() && steps.check-schema.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/schema-tests.xml
+
+        # INTEGRATION TESTS
+      - name: Run integration tests against preview
+        if: github.event.action != 'closed'
+        env:
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: |
+          make test-integration
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: integration-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+
+      - name: Check integration-tests.xml exists
+        id: check-integration
+        if: always()
+        run: |
+          TARGET="gateway-api/test-artefacts/integration-tests.xml"
+          echo "Checking for $TARGET"
+          if [ -f "$TARGET" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Found $TARGET"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Missing $TARGET" >&2
+            echo "Listing gateway-api/test-artefacts for debugging:"
+            ls -la gateway-api/test-artefacts || true
+          fi
+
+      - name: Publish integration test results to summary
+        if: ${{ always() && steps.check-integration.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/integration-tests.xml
+
+        # ACCEPTANCE TESTS
+      - name: Run acceptance tests against preview
+        if: github.event.action != 'closed'
+        env:
+          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
+          HOST: ${{ steps.set-host.outputs.host }}
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: |
+          make test-acceptance
+
+      - name: Upload acceptance test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: acceptance-test-results
+          path: gateway-api/test-artefacts/
+          retention-days: 30
+
+      - name: Check acceptance-tests.xml exists
+        id: check-acceptance
+        if: always()
+        run: |
+          TARGET="gateway-api/test-artefacts/acceptance-tests.xml"
+          echo "Checking for $TARGET"
+          if [ -f "$TARGET" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Found $TARGET"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Missing $TARGET" >&2
+            echo "Listing gateway-api/test-artefacts for debugging:"
+            ls -la gateway-api/test-artefacts || true
+          fi
+
+      - name: Publish acceptance test results to summary
+        if: ${{ always() && steps.check-acceptance.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/acceptance-tests.xml
+
+      - name: Remove mTLS temp files
+        if: github.event.action != 'closed'
+        run: |
+          rm -f /tmp/client1-key.pem /tmp/client1-cert.pem || true
+
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
@@ -300,27 +492,22 @@ jobs:
             const issueNumber = context.issue.number;
             const smokeStatus = '${{ steps.smoke-test.outputs.http_status }}' || 'n/a';
             const smokeResult = '${{ steps.smoke-test.outputs.http_result }}' || 'not-run';
-
             const smokeLabels = {
               success: ':white_check_mark: Passed',
               'allowed-404': ':white_check_mark: Allowed 404',
               'unexpected-status': ':x: Unexpected status',
               'missing-url': ':x: Missing URL',
             };
-
             const smokeReadable = smokeLabels[smokeResult] ?? smokeResult;
-
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
               issue_number: issueNumber,
               per_page: 100,
             });
-
             for (const comment of comments) {
               const isBot = comment.user?.login === 'github-actions[bot]';
               const isPreviewUpdate = comment.body?.includes('Deployment Complete');
-
               if (isBot && isPreviewUpdate) {
                 await github.rest.issues.deleteComment({
                   owner,
@@ -329,7 +516,6 @@ jobs:
                 });
               }
             }
-
             const lines = [
               '**Deployment Complete**',
               `- Preview URL: [${url}](${url}) — [Health endpoint](${url}/health)`,
@@ -339,7 +525,6 @@ jobs:
               `- ECS Service: \`${service}\``,
               `- ALB Target: \`${alb}\``,
             ];
-
             await github.rest.issues.createComment({
               owner,
               repo,
@@ -347,7 +532,6 @@ jobs:
               body: lines.join('\n'),
             });
 
-      # ---------- Security scanning ----------
       - name: Trivy filesystem scan
         if: github.event.action != 'closed'
         uses: nhs-england-tools/trivy-action/image-scan@3456c1657a37d500027fd782e6b08911725392da
@@ -356,8 +540,8 @@ jobs:
           artifact-name: trivy-scan-${{ steps.meta.outputs.branch_name }}
 
       - name: Generate SBOM
-        uses: nhs-england-tools/trivy-action/sbom-scan@3456c1657a37d500027fd782e6b08911725392da
         if: github.event.action != 'closed'
+        uses: nhs-england-tools/trivy-action/sbom-scan@3456c1657a37d500027fd782e6b08911725392da
         with:
           image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
           artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
