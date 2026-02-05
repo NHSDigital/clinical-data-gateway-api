@@ -32,7 +32,7 @@ def valid_simple_response_payload() -> Bundle:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "entry": [
             {
-                "fullUrl": "http://example.com/Patient/9999999999",
+                "fullUrl": "https://example.com/Patient/9999999999",
                 "resource": {
                     "name": [{"family": "Alice", "given": ["Johnson"], "use": "Ally"}],
                     "gender": "female",
