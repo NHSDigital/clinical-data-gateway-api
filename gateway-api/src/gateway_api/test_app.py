@@ -50,64 +50,53 @@ class TestAppInitialization:
 
 
 class TestGetStructuredRecord:
-    def test_get_structured_record_returns_200_with_bundle(
+    @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
+    def test_valid_get_structured_record_request_returns_bundle(
         self,
-        client: FlaskClient[Flask],
-        mocker: MockerFixture,
-        valid_simple_request_payload: Parameters,
-        valid_simple_response_payload: Bundle,
+        get_structured_record_response: Flask,
     ) -> None:
-        """Test that successful controller response is returned correctly."""
+        expected_body_wihtout_timestamp = {
+            "resourceType": "Bundle",
+            "id": "example-patient-bundle",
+            "type": "collection",
+            "entry": [
+                {
+                    "fullUrl": "https://example.com/Patient/9999999999",
+                    "resource": {
+                        "name": [
+                            {"family": "Alice", "given": ["Johnson"], "use": "Ally"}
+                        ],
+                        "gender": "female",
+                        "birthDate": "1990-05-15",
+                        "resourceType": "Patient",
+                        "id": "9999999999",
+                        "identifier": [
+                            {"value": "9999999999", "system": "urn:nhs:numbers"}
+                        ],
+                    },
+                }
+            ],
+        }
 
-        postive_response = FlaskResponse(
-            status_code=200,
-            data=json.dumps(valid_simple_response_payload),
-            headers={"Content-Type": "application/fhir+json"},
-        )
-        mocker.patch(
-            "gateway_api.controller.Controller.run", return_value=postive_response
-        )
+        actual_body_without_timestamp = get_structured_record_response.get_json()
+        del actual_body_without_timestamp["timestamp"]
 
-        response = client.post(
-            "/patient/$gpc.getstructuredrecord",
-            json=valid_simple_request_payload,
-            headers={
-                "Ssp-TraceID": "test-trace-id",
-                "ODS-from": "test-ods",
-            },
-        )
+        assert actual_body_without_timestamp == expected_body_wihtout_timestamp
 
-        assert response.status_code == 200
-        data = response.get_json()
-        assert isinstance(data, dict)
-        assert data.get("resourceType") == "Bundle"
-        assert data.get("id") == "example-patient-bundle"
-        assert data.get("type") == "collection"
-        assert "entry" in data
-        assert isinstance(data["entry"], list)
-        assert len(data["entry"]) > 0
-        assert data["entry"][0]["resource"]["resourceType"] == "Patient"
-        assert data["entry"][0]["resource"]["id"] == "9999999999"
-        assert data["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
+    @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
+    def test_valid_get_structured_record_request_returns_200(
+        self,
+        get_structured_record_response: Flask,
+    ) -> None:
+        assert get_structured_record_response.status_code == 200
 
+    @pytest.mark.usefixtures("mock_raise_error_from_controller_run")
     def test_get_structured_record_returns_500_when_an_uncaught_exception_is_raised(
         self,
-        client: FlaskClient[Flask],
-        mocker: MockerFixture,
-        valid_simple_request_payload: "Parameters",
-        valid_headers: dict[str, str],
+        get_structured_record_response: Flask,
     ) -> None:
-        internal_error = ValueError("Test exception")
-        mocker.patch(
-            "gateway_api.controller.Controller.run", side_effect=internal_error
-        )
-
-        response = client.post(
-            "/patient/$gpc.getstructuredrecord",
-            json=valid_simple_request_payload,
-            headers=valid_headers,
-        )
-        assert response.status_code == 500
+        actual_status_code = get_structured_record_response.status_code
+        assert actual_status_code == 500
 
     @pytest.mark.parametrize(
         ("missing_header_key", "expected_message"),
@@ -132,7 +121,6 @@ class TestGetStructuredRecord:
         missing_header_key: str,
         expected_message: bytes,
     ) -> None:
-        """Test that RequestValidationError returns 400 with error message."""
         invalid_headers = copy(valid_headers)
         del invalid_headers[missing_header_key]
 
@@ -146,10 +134,47 @@ class TestGetStructuredRecord:
         assert "text/plain" in response.content_type
         assert expected_message in response.data
 
-    def test_get_structured_record_handles_invalid_json_data(
-        self, client: FlaskClient[Flask], valid_headers: dict[str, str]
+    def test_get_structured_record_returns_500_when_invalid_json_sent(
+        self, get_structured_record_response_using_invalid_json_body: Flask
     ) -> None:
-        """Test that unexpected exceptions during request init return 500."""
+        assert get_structured_record_response_using_invalid_json_body.status_code == 500
+
+    def test_get_structured_record_returns_content_type_textplain_for_invalid_json_sent(
+        self, get_structured_record_response_using_invalid_json_body: Flask
+    ) -> None:
+        assert (
+            "text/plain"
+            in get_structured_record_response_using_invalid_json_body.content_type
+        )
+
+    def test_get_structured_record_returns_intenral_server_error_when_invalid_json_sent(
+        self, get_structured_record_response_using_invalid_json_body: Flask
+    ) -> None:
+        assert (
+            b"Internal Server Error:"
+            in get_structured_record_response_using_invalid_json_body.data
+        )
+
+    @staticmethod
+    @pytest.fixture
+    def get_structured_record_response(
+        client: FlaskClient[Flask],
+        valid_headers: dict[str, str],
+        valid_simple_request_payload: Parameters,
+    ) -> Flask:
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers=valid_headers,
+        )
+        return response
+
+    @staticmethod
+    @pytest.fixture
+    def get_structured_record_response_using_invalid_json_body(
+        client: FlaskClient[Flask],
+        valid_headers: dict[str, str],
+    ) -> Flask:
         invalid_json = "invalid json data"
 
         response = client.post(
@@ -157,10 +182,33 @@ class TestGetStructuredRecord:
             data=invalid_json,
             headers=valid_headers,
         )
+        return response
 
-        assert response.status_code == 500
-        assert "text/plain" in response.content_type
-        assert b"Internal Server Error:" in response.data
+    @staticmethod
+    @pytest.fixture
+    def mock_positive_return_value_from_controller_run(
+        mocker: MockerFixture,
+        valid_headers: dict[str, str],
+        valid_simple_response_payload: Bundle,
+    ) -> None:
+        postive_response = FlaskResponse(
+            status_code=200,
+            data=json.dumps(valid_simple_response_payload),
+            headers=valid_headers,
+        )
+        mocker.patch(
+            "gateway_api.controller.Controller.run", return_value=postive_response
+        )
+
+    @staticmethod
+    @pytest.fixture
+    def mock_raise_error_from_controller_run(
+        mocker: MockerFixture,
+    ) -> None:
+        internal_error = ValueError("Test exception")
+        mocker.patch(
+            "gateway_api.controller.Controller.run", side_effect=internal_error
+        )
 
 
 class TestHealthCheck:
