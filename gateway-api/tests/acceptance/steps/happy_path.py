@@ -40,6 +40,7 @@ def send_to_nonexistent_endpoint(
         url=nonexistent_endpoint,
         data=json.dumps(simple_request_payload),
         timeout=timedelta(seconds=1).total_seconds(),
+        cert=client.cert,
     )
 
 
