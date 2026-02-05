@@ -57,8 +57,8 @@ def check_status_code(response_context: ResponseContext, expected_status: int) -
     )
 
 
-@then("the response should contain a valid Bundle resource")
-def check_response_contains(response_context: ResponseContext) -> None:
+@then("the response should contain the patient bundle from the provider")
+def check_response_matches_provider(response_context: ResponseContext) -> None:
     assert response_context.response, "Response has not been set."
     assert response_context.response.json() == GpProviderStub.patient_bundle, (
         "Expected response payload does not match actual response payload."
