@@ -1,7 +1,5 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
-from datetime import datetime, timezone
-
 import pytest
 from fhir.bundle import Bundle
 from fhir.parameters import Parameters
@@ -29,7 +27,7 @@ def valid_simple_response_payload() -> Bundle:
         "resourceType": "Bundle",
         "id": "example-patient-bundle",
         "type": "collection",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": "2026-02-05T22:45:42.766330+00:00",
         "entry": [
             {
                 "fullUrl": "https://example.com/Patient/9999999999",

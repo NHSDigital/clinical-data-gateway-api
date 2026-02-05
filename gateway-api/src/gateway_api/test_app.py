@@ -55,10 +55,11 @@ class TestGetStructuredRecord:
         self,
         get_structured_record_response: Flask,
     ) -> None:
-        expected_body_wihtout_timestamp = {
+        expected_body = {
             "resourceType": "Bundle",
             "id": "example-patient-bundle",
             "type": "collection",
+            "timestamp": "2026-02-05T22:45:42.766330+00:00",
             "entry": [
                 {
                     "fullUrl": "https://example.com/Patient/9999999999",
@@ -78,10 +79,8 @@ class TestGetStructuredRecord:
             ],
         }
 
-        actual_body_without_timestamp = get_structured_record_response.get_json()
-        del actual_body_without_timestamp["timestamp"]
-
-        assert actual_body_without_timestamp == expected_body_wihtout_timestamp
+        actual_body = get_structured_record_response.get_json()
+        assert actual_body == expected_body
 
     @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
     def test_valid_get_structured_record_request_returns_200(
