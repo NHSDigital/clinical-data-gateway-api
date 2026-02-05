@@ -1,6 +1,9 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
+from datetime import datetime, timezone
+
 import pytest
+from fhir.bundle import Bundle
 from fhir.parameters import Parameters
 
 
@@ -17,4 +20,37 @@ def valid_simple_request_payload() -> Parameters:
                 },
             },
         ],
+    }
+
+
+@pytest.fixture
+def valid_simple_response_payload() -> Bundle:
+    return {
+        "resourceType": "Bundle",
+        "id": "example-patient-bundle",
+        "type": "collection",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "entry": [
+            {
+                "fullUrl": "https://example.com/Patient/9999999999",
+                "resource": {
+                    "name": [{"family": "Alice", "given": ["Johnson"], "use": "Ally"}],
+                    "gender": "female",
+                    "birthDate": "1990-05-15",
+                    "resourceType": "Patient",
+                    "id": "9999999999",
+                    "identifier": [
+                        {"value": "9999999999", "system": "urn:nhs:numbers"}
+                    ],
+                },
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def valid_headers() -> dict[str, str]:
+    return {
+        "Ssp-TraceID": "test-trace-id",
+        "ODS-from": "test-ods",
     }
