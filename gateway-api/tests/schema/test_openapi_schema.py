@@ -4,6 +4,7 @@ This test suite uses property-based testing to automatically generate test cases
 from the OpenAPI specification and validate the API implementation.
 """
 
+import os
 from pathlib import Path
 
 import schemathesis
@@ -37,10 +38,21 @@ def test_api_schema_compliance(case: Case, base_url: str) -> None:
     Note: Server error checks are disabled because the API may return 500 errors
     when testing with randomly generated NHS numbers that don't exist in the PDS.
     """
-    # Call the API and validate the response against the schema
-    # Exclude not_a_server_error check as 500 responses are expected for
-    # non-existent patients
+
+    cert = None
+    cert_path = os.getenv("MTLS_CERT")
+    key_path = os.getenv("MTLS_KEY")
+    if cert_path and key_path:
+        cert = (cert_path, key_path)
+
+    if case.headers is not None:
+        case.headers["Ods-from"] = "test-ods-code"
+        case.headers["Ssp-TraceID"] = "test-trace-id"
+
     case.call_and_validate(
         base_url=base_url,
         excluded_checks=[schemathesis.checks.not_a_server_error],
+        cert=cert,
+        verify=False,
+        timeout=30,
     )
