@@ -7,7 +7,6 @@ from typing import cast
 import pytest
 import requests
 from dotenv import find_dotenv, load_dotenv
-from fhir.bundle import Bundle
 from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
@@ -22,16 +21,24 @@ class Client:
         self.base_url = base_url
         self._timeout = timeout.total_seconds()
 
-    def send_to_get_structured_record_endpoint(self, payload: str) -> requests.Response:
+    def send_to_get_structured_record_endpoint(
+        self, payload: str, headers: dict[str, str] | None = None
+    ) -> requests.Response:
         """
         Send a request to the get_structured_record endpoint with the given NHS number.
         """
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
-        headers = {"Content-Type": "application/fhir+json"}
+        default_headers = {
+            "Content-Type": "application/fhir+json",
+            "Ods-from": "test-ods-code",
+            "Ssp-TraceID": "test-trace-id",
+        }
+        if headers:
+            default_headers.update(headers)
         return requests.post(
             url=url,
             data=payload,
-            headers=headers,
+            headers=default_headers,
             timeout=self._timeout,
         )
 
@@ -61,34 +68,6 @@ def simple_request_payload() -> Parameters:
     }
 
 
-@pytest.fixture
-def expected_response_payload() -> Bundle:
-    return {
-        "resourceType": "Bundle",
-        "id": "example-patient-bundle",
-        "type": "collection",
-        "timestamp": "2026-01-12T10:00:00Z",
-        "entry": [
-            {
-                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
-                "resource": {
-                    "resourceType": "Patient",
-                    "id": "9999999999",
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9999999999",
-                        }
-                    ],
-                    "name": [{"use": "official", "family": "Doe", "given": ["John"]}],
-                    "gender": "male",
-                    "birthDate": "1985-04-12",
-                },
-            }
-        ],
-    }
-
-
 @pytest.fixture(scope="module")
 def client(base_url: str) -> Client:
     """Create a test client for the application."""
@@ -107,7 +86,10 @@ def hostname() -> str:
     return _fetch_env_variable("HOST", str)
 
 
-def _fetch_env_variable[T](name: str, t: type[T]) -> T:
+def _fetch_env_variable[T](
+    name: str,
+    t: type[T],  # NOQA ARG001 This is actually used for type hinting
+) -> T:
     value = os.getenv(name)
     if not value:
         raise ValueError(f"{name} environment variable is not set.")

@@ -21,32 +21,60 @@ paths:
           type: string
           enum: [application/fhir+json]
         required: true
+      - in: header
+        name: Ods-from
+        required: true
+        schema:
+          type: string
+          example: "A12345"
+          minLength: 1
+      - in: header
+        name: Ssp-TraceID
+        required: true
+        schema:
+          type: string
+          example: "trace-1234"
+          minLength: 1
       requestBody:
         required: true
         content:
           application/fhir+json:
             schema:
               type: object
+              required:
+                - resourceType
+                - parameter
               properties:
                 resourceType:
                   type: string
+                  enum: ["Parameters"]
                   example: "Parameters"
                 parameter:
                   type: array
+                  minItems: 1
                   items:
                     type: object
+                    required:
+                      - name
+                      - valueIdentifier
                     properties:
                       name:
                         type: string
+                        enum: ["patientNHSNumber"]
                         example: "patientNHSNumber"
                       valueIdentifier:
                         type: object
+                        required:
+                          - system
+                          - value
                         properties:
                           system:
                             type: string
+                            minLength: 1
                             example: "https://fhir.nhs.uk/Id/nhs-number"
                           value:
                             type: string
+                            pattern: "^[0-9]{10}$"
                             example: "9999999999"
       responses:
         '200':
@@ -141,6 +169,78 @@ paths:
                                   type: string
                                   format: date
                                   example: "1985-04-12"
+        '400':
+          description: Bad request - invalid input parameters
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: "OperationOutcome"
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: "invalid"
+                        diagnostics:
+                          type: string
+                          example: "Invalid NHS number format"
+        '404':
+          description: Patient not found
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: "OperationOutcome"
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: "not-found"
+                        diagnostics:
+                          type: string
+                          example: "Patient not found"
+        '500':
+          description: Internal server error
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: "OperationOutcome"
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: "exception"
+                        diagnostics:
+                          type: string
+                          example: "Internal server error"
   /health:
     get:
       summary: Health check

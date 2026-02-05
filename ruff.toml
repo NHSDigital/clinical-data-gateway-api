@@ -41,7 +41,9 @@ select = [
   # Flake8-pytest-style
   "PT",
   # Flake8-type-checking
-  "TC"
+  "TC",
+  # Flake8-unused-arguments
+  "ARG"
 ]
 # Ignore Flake8-commas trailing commas as this can conflict with the Ruff standard format.
 ignore =["COM812"]

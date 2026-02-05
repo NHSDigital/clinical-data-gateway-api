@@ -1,5 +1,6 @@
 """Unit tests for the Flask app endpoints."""
 
+import json
 import os
 from collections.abc import Generator
 from typing import TYPE_CHECKING
@@ -9,6 +10,11 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from gateway_api.app import app, get_app_host, get_app_port
+from gateway_api.controller import Controller
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+
+if TYPE_CHECKING:
+    from fhir.parameters import Parameters
 
 if TYPE_CHECKING:
     from fhir.parameters import Parameters
@@ -49,10 +55,64 @@ class TestAppInitialization:
 
 class TestGetStructuredRecord:
     def test_get_structured_record_returns_200_with_bundle(
-        self, client: FlaskClient[Flask], valid_simple_request_payload: "Parameters"
+        self,
+        client: FlaskClient[Flask],
+        monkeypatch: pytest.MonkeyPatch,
+        valid_simple_request_payload: "Parameters",
     ) -> None:
+        """Test that successful controller response is returned correctly."""
+        from datetime import datetime, timezone
+        from typing import Any
+
+        from gateway_api.common.common import FlaskResponse
+
+        # Mock the controller to return a successful FlaskResponse with a Bundle
+        mock_bundle_data: Any = {
+            "resourceType": "Bundle",
+            "id": "example-patient-bundle",
+            "type": "collection",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "entry": [
+                {
+                    "fullUrl": "http://example.com/Patient/9999999999",
+                    "resource": {
+                        "name": [
+                            {"family": "Alice", "given": ["Johnson"], "use": "Ally"}
+                        ],
+                        "gender": "female",
+                        "birthDate": "1990-05-15",
+                        "resourceType": "Patient",
+                        "id": "9999999999",
+                        "identifier": [
+                            {"value": "9999999999", "system": "urn:nhs:numbers"}
+                        ],
+                    },
+                }
+            ],
+        }
+
+        def mock_run(
+            self: Controller,  # noqa: ARG001
+            request: GetStructuredRecordRequest,  # noqa: ARG001
+        ) -> FlaskResponse:
+            return FlaskResponse(
+                status_code=200,
+                data=json.dumps(mock_bundle_data),
+                headers={"Content-Type": "application/fhir+json"},
+            )
+
+        monkeypatch.setattr(
+            "gateway_api.controller.Controller.run",
+            mock_run,
+        )
+
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+            },
         )
 
         assert response.status_code == 200
@@ -74,15 +134,72 @@ class TestGetStructuredRecord:
         monkeypatch: pytest.MonkeyPatch,
         valid_simple_request_payload: "Parameters",
     ) -> None:
+        """
+        Test that exceptions during controller execution are caught and return 500.
+        """
+
+        # This is mocking the run method of the Controller
+        # and therefore self is a Controller
+        def mock_run_with_exception(
+            self: Controller,  # noqa: ARG001
+            request: GetStructuredRecordRequest,  # noqa: ARG001
+        ) -> None:
+            raise ValueError("Test exception")
+
         monkeypatch.setattr(
-            "gateway_api.get_structured_record.GetStructuredRecordHandler.handle",
-            Exception(),
+            "gateway_api.controller.Controller.run",
+            mock_run_with_exception,
         )
 
         response = client.post(
-            "/patient/$gpc.getstructuredrecord", json=valid_simple_request_payload
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+            },
         )
         assert response.status_code == 500
+
+    def test_get_structured_record_handles_request_validation_error(
+        self,
+        client: FlaskClient[Flask],
+        valid_simple_request_payload: "Parameters",
+    ) -> None:
+        """Test that RequestValidationError returns 400 with error message."""
+        # Create a request missing the required ODS-from header
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            json=valid_simple_request_payload,
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                # Missing "ODS-from" header to trigger RequestValidationError
+            },
+        )
+
+        assert response.status_code == 400
+        assert "text/plain" in response.content_type
+        assert b'Missing or empty required header "ODS-from"' in response.data
+
+    def test_get_structured_record_handles_unexpected_exception_during_init(
+        self,
+        client: FlaskClient[Flask],
+    ) -> None:
+        """Test that unexpected exceptions during request init return 500."""
+        # Send invalid JSON to trigger an exception during request processing
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            data="invalid json data",
+            headers={
+                "Ssp-TraceID": "test-trace-id",
+                "ODS-from": "test-ods",
+                "Content-Type": "application/fhir+json",
+            },
+        )
+
+        assert response.status_code == 500
+        assert "text/plain" in response.content_type
+        assert b"Internal Server Error:" in response.data
 
 
 class TestHealthCheck:

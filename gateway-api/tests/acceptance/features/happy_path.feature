@@ -9,7 +9,7 @@ Feature: Gateway API Hello World
   Scenario: Get structured record request
     When I send a valid Parameters resource to the endpoint
     Then the response status code should be 200
-    And the response should contain a valid Bundle resource
+    And the response should contain the patient bundle from the provider
 
   Scenario: Accessing a non-existent endpoint returns a 404
     When I send a valid Parameters resource to a nonexistent endpoint

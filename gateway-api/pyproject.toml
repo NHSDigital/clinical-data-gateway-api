@@ -12,6 +12,7 @@ requires-python = ">3.13,<4.0.0"
 clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.1.0" }
 flask = "^3.1.2"
 types-flask = "^1.1.6"
+requests = "^2.32.5"
 
 [tool.poetry]
 packages = [{include = "gateway_api", from = "src"},
@@ -51,7 +52,6 @@ dev = [
     "pytest-html (>=4.1.1,<5.0.0)",
     "pact-python>=2.0.0",
     "python-dotenv>=1.0.0",
-    "requests>=2.31.0",
     "schemathesis>=4.4.1",
     "types-requests (>=2.32.4.20250913,<3.0.0.0)",
     "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)",

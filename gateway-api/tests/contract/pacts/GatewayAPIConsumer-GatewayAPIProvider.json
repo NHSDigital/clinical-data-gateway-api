@@ -38,6 +38,12 @@
         "headers": {
           "Content-Type": [
             "application/fhir+json"
+          ],
+          "ODS-from": [
+            "A12345"
+          ],
+          "Ssp-TraceID": [
+            "trace-1234"
           ]
         },
         "method": "POST",
@@ -48,23 +54,33 @@
           "content": {
             "entry": [
               {
-                "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
                 "resource": {
-                  "birthDate": "1985-04-12",
-                  "gender": "male",
-                  "id": "9999999999",
+                  "active": true,
+                  "birthDate": "1952-05-31",
+                  "gender": "female",
+                  "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
                   "identifier": [
                     {
                       "system": "https://fhir.nhs.uk/Id/nhs-number",
                       "value": "9999999999"
                     }
                   ],
+                  "meta": {
+                    "profile": [
+                      "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
+                    ],
+                    "versionId": "1469448000000"
+                  },
                   "name": [
                     {
-                      "family": "Doe",
+                      "family": "Jackson",
                       "given": [
-                        "John"
+                        "Jane"
                       ],
+                      "prefix": [
+                        "Miss"
+                      ],
+                      "text": "JACKSON Jane (Miss)",
                       "use": "official"
                     }
                   ],
@@ -72,9 +88,12 @@
                 }
               }
             ],
-            "id": "example-patient-bundle",
+            "meta": {
+              "profile": [
+                "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
+              ]
+            },
             "resourceType": "Bundle",
-            "timestamp": "2026-01-12T10:00:00Z",
             "type": "collection"
           },
           "contentType": "application/fhir+json",
