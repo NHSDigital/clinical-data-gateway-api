@@ -46,3 +46,11 @@ def valid_simple_response_payload() -> Bundle:
             }
         ],
     }
+
+
+@pytest.fixture
+def valid_headers() -> dict[str, str]:
+    return {
+        "Ssp-TraceID": "test-trace-id",
+        "ODS-from": "test-ods",
+    }

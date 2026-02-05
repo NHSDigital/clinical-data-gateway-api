@@ -3,17 +3,17 @@
 import json
 import os
 from collections.abc import Generator
+from copy import copy
 
 import pytest
 from fhir.bundle import Bundle
 from fhir.parameters import Parameters
 from flask import Flask
 from flask.testing import FlaskClient
+from pytest_mock import MockerFixture
 
 from gateway_api.app import app, get_app_host, get_app_port
 from gateway_api.common.common import FlaskResponse
-from gateway_api.controller import Controller
-from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 
 @pytest.fixture
@@ -53,25 +53,19 @@ class TestGetStructuredRecord:
     def test_get_structured_record_returns_200_with_bundle(
         self,
         client: FlaskClient[Flask],
-        monkeypatch: pytest.MonkeyPatch,
+        mocker: MockerFixture,
         valid_simple_request_payload: Parameters,
         valid_simple_response_payload: Bundle,
     ) -> None:
         """Test that successful controller response is returned correctly."""
 
-        def mock_run(
-            self: Controller,  # noqa: ARG001
-            request: GetStructuredRecordRequest,  # noqa: ARG001
-        ) -> FlaskResponse:
-            return FlaskResponse(
-                status_code=200,
-                data=json.dumps(valid_simple_response_payload),
-                headers={"Content-Type": "application/fhir+json"},
-            )
-
-        monkeypatch.setattr(
-            "gateway_api.controller.Controller.run",
-            mock_run,
+        postive_response = FlaskResponse(
+            status_code=200,
+            data=json.dumps(valid_simple_response_payload),
+            headers={"Content-Type": "application/fhir+json"},
+        )
+        mocker.patch(
+            "gateway_api.controller.Controller.run", return_value=postive_response
         )
 
         response = client.post(
@@ -96,73 +90,72 @@ class TestGetStructuredRecord:
         assert data["entry"][0]["resource"]["id"] == "9999999999"
         assert data["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
 
-    def test_get_structured_record_handles_exception(
+    def test_get_structured_record_returns_500_when_an_uncaught_exception_is_raised(
         self,
         client: FlaskClient[Flask],
-        monkeypatch: pytest.MonkeyPatch,
+        mocker: MockerFixture,
         valid_simple_request_payload: "Parameters",
+        valid_headers: dict[str, str],
     ) -> None:
-        """
-        Test that exceptions during controller execution are caught and return 500.
-        """
-
-        # This is mocking the run method of the Controller
-        # and therefore self is a Controller
-        def mock_run_with_exception(
-            self: Controller,  # noqa: ARG001
-            request: GetStructuredRecordRequest,  # noqa: ARG001
-        ) -> None:
-            raise ValueError("Test exception")
-
-        monkeypatch.setattr(
-            "gateway_api.controller.Controller.run",
-            mock_run_with_exception,
+        internal_error = ValueError("Test exception")
+        mocker.patch(
+            "gateway_api.controller.Controller.run", side_effect=internal_error
         )
 
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
             json=valid_simple_request_payload,
-            headers={
-                "Ssp-TraceID": "test-trace-id",
-                "ODS-from": "test-ods",
-            },
+            headers=valid_headers,
         )
         assert response.status_code == 500
 
-    def test_get_structured_record_handles_request_validation_error(
+    @pytest.mark.parametrize(
+        ("missing_header_key", "expected_message"),
+        [
+            pytest.param(
+                "ODS-from",
+                b'Missing or empty required header "ODS-from"',
+                id="missing ODS code",
+            ),
+            pytest.param(
+                "Ssp-TraceID",
+                b'Missing or empty required header "Ssp-TraceID"',
+                id="missing trace id",
+            ),
+        ],
+    )
+    def test_get_structured_record_request_returns_400_when_required_header_missing(
         self,
         client: FlaskClient[Flask],
         valid_simple_request_payload: "Parameters",
+        valid_headers: dict[str, str],
+        missing_header_key: str,
+        expected_message: bytes,
     ) -> None:
         """Test that RequestValidationError returns 400 with error message."""
-        # Create a request missing the required ODS-from header
+        invalid_headers = copy(valid_headers)
+        del invalid_headers[missing_header_key]
+
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
             json=valid_simple_request_payload,
-            headers={
-                "Ssp-TraceID": "test-trace-id",
-                # Missing "ODS-from" header to trigger RequestValidationError
-            },
+            headers=invalid_headers,
         )
 
         assert response.status_code == 400
         assert "text/plain" in response.content_type
-        assert b'Missing or empty required header "ODS-from"' in response.data
+        assert expected_message in response.data
 
-    def test_get_structured_record_handles_unexpected_exception_during_init(
-        self,
-        client: FlaskClient[Flask],
+    def test_get_structured_record_handles_invalid_json_data(
+        self, client: FlaskClient[Flask], valid_headers: dict[str, str]
     ) -> None:
         """Test that unexpected exceptions during request init return 500."""
-        # Send invalid JSON to trigger an exception during request processing
+        invalid_json = "invalid json data"
+
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
-            data="invalid json data",
-            headers={
-                "Ssp-TraceID": "test-trace-id",
-                "ODS-from": "test-ods",
-                "Content-Type": "application/fhir+json",
-            },
+            data=invalid_json,
+            headers=valid_headers,
         )
 
         assert response.status_code == 500
