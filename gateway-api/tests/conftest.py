@@ -21,6 +21,13 @@ class Client:
         self.base_url = base_url
         self._timeout = timeout.total_seconds()
 
+        cert = None
+        cert_path = os.getenv("MTLS_CERT")
+        key_path = os.getenv("MTLS_KEY")
+        if cert_path and key_path:
+            cert = (cert_path, key_path)
+        self._cert = cert
+
     def send_to_get_structured_record_endpoint(
         self, payload: str, headers: dict[str, str] | None = None
     ) -> requests.Response:
@@ -40,6 +47,7 @@ class Client:
             data=payload,
             headers=default_headers,
             timeout=self._timeout,
+            cert=self._cert,
         )
 
     def send_health_check(self) -> requests.Response:
@@ -49,7 +57,7 @@ class Client:
             Response object from the request
         """
         url = f"{self.base_url}/health"
-        return requests.get(url=url, timeout=self._timeout)
+        return requests.get(url=url, timeout=self._timeout, cert=self._cert)
 
 
 @pytest.fixture
