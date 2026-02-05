@@ -3,13 +3,15 @@
 import json
 import os
 from collections.abc import Generator
-from typing import TYPE_CHECKING
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
 from gateway_api.app import app, get_app_host, get_app_port
+from gateway_api.common.common import FlaskResponse
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
@@ -58,10 +60,6 @@ class TestGetStructuredRecord:
         valid_simple_request_payload: "Parameters",
     ) -> None:
         """Test that successful controller response is returned correctly."""
-        from datetime import datetime, timezone
-        from typing import Any
-
-        from gateway_api.common.common import FlaskResponse
 
         # Mock the controller to return a successful FlaskResponse with a Bundle
         mock_bundle_data: Any = {
