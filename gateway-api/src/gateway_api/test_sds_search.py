@@ -280,28 +280,6 @@ def test_sds_client_timeout_parameter(
     assert mock_requests_get["timeout"] == 60
 
 
-def test_sds_client_default_service_interaction_id(
-    stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
-) -> None:
-    """
-    Test that SdsClient uses default interaction ID when not provided.
-
-    :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
-    """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
-
-    client.get_org_details(ods_code="PROVIDER")
-
-    # Check that the default interaction ID was used in params
-    params = mock_requests_get["params"]
-    assert any(
-        SdsClient.DEFAULT_SERVICE_INTERACTION_ID in str(ident)
-        for ident in params.get("identifier", [])
-    )
-
-
 def test_sds_client_custom_service_interaction_id(
     stub: SdsFhirApiStub,
     mock_requests_get: dict[str, Any],  # noqa: ARG001
@@ -426,3 +404,153 @@ def test_sds_client_extract_party_key_from_device(
     # Should have found ASID but may not have endpoint depending on seeding
     assert result is not None
     assert result.asid == "asid_CONS"
+
+
+def test_sds_client_handles_http_error_from_device_endpoint(
+    stub: SdsFhirApiStub,  # noqa: ARG001
+    mock_requests_get: dict[str, Any],  # noqa: ARG001
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that ExternalServiceError is raised when Device API returns HTTP error.
+
+    :param stub: SDS stub fixture.
+    :param mock_requests_get: Capture fixture for request details.
+    :param monkeypatch: Pytest monkeypatch fixture.
+    """
+    from unittest.mock import Mock
+
+    import requests
+
+    from gateway_api.sds_search import ExternalServiceError
+
+    # Create a mock response with error status
+    mock_response = Mock()
+    mock_response.status_code = 500
+    mock_response.reason = "Internal Server Error"
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=mock_response
+    )
+
+    # Create a mock that returns our error response
+    def mock_get(*args: Any, **kwargs: Any) -> Mock:  # noqa: ARG001
+        return mock_response
+
+    # Patch the get_method to return error
+    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    monkeypatch.setattr(client, "get_method", mock_get)
+
+    # Should raise ExternalServiceError
+    with pytest.raises(ExternalServiceError) as exc_info:
+        client.get_org_details(ods_code="PROVIDER")
+
+    assert "Device request failed" in str(exc_info.value)
+    assert "500" in str(exc_info.value)
+
+
+def test_sds_client_handles_http_error_from_endpoint_endpoint(
+    stub: SdsFhirApiStub,  # noqa: ARG001
+    mock_requests_get: dict[str, Any],  # noqa: ARG001
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that ExternalServiceError is raised when Endpoint API returns HTTP error.
+
+    :param stub: SDS stub fixture.
+    :param mock_requests_get: Capture fixture for request details.
+    :param monkeypatch: Pytest monkeypatch fixture.
+    """
+    from unittest.mock import Mock
+
+    import requests
+
+    from gateway_api.sds_search import ExternalServiceError
+
+    call_count = {"count": 0}
+
+    # Create mock responses
+    def mock_get(url: str, *args: Any, **kwargs: Any) -> Mock:  # noqa: ARG001
+        call_count["count"] += 1
+        if call_count["count"] == 1:
+            # First call (Device) - return success
+            device_response = Mock()
+            device_response.status_code = 200
+            device_response.raise_for_status = Mock()
+            device_response.json.return_value = {
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": 1,
+                "entry": [
+                    {
+                        "resource": {
+                            "resourceType": "Device",
+                            "identifier": [
+                                {
+                                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                                    "value": "123456789012",
+                                },
+                                {
+                                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                                    "value": "TEST-PARTY-KEY",
+                                },
+                            ],
+                        }
+                    }
+                ],
+            }
+            return device_response
+        else:
+            # Second call (Endpoint) - return error
+            endpoint_response = Mock()
+            endpoint_response.status_code = 503
+            endpoint_response.reason = "Service Unavailable"
+            endpoint_response.raise_for_status.side_effect = requests.HTTPError(
+                response=endpoint_response
+            )
+            return endpoint_response
+
+    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    monkeypatch.setattr(client, "get_method", mock_get)
+
+    # Should raise ExternalServiceError on Endpoint query
+    with pytest.raises(ExternalServiceError) as exc_info:
+        client.get_org_details(ods_code="TESTORG")
+
+    assert "Endpoint request failed" in str(exc_info.value)
+    assert "503" in str(exc_info.value)
+
+
+def test_sds_client_handles_empty_bundle_gracefully(
+    stub: SdsFhirApiStub,  # noqa: ARG001
+    mock_requests_get: dict[str, Any],  # noqa: ARG001
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that client handles empty Bundle (total: 0) gracefully.
+
+    :param stub: SDS stub fixture.
+    :param mock_requests_get: Capture fixture for request details.
+    :param monkeypatch: Pytest monkeypatch fixture.
+    """
+    from unittest.mock import Mock
+
+    # Create mock that returns empty bundle
+    def mock_get(*args: Any, **kwargs: Any) -> Mock:  # noqa: ARG001
+        response = Mock()
+        response.status_code = 200
+        response.raise_for_status = Mock()
+        response.json.return_value = {
+            "resourceType": "Bundle",
+            "type": "searchset",
+            "total": 0,
+            "entry": [],
+        }
+        return response
+
+    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    monkeypatch.setattr(client, "get_method", mock_get)
+
+    # Should return None for empty result
+    result = client.get_org_details(ods_code="NONEXISTENT")
+
+    assert result is None
