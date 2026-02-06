@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 from gateway_api.common.common import FlaskResponse
 from gateway_api.pds_search import PdsClient, PdsSearchResults
+from gateway_api.sds_search import SdsClient, SdsSearchResults
 
 
 @dataclass
@@ -44,62 +45,6 @@ class RequestError(Exception):
         return self.message
 
 
-@dataclass
-class SdsSearchResults:
-    """
-    Stub SDS search results dataclass.
-
-    Replace this with the real one once it's implemented.
-
-    :param asid: Accredited System ID.
-    :param endpoint: Endpoint URL associated with the organisation, if applicable.
-    """
-
-    asid: str
-    endpoint: str | None
-
-
-class SdsClient:
-    """
-    Stub SDS client for obtaining ASID from ODS code.
-
-    Replace this with the real one once it's implemented.
-    """
-
-    SANDBOX_URL = "https://example.invalid/sds"
-
-    def __init__(
-        self,
-        auth_token: str,
-        base_url: str = SANDBOX_URL,
-        timeout: int = 10,
-    ) -> None:
-        """
-        Create an SDS client.
-
-        :param auth_token: Authentication token to present to SDS.
-        :param base_url: Base URL for SDS.
-        :param timeout: Timeout in seconds for SDS calls.
-        """
-        self.auth_token = auth_token
-        self.base_url = base_url
-        self.timeout = timeout
-
-    def get_org_details(self, ods_code: str) -> SdsSearchResults | None:
-        """
-        Retrieve SDS org details for a given ODS code.
-
-        This is a placeholder implementation that always returns an ASID and endpoint.
-
-        :param ods_code: ODS code to look up.
-        :returns: SDS search results or ``None`` if not found.
-        """
-        # Placeholder implementation
-        return SdsSearchResults(
-            asid=f"asid_{ods_code}", endpoint="https://example-provider.org/endpoint"
-        )
-
-
 class Controller:
     """
     Orchestrates calls to PDS -> SDS -> GP provider.
@@ -113,7 +58,7 @@ class Controller:
     def __init__(
         self,
         pds_base_url: str = PdsClient.SANDBOX_URL,
-        sds_base_url: str = "https://example.invalid/sds",
+        sds_base_url: str = SdsClient.SANDBOX_URL,
         nhsd_session_urid: str | None = None,
         timeout: int = 10,
     ) -> None:
@@ -252,7 +197,7 @@ class Controller:
         - provider details (ASID + endpoint)
         - consumer details (ASID)
 
-        :param auth_token: Authorization token to use for SDS.
+        :param auth_token: Authorization token to use for SDS (used as API key).
         :param consumer_ods: Consumer organisation ODS code (from request headers).
         :param provider_ods: Provider organisation ODS code (from PDS).
         :returns: Tuple of (consumer_asid, provider_asid, provider_endpoint).
@@ -260,7 +205,7 @@ class Controller:
         """
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(
-            auth_token=auth_token,
+            api_key=auth_token,
             base_url=self.sds_base_url,
             timeout=self.timeout,
         )
