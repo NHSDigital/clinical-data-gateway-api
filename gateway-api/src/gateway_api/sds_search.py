@@ -1,177 +1,233 @@
+"""
+SDS (Spine Directory Service) FHIR R4 device and endpoint lookup client.
+
+This module provides a client for querying the Spine Directory Service to retrieve:
+- Device records (including ASID - Accredited System ID)
+- Endpoint records (including endpoint URLs for routing)
+
+The client is structured similarly to :mod:`gateway_api.pds_search` and supports
+stubbing for testing purposes.
+"""
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import requests
+from stubs.stub_sds import SdsFhirApiStub
 
-# Recursive JSON-like structure typing (mirrors the approach in pds_search.py).
-ResultStructure = (
-    str
-    | int
-    | float
-    | bool
-    | None
-    | dict[str, "ResultStructure"]
-    | list["ResultStructure"]
-)
-ResultStructureDict = dict[str, ResultStructure]
-ResultList = list[ResultStructureDict]
+# Recursive JSON-like structure typing used for parsed FHIR bodies.
+type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
+type ResultStructureDict = dict[str, ResultStructure]
+type ResultList = list[ResultStructureDict]
+
+# Type for stub get method
+type GetCallable = Callable[..., requests.Response]
 
 
 class ExternalServiceError(Exception):
     """
     Raised when the downstream SDS request fails.
 
-    Wraps requests.HTTPError so callers are not coupled to requests exception types.
+    This module catches :class:`requests.HTTPError` thrown by
+    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
+    callers are not coupled to ``requests`` exception types.
     """
 
 
-@dataclass(frozen=True)
-class DeviceLookupResult:
+@dataclass
+class SdsSearchResults:
     """
-    Result of an SDS /Device lookup.
+    SDS lookup results containing ASID and endpoint information.
 
-    :param asid: Accredited System Identifier (ASID), if found.
-    :param endpoint_url: Endpoint URL, if found.
+    :param asid: Accredited System ID extracted from the Device resource.
+    :param endpoint: Endpoint URL extracted from the Endpoint resource, or ``None``
+        if no endpoint is available.
     """
 
     asid: str | None
-    endpoint_url: str | None
+    endpoint: str | None
 
 
 class SdsClient:
     """
-    Simple client for SDS FHIR R4 /Device lookup.
+    Simple client for SDS FHIR R4 device and endpoint retrieval.
 
-    Calls GET /Device (returns a FHIR Bundle) and extracts:
-        - ASID from Device.identifier[].value
-        - Endpoint URL from Device.extension[] (best-effort)
+    The client supports:
 
-    Notes:
-    - /Device requires both 'organization' and 'identifier' query params.
-    - 'identifier' must include a service interaction ID; may also include an MHS party
-        key.
+    * :meth:`get_org_details` - Retrieves ASID and endpoint for an organization
+
+    This method returns a :class:`SdsSearchResults` instance when data can be
+    extracted, otherwise ``None``.
+
+    **Usage example**::
+
+        sds = SdsClient(
+            api_key="YOUR_API_KEY",
+            base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4",
+        )
+
+        result = sds.get_org_details("A12345")
+
+        if result:
+            print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
+    # URLs for different SDS environments
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
     DEP_UAT_URL = "https://dep.api.service.nhs.uk/spine-directory/FHIR/R4"
     PROD_URL = "https://api.service.nhs.uk/spine-directory/FHIR/R4"
 
-    # Default taken from the OpenAPI example. In real usage you should pass the
-    # interaction ID relevant to the service you are routing to.
-    DEFAULT_SERVICE_INTERACTION_ID = "urn:nhs:names:services:psis:REPC_IN150016UK05"
-
+    # FHIR identifier systems
     ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
     INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
     PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
+    ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
+
+    # SDS resource types
+    DEVICE: Literal["Device"] = "Device"
+    ENDPOINT: Literal["Endpoint"] = "Endpoint"
+
+    # Default service interaction ID for GP Connect
+    DEFAULT_SERVICE_INTERACTION_ID = (
+        "urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1"
+    )
 
     def __init__(
         self,
         api_key: str,
         base_url: str = SANDBOX_URL,
         timeout: int = 10,
+        service_interaction_id: str | None = None,
     ) -> None:
         """
-        :param api_key: SDS subscription key value (header 'apikey'). In Sandbox, any
-            value works.
+        Create an SDS client.
+
+        :param api_key: API key for SDS authentication (header 'apikey').
         :param base_url: Base URL for the SDS API. Trailing slashes are stripped.
         :param timeout: Default timeout in seconds for HTTP calls.
+        :param service_interaction_id: Service interaction ID to use for lookups.
+            If not provided, uses :attr:`DEFAULT_SERVICE_INTERACTION_ID`.
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.service_interaction_id = (
+            service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
+        )
+        self.stub = SdsFhirApiStub()
+
+        # Use stub for now - use environment variable once we have one
+        # TODO: Put this back to using the environment variable
+        # if os.environ.get("STUB_SDS", None):
+        self.get_method: GetCallable = self.stub.get
+        # else:
+        #     self.get_method: GetCallable = requests.get
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
+        """
+        Build mandatory and optional headers for an SDS request.
+
+        :param correlation_id: Optional ``X-Correlation-Id`` for cross-system tracing.
+        :return: Dictionary of HTTP headers for the outbound request.
+        """
         headers = {
             "Accept": "application/fhir+json",
             "apikey": self.api_key,
         }
+
         if correlation_id:
             headers["X-Correlation-Id"] = correlation_id
+
         return headers
 
-    def lookup_device_asid_and_endpoint(
+    def get_org_details(
         self,
-        device_ods_code: str,
-        service_interaction_id: str | None = None,
-        party_key: str | None = None,
-        manufacturing_ods_code: str | None = None,
+        ods_code: str,
         correlation_id: str | None = None,
         timeout: int | None = None,
-    ) -> DeviceLookupResult:
+    ) -> SdsSearchResults | None:
         """
-        Look up an accredited system by organisation ODS code plus service interaction
-        ID (and optionally party key/manufacturing org), returning ASID and endpoint URL
+        Retrieve ASID and endpoint for an organization by ODS code.
 
-        :param device_ods_code: ODS code used in the required 'organization' query
-            parameter.
-        :param service_interaction_id: Interaction ID for the target service (required
-            by SDS /Device). If not supplied, a default from the OpenAPI example is used
-        :param party_key: Optional MHS party key (included as a second 'identifier'
-            occurrence).
-        :param manufacturing_ods_code: Optional manufacturing organisation ODS code.
+        This method performs two SDS queries:
+        1. Query /Device to get the ASID for the organization
+        2. Query /Endpoint to get the endpoint URL (if available)
+
+        :param ods_code: ODS code of the organization to look up.
         :param correlation_id: Optional correlation ID for tracing.
-        :param timeout: Optional per-call timeout in seconds.
+        :param timeout: Optional per-call timeout in seconds. If not provided,
+            :attr:`timeout` is used.
+        :return: A :class:`SdsSearchResults` instance if data can be extracted,
+            otherwise ``None``.
+        :raises ExternalServiceError: If the HTTP request returns an error status.
         """
-        bundle = self._get_device_bundle(
-            organization_ods=device_ods_code,
-            service_interaction_id=service_interaction_id
-            or self.DEFAULT_SERVICE_INTERACTION_ID,
-            party_key=party_key,
-            manufacturing_ods=manufacturing_ods_code,
+        # Step 1: Get Device to obtain ASID
+        device_bundle = self._query_sds(
+            ods_code=ods_code,
             correlation_id=correlation_id,
             timeout=timeout,
+            querytype=self.DEVICE,
         )
 
-        entries = cast("list[dict[str, Any]]", bundle.get("entry", []))
-        if not entries:
-            return DeviceLookupResult(asid=None, endpoint_url=None)
+        device = self._extract_first_entry(device_bundle)
+        if device is None:
+            return None
 
-        # Best-effort: return first entry that yields an ASID; else fall back to first
-        # TODO: Look at this again. If we don't get a hit then should return None
-        best: DeviceLookupResult | None = None
-        for entry in entries:
-            device = cast("dict[str, Any]", entry.get("resource", {}))
-            asid = self._extract_asid(device)
-            endpoint_url = self._extract_endpoint_url(device)
-            candidate = DeviceLookupResult(asid=asid, endpoint_url=endpoint_url)
-            if asid:
-                return candidate
-            best = best or candidate
+        asid = self._extract_identifier(device, self.ASID_SYSTEM)
+        party_key = self._extract_identifier(device, self.PARTYKEY_SYSTEM)
 
-        return best or DeviceLookupResult(asid=None, endpoint_url=None)
+        # Step 2: Get Endpoint to obtain endpoint URL
+        endpoint_url: str | None = None
+        if party_key:
+            endpoint_bundle = self._query_sds(
+                ods_code=ods_code,
+                party_key=party_key,
+                correlation_id=correlation_id,
+                timeout=timeout,
+                querytype=self.ENDPOINT,
+            )
+            endpoint = self._extract_first_entry(endpoint_bundle)
+            if endpoint:
+                address = endpoint.get("address")
+                if address:
+                    endpoint_url = str(address).strip()
 
-    def _get_device_bundle(
+        return SdsSearchResults(asid=asid, endpoint=endpoint_url)
+
+    def _query_sds(
         self,
-        organization_ods: str,
-        service_interaction_id: str,
-        party_key: str | None,
-        manufacturing_ods: str | None,
-        correlation_id: str | None,
-        timeout: int | None,
-    ) -> dict[str, Any]:
-        headers = self._build_headers(correlation_id=correlation_id)
+        ods_code: str,
+        party_key: str | None = None,
+        correlation_id: str | None = None,
+        timeout: int | None = 10,
+        querytype: Literal["Device", "Endpoint"] = DEVICE,
+    ) -> ResultStructureDict:
+        """
+        Query SDS /Device or /Endpoint endpoint.
 
-        url = f"{self.base_url}/Device"
+        :param ods_code: ODS code to search for.
+        :param party_key: Party key to search for.
+        :param correlation_id: Optional correlation ID.
+        :param timeout: Optional timeout.
+        :return: Parsed JSON response as a dictionary.
+        :raises ExternalServiceError: If the request fails.
+        """
+        headers = self._build_headers(correlation_id=correlation_id)
+        url = f"{self.base_url}/{querytype}"
 
         params: dict[str, Any] = {
-            "organization": f"{self.ODS_SYSTEM}|{organization_ods}",
-            # Explode=true means repeating identifier=... is acceptable; requests
-            # will encode a list as repeated query params.
-            "identifier": [f"{self.INTERACTION_SYSTEM}|{service_interaction_id}"],
+            "organization": f"{self.ODS_SYSTEM}|{ods_code}",
+            "identifier": [f"{self.INTERACTION_SYSTEM}|{self.service_interaction_id}"],
         }
 
-        if party_key:
+        if party_key is not None:
             params["identifier"].append(f"{self.PARTYKEY_SYSTEM}|{party_key}")
 
-        if manufacturing_ods:
-            params["manufacturing-organization"] = (
-                f"{self.ODS_SYSTEM}|{manufacturing_ods}"
-            )
-
-        response = requests.get(
+        response = self.get_method(
             url,
             headers=headers,
             params=params,
@@ -182,101 +238,49 @@ class SdsClient:
             response.raise_for_status()
         except requests.HTTPError as err:
             raise ExternalServiceError(
-                f"SDS /Device request failed: {err.response.status_code} "
+                f"SDS /{querytype} request failed: {err.response.status_code} "
                 f"{err.response.reason}"
             ) from err
 
         body = response.json()
-        return cast("dict[str, Any]", body)
+        return cast("ResultStructureDict", body)
+
+    # --------------- internal helpers for result extraction -----------------
 
     @staticmethod
-    def _extract_asid(device: dict[str, Any]) -> str | None:
+    def _extract_first_entry(
+        bundle: ResultStructureDict,
+    ) -> ResultStructureDict | None:
         """
-        ASID is described by the caller as: "the value field in the identifier array".
+        Extract the first Device resource from a Bundle.
 
-        The schema is generic (identifier[] elements are {system, value}), so this uses
-        a best-effort heuristic:
-            1) Prefer an identifier whose system mentions 'asid'
-            2) Else return the first identifier.value present
+        :param bundle: FHIR Bundle containing Device resources.
+        :return: First Device resource, or ``None`` if the bundle is empty.
         """
-        # TODO: No, just take identifier.value, not system
-        # TODO: But check that identifier.value is actually the ASID
-        identifiers = cast("list[dict[str, Any]]", device.get("identifier", []))
-        if not identifiers:
+        entries = cast("ResultList", bundle.get("entry", []))
+        if not entries:
             return None
 
-        def value_of(item: dict[str, Any]) -> str | None:
-            v = item.get("value")
-            return str(v).strip() if v is not None and str(v).strip() else None
+        first_entry = entries[0]
+        return cast("ResultStructureDict", first_entry.get("resource", {}))
 
-        # TODO: No!
-        # Prefer system containing "asid"
-        for ident in identifiers:
-            system = str(ident.get("system", "") or "").lower()
-            if "asid" in system:
-                v = value_of(ident)
-                if v:
-                    return v
+    def _extract_identifier(
+        self, device: ResultStructureDict, system: str
+    ) -> str | None:
+        """
+        Extract an identifier value from a Device resource for a given system.
 
-        # TODO: Also No!
-        # Fallback: first non-empty value
-        for ident in identifiers:
-            v = value_of(ident)
-            if v:
-                return v
+        :param device: Device resource dictionary.
+        :param system: The identifier system to look for.
+        :return: Identifier value if found, otherwise ``None``.
+        """
+        identifiers = cast("ResultList", device.get("identifier", []))
+
+        for identifier in identifiers:
+            id_system = str(identifier.get("system", ""))
+            if id_system == system:
+                value = identifier.get("value")
+                if value:
+                    return str(value).strip()
 
         return None
-
-    @staticmethod
-    def _extract_endpoint_url(device: dict[str, Any]) -> str | None:
-        """
-        The caller asked for: "endpoint URL, which is the 'url' field in the 'extension'
-        array".
-
-        In the schema, each extension item has:
-            - url
-            - valueReference.identifier.{system,value}
-
-        Best-effort strategy:
-            1) If valueReference.identifier.value looks like a URL, return that
-            2) Else return extension.url if it looks like a URL
-        """
-        # TODO: Stupid AI. I said extension.url, not identifier.value
-        extensions = cast("list[dict[str, Any]]", device.get("extension", []))
-        if not extensions:
-            return None
-
-        def looks_like_url(s: str) -> bool:
-            return s.startswith("http://") or s.startswith("https://")
-
-        for ext in extensions:
-            vr = cast("dict[str, Any]", ext.get("valueReference", {}) or {})
-            ident = cast("dict[str, Any]", vr.get("identifier", {}) or {})
-            v = str(ident.get("value", "") or "").strip()
-            if v and looks_like_url(v):
-                return v
-
-        for ext in extensions:
-            u = str(ext.get("url", "") or "").strip()
-            if u and looks_like_url(u):
-                return u
-
-        return None
-
-
-# TODO: Delete this but leave for now to make sure I'm calling right
-# ---------------- example usage ----------------
-if __name__ == "__main__":
-    sds = SdsClient(
-        api_key="any-value-works-in-sandbox",
-        base_url=SdsClient.SANDBOX_URL,
-    )
-
-    result = sds.lookup_device_asid_and_endpoint(
-        device_ods_code="YES",
-        # Optionally override these:
-        # service_interaction_id="urn:nhs:names:services:psis:REPC_IN150016UK05",
-        # party_key="YES-0000806",
-    )
-
-    print(result)
