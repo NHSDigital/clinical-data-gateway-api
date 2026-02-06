@@ -4,6 +4,8 @@
 
 data "aws_region" "current" {}
 
+data "aws_caller_identity" "current" {}
+
 data "terraform_remote_state" "core" {
   backend = "s3"
   config = {
@@ -38,6 +40,8 @@ locals {
   alb_listener_arn   = data.terraform_remote_state.core.outputs.alb_listener_arn
   ecs_cluster_name   = data.terraform_remote_state.core.outputs.ecs_cluster_name
   ecr_repository_url = data.terraform_remote_state.core.outputs.ecr_repository_url
+
+  log_kms_key_id = var.log_kms_key_id != null ? var.log_kms_key_id : aws_kms_key.log_group[0].arn
 }
 
 ############################
@@ -141,6 +145,57 @@ resource "aws_iam_role_policy" "task_exec_command" {
 resource "aws_cloudwatch_log_group" "branch" {
   name              = local.log_group_name
   retention_in_days = var.log_retention_days
+  kms_key_id        = local.log_kms_key_id
+}
+
+resource "aws_kms_key" "log_group" {
+  count = var.log_kms_key_id == null ? 1 : 0
+
+  description             = "KMS key for preview CloudWatch Logs"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "EnableRootPermissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowCloudWatchLogs"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${data.aws_region.current.name}.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${local.log_group_name}*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_kms_alias" "log_group" {
+  count = var.log_kms_key_id == null ? 1 : 0
+
+  name          = "alias/preview-logs-${local.branch_role_suffix}"
+  target_key_id = aws_kms_key.log_group[0].key_id
 }
 
 ############################
