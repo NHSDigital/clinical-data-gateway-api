@@ -73,313 +73,166 @@ class SdsFhirApiStub(StubBase):
 
     def _seed_default_devices(self) -> None:
         """Seed the stub with some default Device records for testing."""
-        self.upsert_device(
-            organization_ods="PROVIDER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="PROVIDER-0000806",
-            device={
-                "resourceType": "Device",
-                "id": "F0F0E921-92CA-4A88-A550-2DBB36F703AF",
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_PROV",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "PROVIDER-0000806",
-                    },
-                ],
-                "owner": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "PROVIDER",
-                    },
-                    "display": "Example NHS Trust",
-                },
+        # Define test device data as a list of parameters
+        device_data = [
+            {
+                "org_ods": "PROVIDER",
+                "party_key": "PROVIDER-0000806",
+                "device_id": "F0F0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_PROV",
+                "display": "Example NHS Trust",
             },
-        )
+            {
+                "org_ods": "CONSUMER",
+                "party_key": "CONSUMER-0000807",
+                "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_CONS",
+                "display": "Example Consumer Organisation",
+            },
+            {
+                "org_ods": "A12345",
+                "party_key": "A12345-0000808",
+                "device_id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_A12345",
+                "display": "Example GP Practice A12345",
+            },
+        ]
 
-        self.upsert_device(
-            organization_ods="CONSUMER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="CONSUMER-0000807",
-            device={
-                "resourceType": "Device",
-                "id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_CONS",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "CONSUMER-0000807",
-                    },
-                ],
-                "owner": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "CONSUMER",
-                    },
-                    "display": "Example Consumer Organisation",
-                },
-            },
-        )
-
-        self.upsert_device(
-            organization_ods="A12345",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="A12345-0000808",
-            device={
-                "resourceType": "Device",
-                "id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_A12345",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "A12345-0000808",
-                    },
-                ],
-                "owner": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "A12345",
-                    },
-                    "display": "Example GP Practice A12345",
-                },
-            },
-        )
+        # Iterate through test data and create devices
+        for data in device_data:
+            self.upsert_device(
+                organization_ods=data["org_ods"],
+                service_interaction_id=self.GP_CONNECT_INTERACTION,
+                party_key=data["party_key"],
+                device=self._create_device_resource(
+                    device_id=data["device_id"],
+                    asid=data["asid"],
+                    party_key=data["party_key"],
+                    org_ods=data["org_ods"],
+                    display=data["display"],
+                ),
+            )
 
     def _seed_default_endpoints(self) -> None:
         """Seed the stub with some default Endpoint records for testing."""
-        # Example 1: Endpoint for provider organization with GP Connect interaction
-        self.upsert_endpoint(
-            organization_ods="PROVIDER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="PROVIDER-0000806",
-            endpoint={
-                "resourceType": "Endpoint",
-                "id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
-                "status": "active",
-                "connectionType": {
-                    "system": self.CONNECTION_SYSTEM,
-                    "code": "hl7-fhir-rest",
-                    "display": self.CONNECTION_DISPLAY,
-                },
-                "payloadType": [
-                    {
-                        "coding": [
-                            {
-                                "system": self.CODING_SYSTEM,
-                                "code": "any",
-                                "display": "Any",
-                            }
-                        ]
-                    }
-                ],
+        # Define test endpoint data as a list of parameters
+        endpoint_data = [
+            {
+                "org_ods": "PROVIDER",
+                "party_key": "PROVIDER-0000806",
+                "endpoint_id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_PROV",
                 "address": "https://provider.example.com/fhir",
-                "managingOrganization": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "PROVIDER",
-                    }
-                },
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_PROV",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "PROVIDER-0000806",
-                    },
-                ],
             },
-        )
-
-        # Also seed endpoint with PSIS interaction for backwards compatibility
-        self.upsert_endpoint(
-            organization_ods="PROVIDER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="PROVIDER-0000806",
-            endpoint={
-                "resourceType": "Endpoint",
-                "id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
-                "status": "active",
-                "connectionType": {
-                    "system": self.CONNECTION_SYSTEM,
-                    "code": "hl7-fhir-rest",
-                    "display": self.CONNECTION_DISPLAY,
-                },
-                "payloadType": [
-                    {
-                        "coding": [
-                            {
-                                "system": self.CODING_SYSTEM,
-                                "code": "any",
-                                "display": "Any",
-                            }
-                        ]
-                    }
-                ],
-                "address": "https://provider.example.com/fhir",
-                "managingOrganization": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "PROVIDER",
-                    }
-                },
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_PROV",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "PROVIDER-0000806",
-                    },
-                ],
-            },
-        )
-
-        # Example 2: Endpoint for consumer organization with GP Connect interaction
-        self.upsert_endpoint(
-            organization_ods="CONSUMER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="CONSUMER-0000807",
-            endpoint={
-                "resourceType": "Endpoint",
-                "id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-                "status": "active",
-                "connectionType": {
-                    "system": self.CONNECTION_SYSTEM,
-                    "code": "hl7-fhir-rest",
-                    "display": self.CONNECTION_DISPLAY,
-                },
-                "payloadType": [
-                    {
-                        "coding": [
-                            {
-                                "system": self.CODING_SYSTEM,
-                                "code": "any",
-                                "display": "Any",
-                            }
-                        ]
-                    }
-                ],
+            {
+                "org_ods": "CONSUMER",
+                "party_key": "CONSUMER-0000807",
+                "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_CONS",
                 "address": "https://consumer.example.com/fhir",
-                "managingOrganization": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "CONSUMER",
-                    }
-                },
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_CONS",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "CONSUMER-0000807",
-                    },
-                ],
             },
-        )
-
-        # Also seed endpoint with PSIS interaction for backwards compatibility
-        self.upsert_endpoint(
-            organization_ods="CONSUMER",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="CONSUMER-0000807",
-            endpoint={
-                "resourceType": "Endpoint",
-                "id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-                "status": "active",
-                "connectionType": {
-                    "system": self.CONNECTION_SYSTEM,
-                    "code": "hl7-fhir-rest",
-                    "display": self.CONNECTION_DISPLAY,
-                },
-                "payloadType": [
-                    {
-                        "coding": [
-                            {
-                                "system": self.CODING_SYSTEM,
-                                "code": "any",
-                                "display": "Any",
-                            }
-                        ]
-                    }
-                ],
-                "address": "https://consumer.example.com/fhir",
-                "managingOrganization": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "CONSUMER",
-                    }
-                },
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_CONS",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "CONSUMER-0000807",
-                    },
-                ],
-            },
-        )
-
-        # Example 3: Endpoint for A12345 organization with GP Connect interaction
-        self.upsert_endpoint(
-            organization_ods="A12345",
-            service_interaction_id=self.GP_CONNECT_INTERACTION,
-            party_key="A12345-0000808",
-            endpoint={
-                "resourceType": "Endpoint",
-                "id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
-                "status": "active",
-                "connectionType": {
-                    "system": self.CONNECTION_SYSTEM,
-                    "code": "hl7-fhir-rest",
-                    "display": self.CONNECTION_DISPLAY,
-                },
-                "payloadType": [
-                    {
-                        "coding": [
-                            {
-                                "system": self.CODING_SYSTEM,
-                                "code": "any",
-                                "display": "Any",
-                            }
-                        ]
-                    }
-                ],
+            {
+                "org_ods": "A12345",
+                "party_key": "A12345-0000808",
+                "endpoint_id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_A12345",
                 "address": "https://a12345.example.com/fhir",
-                "managingOrganization": {
-                    "identifier": {
-                        "system": self.ODS_SYSTEM,
-                        "value": "A12345",
-                    }
-                },
-                "identifier": [
-                    {
-                        "system": self.ASID_SYSTEM,
-                        "value": "asid_A12345",
-                    },
-                    {
-                        "system": self.PARTYKEY_SYSTEM,
-                        "value": "A12345-0000808",
-                    },
-                ],
             },
-        )
+        ]
+
+        # Iterate through test data and create endpoints
+        for data in endpoint_data:
+            self.upsert_endpoint(
+                organization_ods=data["org_ods"],
+                service_interaction_id=self.GP_CONNECT_INTERACTION,
+                party_key=data["party_key"],
+                endpoint=self._create_endpoint_resource(
+                    endpoint_id=data["endpoint_id"],
+                    asid=data["asid"],
+                    party_key=data["party_key"],
+                    org_ods=data["org_ods"],
+                    address=data["address"],
+                ),
+            )
+
+    def _create_device_resource(
+        self,
+        device_id: str,
+        asid: str,
+        party_key: str,
+        org_ods: str,
+        display: str,
+    ) -> dict[str, Any]:
+        """Create a Device resource dictionary with the given parameters."""
+        return {
+            "resourceType": "Device",
+            "id": device_id,
+            "identifier": [
+                {
+                    "system": self.ASID_SYSTEM,
+                    "value": asid,
+                },
+                {
+                    "system": self.PARTYKEY_SYSTEM,
+                    "value": party_key,
+                },
+            ],
+            "owner": {
+                "identifier": {
+                    "system": self.ODS_SYSTEM,
+                    "value": org_ods,
+                },
+                "display": display,
+            },
+        }
+
+    def _create_endpoint_resource(
+        self,
+        endpoint_id: str,
+        asid: str,
+        party_key: str,
+        org_ods: str,
+        address: str,
+    ) -> dict[str, Any]:
+        """Create an Endpoint resource dictionary with the given parameters."""
+        return {
+            "resourceType": "Endpoint",
+            "id": endpoint_id,
+            "status": "active",
+            "connectionType": {
+                "system": self.CONNECTION_SYSTEM,
+                "code": "hl7-fhir-rest",
+                "display": self.CONNECTION_DISPLAY,
+            },
+            "payloadType": [
+                {
+                    "coding": [
+                        {
+                            "system": self.CODING_SYSTEM,
+                            "code": "any",
+                            "display": "Any",
+                        }
+                    ]
+                }
+            ],
+            "address": address,
+            "managingOrganization": {
+                "identifier": {
+                    "system": self.ODS_SYSTEM,
+                    "value": org_ods,
+                }
+            },
+            "identifier": [
+                {
+                    "system": self.ASID_SYSTEM,
+                    "value": asid,
+                },
+                {
+                    "system": self.PARTYKEY_SYSTEM,
+                    "value": party_key,
+                },
+            ],
+        }
 
     # ---------------------------
     # Public API for tests
