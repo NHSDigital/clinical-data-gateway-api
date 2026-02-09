@@ -40,8 +40,10 @@ class SdsFhirApiStub(StubBase):
     INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
     PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
     ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
-    CONNECTION_SYSTEM = "http://terminology.hl7.org/CodeSystem/endpoint-connection-type"
-    CODING_SYSTEM = "http://terminology.hl7.org/CodeSystem/endpoint-payload-type"
+    CONNECTION_SYSTEM = (
+        "https://terminology.hl7.org/CodeSystem/endpoint-connection-type"
+    )
+    CODING_SYSTEM = "https://terminology.hl7.org/CodeSystem/endpoint-payload-type"
 
     GP_CONNECT_INTERACTION = (
         "urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1"
