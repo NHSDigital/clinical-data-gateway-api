@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+from gateway_api.common.error import NoPatientFound
 from gateway_api.provider_request import GpProviderClient
 
 if TYPE_CHECKING:
@@ -224,10 +225,8 @@ class Controller:
         )
 
         if pds_result is None:
-            raise RequestError(
-                status_code=404,
-                message=f"No PDS patient found for NHS number {nhs_number}",
-            )
+            error = NoPatientFound(nhs_number=nhs_number)
+            raise error
 
         if pds_result.gp_ods_code:
             provider_ods_code = pds_result.gp_ods_code

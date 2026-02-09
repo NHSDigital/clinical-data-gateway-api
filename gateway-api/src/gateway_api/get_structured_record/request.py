@@ -7,7 +7,7 @@ from flask.wrappers import Request, Response
 from werkzeug.exceptions import BadRequest
 
 from gateway_api.common.common import FlaskResponse
-from gateway_api.common.error import CDGAPIErrors
+from gateway_api.common.error import InvalidRequestJSON, MissingOrEmptyHeader
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
@@ -28,7 +28,7 @@ class GetStructuredRecordRequest:
         try:
             self._request_body: Parameters = request.get_json()
         except BadRequest as error:
-            raise CDGAPIErrors.INVALID_REQUEST_JSON from error
+            raise InvalidRequestJSON() from error
 
         self._response_body: Bundle | OperationOutcome | None = None
         self._status_code: int | None = None
@@ -61,11 +61,11 @@ class GetStructuredRecordRequest:
         """
         trace_id = self._headers.get("Ssp-TraceID", "").strip()
         if not trace_id:
-            raise CDGAPIErrors.MISSING_TRACE_ID
+            raise MissingOrEmptyHeader(header="Ssp-TraceID")
 
         ods_from = self._headers.get("ODS-from", "").strip()
         if not ods_from:
-            raise CDGAPIErrors.MISSING_ODS_CODE
+            raise MissingOrEmptyHeader(header="ODS-from")
 
     def build_response(self) -> Response:
         return Response(

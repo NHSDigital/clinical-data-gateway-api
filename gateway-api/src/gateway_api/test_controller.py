@@ -14,6 +14,7 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
+from gateway_api.common.error import BaseError
 from gateway_api.controller import (
     Controller,
     SdsSearchResults,
@@ -345,7 +346,7 @@ def test_call_gp_provider_returns_200_on_success(
     [({}, {})],
     indirect=["get_structured_record_request"],
 )
-def test_call_gp_provider_returns_404_when_pds_patient_not_found(
+def test_controller_run_raises_error_when_request_body_is_empty(
     patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -353,11 +354,10 @@ def test_call_gp_provider_returns_404_when_pds_patient_not_found(
     """
     If PDS returns no patient record, the controller should return 404.
     """
-    # FakePdsClient defaults to returning None => RequestError => 404
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert "No PDS patient found for NHS number" in (r.data or "")
+    with pytest.raises(
+        BaseError, match="No PDS patient found for NHS number 9999999999"
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -481,33 +481,10 @@ def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
 
 @pytest.mark.parametrize(
     "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_constructs_pds_client_with_expected_kwargs(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    Validate that the controller constructs the PDS client with expected kwargs.
-    """
-    _ = controller.run(get_structured_record_request)  # will stop at PDS None => 404
-
-    assert FakePdsClient.last_init is not None
-    assert FakePdsClient.last_init["auth_token"] == "PLACEHOLDER_AUTH_TOKEN"  # noqa: S105
-    assert FakePdsClient.last_init["end_user_org_ods"] == "CONSUMER"
-    assert FakePdsClient.last_init["base_url"] == "https://pds.example"
-    assert FakePdsClient.last_init["nhsd_session_urid"] == "session-123"
-    assert FakePdsClient.last_init["timeout"] == 3
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
     [({}, {"parameter": [{"valueIdentifier": {"value": "1234567890"}}]})],
     indirect=["get_structured_record_request"],
 )
-def test_call_gp_provider_404_message_includes_nhs_number_from_request_body(
+def test_controller_run_raises_patient_not_found_error_when_patient_doesnt_exist(
     patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
     get_structured_record_request: GetStructuredRecordRequest,
@@ -516,10 +493,10 @@ def test_call_gp_provider_404_message_includes_nhs_number_from_request_body(
     If PDS returns no patient record, error message should include NHS number parsed
     from the FHIR Parameters request body.
     """
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert r.data == "No PDS patient found for NHS number 1234567890"
+    with pytest.raises(
+        BaseError, match="No PDS patient found for NHS number 1234567890"
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(

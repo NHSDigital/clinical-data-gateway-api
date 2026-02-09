@@ -7,7 +7,7 @@ from flask import Request
 from werkzeug.test import EnvironBuilder
 
 from gateway_api.common.common import FlaskResponse
-from gateway_api.common.error import Error
+from gateway_api.common.error import BaseError
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
@@ -79,7 +79,9 @@ class TestGetStructuredRecordRequest:
         }
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
-        with pytest.raises(Error, match='Missing or empty required header "ODS-from"'):
+        with pytest.raises(
+            BaseError, match='Missing or empty required header "ODS-from"'
+        ):
             GetStructuredRecordRequest(request=mock_request)
 
     def test_raises_value_error_when_ods_from_header_is_whitespace(
@@ -94,7 +96,9 @@ class TestGetStructuredRecordRequest:
         }
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
-        with pytest.raises(Error, match='Missing or empty required header "ODS-from"'):
+        with pytest.raises(
+            BaseError, match='Missing or empty required header "ODS-from"'
+        ):
             GetStructuredRecordRequest(request=mock_request)
 
     def test_raises_value_error_when_trace_id_header_is_missing(
@@ -107,7 +111,7 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            Error,
+            BaseError,
             match='Missing or empty required header "Ssp-TraceID"',
         ):
             GetStructuredRecordRequest(request=mock_request)
@@ -125,7 +129,7 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            Error,
+            BaseError,
             match='Missing or empty required header "Ssp-TraceID"',
         ):
             GetStructuredRecordRequest(request=mock_request)

@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from http.client import BAD_REQUEST
+from http.client import INTERNAL_SERVER_ERROR
 from typing import TYPE_CHECKING
 
 from flask import Response
@@ -10,11 +10,14 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Error(Exception):
-    message: str
-    status_code: int = 500
+class BaseError(Exception):
+    _message = "Internal Server Error"
+    status_code: int = INTERNAL_SERVER_ERROR
     severity: str = "error"
-    fhir_error_code: str = "exception"
+    error_code: str = "exception"
+
+    def __init__(self, **additional_details: str):
+        self.additional_details = additional_details
 
     def build_response(self) -> Response:
         operation_outcome: OperationOutcome = {
@@ -22,7 +25,7 @@ class Error(Exception):
             "issue": [
                 {
                     "severity": self.severity,
-                    "code": self.fhir_error_code,
+                    "code": self.error_code,
                     "diagnostics": self.message,
                 }
             ],
@@ -37,18 +40,24 @@ class Error(Exception):
     def log(self) -> None:
         print(self)
 
+    @property
+    def message(self) -> str:
+        return self._message.format(**self.additional_details)
 
-class CDGAPIErrors:
-    GENERIC_ERROR = Error("Internal Server Error")
+    def __str__(self) -> str:
+        return self.message
 
-    INVALID_REQUEST_JSON = Error(
-        "Invalid JSON body sent in request", status_code=BAD_REQUEST
-    )
 
-    MISSING_TRACE_ID = Error(
-        'Missing or empty required header "Ssp-TraceID"', status_code=BAD_REQUEST
-    )
+class NoPatientFound(BaseError):
+    _message = "No PDS patient found for NHS number {nhs_number}"
+    status_code = 400
 
-    MISSING_ODS_CODE = Error(
-        'Missing or empty required header "ODS-from"', status_code=BAD_REQUEST
-    )
+
+class InvalidRequestJSON(BaseError):
+    _message = "Invalid JSON body sent in request"
+    status_code = 400
+
+
+class MissingOrEmptyHeader(BaseError):
+    _message = 'Missing or empty required header "{header}"'
+    status_code = 400

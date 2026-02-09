@@ -4,7 +4,7 @@ from typing import TypedDict
 from flask import Flask, request
 from flask.wrappers import Response
 
-from gateway_api.common.error import CDGAPIErrors, Error
+from gateway_api.common.error import BaseError
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
@@ -41,11 +41,11 @@ def get_structured_record() -> Response:
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
         get_structured_record_request.set_response_from_flaskresponse(flask_response)
-    except Error as e:
+    except BaseError as e:
         e.log()
         return e.build_response()
     except Exception:
-        error = CDGAPIErrors.GENERIC_ERROR
+        error = BaseError()
         error.log()
         response = error.build_response()
         return response
