@@ -86,7 +86,6 @@ class PdsClient:
 
         pds = PdsClient(
             auth_token="YOUR_ACCESS_TOKEN",
-            end_user_org_ods="A12345",
             base_url="https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4",
         )
 
@@ -104,7 +103,6 @@ class PdsClient:
     def __init__(
         self,
         auth_token: str,
-        end_user_org_ods: str,
         base_url: str = SANDBOX_URL,
         nhsd_session_urid: str | None = None,
         timeout: int = 10,
@@ -114,7 +112,6 @@ class PdsClient:
         Create a PDS client.
 
         :param auth_token: OAuth2 bearer token (without the ``"Bearer "`` prefix).
-        :param end_user_org_ods: NHSD End User Organisation ODS code.
         :param base_url: Base URL for the PDS API (one of :attr:`SANDBOX_URL`,
             :attr:`INT_URL`, :attr:`PROD_URL`). Trailing slashes are stripped.
         :param nhsd_session_urid: Optional ``NHSD-Session-URID`` header value.
@@ -123,7 +120,6 @@ class PdsClient:
             ignoring the date ranges.
         """
         self.auth_token = auth_token
-        self.end_user_org_ods = end_user_org_ods
         self.base_url = base_url.rstrip("/")
         self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
@@ -151,7 +147,6 @@ class PdsClient:
         """
         headers = {
             "X-Request-ID": request_id or str(uuid.uuid4()),
-            "NHSD-End-User-Organisation-ODS": self.end_user_org_ods,
             "Accept": "application/fhir+json",
         }
 

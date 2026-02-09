@@ -193,7 +193,6 @@ def test_search_patient_by_nhs_number_get_patient_success(
 
     client = PdsClient(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
         nhsd_session_urid="test-urid",
     )
@@ -246,7 +245,6 @@ def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
 
     client = PdsClient(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
@@ -287,7 +285,6 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
 
     client = PdsClient(
         auth_token="test-token",  # noqa: S106
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
@@ -303,7 +300,6 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
 
     headers = mock_requests_get["headers"]
     assert headers["Authorization"] == "Bearer test-token"
-    assert headers["NHSD-End-User-Organisation-ODS"] == "A12345"
     assert headers["Accept"] == "application/fhir+json"
     assert headers["X-Request-ID"] == req_id
     assert headers["X-Correlation-ID"] == corr_id
@@ -334,7 +330,6 @@ def test_search_patient_by_nhs_number_generates_request_id(
 
     client = PdsClient(
         auth_token="test-token",  # noqa: S106
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
@@ -363,7 +358,6 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     """
     pds = PdsClient(
         auth_token="test-token",  # noqa: S106
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
@@ -425,7 +419,6 @@ def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
 
     client = PdsClient(
         auth_token="test-token",  # noqa: S106
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
@@ -516,7 +509,6 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
     """
     client = PdsClient(
         auth_token="test-token",  # noqa: S106 (test token hardcoded)
-        end_user_org_ods="A12345",
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 

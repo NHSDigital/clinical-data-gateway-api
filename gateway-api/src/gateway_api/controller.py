@@ -152,9 +152,7 @@ class Controller:
         auth_token = self.get_auth_token()
 
         try:
-            provider_ods = self._get_pds_details(
-                auth_token, request.ods_from.strip(), request.nhs_number
-            )
+            provider_ods = self._get_pds_details(auth_token, request.nhs_number)
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
 
@@ -198,14 +196,11 @@ class Controller:
         # Placeholder implementation
         return "PLACEHOLDER_AUTH_TOKEN"
 
-    def _get_pds_details(
-        self, auth_token: str, consumer_ods: str, nhs_number: str
-    ) -> str:
+    def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
 
         :param auth_token: Authorization token to use for PDS.
-        :param consumer_ods: Consumer organisation ODS code (from request headers).
         :param nhs_number: NHS number
         :returns: Provider ODS code (GP ODS code).
         :raises RequestError: If the patient cannot be found or has no provider ODS code
@@ -213,7 +208,6 @@ class Controller:
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
             auth_token=auth_token,
-            end_user_org_ods=consumer_ods,
             base_url=self.pds_base_url,
             nhsd_session_urid=self.nhsd_session_urid,
             timeout=self.timeout,
