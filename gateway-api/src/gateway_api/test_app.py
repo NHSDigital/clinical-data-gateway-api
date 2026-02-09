@@ -101,40 +101,62 @@ class TestGetStructuredRecord:
         actual_status_code = get_structured_record_response.status_code
         assert actual_status_code == 500
 
+    @staticmethod
+    @pytest.fixture
+    def missing_headers(
+        request: pytest.FixtureRequest, valid_headers: dict[str, str]
+    ) -> dict[str, str]:
+        invalid_headers = copy(valid_headers)
+        del invalid_headers[request.param]
+        return invalid_headers
+
     @pytest.mark.parametrize(
-        ("missing_header_key", "expected_message"),
+        "missing_headers",
+        ["ODS-from", "Ssp-TraceID"],
+        indirect=True,
+    )
+    @pytest.mark.usefixtures("missing_headers")
+    def test_get_structured_record_returns_400_when_required_header_missing(
+        self,
+        get_structured_record_response_from_missing_header: Flask,
+    ) -> None:
+
+        assert get_structured_record_response_from_missing_header.status_code == 400
+
+    @pytest.mark.parametrize(
+        "missing_headers",
+        ["ODS-from", "Ssp-TraceID"],
+        indirect=True,
+    )
+    @pytest.mark.usefixtures("missing_headers")
+    def test_get_structured_record_returns_fhir_content_when_missing_header(
+        self,
+        get_structured_record_response_from_missing_header: Flask,
+    ) -> None:
+        assert (
+            "application/fhir+json"
+            in get_structured_record_response_from_missing_header.content_type
+        )
+
+    @pytest.mark.parametrize(
+        ("missing_headers", "expected_message"),
         [
             pytest.param(
                 "ODS-from",
                 'Missing or empty required header "ODS-from"',
-                id="missing ODS code",
             ),
             pytest.param(
                 "Ssp-TraceID",
                 'Missing or empty required header "Ssp-TraceID"',
-                id="missing trace id",
             ),
         ],
+        indirect=["missing_headers"],
     )
-    def test_get_structured_record_request_returns_400_when_required_header_missing(
+    def test_get_structured_record_returns_operation_outcome_when_missing_header(
         self,
-        client: FlaskClient[Flask],
-        valid_simple_request_payload: "Parameters",
-        valid_headers: dict[str, str],
-        missing_header_key: str,
+        get_structured_record_response_from_missing_header: Flask,
         expected_message: str,
     ) -> None:
-        invalid_headers = copy(valid_headers)
-        del invalid_headers[missing_header_key]
-
-        response = client.post(
-            "/patient/$gpc.getstructuredrecord",
-            json=valid_simple_request_payload,
-            headers=invalid_headers,
-        )
-
-        assert response.status_code == 400
-        assert "application/fhir+json" in response.content_type
         expected_body: OperationOutcome = {
             "resourceType": "OperationOutcome",
             "issue": [
@@ -145,7 +167,10 @@ class TestGetStructuredRecord:
                 }
             ],
         }
-        assert expected_body == response.get_json()
+        assert (
+            expected_body
+            == get_structured_record_response_from_missing_header.get_json()
+        )
 
     def test_get_structured_record_returns_400_when_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
@@ -187,6 +212,21 @@ class TestGetStructuredRecord:
             "/patient/$gpc.getstructuredrecord",
             json=valid_simple_request_payload,
             headers=valid_headers,
+        )
+        return response
+
+    @staticmethod
+    @pytest.fixture
+    def get_structured_record_response_from_missing_header(
+        client: FlaskClient[Flask],
+        missing_headers: dict[str, str],
+        valid_simple_request_payload: Parameters,
+    ) -> Flask:
+
+        response = client.post(
+            "/patient/$gpc.getstructuredrecord",
+            data=json.dumps(valid_simple_request_payload),
+            headers=missing_headers,
         )
         return response
 
