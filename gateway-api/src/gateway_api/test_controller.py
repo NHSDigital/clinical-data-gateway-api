@@ -14,11 +14,9 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
-from gateway_api.controller import (
-    Controller,
-    SdsSearchResults,
-)
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+from gateway_api.sds_search import SdsSearchResults
 
 if TYPE_CHECKING:
     from collections.abc import Generator
