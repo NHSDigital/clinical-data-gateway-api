@@ -33,7 +33,6 @@ class GetStructuredRecordRequest:
         self._response_body: Bundle | OperationOutcome | None = None
         self._status_code: int | None = None
 
-        # Validate required headers
         self._validate_headers()
 
     @property
@@ -62,13 +61,11 @@ class GetStructuredRecordRequest:
         """
         trace_id = self._headers.get("Ssp-TraceID", "").strip()
         if not trace_id:
-            raise RequestValidationError(
-                'Missing or empty required header "Ssp-TraceID"'
-            )
+            raise CDGAPIErrors.MISSING_TRACE_ID
 
         ods_from = self._headers.get("ODS-from", "").strip()
         if not ods_from:
-            raise RequestValidationError('Missing or empty required header "ODS-from"')
+            raise CDGAPIErrors.MISSING_ODS_CODE
 
     def build_response(self) -> Response:
         return Response(

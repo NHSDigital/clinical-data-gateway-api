@@ -39,3 +39,10 @@ class CDGAPIErrors:
     INVALID_REQUEST_JSON = Error(
         "Invalid JSON body sent in request", status_code=BAD_REQUEST
     )
+
+    MISSING_TRACE_ID = Error(
+        'Missing or empty required header "Ssp-TraceID"', status_code=BAD_REQUEST
+    )
+    MISSING_ODS_CODE = Error(
+        'Missing or empty required header "ODS-from"', status_code=BAD_REQUEST
+    )

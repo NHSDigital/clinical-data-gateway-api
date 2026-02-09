@@ -106,12 +106,12 @@ class TestGetStructuredRecord:
         [
             pytest.param(
                 "ODS-from",
-                b'Missing or empty required header "ODS-from"',
+                'Missing or empty required header "ODS-from"',
                 id="missing ODS code",
             ),
             pytest.param(
                 "Ssp-TraceID",
-                b'Missing or empty required header "Ssp-TraceID"',
+                'Missing or empty required header "Ssp-TraceID"',
                 id="missing trace id",
             ),
         ],
@@ -122,7 +122,7 @@ class TestGetStructuredRecord:
         valid_simple_request_payload: "Parameters",
         valid_headers: dict[str, str],
         missing_header_key: str,
-        expected_message: bytes,
+        expected_message: str,
     ) -> None:
         invalid_headers = copy(valid_headers)
         del invalid_headers[missing_header_key]
@@ -134,8 +134,18 @@ class TestGetStructuredRecord:
         )
 
         assert response.status_code == 400
-        assert "text/plain" in response.content_type
-        assert expected_message in response.data
+        assert "application/fhir+json" in response.content_type
+        expected_body: OperationOutcome = {
+            "resourceType": "OperationOutcome",
+            "issue": [
+                {
+                    "severity": "error",
+                    "code": "exception",
+                    "diagnostics": expected_message,
+                }
+            ],
+        }
+        assert expected_body == response.get_json()
 
     def test_get_structured_record_returns_400_when_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
