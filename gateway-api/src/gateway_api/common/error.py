@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Error(Exception):
-    message: str = "Internal Server Error"
+    message: str
     status_code: int = 500
     severity: str = "error"
     fhir_error_code: str = "exception"
@@ -36,6 +36,8 @@ class Error(Exception):
 
 
 class CDGAPIErrors:
+    GENERIC_ERROR = Error("Internal Server Error")
+
     INVALID_REQUEST_JSON = Error(
         "Invalid JSON body sent in request", status_code=BAD_REQUEST
     )
@@ -43,6 +45,7 @@ class CDGAPIErrors:
     MISSING_TRACE_ID = Error(
         'Missing or empty required header "Ssp-TraceID"', status_code=BAD_REQUEST
     )
+
     MISSING_ODS_CODE = Error(
         'Missing or empty required header "ODS-from"', status_code=BAD_REQUEST
     )

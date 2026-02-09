@@ -4,11 +4,10 @@ from typing import TypedDict
 from flask import Flask, request
 from flask.wrappers import Response
 
-from gateway_api.common.error import Error
+from gateway_api.common.error import CDGAPIErrors, Error
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
-    RequestValidationError,
 )
 
 app = Flask(__name__)
@@ -39,21 +38,10 @@ def get_app_port() -> int:
 def get_structured_record() -> Response:
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
-    except RequestValidationError as e:
-        response = Response(
-            response=str(e),
-            status=400,
-            content_type="text/plain",
-        )
-        return response
     except Error as error:
         return error.build_response()
-    except Exception as e:
-        response = Response(
-            response=f"Internal Server Error: {e}",
-            status=500,
-            content_type="text/plain",
-        )
+    except Exception:
+        response = CDGAPIErrors.GENERIC_ERROR.build_response()
         return response
 
     try:
