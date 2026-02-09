@@ -34,6 +34,9 @@ class Error(Exception):
         )
         return response
 
+    def log(self) -> None:
+        print(self)
+
 
 class CDGAPIErrors:
     GENERIC_ERROR = Error("Internal Server Error")

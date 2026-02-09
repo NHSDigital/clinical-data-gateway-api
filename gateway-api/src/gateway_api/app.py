@@ -41,10 +41,13 @@ def get_structured_record() -> Response:
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
         get_structured_record_request.set_response_from_flaskresponse(flask_response)
-    except Error as error:
-        return error.build_response()
+    except Error as e:
+        e.log()
+        return e.build_response()
     except Exception:
-        response = CDGAPIErrors.GENERIC_ERROR.build_response()
+        error = CDGAPIErrors.GENERIC_ERROR
+        error.log()
+        response = error.build_response()
         return response
 
     return get_structured_record_request.build_response()
