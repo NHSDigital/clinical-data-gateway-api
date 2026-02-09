@@ -30,7 +30,7 @@ class Client:
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
         default_headers = {
             "Content-Type": "application/fhir+json",
-            "Ods-from": "test-ods-code",
+            "Ods-from": "CONSUMER",
             "Ssp-TraceID": "test-trace-id",
         }
         if headers:

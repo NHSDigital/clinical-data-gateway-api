@@ -150,6 +150,33 @@ class SdsFhirApiStub:
             },
         )
 
+        self.upsert_device(
+            organization_ods="A12345",
+            service_interaction_id=self.GP_CONNECT_INTERACTION,
+            party_key="A12345-0000808",
+            device={
+                "resourceType": "Device",
+                "id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
+                "identifier": [
+                    {
+                        "system": self.ASID_SYSTEM,
+                        "value": "asid_A12345",
+                    },
+                    {
+                        "system": self.PARTYKEY_SYSTEM,
+                        "value": "A12345-0000808",
+                    },
+                ],
+                "owner": {
+                    "identifier": {
+                        "system": self.ODS_SYSTEM,
+                        "value": "A12345",
+                    },
+                    "display": "Example GP Practice A12345",
+                },
+            },
+        )
+
     def _seed_default_endpoints(self) -> None:
         """Seed the stub with some default Endpoint records for testing."""
         # Example 1: Endpoint for provider organization with GP Connect interaction
@@ -327,6 +354,51 @@ class SdsFhirApiStub:
                     {
                         "system": self.PARTYKEY_SYSTEM,
                         "value": "CONSUMER-0000807",
+                    },
+                ],
+            },
+        )
+
+        # Example 3: Endpoint for A12345 organization with GP Connect interaction
+        self.upsert_endpoint(
+            organization_ods="A12345",
+            service_interaction_id=self.GP_CONNECT_INTERACTION,
+            party_key="A12345-0000808",
+            endpoint={
+                "resourceType": "Endpoint",
+                "id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
+                "status": "active",
+                "connectionType": {
+                    "system": self.CONNECTION_SYSTEM,
+                    "code": "hl7-fhir-rest",
+                    "display": self.CONNECTION_DISPLAY,
+                },
+                "payloadType": [
+                    {
+                        "coding": [
+                            {
+                                "system": self.CODING_SYSTEM,
+                                "code": "any",
+                                "display": "Any",
+                            }
+                        ]
+                    }
+                ],
+                "address": "https://a12345.example.com/fhir",
+                "managingOrganization": {
+                    "identifier": {
+                        "system": self.ODS_SYSTEM,
+                        "value": "A12345",
+                    }
+                },
+                "identifier": [
+                    {
+                        "system": self.ASID_SYSTEM,
+                        "value": "asid_A12345",
+                    },
+                    {
+                        "system": self.PARTYKEY_SYSTEM,
+                        "value": "A12345-0000808",
                     },
                 ],
             },
