@@ -145,11 +145,8 @@ class PdsClient:
         headers = {
             "X-Request-ID": request_id or str(uuid.uuid4()),
             "Accept": "application/fhir+json",
+            "Authorization": f"Bearer {self.auth_token}",
         }
-
-        # Trying to pass an auth token to the sandbox makes PDS unhappy
-        if self.base_url != self.SANDBOX_URL:
-            headers["Authorization"] = f"Bearer {self.auth_token}"
 
         # Correlation ID is used to track the same request across multiple systems.
         # Can be safely omitted, mirrored back in response if included.

@@ -190,8 +190,7 @@ class Controller:
 
         :returns: Authorization token as a string.
         """
-        # Placeholder implementation
-        return "PLACEHOLDER_AUTH_TOKEN"
+        return "AUTH_TOKEN123"
 
     def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
         """
