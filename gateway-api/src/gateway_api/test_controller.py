@@ -224,7 +224,6 @@ def controller() -> Controller:
     return Controller(
         pds_base_url="https://pds.example",
         sds_base_url="https://sds.example",
-        nhsd_session_urid="session-123",
         timeout=3,
     )
 

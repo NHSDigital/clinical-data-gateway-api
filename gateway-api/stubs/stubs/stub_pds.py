@@ -275,8 +275,6 @@ class PdsFhirApiStub:
             request_id = headers.get("X-Request-ID")
             correlation_id = headers.get("X-Correlation-ID")
             authorization = headers.get("Authorization")
-            role_id = headers.get("NHSD-Session-URID")
-            end_user_org_ods = headers.get("NHSD-End-User-Organisation-ODS")
 
         return self.get_patient(
             nhs_number=nhs_number,

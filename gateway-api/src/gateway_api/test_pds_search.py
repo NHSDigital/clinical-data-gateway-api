@@ -194,7 +194,6 @@ def test_search_patient_by_nhs_number_get_patient_success(
     client = PdsClient(
         auth_token="test-token",  # noqa: S106  (test token hardcoded)
         base_url="https://example.test/personal-demographics/FHIR/R4",
-        nhsd_session_urid="test-urid",
     )
 
     result = client.search_patient_by_nhs_number("9000000009")

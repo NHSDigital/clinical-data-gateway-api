@@ -115,7 +115,6 @@ class Controller:
         self,
         pds_base_url: str = PdsClient.SANDBOX_URL,
         sds_base_url: str = "https://example.invalid/sds",
-        nhsd_session_urid: str | None = None,
         timeout: int = 10,
     ) -> None:
         """
@@ -123,12 +122,10 @@ class Controller:
 
         :param pds_base_url: Base URL for PDS client.
         :param sds_base_url: Base URL for SDS client.
-        :param nhsd_session_urid: Session URID for NHS Digital session handling.
         :param timeout: Timeout in seconds for downstream calls.
         """
         self.pds_base_url = pds_base_url
         self.sds_base_url = sds_base_url
-        self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
         self.gp_provider_client = None
 
@@ -209,7 +206,6 @@ class Controller:
         pds = PdsClient(
             auth_token=auth_token,
             base_url=self.pds_base_url,
-            nhsd_session_urid=self.nhsd_session_urid,
             timeout=self.timeout,
             ignore_dates=True,
         )

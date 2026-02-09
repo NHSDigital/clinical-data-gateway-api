@@ -104,7 +104,6 @@ class PdsClient:
         self,
         auth_token: str,
         base_url: str = SANDBOX_URL,
-        nhsd_session_urid: str | None = None,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
@@ -114,14 +113,12 @@ class PdsClient:
         :param auth_token: OAuth2 bearer token (without the ``"Bearer "`` prefix).
         :param base_url: Base URL for the PDS API (one of :attr:`SANDBOX_URL`,
             :attr:`INT_URL`, :attr:`PROD_URL`). Trailing slashes are stripped.
-        :param nhsd_session_urid: Optional ``NHSD-Session-URID`` header value.
         :param timeout: Default timeout in seconds for HTTP calls.
         :param ignore_dates: If ``True`` just get the most recent name or GP record,
             ignoring the date ranges.
         """
         self.auth_token = auth_token
         self.base_url = base_url.rstrip("/")
-        self.nhsd_session_urid = nhsd_session_urid
         self.timeout = timeout
         self.ignore_dates = ignore_dates
         self.stub = PdsFhirApiStub()
@@ -153,10 +150,6 @@ class PdsClient:
         # Trying to pass an auth token to the sandbox makes PDS unhappy
         if self.base_url != self.SANDBOX_URL:
             headers["Authorization"] = f"Bearer {self.auth_token}"
-
-        # NHSD-Session-URID is required in some flows; include only if configured.
-        if self.nhsd_session_urid:
-            headers["NHSD-Session-URID"] = self.nhsd_session_urid
 
         # Correlation ID is used to track the same request across multiple systems.
         # Can be safely omitted, mirrored back in response if included.
