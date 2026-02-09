@@ -6,38 +6,15 @@ The stub does **not** implement the full SDS API surface, nor full FHIR validati
 
 from __future__ import annotations
 
-import json
-from http.client import responses as http_responses
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from requests import Response
-from requests.structures import CaseInsensitiveDict
+from stubs.base_stub import FhirApiStubBase
 
-
-def _create_response(
-    status_code: int,
-    headers: dict[str, str],
-    json_data: dict[str, Any],
-) -> Response:
-    """
-    Create a :class:`requests.Response` object for the stub.
-
-    :param status_code: HTTP status code.
-    :param headers: Response headers dictionary.
-    :param json_data: JSON body data.
-    :return: A :class:`requests.Response` instance.
-    """
-    response = Response()
-    response.status_code = status_code
-    response.headers = CaseInsensitiveDict(headers)
-    response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001
-    response.encoding = "utf-8"
-    # Set a reason phrase for HTTP error handling
-    response.reason = http_responses.get(status_code, "Unknown")
-    return response
+if TYPE_CHECKING:
+    from requests import Response
 
 
-class SdsFhirApiStub:
+class SdsFhirApiStub(FhirApiStubBase):
     """
     Minimal in-memory stub for the SDS FHIR API, implementing ``GET /Device``
     and ``GET /Endpoint``
@@ -555,7 +532,9 @@ class SdsFhirApiStub:
         # Build FHIR Bundle response
         bundle = self._build_bundle(devices)
 
-        return _create_response(status_code=200, headers=headers_out, json_data=bundle)
+        return self._create_response(
+            status_code=200, headers=headers_out, json_data=bundle
+        )
 
     def get_endpoint_bundle(
         self,
@@ -636,7 +615,9 @@ class SdsFhirApiStub:
         # Build FHIR Bundle response
         bundle = self._build_endpoint_bundle(endpoints)
 
-        return _create_response(status_code=200, headers=headers_out, json_data=bundle)
+        return self._create_response(
+            status_code=200, headers=headers_out, json_data=bundle
+        )
 
     def get(
         self,
@@ -830,9 +811,8 @@ class SdsFhirApiStub:
 
         return None
 
-    @staticmethod
     def _error_response(
-        status_code: int, headers: dict[str, str], message: str
+        self, status_code: int, headers: dict[str, str], message: str
     ) -> Response:
         """
         Build an error response.
@@ -852,6 +832,6 @@ class SdsFhirApiStub:
                 }
             ],
         }
-        return _create_response(
+        return self._create_response(
             status_code=status_code, headers=dict(headers), json_data=body
         )
