@@ -4,8 +4,10 @@ from typing import TYPE_CHECKING
 from fhir import OperationOutcome, Parameters
 from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
+from werkzeug.exceptions import BadRequest
 
 from gateway_api.common.common import FlaskResponse
+from gateway_api.common.error import CDGAPIErrors
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
@@ -23,7 +25,11 @@ class GetStructuredRecordRequest:
     def __init__(self, request: Request) -> None:
         self._http_request = request
         self._headers = request.headers
-        self._request_body: Parameters = request.get_json()
+        try:
+            self._request_body: Parameters = request.get_json()
+        except BadRequest as error:
+            raise CDGAPIErrors.INVALID_REQUEST_JSON from error
+
         self._response_body: Bundle | OperationOutcome | None = None
         self._status_code: int | None = None
 

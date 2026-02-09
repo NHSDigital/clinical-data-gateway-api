@@ -4,6 +4,7 @@ import json
 import os
 from collections.abc import Generator
 from copy import copy
+from typing import TYPE_CHECKING
 
 import pytest
 from fhir.bundle import Bundle
@@ -14,6 +15,9 @@ from pytest_mock import MockerFixture
 
 from gateway_api.app import app, get_app_host, get_app_port
 from gateway_api.common.common import FlaskResponse
+
+if TYPE_CHECKING:
+    from fhir.operation_outcome import OperationOutcome
 
 
 @pytest.fixture
@@ -133,26 +137,34 @@ class TestGetStructuredRecord:
         assert "text/plain" in response.content_type
         assert expected_message in response.data
 
-    def test_get_structured_record_returns_500_when_invalid_json_sent(
+    def test_get_structured_record_returns_400_when_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
     ) -> None:
-        assert get_structured_record_response_using_invalid_json_body.status_code == 500
+        assert get_structured_record_response_using_invalid_json_body.status_code == 400
 
-    def test_get_structured_record_returns_content_type_textplain_for_invalid_json_sent(
+    def test_get_structured_record_returns_content_type_fhir_json_for_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
     ) -> None:
         assert (
-            "text/plain"
+            "application/fhir+json"
             in get_structured_record_response_using_invalid_json_body.content_type
         )
 
-    def test_get_structured_record_returns_intenral_server_error_when_invalid_json_sent(
+    def test_get_structured_record_returns_internal_server_error_when_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
     ) -> None:
-        assert (
-            b"Internal Server Error:"
-            in get_structured_record_response_using_invalid_json_body.data
-        )
+        expected: OperationOutcome = {
+            "resourceType": "OperationOutcome",
+            "issue": [
+                {
+                    "severity": "error",
+                    "code": "exception",
+                    "diagnostics": "Invalid JSON body sent in request",
+                }
+            ],
+        }
+        actual = get_structured_record_response_using_invalid_json_body.get_json()
+        assert actual == expected
 
     @staticmethod
     @pytest.fixture

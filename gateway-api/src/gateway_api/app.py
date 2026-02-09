@@ -4,6 +4,7 @@ from typing import TypedDict
 from flask import Flask, request
 from flask.wrappers import Response
 
+from gateway_api.common.error import Error
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
@@ -45,6 +46,8 @@ def get_structured_record() -> Response:
             content_type="text/plain",
         )
         return response
+    except Error as error:
+        return error.build_response()
     except Exception as e:
         response = Response(
             response=f"Internal Server Error: {e}",
