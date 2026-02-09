@@ -15,7 +15,7 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 
-class FhirApiStubBase(ABC):
+class StubBase(ABC):
     """
     Abstract base class for FHIR API stubs.
 
@@ -56,6 +56,24 @@ class FhirApiStubBase(ABC):
         :param url: Request URL.
         :param headers: Request headers.
         :param params: Query parameters.
+        :param timeout: Request timeout in seconds.
+        :return: A :class:`requests.Response` instance.
+        """
+
+    @abstractmethod
+    def post(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        data: str,
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub.
+
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param data: Request body data.
         :param timeout: Request timeout in seconds.
         :return: A :class:`requests.Response` instance.
         """

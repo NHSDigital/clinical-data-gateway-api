@@ -11,13 +11,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from stubs.base_stub import FhirApiStubBase
+from .base_stub import StubBase
 
 if TYPE_CHECKING:
     from requests import Response
 
 
-class PdsFhirApiStub(FhirApiStubBase):
+class PdsFhirApiStub(StubBase):
     """
     Minimal in-memory stub for the PDS FHIR API, implementing only ``GET /Patient/{id}``
 
@@ -265,6 +265,24 @@ class PdsFhirApiStub(FhirApiStubBase):
             role_id=role_id,
             end_user_org_ods=end_user_org_ods,
         )
+
+    def post(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        data: Any,
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub.
+
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param data: Request body data.
+        :param timeout: Request timeout in seconds.
+        :raises NotImplementedError: POST requests are not supported by this stub.
+        """
+        raise NotImplementedError("POST requests are not supported by PdsFhirApiStub")
 
     # ---------------------------
     # Internal helpers

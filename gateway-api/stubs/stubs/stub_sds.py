@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from stubs.base_stub import FhirApiStubBase
+from .base_stub import StubBase
 
 if TYPE_CHECKING:
     from requests import Response
 
 
-class SdsFhirApiStub(FhirApiStubBase):
+class SdsFhirApiStub(StubBase):
     """
     Minimal in-memory stub for the SDS FHIR API, implementing ``GET /Device``
     and ``GET /Endpoint``
@@ -644,6 +644,24 @@ class SdsFhirApiStub(FhirApiStubBase):
         return self.get_device_bundle(
             url=url, headers=headers, params=params, timeout=timeout
         )
+
+    def post(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        data: Any,
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub.
+
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param data: Request body data.
+        :param timeout: Request timeout in seconds.
+        :raises NotImplementedError: POST requests are not supported by this stub.
+        """
+        raise NotImplementedError("POST requests are not supported by SdsFhirApiStub")
 
     # ---------------------------
     # Internal helpers
