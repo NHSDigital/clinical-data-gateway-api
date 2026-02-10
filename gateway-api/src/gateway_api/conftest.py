@@ -53,3 +53,8 @@ def valid_headers() -> dict[str, str]:
         "ODS-from": "test-ods",
         "Content-type": "application/fhir+json",
     }
+
+
+@pytest.fixture
+def auth_token() -> str:
+    return "AUTH_TOKEN123"
