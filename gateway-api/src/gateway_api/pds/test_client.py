@@ -13,9 +13,9 @@ from requests.structures import CaseInsensitiveDict
 from stubs.stub_pds import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
-from gateway_api.pds_search import (
+from gateway_api.pds.client import (
     PdsClient,
-    ResultList,
+    ResultList,  # TODO: Use FHIR class here
 )
 
 
@@ -117,7 +117,7 @@ def mock_requests_get(
     stub.get = _capturing_get  # type: ignore[method-assign]
 
     # Monkeypatch PdsFhirApiStub so PdsClient uses our test stub
-    import gateway_api.pds_search as pds_module
+    import gateway_api.pds.client as pds_module
 
     monkeypatch.setattr(
         pds_module,

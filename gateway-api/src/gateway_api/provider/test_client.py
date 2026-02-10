@@ -13,9 +13,8 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.stub_provider import GpProviderStub
 
-from gateway_api import provider_request
 from gateway_api.common.error import SdsRequestFailed
-from gateway_api.provider_request import GpProviderClient
+from gateway_api.provider import GpProviderClient, client
 
 ars_interactionId = (
     "urn:nhs:names:services:gpconnect:structured"
@@ -61,7 +60,7 @@ def mock_request_post(
             trace_id=headers.get("Ssp-TraceID", "dummy-trace-id"), body=data
         )
 
-    monkeypatch.setattr(provider_request, "post", _fake_post)
+    monkeypatch.setattr(client, "post", _fake_post)
     return capture
 
 

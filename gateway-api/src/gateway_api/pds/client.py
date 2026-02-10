@@ -20,7 +20,6 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import cast
 
@@ -28,6 +27,7 @@ import requests
 from stubs.stub_pds import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
+from gateway_api.pds.search_results import PdsSearchResults
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
@@ -36,29 +36,6 @@ type ResultList = list[ResultStructureDict]
 
 # Type for stub get method
 type GetCallable = Callable[..., requests.Response]
-
-
-@dataclass
-class PdsSearchResults:
-    """
-    A single extracted patient record.
-
-    Only a small subset of the PDS Patient fields are currently required by this
-    gateway. More will be added in later phases.
-
-    :param given_names: Given names from the *current* ``Patient.name`` record,
-        concatenated with spaces.
-    :param family_name: Family name from the *current* ``Patient.name`` record.
-    :param nhs_number: NHS number (``Patient.id``).
-    :param gp_ods_code: The ODS code of the *current* GP, extracted from
-        ``Patient.generalPractitioner[].identifier.value`` if a current GP record exists
-        otherwise ``None``.
-    """
-
-    given_names: str
-    family_name: str
-    nhs_number: str
-    gp_ods_code: str | None
 
 
 class PdsClient:

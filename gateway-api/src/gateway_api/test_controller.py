@@ -21,11 +21,9 @@ from gateway_api.common.error import (
     NoOrganisationFound,
     NoPatientFound,
 )
-from gateway_api.controller import (
-    Controller,
-    SdsSearchResults,
-)
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+from gateway_api.sds import SdsSearchResults
 
 
 # -----------------------------
