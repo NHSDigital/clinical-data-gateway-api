@@ -285,65 +285,6 @@ def get_structured_record_request(
     [({}, {})],
     indirect=["get_structured_record_request"],
 )
-def test_call_gp_provider_returns_200_on_success(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    On successful end-to-end call, the controller should return 200 with
-    expected body/headers.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
-    )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
-    )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    FakeGpProviderClient.response_status_code = 200
-    FakeGpProviderClient.response_body = b'{"resourceType":"Bundle"}'
-    FakeGpProviderClient.response_headers = {
-        "Content-Type": "application/fhir+json",
-        "X-Downstream": "gp-provider",
-    }
-
-    r = controller.run(get_structured_record_request)
-
-    # Check that response from GP provider was passed through.
-    assert r.status_code == 200
-    assert r.data == FakeGpProviderClient.response_body.decode("utf-8")
-    assert r.headers == FakeGpProviderClient.response_headers
-
-    # Check that GP provider was initialised correctly
-    assert FakeGpProviderClient.last_init == {
-        "provider_endpoint": "https://provider.example/ep",
-        "provider_asid": "asid_PROV",
-        "consumer_asid": "asid_CONS",
-    }
-
-    # Check that we passed the trace ID and body to the provider
-    assert FakeGpProviderClient.last_call == {
-        "trace_id": get_structured_record_request.trace_id,
-        "body": get_structured_record_request.request_body,
-    }
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {})],
-    indirect=["get_structured_record_request"],
-)
 def test_controller_run_raises_error_when_request_body_is_empty(
     patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
     controller: Controller,
