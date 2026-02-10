@@ -31,16 +31,11 @@ class StubBase(ABC):
     ) -> Response:
         """
         Create a :class:`requests.Response` object for the stub.
-
-        :param status_code: HTTP status code.
-        :param headers: Response headers dictionary.
-        :param json_data: JSON body data.
-        :return: A :class:`requests.Response` instance.
         """
         response = Response()
         response.status_code = status_code
         response.headers = CaseInsensitiveDict(headers)
-        response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001
+        response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001 to customise stub
         response.encoding = "utf-8"
         # Set a reason phrase for HTTP error handling
         response.reason = http_responses.get(status_code, "Unknown")
@@ -52,12 +47,6 @@ class StubBase(ABC):
     ) -> Response:
         """
         Handle HTTP GET requests for the stub.
-
-        :param url: Request URL.
-        :param headers: Request headers.
-        :param params: Query parameters.
-        :param timeout: Request timeout in seconds.
-        :return: A :class:`requests.Response` instance.
         """
 
     @abstractmethod
@@ -70,10 +59,4 @@ class StubBase(ABC):
     ) -> Response:
         """
         Handle HTTP POST requests for the stub.
-
-        :param url: Request URL.
-        :param headers: Request headers.
-        :param data: Request body data.
-        :param timeout: Request timeout in seconds.
-        :return: A :class:`requests.Response` instance.
         """
