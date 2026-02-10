@@ -7,7 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any, cast
-from uuid import uuid4
 
 import pytest
 import requests
@@ -270,7 +269,8 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     * Authorization header
     * NHSD-End-User-Organisation-ODS header
     * Accept header
-    * caller-provided X-Request-ID and X-Correlation-ID headers
+    * X-Request-ID header (generated as UUID)
+    * caller-provided X-Correlation-ID header
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
@@ -291,12 +291,10 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    req_id = str(uuid4())
     corr_id = "corr-123"
 
     result = client.search_patient_by_nhs_number(
         "9000000009",
-        request_id=req_id,
         correlation_id=corr_id,
     )
     assert result is not None
@@ -305,7 +303,9 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     assert headers["Authorization"] == "Bearer test-token"
     assert headers["NHSD-End-User-Organisation-ODS"] == "A12345"
     assert headers["Accept"] == "application/fhir+json"
-    assert headers["X-Request-ID"] == req_id
+    assert "X-Request-ID" in headers
+    assert isinstance(headers["X-Request-ID"], str)
+    assert len(headers["X-Request-ID"]) >= 32  # UUID length check
     assert headers["X-Correlation-ID"] == corr_id
 
 
@@ -314,10 +314,10 @@ def test_search_patient_by_nhs_number_generates_request_id(
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    Verify that the client generates an X-Request-ID when not provided.
+    Verify that the client generates a valid UUID for X-Request-ID.
 
     The stub is in strict mode, so a missing or invalid X-Request-ID would cause a 400.
-    This test confirms a request ID is present and looks UUID-like.
+    This test confirms a request ID is present and is a valid UUID.
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
@@ -343,8 +343,66 @@ def test_search_patient_by_nhs_number_generates_request_id(
 
     headers = mock_requests_get["headers"]
     assert "X-Request-ID" in headers
-    assert isinstance(headers["X-Request-ID"], str)
-    assert len(headers["X-Request-ID"]) >= 32
+    request_id = headers["X-Request-ID"]
+    assert isinstance(request_id, str)
+    # Verify it's a valid UUID by parsing it
+    import uuid
+
+    try:
+        uuid.UUID(request_id)
+    except ValueError:
+        pytest.fail(f"X-Request-ID '{request_id}' is not a valid UUID")
+
+
+def test_search_patient_by_nhs_number_generates_fresh_request_id_each_call(
+    stub: PdsFhirApiStub,
+    mock_requests_get: dict[str, Any],
+) -> None:
+    """
+    Verify that a fresh UUID is generated for X-Request-ID on each call.
+
+    This test makes two calls to search_patient_by_nhs_number and confirms that
+    different UUIDs are generated for each request.
+
+    :param stub: Stub backend fixture.
+    :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
+        headers.
+    :return: ``None``.
+    """
+    _insert_basic_patient(
+        stub=stub,
+        nhs_number="9000000009",
+        family="Smith",
+        given=["Jane"],
+        general_practitioner=[],
+    )
+
+    client = PdsClient(
+        auth_token="test-token",  # noqa: S106
+        end_user_org_ods="A12345",
+        base_url="https://example.test/personal-demographics/FHIR/R4",
+    )
+
+    # First call
+    result1 = client.search_patient_by_nhs_number("9000000009")
+    assert result1 is not None
+    request_id_1 = mock_requests_get["headers"]["X-Request-ID"]
+
+    # Second call
+    result2 = client.search_patient_by_nhs_number("9000000009")
+    assert result2 is not None
+    request_id_2 = mock_requests_get["headers"]["X-Request-ID"]
+
+    # Verify both are valid UUIDs
+    import uuid
+
+    uuid.UUID(request_id_1)
+    uuid.UUID(request_id_2)
+
+    # Verify they are different
+    assert request_id_1 != request_id_2, (
+        "X-Request-ID should be a fresh UUID for each call"
+    )
 
 
 def test_search_patient_by_nhs_number_not_found_raises_error(

@@ -14,11 +14,9 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
-from gateway_api.controller import (
-    Controller,
-    SdsSearchResults,
-)
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+from gateway_api.sds_search import SdsSearchResults
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -61,6 +59,8 @@ class FakePdsClient:
     def search_patient_by_nhs_number(
         self,
         nhs_number: int,  # noqa: ARG002 (unused in fake)
+        correlation_id: str | None = None,  # noqa: ARG002 (unused in fake)
+        timeout: int | None = None,  # noqa: ARG002 (unused in fake)
     ) -> Any | None:
         return self._patient_details
 
@@ -77,18 +77,21 @@ class FakeSdsClient:
 
     def __init__(
         self,
-        auth_token: str | None = None,
+        api_key: str,
         base_url: str = "test_url",
         timeout: int = 10,
+        service_interaction_id: str | None = None,
     ) -> None:
         FakeSdsClient.last_init = {
-            "auth_token": auth_token,
+            "api_key": api_key,
             "base_url": base_url,
             "timeout": timeout,
+            "service_interaction_id": service_interaction_id,
         }
-        self.auth_token = auth_token
+        self.api_key = api_key
         self.base_url = base_url
         self.timeout = timeout
+        self.service_interaction_id = service_interaction_id
         self._org_details_by_ods: dict[str, SdsSearchResults | None] = {}
 
     def set_org_details(
