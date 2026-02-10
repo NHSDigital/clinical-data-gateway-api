@@ -14,6 +14,8 @@ from typing import Any
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
+from stubs.data.patients import Patients
+
 
 def _create_response(
     status_code: int,
@@ -70,69 +72,13 @@ class PdsFhirApiStub:
         # Tests may overwrite this record via upsert_patient.
         self.upsert_patient(
             nhs_number="9000000009",
-            patient={
-                "resourceType": "Patient",
-                "id": "9000000009",
-                "meta": {
-                    "versionId": "1",
-                    "lastUpdated": "2020-01-01T00:00:00Z",
-                },
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9000000009",
-                    }
-                ],
-                "name": [
-                    {
-                        "use": "official",
-                        "family": "Smith",
-                        "given": ["Jane"],
-                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                    }
-                ],
-                "gender": "female",
-                "birthDate": "1970-01-01",
-            },
+            patient=Patients.JANE_SMITH_9000000009,
             version_id=1,
         )
 
         self.upsert_patient(
             nhs_number="9999999999",
-            patient={
-                "resourceType": "Patient",
-                "id": "9999999999",
-                "meta": {
-                    "versionId": "1",
-                    "lastUpdated": "2020-01-01T00:00:00Z",
-                },
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9999999999",
-                    }
-                ],
-                "name": [
-                    {
-                        "use": "official",
-                        "family": "Jones",
-                        "given": ["Alice"],
-                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                    }
-                ],
-                "gender": "female",
-                "birthDate": "1980-01-01",
-                "generalPractitioner": [
-                    {
-                        "id": "1",
-                        "type": "Organization",
-                        "identifier": {
-                            "value": "A12345",
-                            "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                        },
-                    }
-                ],
-            },
+            patient=Patients.ALICE_JONES_9999999999,
             version_id=1,
         )
 

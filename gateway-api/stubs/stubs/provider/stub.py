@@ -28,6 +28,8 @@ from gateway_api.common.common import json_str
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
+from stubs.data.bundles import Bundles
+
 
 def _create_response(
     status_code: int,
@@ -64,49 +66,6 @@ class GpProviderStub:
     # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
     """
 
-    # Example patient resource
-    patient_bundle = {
-        "resourceType": "Bundle",
-        "type": "collection",
-        "meta": {
-            "profile": [
-                "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
-            ]
-        },
-        "entry": [
-            {
-                "resource": {
-                    "resourceType": "Patient",
-                    "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
-                    "meta": {
-                        "versionId": "1469448000000",
-                        "profile": [
-                            "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                        ],
-                    },
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9999999999",
-                        }
-                    ],
-                    "active": True,
-                    "name": [
-                        {
-                            "use": "official",
-                            "text": "JACKSON Jane (Miss)",
-                            "family": "Jackson",
-                            "given": ["Jane"],
-                            "prefix": ["Miss"],
-                        }
-                    ],
-                    "gender": "female",
-                    "birthDate": "1952-05-31",
-                }
-            }
-        ],
-    }
-
     def access_record_structured(
         self,
         trace_id: str,
@@ -122,7 +81,7 @@ class GpProviderStub:
         stub_response = _create_response(
             status_code=200,
             headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-            content=json.dumps(self.patient_bundle).encode("utf-8"),
+            content=json.dumps(Bundles.ALICE_JONES_9999999999).encode("utf-8"),
             reason="OK",
         )
 

@@ -26,7 +26,7 @@ from collections.abc import Callable
 from urllib.parse import urljoin
 
 from requests import HTTPError, Response, post
-from stubs.stub_provider import stub_post
+from stubs.provider.stub import stub_post
 
 from gateway_api.common.error import SdsRequestFailed
 

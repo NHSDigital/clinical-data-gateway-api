@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 import requests
 from requests.structures import CaseInsensitiveDict
-from stubs.stub_pds import PdsFhirApiStub
+from stubs.pds.stub import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds.client import (

@@ -55,10 +55,22 @@
             "entry": [
               {
                 "resource": {
-                  "active": true,
-                  "birthDate": "1952-05-31",
+                  "birthDate": "1980-01-01",
                   "gender": "female",
-                  "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                  "generalPractitioner": [
+                    {
+                      "id": "1",
+                      "identifier": {
+                        "period": {
+                          "end": "9999-12-31",
+                          "start": "2020-01-01"
+                        },
+                        "value": "A12345"
+                      },
+                      "type": "Organization"
+                    }
+                  ],
+                  "id": "9999999999",
                   "identifier": [
                     {
                       "system": "https://fhir.nhs.uk/Id/nhs-number",
@@ -66,21 +78,19 @@
                     }
                   ],
                   "meta": {
-                    "profile": [
-                      "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                    ],
-                    "versionId": "1469448000000"
+                    "lastUpdated": "2020-01-01T00:00:00Z",
+                    "versionId": "1"
                   },
                   "name": [
                     {
-                      "family": "Jackson",
+                      "family": "Jones",
                       "given": [
-                        "Jane"
+                        "Alice"
                       ],
-                      "prefix": [
-                        "Miss"
-                      ],
-                      "text": "JACKSON Jane (Miss)",
+                      "period": {
+                        "end": "9999-12-31",
+                        "start": "1900-01-01"
+                      },
                       "use": "official"
                     }
                   ],

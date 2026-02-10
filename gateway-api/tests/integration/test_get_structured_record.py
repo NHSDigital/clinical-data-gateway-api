@@ -3,7 +3,7 @@
 import json
 
 from fhir.parameters import Parameters
-from stubs.stub_provider import GpProviderStub
+from stubs.data.bundles import Bundles
 
 from tests.conftest import Client
 
@@ -27,7 +27,7 @@ class TestGetStructuredRecord:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
         )
-        assert response.json() == GpProviderStub.patient_bundle
+        assert response.json() == Bundles.ALICE_JONES_9999999999
 
     def test_happy_path_content_type(
         self, client: Client, simple_request_payload: Parameters

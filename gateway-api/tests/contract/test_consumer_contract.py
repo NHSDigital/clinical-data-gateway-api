@@ -34,12 +34,10 @@ class TestConsumerContract:
                 {
                     "resource": {
                         "resourceType": "Patient",
-                        "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                        "id": "9999999999",
                         "meta": {
-                            "versionId": "1469448000000",
-                            "profile": [
-                                "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                            ],
+                            "versionId": "1",
+                            "lastUpdated": "2020-01-01T00:00:00Z",
                         },
                         "identifier": [
                             {
@@ -47,18 +45,29 @@ class TestConsumerContract:
                                 "value": "9999999999",
                             }
                         ],
-                        "active": True,
                         "name": [
                             {
                                 "use": "official",
-                                "text": "JACKSON Jane (Miss)",
-                                "family": "Jackson",
-                                "given": ["Jane"],
-                                "prefix": ["Miss"],
+                                "family": "Jones",
+                                "given": ["Alice"],
+                                "period": {"start": "1900-01-01", "end": "9999-12-31"},
                             }
                         ],
                         "gender": "female",
-                        "birthDate": "1952-05-31",
+                        "birthDate": "1980-01-01",
+                        "generalPractitioner": [
+                            {
+                                "id": "1",
+                                "type": "Organization",
+                                "identifier": {
+                                    "value": "A12345",
+                                    "period": {
+                                        "start": "2020-01-01",
+                                        "end": "9999-12-31",
+                                    },
+                                },
+                            }
+                        ],
                     }
                 }
             ],
@@ -128,10 +137,7 @@ class TestConsumerContract:
             assert body["type"] == "collection"
             assert len(body["entry"]) == 1
             assert body["entry"][0]["resource"]["resourceType"] == "Patient"
-            assert (
-                body["entry"][0]["resource"]["id"]
-                == "04603d77-1a4e-4d63-b246-d7504f8bd833"
-            )
+            assert body["entry"][0]["resource"]["id"] == "9999999999"
             assert (
                 body["entry"][0]["resource"]["identifier"][0]["value"] == "9999999999"
             )
