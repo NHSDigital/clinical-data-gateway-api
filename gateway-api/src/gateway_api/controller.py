@@ -2,11 +2,9 @@
 Controller layer for orchestrating calls to external services
 """
 
-from __future__ import annotations
+from dataclasses import dataclass
 
-import json
-from typing import TYPE_CHECKING
-
+from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFound,
     NoCurrentEndpoint,
@@ -14,17 +12,9 @@ from gateway_api.common.error import (
     NoOrganisationFound,
     NoPatientFound,
 )
-from gateway_api.provider_request import GpProviderClient
-
-if TYPE_CHECKING:
-    from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-
-__all__ = ["json"]  # Make mypy happy in tests
-
-from dataclasses import dataclass
-
-from gateway_api.common.common import FlaskResponse
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 from gateway_api.pds_search import PdsClient, PdsSearchResults
+from gateway_api.provider_request import GpProviderClient
 
 
 @dataclass

@@ -18,8 +18,6 @@ If required keys are missing, a ``KeyError`` is raised intentionally. This is tr
 malformed upstream data (or malformed test fixtures) and should be corrected at source.
 """
 
-from __future__ import annotations
-
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass

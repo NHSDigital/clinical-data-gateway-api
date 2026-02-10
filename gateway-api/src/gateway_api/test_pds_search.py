@@ -2,19 +2,15 @@
 Unit tests for :mod:`gateway_api.pds_search`.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import date
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
 import requests
+from requests.structures import CaseInsensitiveDict
 from stubs.stub_pds import PdsFhirApiStub
-
-if TYPE_CHECKING:
-    from requests.structures import CaseInsensitiveDict
 
 from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds_search import (

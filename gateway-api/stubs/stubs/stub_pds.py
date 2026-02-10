@@ -4,8 +4,6 @@ In-memory PDS FHIR R4 API stub.
 The stub does **not** implement the full PDS API surface, nor full FHIR validation.
 """
 
-from __future__ import annotations
-
 import json
 import re
 import uuid

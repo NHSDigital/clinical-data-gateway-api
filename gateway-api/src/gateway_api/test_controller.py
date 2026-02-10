@@ -2,11 +2,10 @@
 Unit tests for :mod:`gateway_api.controller`.
 """
 
-from __future__ import annotations
-
+from collections.abc import Generator
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 from flask import request as flask_request
@@ -14,6 +13,7 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
+from gateway_api.common.common import json_str
 from gateway_api.common.error import (
     NoAsidFound,
     NoCurrentEndpoint,
@@ -26,11 +26,6 @@ from gateway_api.controller import (
     SdsSearchResults,
 )
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-
-if TYPE_CHECKING:
-    from collections.abc import Generator
-
-    from gateway_api.common.common import json_str
 
 
 # -----------------------------
