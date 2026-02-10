@@ -14,7 +14,13 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
-from gateway_api.common.error import BaseError
+from gateway_api.common.error import (
+    NoAsidFound,
+    NoCurrentEndpoint,
+    NoCurrentProvider,
+    NoOrganisationFound,
+    NoPatientFound,
+)
 from gateway_api.controller import (
     Controller,
     SdsSearchResults,
@@ -354,7 +360,7 @@ def test_controller_run_raises_error_when_request_body_is_empty(
     If PDS returns no patient record, the controller should return 404.
     """
     with pytest.raises(
-        BaseError, match="No PDS patient found for NHS number 9999999999"
+        NoPatientFound, match="No PDS patient found for NHS number 9999999999"
     ):
         _ = controller.run(get_structured_record_request)
 
@@ -376,10 +382,11 @@ def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
     pds = pds_factory(ods_code="")
     monkeypatch.setattr(controller_module, "PdsClient", pds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert "did not contain a current provider ODS code" in (r.data or "")
+    with pytest.raises(
+        NoCurrentProvider,
+        match="PDS patient 9999999999 did not contain a current provider ODS code",
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -402,10 +409,11 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert r.data == "No SDS org found for provider ODS code PROVIDER"
+    with pytest.raises(
+        NoOrganisationFound,
+        match="No SDS org found for provider ODS code PROVIDER",
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -434,10 +442,13 @@ def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert "did not contain a current ASID" in (r.data or "")
+    with pytest.raises(
+        NoAsidFound,
+        match=(
+            "SDS result for provider ODS code PROVIDER did not contain a current ASID"
+        ),
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -493,7 +504,7 @@ def test_controller_run_raises_patient_not_found_error_when_patient_doesnt_exist
     from the FHIR Parameters request body.
     """
     with pytest.raises(
-        BaseError, match="No PDS patient found for NHS number 1234567890"
+        NoPatientFound, match="No PDS patient found for NHS number 1234567890"
     ):
         _ = controller.run(get_structured_record_request)
 
@@ -522,10 +533,14 @@ def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert "did not contain a current endpoint" in (r.data or "")
+    with pytest.raises(
+        NoCurrentEndpoint,
+        match=(
+            "SDS result for provider ODS code PROVIDER did not contain "
+            "a current endpoint"
+        ),
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -554,10 +569,10 @@ def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert r.data == "No SDS org found for consumer ODS code CONSUMER"
+    with pytest.raises(
+        NoOrganisationFound, match="No SDS org found for consumer ODS code CONSUMER"
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(
@@ -590,10 +605,13 @@ def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
     monkeypatch.setattr(controller_module, "PdsClient", pds)
     monkeypatch.setattr(controller_module, "SdsClient", sds)
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert "did not contain a current ASID" in (r.data or "")
+    with pytest.raises(
+        NoAsidFound,
+        match=(
+            "SDS result for consumer ODS code CONSUMER did not contain a current ASID"
+        ),
+    ):
+        _ = controller.run(get_structured_record_request)
 
 
 @pytest.mark.parametrize(

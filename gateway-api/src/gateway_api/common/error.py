@@ -18,6 +18,7 @@ class BaseError(Exception):
 
     def __init__(self, **additional_details: str):
         self.additional_details = additional_details
+        super().__init__(self)
 
     def build_response(self) -> Response:
         operation_outcome: OperationOutcome = {
@@ -61,3 +62,28 @@ class InvalidRequestJSON(BaseError):
 class MissingOrEmptyHeader(BaseError):
     _message = 'Missing or empty required header "{header}"'
     status_code = 400
+
+
+class NoCurrentProvider(BaseError):
+    _message = "PDS patient {nhs_number} did not contain a current provider ODS code"
+    status_code = 404
+
+
+class NoOrganisationFound(BaseError):
+    _message = "No SDS org found for {org_type} ODS code {ods_code}"
+    status_code = 404
+
+
+class NoAsidFound(BaseError):
+    _message = (
+        "SDS result for {org_type} ODS code {ods_code} did not contain a current ASID"
+    )
+    status_code = 404
+
+
+class NoCurrentEndpoint(BaseError):
+    _message = (
+        "SDS result for provider ODS code {provider_ods} did not contain "
+        "a current endpoint"
+    )
+    status_code = 404

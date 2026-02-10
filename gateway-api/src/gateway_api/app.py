@@ -47,8 +47,7 @@ def get_structured_record() -> Response:
     except Exception:
         error = BaseError()
         error.log()
-        response = error.build_response()
-        return response
+        return error.build_response()
 
     return get_structured_record_request.build_response()
 

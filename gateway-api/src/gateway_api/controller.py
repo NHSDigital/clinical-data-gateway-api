@@ -7,7 +7,13 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from gateway_api.common.error import NoPatientFound
+from gateway_api.common.error import (
+    NoAsidFound,
+    NoCurrentEndpoint,
+    NoCurrentProvider,
+    NoOrganisationFound,
+    NoPatientFound,
+)
 from gateway_api.provider_request import GpProviderClient
 
 if TYPE_CHECKING:
@@ -148,17 +154,11 @@ class Controller:
         """
         auth_token = self.get_auth_token()
 
-        try:
-            provider_ods = self._get_pds_details(auth_token, request.nhs_number)
-        except RequestError as err:
-            return FlaskResponse(status_code=err.status_code, data=str(err))
+        provider_ods = self._get_pds_details(auth_token, request.nhs_number)
 
-        try:
-            consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-                auth_token, request.ods_from.strip(), provider_ods
-            )
-        except RequestError as err:
-            return FlaskResponse(status_code=err.status_code, data=str(err))
+        consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
+            auth_token, request.ods_from.strip(), provider_ods
+        )
 
         # Call GP provider with correct parameters
         self.gp_provider_client = GpProviderClient(
@@ -220,13 +220,7 @@ class Controller:
         if pds_result.gp_ods_code:
             provider_ods_code = pds_result.gp_ods_code
         else:
-            raise RequestError(
-                status_code=404,
-                message=(
-                    f"PDS patient {nhs_number} did not contain a current "
-                    "provider ODS code"
-                ),
-            )
+            raise NoCurrentProvider(nhs_number=nhs_number)
 
         return provider_ods_code
 
@@ -255,47 +249,23 @@ class Controller:
 
         provider_details: SdsSearchResults | None = sds.get_org_details(provider_ods)
         if provider_details is None:
-            raise RequestError(
-                status_code=404,
-                message=f"No SDS org found for provider ODS code {provider_ods}",
-            )
+            raise NoOrganisationFound(org_type="provider", ods_code=provider_ods)
 
         provider_asid = (provider_details.asid or "").strip()
         if not provider_asid:
-            raise RequestError(
-                status_code=404,
-                message=(
-                    f"SDS result for provider ODS code {provider_ods} did not contain "
-                    "a current ASID"
-                ),
-            )
+            raise NoAsidFound(org_type="provider", ods_code=provider_ods)
 
         provider_endpoint = (provider_details.endpoint or "").strip()
         if not provider_endpoint:
-            raise RequestError(
-                status_code=404,
-                message=(
-                    f"SDS result for provider ODS code {provider_ods} did not contain "
-                    "a current endpoint"
-                ),
-            )
+            raise NoCurrentEndpoint(provider_ods=provider_ods)
 
         # SDS: Get consumer details (ASID) for consumer ODS
         consumer_details: SdsSearchResults | None = sds.get_org_details(consumer_ods)
         if consumer_details is None:
-            raise RequestError(
-                status_code=404,
-                message=f"No SDS org found for consumer ODS code {consumer_ods}",
-            )
+            raise NoOrganisationFound(org_type="consumer", ods_code=consumer_ods)
 
         consumer_asid = (consumer_details.asid or "").strip()
         if not consumer_asid:
-            raise RequestError(
-                status_code=404,
-                message=(
-                    f"SDS result for consumer ODS code {consumer_ods} did not contain "
-                    "a current ASID"
-                ),
-            )
+            raise NoAsidFound(org_type="consumer", ods_code=consumer_ods)
 
         return consumer_asid, provider_asid, provider_endpoint
