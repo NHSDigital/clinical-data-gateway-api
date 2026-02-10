@@ -168,7 +168,7 @@ jobs:
         with:
           mtls-secret-name: ${{ vars.PREVIEW_ENV_MTLS_SECRET_NAME}}
           target-url: ${{ steps.tf-output.outputs.preview_url }}
-          proxy-base-path: 'clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
+          proxy-base-path: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
           proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
           proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
           proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
@@ -178,7 +178,7 @@ jobs:
         if: github.event.action == 'closed'
         uses: ./.github/actions/proxy/tear-down-proxy
         with:
-          proxy-base-path: 'clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
+          proxy-base-path: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
           proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
           proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
           proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
@@ -348,6 +348,13 @@ jobs:
             });
 
       # ---------- Security scanning ----------
+      - name: Trivy IaC scan
+        if: github.event.action != 'closed'
+        uses: nhs-england-tools/trivy-action/iac-scan@3456c1657a37d500027fd782e6b08911725392da
+        with:
+          scan-ref: infrastructure/environments/preview
+          artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
+
       - name: Trivy filesystem scan
         if: github.event.action != 'closed'
         uses: nhs-england-tools/trivy-action/image-scan@3456c1657a37d500027fd782e6b08911725392da
