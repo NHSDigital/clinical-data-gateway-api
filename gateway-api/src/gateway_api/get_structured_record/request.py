@@ -13,10 +13,6 @@ if TYPE_CHECKING:
     from fhir.bundle import Bundle
 
 
-class RequestValidationError(Exception):
-    """Exception raised for errors in the request validation."""
-
-
 class GetStructuredRecordRequest:
     INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
     RESOURCE: str = "patient"
@@ -55,10 +51,7 @@ class GetStructuredRecordRequest:
         return json.dumps(self._request_body)
 
     def _validate_headers(self) -> None:
-        """Validate required headers are present and non-empty.
-
-        :raises RequestValidationError: If required headers are missing or empty.
-        """
+        """Validate required headers are present and non-empty."""
         trace_id = self._headers.get("Ssp-TraceID", "").strip()
         if not trace_id:
             raise MissingOrEmptyHeader(header="Ssp-TraceID")

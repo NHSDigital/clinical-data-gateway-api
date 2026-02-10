@@ -29,6 +29,8 @@ from typing import cast
 import requests
 from stubs.stub_pds import PdsFhirApiStub
 
+from gateway_api.common.error import PdsRequestFailed
+
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
 type ResultStructureDict = dict[str, ResultStructure]
@@ -36,16 +38,6 @@ type ResultList = list[ResultStructureDict]
 
 # Type for stub get method
 type GetCallable = Callable[..., requests.Response]
-
-
-class ExternalServiceError(Exception):
-    """
-    Raised when the downstream PDS request fails.
-
-    This module catches :class:`requests.HTTPError` thrown by
-    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
-    callers are not coupled to ``requests`` exception types.
-    """
 
 
 @dataclass
@@ -176,8 +168,6 @@ class PdsClient:
             :attr:`timeout` is used.
         :return: A :class:`PdsSearchResults` instance if a patient can be extracted,
             otherwise ``None``.
-        :raises ExternalServiceError: If the HTTP request returns an error status and
-            ``raise_for_status()`` raises :class:`requests.HTTPError`.
         """
         headers = self._build_headers(
             request_id=request_id,
@@ -195,12 +185,9 @@ class PdsClient:
         )
 
         try:
-            # In production, failures surface here (4xx/5xx -> HTTPError).
             response.raise_for_status()
         except requests.HTTPError as err:
-            raise ExternalServiceError(
-                f"PDS request failed: {err.response.reason}"
-            ) from err
+            raise PdsRequestFailed(error_reason=err.response.reason) from err
 
         body = response.json()
         return self._extract_single_search_result(body)

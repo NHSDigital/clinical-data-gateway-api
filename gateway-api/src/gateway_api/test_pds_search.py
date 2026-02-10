@@ -16,8 +16,8 @@ from stubs.stub_pds import PdsFhirApiStub
 if TYPE_CHECKING:
     from requests.structures import CaseInsensitiveDict
 
+from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds_search import (
-    ExternalServiceError,
     PdsClient,
     ResultList,
 )
@@ -345,11 +345,11 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
-    Verify that a 404 response results in :class:`ExternalServiceError`.
+    Verify that a 404 response results in :class:`PDSRequestFailed`.
 
     The stub returns a 404 OperationOutcome for unknown NHS numbers. The client calls
     ``raise_for_status()``, which raises ``requests.HTTPError``; the client wraps that
-    into :class:`ExternalServiceError`.
+    into :class:`PDSRequestFailed`.
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture.
@@ -360,7 +360,9 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    with pytest.raises(ExternalServiceError):
+    with pytest.raises(
+        PdsRequestFailed, match="PDS FHIR API request failed: Not Found"
+    ):
         pds.search_patient_by_nhs_number("9900000001")
 
 

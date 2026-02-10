@@ -87,3 +87,13 @@ class NoCurrentEndpoint(BaseError):
         "a current endpoint"
     )
     status_code = NOT_FOUND
+
+
+class PdsRequestFailed(BaseError):
+    _message = "PDS FHIR API request failed: {error_reason}"
+    status_code = INTERNAL_SERVER_ERROR
+
+
+class SdsRequestFailed(BaseError):
+    _message = "SDS FHIR API request failed: {error_reason}"
+    status_code = INTERNAL_SERVER_ERROR

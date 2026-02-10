@@ -28,30 +28,6 @@ from gateway_api.pds_search import PdsClient, PdsSearchResults
 
 
 @dataclass
-class RequestError(Exception):
-    """
-    Raised (and handled) when there is a problem with the incoming request.
-
-    Instances of this exception are caught by controller entry points and converted
-    into an appropriate :class:`FlaskResponse`.
-
-    :param status_code: HTTP status code that should be returned.
-    :param message: Human-readable error message.
-    """
-
-    status_code: int
-    message: str
-
-    def __str__(self) -> str:
-        """
-        Coercing this exception to a string returns the error message.
-
-        :returns: The error message.
-        """
-        return self.message
-
-
-@dataclass
 class SdsSearchResults:
     """
     Stub SDS search results dataclass.
@@ -199,7 +175,6 @@ class Controller:
         :param auth_token: Authorization token to use for PDS.
         :param nhs_number: NHS number
         :returns: Provider ODS code (GP ODS code).
-        :raises RequestError: If the patient cannot be found or has no provider ODS code
         """
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
@@ -238,7 +213,6 @@ class Controller:
         :param consumer_ods: Consumer organisation ODS code (from request headers).
         :param provider_ods: Provider organisation ODS code (from PDS).
         :returns: Tuple of (consumer_asid, provider_asid, provider_endpoint).
-        :raises RequestError: If SDS data is missing or incomplete for provider/consumer
         """
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(

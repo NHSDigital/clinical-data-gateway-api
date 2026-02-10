@@ -1,8 +1,5 @@
 """Get Structured Record module."""
 
-from gateway_api.get_structured_record.request import (
-    GetStructuredRecordRequest,
-    RequestValidationError,
-)
+from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
-__all__ = ["RequestValidationError", "GetStructuredRecordRequest"]
+__all__ = ["GetStructuredRecordRequest"]

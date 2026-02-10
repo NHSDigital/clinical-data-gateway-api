@@ -14,7 +14,8 @@ from requests.structures import CaseInsensitiveDict
 from stubs.stub_provider import GpProviderStub
 
 from gateway_api import provider_request
-from gateway_api.provider_request import ExternalServiceError, GpProviderClient
+from gateway_api.common.error import SdsRequestFailed
+from gateway_api.provider_request import GpProviderClient
 
 ars_interactionId = (
     "urn:nhs:names:services:gpconnect:structured"
@@ -199,7 +200,7 @@ def test_access_structured_record_raises_external_service_error(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
-    Test that the `access_structured_record` method raises an `ExternalServiceError`
+    Test that the `access_structured_record` method raises an `SdsRequestFailed`
     when the GPProvider FHIR API request fails with an HTTP error.
     """
     provider_asid = "200000001154"
@@ -214,7 +215,7 @@ def test_access_structured_record_raises_external_service_error(
     )
 
     with pytest.raises(
-        ExternalServiceError,
-        match="GPProvider FHIR API request failed:Bad Request",
+        SdsRequestFailed,
+        match="SDS FHIR API request failed: Bad Request",
     ):
         client.access_structured_record(trace_id, "body")
