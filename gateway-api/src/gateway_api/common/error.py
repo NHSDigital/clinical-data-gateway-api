@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from http.client import INTERNAL_SERVER_ERROR
+from http.client import BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
 from typing import TYPE_CHECKING
 
 from flask import Response
@@ -51,34 +51,34 @@ class BaseError(Exception):
 
 class NoPatientFound(BaseError):
     _message = "No PDS patient found for NHS number {nhs_number}"
-    status_code = 400
+    status_code = BAD_REQUEST
 
 
 class InvalidRequestJSON(BaseError):
     _message = "Invalid JSON body sent in request"
-    status_code = 400
+    status_code = BAD_REQUEST
 
 
 class MissingOrEmptyHeader(BaseError):
     _message = 'Missing or empty required header "{header}"'
-    status_code = 400
+    status_code = BAD_REQUEST
 
 
 class NoCurrentProvider(BaseError):
     _message = "PDS patient {nhs_number} did not contain a current provider ODS code"
-    status_code = 404
+    status_code = NOT_FOUND
 
 
 class NoOrganisationFound(BaseError):
     _message = "No SDS org found for {org_type} ODS code {ods_code}"
-    status_code = 404
+    status_code = NOT_FOUND
 
 
 class NoAsidFound(BaseError):
     _message = (
         "SDS result for {org_type} ODS code {ods_code} did not contain a current ASID"
     )
-    status_code = 404
+    status_code = NOT_FOUND
 
 
 class NoCurrentEndpoint(BaseError):
@@ -86,4 +86,4 @@ class NoCurrentEndpoint(BaseError):
         "SDS result for provider ODS code {provider_ods} did not contain "
         "a current endpoint"
     )
-    status_code = 404
+    status_code = NOT_FOUND
