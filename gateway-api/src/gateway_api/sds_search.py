@@ -234,13 +234,7 @@ class SdsClient:
             timeout=timeout or self.timeout,
         )
 
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as err:
-            raise ExternalServiceError(
-                f"SDS /{querytype} request failed: {err.response.status_code} "
-                f"{err.response.reason}"
-            ) from err
+        # TODO: Post-steel-thread we probably want a raise_for_status() here
 
         body = response.json()
         return cast("ResultStructureDict", body)
@@ -258,8 +252,8 @@ class SdsClient:
         :return: First Device resource, or ``None`` if the bundle is empty.
         """
         entries = cast("ResultList", bundle.get("entry", []))
-        if not entries:
-            return None
+
+        # TODO: Post-steel-thread handle case where bundle contains no entries
 
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
