@@ -174,8 +174,8 @@ class SdsClient:
         )
 
         device = self._extract_first_entry(device_bundle)
-        if device is None:
-            return None
+
+        # TODO: Post-steel-thread handle case where no device is found for ODS code
 
         asid = self._extract_identifier(device, self.ASID_SYSTEM)
         party_key = self._extract_identifier(device, self.PARTYKEY_SYSTEM)
@@ -244,7 +244,7 @@ class SdsClient:
     @staticmethod
     def _extract_first_entry(
         bundle: ResultStructureDict,
-    ) -> ResultStructureDict | None:
+    ) -> ResultStructureDict:  # TODO: Post-steel-thread this may return a None as well
         """
         Extract the first Device resource from a Bundle.
 
