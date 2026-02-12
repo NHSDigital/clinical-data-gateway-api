@@ -14,12 +14,8 @@ from requests.structures import CaseInsensitiveDict
 from stubs.stub_provider import GpProviderStub
 
 from gateway_api import provider_request
+from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.provider_request import ExternalServiceError, GpProviderClient
-
-ars_interactionId = (
-    "urn:nhs:names:services:gpconnect:structured"
-    ":fhir:operation:gpc.getstructuredrecord-1"
-)
 
 
 @pytest.fixture
@@ -123,7 +119,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
-        "Ssp-InteractionID": ars_interactionId,
+        "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
     }
 
     result = client.access_structured_record(trace_id, "body")

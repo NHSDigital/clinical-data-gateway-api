@@ -9,6 +9,12 @@ from dataclasses import dataclass
 # The alias is used to make intent clearer in function signatures.
 type json_str = str
 
+# Access record structured interaction ID from
+# https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
+ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
+    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+)
+
 
 @dataclass
 class FlaskResponse:

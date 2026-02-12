@@ -28,10 +28,10 @@ from urllib.parse import urljoin
 from requests import HTTPError, Response, post
 from stubs.stub_provider import GpProviderStub
 
-ARS_INTERACTION_ID = (
-    "urn:nhs:names:services:gpconnect:structured"
-    ":fhir:operation:gpc.getstructuredrecord-1"
+from gateway_api.common.common import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID as ARS_INTERACTION_ID,
 )
+
 ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"

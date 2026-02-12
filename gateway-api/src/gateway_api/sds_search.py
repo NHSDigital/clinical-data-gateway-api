@@ -18,6 +18,8 @@ from typing import Any, Literal, cast
 import requests
 from stubs.stub_sds import SdsFhirApiStub
 
+from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
 type ResultStructureDict = dict[str, ResultStructure]
@@ -92,9 +94,7 @@ class SdsClient:
     ENDPOINT: Literal["Endpoint"] = "Endpoint"
 
     # Default service interaction ID for GP Connect
-    DEFAULT_SERVICE_INTERACTION_ID = (
-        "urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1"
-    )
+    DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
     def __init__(
         self,

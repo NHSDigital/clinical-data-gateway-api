@@ -9,7 +9,11 @@ from typing import Any
 import pytest
 from stubs.stub_sds import SdsFhirApiStub
 
-from gateway_api.sds_search import SdsClient, SdsSearchResults
+from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.sds_search import (
+    SdsClient,
+    SdsSearchResults,
+)
 
 
 @pytest.fixture
@@ -110,7 +114,7 @@ def test_sds_client_get_org_details_with_endpoint(
     # Add a device with party key so we can get an endpoint
     stub.upsert_device(
         organization_ods="TESTORG",
-        service_interaction_id="urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
         party_key="TESTORG-123456",
         device={
             "resourceType": "Device",
@@ -136,7 +140,7 @@ def test_sds_client_get_org_details_with_endpoint(
 
     stub.upsert_endpoint(
         organization_ods="TESTORG",
-        service_interaction_id="urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
         party_key="TESTORG-123456",
         endpoint={
             "resourceType": "Endpoint",
@@ -179,7 +183,7 @@ def test_sds_client_get_org_details_no_endpoint(
     # Add a device without a party key (so no endpoint will be found)
     stub.upsert_device(
         organization_ods="NOENDPOINT",
-        service_interaction_id="urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
         party_key=None,
         device={
             "resourceType": "Device",

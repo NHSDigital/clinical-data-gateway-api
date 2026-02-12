@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+
 from .base_stub import StubBase
 
 if TYPE_CHECKING:
@@ -44,10 +46,6 @@ class SdsFhirApiStub(StubBase):
         "https://terminology.hl7.org/CodeSystem/endpoint-connection-type"
     )
     CODING_SYSTEM = "https://terminology.hl7.org/CodeSystem/endpoint-payload-type"
-
-    GP_CONNECT_INTERACTION = (
-        "urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1"
-    )
     CONNECTION_DISPLAY = "HL7 FHIR"
 
     def __init__(self) -> None:
@@ -104,7 +102,7 @@ class SdsFhirApiStub(StubBase):
         for data in device_data:
             self.upsert_device(
                 organization_ods=data["org_ods"],
-                service_interaction_id=self.GP_CONNECT_INTERACTION,
+                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
                 party_key=data["party_key"],
                 device=self._create_device_resource(
                     device_id=data["device_id"],
@@ -146,7 +144,7 @@ class SdsFhirApiStub(StubBase):
         for data in endpoint_data:
             self.upsert_endpoint(
                 organization_ods=data["org_ods"],
-                service_interaction_id=self.GP_CONNECT_INTERACTION,
+                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
                 party_key=data["party_key"],
                 endpoint=self._create_endpoint_resource(
                     endpoint_id=data["endpoint_id"],
