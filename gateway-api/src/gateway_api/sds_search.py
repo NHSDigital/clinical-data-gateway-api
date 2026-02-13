@@ -152,6 +152,7 @@ class SdsClient:
         ods_code: str,
         correlation_id: str | None = None,
         timeout: int | None = None,
+        get_endpoint: bool = True,
     ) -> SdsSearchResults | None:
         """
         Retrieve ASID and endpoint for an organization by ODS code.
@@ -164,6 +165,8 @@ class SdsClient:
         :param correlation_id: Optional correlation ID for tracing.
         :param timeout: Optional per-call timeout in seconds. If not provided,
             :attr:`timeout` is used.
+        :param get_endpoint: Whether to perform the second query to retrieve the
+            endpoint URL.
         :return: A :class:`SdsSearchResults` instance if data can be extracted,
             otherwise ``None``.
         :raises ExternalServiceError: If the HTTP request returns an error status.
@@ -185,7 +188,7 @@ class SdsClient:
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
-        if party_key:
+        if get_endpoint:
             endpoint_bundle = self._query_sds(
                 ods_code=ods_code,
                 party_key=party_key,
@@ -258,6 +261,7 @@ class SdsClient:
 
         # TODO: Post-steel-thread handle case where bundle contains no entries
 
+        # TODO: consider business logic for handling multiple entries in beta
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
 

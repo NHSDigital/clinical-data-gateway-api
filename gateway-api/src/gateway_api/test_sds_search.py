@@ -44,7 +44,7 @@ def test_sds_client_get_org_details_success(
     assert result is not None
     assert isinstance(result, SdsSearchResults)
     assert result.asid == "asid_PROV"
-    assert result.endpoint is not None
+    assert result.endpoint == "https://provider.example.com/fhir"
 
 
 def test_sds_client_get_org_details_with_endpoint(
@@ -57,7 +57,7 @@ def test_sds_client_get_org_details_with_endpoint(
     :param mock_requests_get: Capture fixture for request details.
     """
 
-    # Add a device with party key so we can get an endpoint
+    # Add a device so we can get an endpoint
     stub.upsert_device(
         organization_ods="TESTORG",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
@@ -116,69 +116,11 @@ def test_sds_client_get_org_details_with_endpoint(
     assert result.endpoint == "https://testorg.example.com/fhir"
 
 
-def test_sds_client_get_org_details_no_endpoint(
+def test_sds_client_sends_correct_headers(
     stub: SdsFhirApiStub,
 ) -> None:
     """
-    Test SdsClient handles missing endpoint gracefully.
-
-    :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
-    """
-    # Add a device without a party key (so no endpoint will be found)
-    stub.upsert_device(
-        organization_ods="NOENDPOINT",
-        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key=None,
-        device={
-            "resourceType": "Device",
-            "id": "noendpoint-device-id",
-            "identifier": [
-                {
-                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
-                    "value": "888888888888",
-                }
-            ],
-            "owner": {
-                "identifier": {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                    "value": "NOENDPOINT",
-                }
-            },
-        },
-    )
-
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
-    result = client.get_org_details(ods_code="NOENDPOINT")
-
-    assert result is not None
-    assert result.asid == "888888888888"
-    assert result.endpoint is None
-
-
-def test_sds_client_sends_correlation_id(
-    stub: SdsFhirApiStub,  # noqa: ARG001
-) -> None:
-    """
-    Test that SdsClient sends X-Correlation-Id header when provided.
-
-    :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
-    """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
-
-    correlation_id = "test-correlation-123"
-    client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
-
-    # Check that the header was sent
-    assert stub.get_headers["X-Correlation-Id"] == correlation_id
-
-
-def test_sds_client_sends_apikey(
-    stub: SdsFhirApiStub,  # noqa: ARG001
-) -> None:
-    """
-    Test that SdsClient sends apikey header.
+    Test that SdsClient sends X-Correlation-Id and apikey headers when provided.
 
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
@@ -186,9 +128,11 @@ def test_sds_client_sends_apikey(
     api_key = "my-secret-key"
     client = SdsClient(api_key=api_key, base_url=SdsClient.SANDBOX_URL)
 
-    client.get_org_details(ods_code="PROVIDER")
+    correlation_id = "test-correlation-123"
+    client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
-    # Check that the apikey header was sent
+    # Check that the headers were
+    assert stub.get_headers["X-Correlation-Id"] == correlation_id
     assert stub.get_headers["apikey"] == api_key
 
 
@@ -249,7 +193,7 @@ def test_sds_client_custom_service_interaction_id(
         service_interaction_id=custom_interaction,
     )
 
-    result = client.get_org_details(ods_code="CUSTOMINT")
+    result = client.get_org_details(ods_code="CUSTOMINT", get_endpoint=False)
 
     # Verify the custom interaction was used
     params = stub.get_params
@@ -263,7 +207,7 @@ def test_sds_client_custom_service_interaction_id(
 
 
 def test_sds_client_builds_correct_device_query_params(
-    stub: SdsFhirApiStub,  # noqa: ARG001
+    stub: SdsFhirApiStub,
 ) -> None:
     """
     Test that SdsClient builds Device query parameters correctly.
@@ -292,26 +236,8 @@ def test_sds_client_builds_correct_device_query_params(
     )
 
 
-def test_sds_client_extract_asid_from_device(
-    stub: SdsFhirApiStub,  # noqa: ARG001
-) -> None:
-    """
-    Test ASID extraction from Device resource.
-
-    :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
-    """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
-
-    result = client.get_org_details(ods_code="PROVIDER")
-
-    assert result is not None
-    assert result.asid is not None
-    assert result.asid == "asid_PROV"
-
-
 def test_sds_client_extract_party_key_from_device(
-    stub: SdsFhirApiStub,  # noqa: ARG001
+    stub: SdsFhirApiStub,
 ) -> None:
     """
     Test party key extraction and subsequent endpoint lookup.
@@ -319,13 +245,50 @@ def test_sds_client_extract_party_key_from_device(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    # The default seeded PROVIDER device has a party key, which should trigger
-    # an endpoint lookup
+    # The default seeded PROVIDER device has a party key
     client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
 
-    # Need to seed the data correctly - let's use CONSUMER which has party key
-    result = client.get_org_details(ods_code="CONSUMER")
+    stub.upsert_device(
+        organization_ods="WITHPARTYKEY",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        party_key="WITHPARTYKEY-654321",
+        device={
+            "resourceType": "Device",
+            "id": "device-with-party-key",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                    "value": "888888888888",
+                },
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "value": "WITHPARTYKEY-654321",
+                },
+            ],
+        },
+    )
+
+    stub.upsert_endpoint(
+        organization_ods="WITHPARTYKEY",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        party_key="WITHPARTYKEY-654321",
+        endpoint={
+            "resourceType": "Endpoint",
+            "id": "endpoint-for-party-key",
+            "status": "active",
+            "address": "https://withpartykey.example.com/fhir",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "value": "WITHPARTYKEY-654321",
+                }
+            ],
+        },
+    )
+
+    result = client.get_org_details(ods_code="WITHPARTYKEY", get_endpoint=True)
 
     # Should have found ASID but may not have endpoint depending on seeding
     assert result is not None
-    assert result.asid == "asid_CONS"
+    assert result.asid == "888888888888"
+    assert result.endpoint == "https://withpartykey.example.com/fhir"

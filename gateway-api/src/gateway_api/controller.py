@@ -210,7 +210,9 @@ class Controller:
             timeout=self.timeout,
         )
 
-        provider_details: SdsSearchResults | None = sds.get_org_details(provider_ods)
+        provider_details: SdsSearchResults | None = sds.get_org_details(
+            provider_ods, get_endpoint=True
+        )
         if provider_details is None:
             raise RequestError(
                 status_code=404,
@@ -238,7 +240,9 @@ class Controller:
             )
 
         # SDS: Get consumer details (ASID) for consumer ODS
-        consumer_details: SdsSearchResults | None = sds.get_org_details(consumer_ods)
+        consumer_details: SdsSearchResults | None = sds.get_org_details(
+            consumer_ods, get_endpoint=False
+        )
         if consumer_details is None:
             raise RequestError(
                 status_code=404,

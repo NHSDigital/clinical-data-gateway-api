@@ -29,7 +29,7 @@ from requests import HTTPError, Response, post
 from stubs.stub_provider import GpProviderStub
 
 from gateway_api.common.common import (
-    ACCESS_RECORD_STRUCTURED_INTERACTION_ID as ARS_INTERACTION_ID,
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
 )
 
 ARS_FHIR_BASE = "FHIR/STU3"
@@ -95,7 +95,7 @@ class GpProviderClient:
         return {
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json",
-            "Ssp-InteractionID": ARS_INTERACTION_ID,
+            "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
             "Ssp-TraceID": trace_id,
