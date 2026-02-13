@@ -24,6 +24,7 @@ def stub(monkeypatch: pytest.MonkeyPatch) -> SdsFhirApiStub:
         "SdsFhirApiStub",
         lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
     )
+    monkeypatch.setattr("requests.get", stub.get)
 
     return stub
 
