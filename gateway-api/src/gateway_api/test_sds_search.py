@@ -4,8 +4,6 @@ Unit tests for :mod:`gateway_api.sds_search`.
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 from stubs.stub_sds import SdsFhirApiStub
 
@@ -17,59 +15,8 @@ from gateway_api.sds_search import (
 
 
 @pytest.fixture
-def stub() -> SdsFhirApiStub:
-    """
-    Create a stub backend instance.
-
-    :return: A :class:`stubs.stub_sds.SdsFhirApiStub` instance.
-    """
-    return SdsFhirApiStub()
-
-
-@pytest.fixture
-def mock_requests_get(
-    monkeypatch: pytest.MonkeyPatch, stub: SdsFhirApiStub
-) -> dict[str, Any]:
-    """
-    Patch ``SdsFhirApiStub`` so the SdsClient uses the test stub fixture.
-
-    The fixture returns a "capture" dict recording the most recent request information.
-
-    :param monkeypatch: Pytest monkeypatch fixture.
-    :param stub: Stub backend used to serve GET requests.
-    :param return: A capture dictionary containing the last call details.
-    """
-    capture: dict[str, Any] = {}
-
-    # Wrap the stub's get method to capture call parameters
-    original_stub_get = stub.get
-
-    def _capturing_get(
-        url: str,
-        headers: dict[str, str] | None = None,
-        params: Any = None,
-        timeout: Any = None,
-    ) -> Any:
-        """
-        Wrapper around stub.get that captures parameters.
-
-        :param url: URL passed by the client.
-        :param headers: Headers passed by the client.
-        :param params: Query parameters.
-        :param timeout: Timeout.
-        :return: Response from the stub.
-        """
-        headers = headers or {}
-        capture["url"] = url
-        capture["headers"] = dict(headers)
-        capture["params"] = params
-        capture["timeout"] = timeout
-
-        return original_stub_get(url, headers, params, timeout)
-
-    stub.get = _capturing_get  # type: ignore[method-assign]
-
-    # Monkeypatch SdsFhirApiStub so SdsClient uses our test stub
+def stub(monkeypatch: pytest.MonkeyPatch) -> SdsFhirApiStub:
+    stub = SdsFhirApiStub()
     import gateway_api.sds_search as sds_module
 
     monkeypatch.setattr(
@@ -78,12 +25,11 @@ def mock_requests_get(
         lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
     )
 
-    return capture
+    return stub
 
 
 def test_sds_client_get_org_details_success(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test SdsClient can successfully look up organization details.
@@ -103,7 +49,6 @@ def test_sds_client_get_org_details_success(
 
 def test_sds_client_get_org_details_with_endpoint(
     stub: SdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test SdsClient retrieves endpoint when available.
@@ -111,6 +56,7 @@ def test_sds_client_get_org_details_with_endpoint(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
+
     # Add a device with party key so we can get an endpoint
     stub.upsert_device(
         organization_ods="TESTORG",
@@ -172,7 +118,6 @@ def test_sds_client_get_org_details_with_endpoint(
 
 def test_sds_client_get_org_details_no_endpoint(
     stub: SdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test SdsClient handles missing endpoint gracefully.
@@ -213,7 +158,6 @@ def test_sds_client_get_org_details_no_endpoint(
 
 def test_sds_client_sends_correlation_id(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test that SdsClient sends X-Correlation-Id header when provided.
@@ -227,12 +171,11 @@ def test_sds_client_sends_correlation_id(
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
     # Check that the header was sent
-    assert mock_requests_get["headers"]["X-Correlation-Id"] == correlation_id
+    assert stub.get_headers["X-Correlation-Id"] == correlation_id
 
 
 def test_sds_client_sends_apikey(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test that SdsClient sends apikey header.
@@ -246,12 +189,11 @@ def test_sds_client_sends_apikey(
     client.get_org_details(ods_code="PROVIDER")
 
     # Check that the apikey header was sent
-    assert mock_requests_get["headers"]["apikey"] == api_key
+    assert stub.get_headers["apikey"] == api_key
 
 
 def test_sds_client_timeout_parameter(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test that SdsClient passes timeout parameter to requests.
@@ -264,12 +206,11 @@ def test_sds_client_timeout_parameter(
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
     # Check that the custom timeout was passed
-    assert mock_requests_get["timeout"] == 60
+    assert stub.get_timeout == 60
 
 
 def test_sds_client_custom_service_interaction_id(
     stub: SdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test that SdsClient uses custom interaction ID when provided.
@@ -311,7 +252,7 @@ def test_sds_client_custom_service_interaction_id(
     result = client.get_org_details(ods_code="CUSTOMINT")
 
     # Verify the custom interaction was used
-    params = mock_requests_get["params"]
+    params = stub.get_params
     assert any(
         custom_interaction in str(ident) for ident in params.get("identifier", [])
     )
@@ -323,7 +264,6 @@ def test_sds_client_custom_service_interaction_id(
 
 def test_sds_client_builds_correct_device_query_params(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test that SdsClient builds Device query parameters correctly.
@@ -335,7 +275,7 @@ def test_sds_client_builds_correct_device_query_params(
 
     client.get_org_details(ods_code="PROVIDER")
 
-    params = mock_requests_get["params"]
+    params = stub.get_params
 
     # Check organization parameter
     assert (
@@ -354,7 +294,6 @@ def test_sds_client_builds_correct_device_query_params(
 
 def test_sds_client_extract_asid_from_device(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test ASID extraction from Device resource.
@@ -373,7 +312,6 @@ def test_sds_client_extract_asid_from_device(
 
 def test_sds_client_extract_party_key_from_device(
     stub: SdsFhirApiStub,  # noqa: ARG001
-    mock_requests_get: dict[str, Any],  # noqa: ARG001
 ) -> None:
     """
     Test party key extraction and subsequent endpoint lookup.

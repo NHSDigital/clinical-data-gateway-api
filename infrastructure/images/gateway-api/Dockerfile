@@ -13,6 +13,12 @@ ENV PYTHONPATH=/resources/build/gateway-api
 ENV FLASK_HOST="0.0.0.0"
 ENV FLASK_PORT="8080"
 
+# Configure external services to use stubs
+# To disable, comment these out - if they're set at all, it'll use the stub
+ENV STUB_SDS=1
+ENV STUB_PDS=1
+ENV STUB_PROVIDER=1
+
 ARG COMMIT_VERSION
 ENV COMMIT_VERSION=$COMMIT_VERSION
 ARG BUILD_DATE

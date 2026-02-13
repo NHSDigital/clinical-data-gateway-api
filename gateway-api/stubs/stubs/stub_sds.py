@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Any
 
 from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
-from .base_stub import StubBase
+from .base_stub import GetStub, StubBase
 
 if TYPE_CHECKING:
     from requests import Response
 
 
-class SdsFhirApiStub(StubBase):
+class SdsFhirApiStub(StubBase, GetStub):
     """
     Minimal in-memory stub for the SDS FHIR API, implementing ``GET /Device``
     and ``GET /Endpoint``
@@ -71,168 +71,26 @@ class SdsFhirApiStub(StubBase):
         self._seed_default_devices()
         self._seed_default_endpoints()
 
-    def _seed_default_devices(self) -> None:
-        """Seed the stub with some default Device records for testing."""
-        # Define test device data as a list of parameters
-        device_data = [
-            {
-                "org_ods": "PROVIDER",
-                "party_key": "PROVIDER-0000806",
-                "device_id": "F0F0E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_PROV",
-                "display": "Example NHS Trust",
-            },
-            {
-                "org_ods": "CONSUMER",
-                "party_key": "CONSUMER-0000807",
-                "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
-                "display": "Example Consumer Organisation",
-            },
-            {
-                "org_ods": "A12345",
-                "party_key": "A12345-0000808",
-                "device_id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_A12345",
-                "display": "Example GP Practice A12345",
-            },
-        ]
+        self._last_headers: dict[str, str] = {}
+        self._last_params: dict[str, str] = {}
+        self._last_url: str = ""
+        self._last_timeout: int | None = None
 
-        # Iterate through test data and create devices
-        for data in device_data:
-            self.upsert_device(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                party_key=data["party_key"],
-                device=self._create_device_resource(
-                    device_id=data["device_id"],
-                    asid=data["asid"],
-                    party_key=data["party_key"],
-                    org_ods=data["org_ods"],
-                    display=data["display"],
-                ),
-            )
+    @property
+    def get_headers(self) -> dict[str, str]:
+        return self._last_headers
 
-    def _seed_default_endpoints(self) -> None:
-        """Seed the stub with some default Endpoint records for testing."""
-        # Define test endpoint data as a list of parameters
-        endpoint_data = [
-            {
-                "org_ods": "PROVIDER",
-                "party_key": "PROVIDER-0000806",
-                "endpoint_id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_PROV",
-                "address": "https://provider.example.com/fhir",
-            },
-            {
-                "org_ods": "CONSUMER",
-                "party_key": "CONSUMER-0000807",
-                "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
-                "address": "https://consumer.example.com/fhir",
-            },
-            {
-                "org_ods": "A12345",
-                "party_key": "A12345-0000808",
-                "endpoint_id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_A12345",
-                "address": "https://a12345.example.com/fhir",
-            },
-        ]
+    @property
+    def get_params(self) -> dict[str, str]:
+        return self._last_params
 
-        # Iterate through test data and create endpoints
-        for data in endpoint_data:
-            self.upsert_endpoint(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                party_key=data["party_key"],
-                endpoint=self._create_endpoint_resource(
-                    endpoint_id=data["endpoint_id"],
-                    asid=data["asid"],
-                    party_key=data["party_key"],
-                    org_ods=data["org_ods"],
-                    address=data["address"],
-                ),
-            )
+    @property
+    def get_url(self) -> str:
+        return self._last_url
 
-    def _create_device_resource(
-        self,
-        device_id: str,
-        asid: str,
-        party_key: str,
-        org_ods: str,
-        display: str,
-    ) -> dict[str, Any]:
-        """Create a Device resource dictionary with the given parameters."""
-        return {
-            "resourceType": "Device",
-            "id": device_id,
-            "identifier": [
-                {
-                    "system": self.ASID_SYSTEM,
-                    "value": asid,
-                },
-                {
-                    "system": self.PARTYKEY_SYSTEM,
-                    "value": party_key,
-                },
-            ],
-            "owner": {
-                "identifier": {
-                    "system": self.ODS_SYSTEM,
-                    "value": org_ods,
-                },
-                "display": display,
-            },
-        }
-
-    def _create_endpoint_resource(
-        self,
-        endpoint_id: str,
-        asid: str,
-        party_key: str,
-        org_ods: str,
-        address: str,
-    ) -> dict[str, Any]:
-        """Create an Endpoint resource dictionary with the given parameters."""
-        return {
-            "resourceType": "Endpoint",
-            "id": endpoint_id,
-            "status": "active",
-            "connectionType": {
-                "system": self.CONNECTION_SYSTEM,
-                "code": "hl7-fhir-rest",
-                "display": self.CONNECTION_DISPLAY,
-            },
-            "payloadType": [
-                {
-                    "coding": [
-                        {
-                            "system": self.CODING_SYSTEM,
-                            "code": "any",
-                            "display": "Any",
-                        }
-                    ]
-                }
-            ],
-            "address": address,
-            "managingOrganization": {
-                "identifier": {
-                    "system": self.ODS_SYSTEM,
-                    "value": org_ods,
-                }
-            },
-            "identifier": [
-                {
-                    "system": self.ASID_SYSTEM,
-                    "value": asid,
-                },
-                {
-                    "system": self.PARTYKEY_SYSTEM,
-                    "value": party_key,
-                },
-            ],
-        }
+    @property
+    def get_timeout(self) -> int | None:
+        return self._last_timeout
 
     # ---------------------------
     # Public API for tests
@@ -490,6 +348,11 @@ class SdsFhirApiStub(StubBase):
         :param timeout: Timeout value.
         :return: A :class:`requests.Response`.
         """
+        self._last_url = url
+        self._last_headers = headers
+        self._last_params = params
+        self._last_timeout = timeout
+
         if "/Endpoint" in url:
             return self.get_endpoint_bundle(
                 url=url, headers=headers, params=params, timeout=timeout
@@ -498,27 +361,172 @@ class SdsFhirApiStub(StubBase):
             url=url, headers=headers, params=params, timeout=timeout
         )
 
-    def post(
-        self,
-        url: str,
-        headers: dict[str, Any],
-        data: Any,
-        timeout: int,
-    ) -> Response:
-        """
-        Handle HTTP POST requests for the stub.
-
-        :param url: Request URL.
-        :param headers: Request headers.
-        :param data: Request body data.
-        :param timeout: Request timeout in seconds.
-        :raises NotImplementedError: POST requests are not supported by this stub.
-        """
-        raise NotImplementedError("POST requests are not supported by SdsFhirApiStub")
-
     # ---------------------------
     # Internal helpers
     # ---------------------------
+
+    def _seed_default_devices(self) -> None:
+        """Seed the stub with some default Device records for testing."""
+        # Define test device data as a list of parameters
+        device_data = [
+            {
+                "org_ods": "PROVIDER",
+                "party_key": "PROVIDER-0000806",
+                "device_id": "F0F0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_PROV",
+                "display": "Example NHS Trust",
+            },
+            {
+                "org_ods": "CONSUMER",
+                "party_key": "CONSUMER-0000807",
+                "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_CONS",
+                "display": "Example Consumer Organisation",
+            },
+            {
+                "org_ods": "A12345",
+                "party_key": "A12345-0000808",
+                "device_id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_A12345",
+                "display": "Example GP Practice A12345",
+            },
+        ]
+
+        # Iterate through test data and create devices
+        for data in device_data:
+            self.upsert_device(
+                organization_ods=data["org_ods"],
+                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+                party_key=data["party_key"],
+                device=self._create_device_resource(
+                    device_id=data["device_id"],
+                    asid=data["asid"],
+                    party_key=data["party_key"],
+                    org_ods=data["org_ods"],
+                    display=data["display"],
+                ),
+            )
+
+    def _seed_default_endpoints(self) -> None:
+        """Seed the stub with some default Endpoint records for testing."""
+        # Define test endpoint data as a list of parameters
+        endpoint_data = [
+            {
+                "org_ods": "PROVIDER",
+                "party_key": "PROVIDER-0000806",
+                "endpoint_id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_PROV",
+                "address": "https://provider.example.com/fhir",
+            },
+            {
+                "org_ods": "CONSUMER",
+                "party_key": "CONSUMER-0000807",
+                "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_CONS",
+                "address": "https://consumer.example.com/fhir",
+            },
+            {
+                "org_ods": "A12345",
+                "party_key": "A12345-0000808",
+                "endpoint_id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "asid_A12345",
+                "address": "https://a12345.example.com/fhir",
+            },
+        ]
+
+        # Iterate through test data and create endpoints
+        for data in endpoint_data:
+            self.upsert_endpoint(
+                organization_ods=data["org_ods"],
+                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+                party_key=data["party_key"],
+                endpoint=self._create_endpoint_resource(
+                    endpoint_id=data["endpoint_id"],
+                    asid=data["asid"],
+                    party_key=data["party_key"],
+                    org_ods=data["org_ods"],
+                    address=data["address"],
+                ),
+            )
+
+    def _create_device_resource(
+        self,
+        device_id: str,
+        asid: str,
+        party_key: str,
+        org_ods: str,
+        display: str,
+    ) -> dict[str, Any]:
+        """Create a Device resource dictionary with the given parameters."""
+        return {
+            "resourceType": "Device",
+            "id": device_id,
+            "identifier": [
+                {
+                    "system": self.ASID_SYSTEM,
+                    "value": asid,
+                },
+                {
+                    "system": self.PARTYKEY_SYSTEM,
+                    "value": party_key,
+                },
+            ],
+            "owner": {
+                "identifier": {
+                    "system": self.ODS_SYSTEM,
+                    "value": org_ods,
+                },
+                "display": display,
+            },
+        }
+
+    def _create_endpoint_resource(
+        self,
+        endpoint_id: str,
+        asid: str,
+        party_key: str,
+        org_ods: str,
+        address: str,
+    ) -> dict[str, Any]:
+        """Create an Endpoint resource dictionary with the given parameters."""
+        return {
+            "resourceType": "Endpoint",
+            "id": endpoint_id,
+            "status": "active",
+            "connectionType": {
+                "system": self.CONNECTION_SYSTEM,
+                "code": "hl7-fhir-rest",
+                "display": self.CONNECTION_DISPLAY,
+            },
+            "payloadType": [
+                {
+                    "coding": [
+                        {
+                            "system": self.CODING_SYSTEM,
+                            "code": "any",
+                            "display": "Any",
+                        }
+                    ]
+                }
+            ],
+            "address": address,
+            "managingOrganization": {
+                "identifier": {
+                    "system": self.ODS_SYSTEM,
+                    "value": org_ods,
+                }
+            },
+            "identifier": [
+                {
+                    "system": self.ASID_SYSTEM,
+                    "value": asid,
+                },
+                {
+                    "system": self.PARTYKEY_SYSTEM,
+                    "value": party_key,
+                },
+            ],
+        }
 
     def _lookup_devices(
         self, org_ods: str, service_interaction_id: str, party_key: str | None

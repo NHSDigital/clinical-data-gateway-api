@@ -11,6 +11,7 @@ stubbing for testing purposes.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, cast
@@ -93,6 +94,9 @@ class SdsClient:
     DEVICE: Literal["Device"] = "Device"
     ENDPOINT: Literal["Endpoint"] = "Endpoint"
 
+    # Define here so it's neater
+    get_method: GetCallable
+
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
@@ -118,14 +122,13 @@ class SdsClient:
         self.service_interaction_id = (
             service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
         )
-        self.stub = SdsFhirApiStub()
+        self.stub = None
 
-        # Use stub for now - use environment variable once we have one
-        # TODO: Put this back to using the environment variable
-        # if os.environ.get("STUB_SDS", None):
-        self.get_method: GetCallable = self.stub.get
-        # else:
-        #     self.get_method: GetCallable = requests.get
+        if os.environ.get("STUB_SDS", None):
+            self.stub = SdsFhirApiStub()
+            self.get_method = self.stub.get
+        else:
+            self.get_method = requests.get
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
