@@ -47,6 +47,12 @@ def test_sds_client_get_org_details_success(
     assert result.asid == "asid_PROV"
     assert result.endpoint == "https://provider.example.com/fhir"
 
+    params = stub.get_params
+    assert any(
+        ACCESS_RECORD_STRUCTURED_INTERACTION_ID in str(ident)
+        for ident in params.get("identifier", [])
+    )
+
 
 def test_sds_client_get_org_details_with_endpoint(
     stub: SdsFhirApiStub,
