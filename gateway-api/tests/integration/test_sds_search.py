@@ -2,46 +2,21 @@
 
 from __future__ import annotations
 
-import pytest
 from gateway_api.sds_search import SdsClient, SdsSearchResults
-from stubs.stub_sds import SdsFhirApiStub
 
-
-@pytest.fixture
-def sds_stub() -> SdsFhirApiStub:
-    """
-    Create and return an SDS stub instance with default seeded data.
-
-    :return: SdsFhirApiStub instance with PROVIDER and CONSUMER organizations.
-    """
-    return SdsFhirApiStub()
-
-
-@pytest.fixture
-def sds_client(sds_stub: SdsFhirApiStub) -> SdsClient:
-    """
-    Create an SdsClient configured to use the stub.
-
-    :param sds_stub: SDS stub fixture.
-    :return: SdsClient configured with test stub.
-    """
-    client = SdsClient(api_key="test-integration-key", base_url="http://stub")
-    # Override the get_method to use the stub
-    client.get_method = sds_stub.get
-    return client
+API_KEY = "test-integration-key"
 
 
 class TestSdsIntegration:
     """Integration tests for SDS search operations."""
 
-    def test_get_device_by_ods_code_returns_valid_asid(
-        self, sds_client: SdsClient
-    ) -> None:
+    def test_get_device_by_ods_code_returns_valid_asid(self) -> None:
         """
         Test that querying by ODS code returns a valid ASID.
 
         :param sds_client: SDS client fixture configured with stub.
         """
+        sds_client = SdsClient(api_key=API_KEY)
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
@@ -50,14 +25,13 @@ class TestSdsIntegration:
         assert result.asid == "asid_PROV"
         assert len(result.asid) > 0
 
-    def test_get_device_with_party_key_returns_endpoint(
-        self, sds_client: SdsClient
-    ) -> None:
+    def test_get_device_with_party_key_returns_endpoint(self) -> None:
         """
         Test that a device with party key returns both ASID and endpoint.
 
         :param sds_client: SDS client fixture configured with stub.
         """
+        sds_client = SdsClient(api_key=API_KEY)
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
@@ -68,12 +42,13 @@ class TestSdsIntegration:
         assert result.endpoint.startswith("https://")
         assert "fhir" in result.endpoint
 
-    def test_consumer_organization_lookup(self, sds_client: SdsClient) -> None:
+    def test_consumer_organization_lookup(self) -> None:
         """
         Test that CONSUMER organization can be looked up successfully.
 
         :param sds_client: SDS client fixture configured with stub.
         """
+        sds_client = SdsClient(api_key=API_KEY)
         result = sds_client.get_org_details(ods_code="CONSUMER")
 
         assert result is not None
@@ -81,14 +56,13 @@ class TestSdsIntegration:
         assert result.endpoint is not None
         assert result.endpoint == "https://consumer.example.com/fhir"
 
-    def test_result_contains_both_asid_and_endpoint_when_available(
-        self, sds_client: SdsClient
-    ) -> None:
+    def test_result_contains_both_asid_and_endpoint_when_available(self) -> None:
         """
         Test that results contain both ASID and endpoint when both are available.
 
         :param sds_client: SDS client fixture configured with stub.
         """
+        sds_client = SdsClient(api_key=API_KEY)
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
