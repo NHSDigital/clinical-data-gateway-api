@@ -97,7 +97,11 @@ class FakeSdsClient:
     ) -> None:
         self._org_details_by_ods[ods_code] = org_details
 
-    def get_org_details(self, ods_code: str) -> SdsSearchResults | None:
+    def get_org_details(
+        self,
+        ods_code: str,
+        get_endpoint: bool = True,  # NOQA ARG002 (unused in fake),
+    ) -> SdsSearchResults | None:
         return self._org_details_by_ods.get(ods_code)
 
 

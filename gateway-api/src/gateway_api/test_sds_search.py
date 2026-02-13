@@ -137,7 +137,7 @@ def test_sds_client_sends_correct_headers(
 
 
 def test_sds_client_timeout_parameter(
-    stub: SdsFhirApiStub,  # noqa: ARG001
+    stub: SdsFhirApiStub,
 ) -> None:
     """
     Test that SdsClient passes timeout parameter to requests.
