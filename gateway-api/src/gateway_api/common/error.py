@@ -39,7 +39,7 @@ class BaseError(Exception):
         return response
 
     def log(self) -> None:
-        print(self)
+        print(self)  # TODO: Use traceback.print_exec()
 
     @property
     def message(self) -> str:
