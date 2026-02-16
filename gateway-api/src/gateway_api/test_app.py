@@ -68,8 +68,27 @@ class TestGetStructuredRecord:
                 {
                     "fullUrl": "https://example.com/Patient/9999999999",
                     "resource": {
+                        "generalPractitioner": [
+                            {
+                                "id": "1",
+                                "type": "Organization",
+                                "identifier": {
+                                    "value": "A12345",
+                                    "period": {
+                                        "start": "2020-01-01",
+                                        "end": "9999-12-31",
+                                    },
+                                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                                },
+                            }
+                        ],
                         "name": [
-                            {"family": "Alice", "given": ["Johnson"], "use": "Ally"}
+                            {
+                                "family": "Alice",
+                                "given": ["Johnson"],
+                                "use": "Ally",
+                                "period": {"start": "2020-01-01"},
+                            }
                         ],
                         "gender": "female",
                         "birthDate": "1990-05-15",

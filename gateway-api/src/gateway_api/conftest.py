@@ -32,13 +32,31 @@ def valid_simple_response_payload() -> Bundle:
             {
                 "fullUrl": "https://example.com/Patient/9999999999",
                 "resource": {
-                    "name": [{"family": "Alice", "given": ["Johnson"], "use": "Ally"}],
+                    "name": [
+                        {
+                            "family": "Alice",
+                            "given": ["Johnson"],
+                            "use": "Ally",
+                            "period": {"start": "2020-01-01"},
+                        }
+                    ],
                     "gender": "female",
                     "birthDate": "1990-05-15",
                     "resourceType": "Patient",
                     "id": "9999999999",
                     "identifier": [
                         {"value": "9999999999", "system": "urn:nhs:numbers"}
+                    ],
+                    "generalPractitioner": [
+                        {
+                            "id": "1",
+                            "type": "Organization",
+                            "identifier": {
+                                "value": "A12345",
+                                "period": {"start": "2020-01-01", "end": "9999-12-31"},
+                                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                            },
+                        }
                     ],
                 },
             }

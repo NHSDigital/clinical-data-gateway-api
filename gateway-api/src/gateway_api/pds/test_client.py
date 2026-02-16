@@ -4,7 +4,7 @@ Unit tests for :mod:`gateway_api.pds_search`.
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import pytest
@@ -13,10 +13,10 @@ from requests.structures import CaseInsensitiveDict
 from stubs.pds.stub import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
-from gateway_api.pds.client import (
-    PdsClient,
-    ResultList,  # TODO: Use FHIR class here
-)
+from gateway_api.pds.client import PdsClient
+
+if TYPE_CHECKING:
+    from fhir import GeneralPractitioner, HumanName
 
 
 @dataclass
@@ -436,23 +436,26 @@ def test_find_current_gp_with_today_override() -> None:
     pds = PdsClient("test-token", "A12345")
     pds_ignore_dates = PdsClient("test-token", "A12345", ignore_dates=True)
 
-    records = cast(
-        "ResultList",
-        [
-            {
-                "identifier": {
-                    "value": "a",
-                    "period": {"start": "2020-01-01", "end": "2020-12-31"},
-                }
+    records: list[GeneralPractitioner] = [
+        {
+            "id": "1234",
+            "type": "Organization",
+            "identifier": {
+                "value": "a",
+                "period": {"start": "2020-01-01", "end": "2020-12-31"},
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
             },
-            {
-                "identifier": {
-                    "value": "b",
-                    "period": {"start": "2021-01-01", "end": "2021-12-31"},
-                }
+        },
+        {
+            "id": "abcd",
+            "type": "Organization",
+            "identifier": {
+                "value": "b",
+                "period": {"start": "2021-01-01", "end": "2021-12-31"},
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
             },
-        ],
-    )
+        },
+    ]
 
     assert pds.find_current_gp(records, today=date(2020, 6, 1)) == records[0]
     assert pds.find_current_gp(records, today=date(2021, 6, 1)) == records[1]
@@ -470,23 +473,20 @@ def test_find_current_name_record_no_current_name() -> None:
     pds = PdsClient("test-token", "A12345")
     pds_ignore_date = PdsClient("test-token", "A12345", ignore_dates=True)
 
-    records = cast(
-        "ResultList",
-        [
-            {
-                "use": "official",
-                "family": "Doe",
-                "given": ["John"],
-                "period": {"start": "2000-01-01", "end": "2010-12-31"},
-            },
-            {
-                "use": "official",
-                "family": "Smith",
-                "given": ["John"],
-                "period": {"start": "2011-01-01", "end": "2020-12-31"},
-            },
-        ],
-    )
+    records: list[HumanName] = [
+        {
+            "use": "official",
+            "family": "Doe",
+            "given": ["John"],
+            "period": {"start": "2000-01-01", "end": "2010-12-31"},
+        },
+        {
+            "use": "official",
+            "family": "Smith",
+            "given": ["John"],
+            "period": {"start": "2011-01-01", "end": "2020-12-31"},
+        },
+    ]
 
     assert pds.find_current_name_record(records) is None
     assert pds_ignore_date.find_current_name_record(records) is not None
@@ -568,29 +568,26 @@ def test_find_current_name_record_ignore_dates_returns_last_or_none() -> None:
     """
     pds_ignore = PdsClient("test-token", "A12345", ignore_dates=True)
 
-    records = cast(
-        "ResultList",
-        [
-            {
-                "use": "official",
-                "family": "Old",
-                "given": ["First"],
-                "period": {"start": "1900-01-01", "end": "1900-12-31"},
-            },
-            {
-                "use": "official",
-                "family": "Newer",
-                "given": ["Second"],
-                "period": {"start": "1901-01-01", "end": "1901-12-31"},
-            },
-        ],
-    )
+    records: list[HumanName] = [
+        {
+            "use": "official",
+            "family": "Old",
+            "given": ["First"],
+            "period": {"start": "1900-01-01", "end": "1900-12-31"},
+        },
+        {
+            "use": "official",
+            "family": "Newer",
+            "given": ["Second"],
+            "period": {"start": "1901-01-01", "end": "1901-12-31"},
+        },
+    ]
 
     # Pick a date that is not covered by any record; ignore_dates should still pick last
     chosen = pds_ignore.find_current_name_record(records, today=date(2026, 1, 1))
     assert chosen == records[-1]
 
-    assert pds_ignore.find_current_name_record(cast("ResultList", [])) is None
+    assert pds_ignore.find_current_name_record([]) is None
 
 
 def test_find_current_gp_ignore_dates_returns_last_or_none() -> None:
@@ -601,26 +598,29 @@ def test_find_current_gp_ignore_dates_returns_last_or_none() -> None:
     """
     pds_ignore = PdsClient("test-token", "A12345", ignore_dates=True)
 
-    records = cast(
-        "ResultList",
-        [
-            {
-                "identifier": {
-                    "value": "GP-OLD",
-                    "period": {"start": "1900-01-01", "end": "1900-12-31"},
-                }
+    records: list[GeneralPractitioner] = [
+        {
+            "id": "abcd",
+            "type": "Organization",
+            "identifier": {
+                "value": "GP-OLD",
+                "period": {"start": "1900-01-01", "end": "1900-12-31"},
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
             },
-            {
-                "identifier": {
-                    "value": "GP-NEWER",
-                    "period": {"start": "1901-01-01", "end": "1901-12-31"},
-                }
+        },
+        {
+            "id": "1234",
+            "type": "Organization",
+            "identifier": {
+                "value": "GP-NEWER",
+                "period": {"start": "1901-01-01", "end": "1901-12-31"},
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
             },
-        ],
-    )
+        },
+    ]
 
     # Pick a date that is not covered by any record; ignore_dates should still pick last
     chosen = pds_ignore.find_current_gp(records, today=date(2026, 1, 1))
     assert chosen == records[-1]
 
-    assert pds_ignore.find_current_gp(cast("ResultList", [])) is None
+    assert pds_ignore.find_current_gp([]) is None

@@ -24,15 +24,11 @@ from datetime import date, datetime, timezone
 from typing import cast
 
 import requests
+from fhir import Bundle, BundleEntry, GeneralPractitioner, HumanName, Patient
 from stubs.pds.stub import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds.search_results import PdsSearchResults
-
-# Recursive JSON-like structure typing used for parsed FHIR bodies.
-type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
-type ResultStructureDict = dict[str, ResultStructure]
-type ResultList = list[ResultStructureDict]
 
 # Type for stub get method
 type GetCallable = Callable[..., requests.Response]
@@ -169,7 +165,9 @@ class PdsClient:
 
     # --------------- internal helpers for result extraction -----------------
 
-    def _get_gp_ods_code(self, general_practitioners: ResultList) -> str | None:
+    def _get_gp_ods_code(
+        self, general_practitioners: list[GeneralPractitioner]
+    ) -> str | None:
         """
         Extract the current GP ODS code from ``Patient.generalPractitioner``.
 
@@ -193,14 +191,12 @@ class PdsClient:
         if gp is None:
             return None
 
-        identifier = cast("ResultStructureDict", gp.get("identifier", {}))
-        ods_code = str(identifier.get("value", None))
+        ods_code = gp["identifier"]["value"]
 
-        # Avoid returning the literal string "None" if identifier.value is absent.
         return None if ods_code == "None" else ods_code
 
     def _extract_single_search_result(
-        self, body: ResultStructureDict
+        self, body: Patient | Bundle
     ) -> PdsSearchResults | None:
         """
         Extract a single :class:`PdsSearchResults` from a Patient response.
@@ -220,9 +216,9 @@ class PdsClient:
         # 1) Patient (GET /Patient/{id})
         # 2) Bundle with Patient in entry[0].resource (search endpoints)
         if str(body.get("resourceType", "")) == "Patient":
-            patient = body
+            patient = cast("Patient", body)
         else:
-            entries: ResultList = cast("ResultList", body.get("entry", []))
+            entries = cast("list[BundleEntry]", body.get("entry", []))
             if not entries:
                 raise RuntimeError("PDS response contains no patient entries")
 
@@ -232,38 +228,36 @@ class PdsClient:
             # application.
             # See MaxResults parameter in the PDS OpenAPI spec.
             entry = entries[0]
-            patient = cast("ResultStructureDict", entry.get("resource", {}))
+            patient = cast("Patient", entry.get("resource", {}))
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
             raise RuntimeError("PDS patient resource missing NHS number")
 
-        # Select current name record and extract names.
-        names = cast("ResultList", patient.get("name", []))
-        current_name = self.find_current_name_record(names)
+        current_name = self.find_current_name_record(patient["name"])
 
         if current_name is not None:
-            given_names_list = cast("list[str]", current_name.get("given", []))
-            family_name = str(current_name.get("family", "")) or ""
-            given_names_str = " ".join(given_names_list).strip()
+            given_names = " ".join(current_name.get("given", [])).strip()
+            family_name = current_name.get("family", "")
         else:
-            given_names_str = ""
+            given_names = ""
             family_name = ""
 
         # Extract GP ODS code if a current GP record exists.
-        gp_list = cast("ResultList", patient.get("generalPractitioner", []))
-        gp_ods_code = self._get_gp_ods_code(gp_list)
+        gp_ods_code = self._get_gp_ods_code(patient["generalPractitioner"])
 
         return PdsSearchResults(
-            given_names=given_names_str,
+            given_names=given_names,
             family_name=family_name,
             nhs_number=nhs_number,
             gp_ods_code=gp_ods_code,
         )
 
     def find_current_gp(
-        self, records: ResultList, today: date | None = None
-    ) -> ResultStructureDict | None:
+        self,
+        gerneral_practitioners: list[GeneralPractitioner],
+        today: date | None = None,
+    ) -> GeneralPractitioner | None:
         """
         Select the current record from a ``generalPractitioner`` list.
 
@@ -291,28 +285,23 @@ class PdsClient:
             today = datetime.now(timezone.utc).date()
 
         if self.ignore_dates:
-            if len(records) > 0:
-                return records[-1]
+            if len(gerneral_practitioners) > 0:
+                return gerneral_practitioners[-1]
             else:
                 return None
 
-        for record in records:
-            identifier = cast("ResultStructureDict", record["identifier"])
-            periods = cast("dict[str, str]", identifier["period"])
-            start_str = periods["start"]
-            end_str = periods["end"]
-
-            start = date.fromisoformat(start_str)
-            end = date.fromisoformat(end_str)
-
+        for record in gerneral_practitioners:
+            period = record["identifier"]["period"]  # TODO: spell check lint
+            start = date.fromisoformat(period["start"])
+            end = date.fromisoformat(period["end"])
             if start <= today <= end:
                 return record
 
         return None
 
     def find_current_name_record(
-        self, records: ResultList, today: date | None = None
-    ) -> ResultStructureDict | None:
+        self, names: list[HumanName], today: date | None = None
+    ) -> HumanName | None:
         """
         Select the current record from a ``Patient.name`` list.
 
@@ -335,20 +324,16 @@ class PdsClient:
             today = datetime.now(timezone.utc).date()
 
         if self.ignore_dates:
-            if len(records) > 0:
-                return records[-1]
+            if len(names) > 0:
+                return names[-1]
             else:
                 return None
 
-        for record in records:
-            periods = cast("dict[str, str]", record["period"])
-            start_str = periods["start"]
-            end_str = periods["end"]
-
-            start = date.fromisoformat(start_str)
-            end = date.fromisoformat(end_str)
-
+        for name in names:
+            period = cast("dict[str, str]", name["period"])
+            start = date.fromisoformat(period["start"])
+            end = date.fromisoformat(period["end"])
             if start <= today <= end:
-                return record
+                return name
 
         return None
