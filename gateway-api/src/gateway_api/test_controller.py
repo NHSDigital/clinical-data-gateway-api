@@ -1,594 +1,81 @@
-"""
-Unit tests for :mod:`gateway_api.controller`.
-"""
-
-from collections.abc import Generator
-from dataclasses import dataclass
-from types import SimpleNamespace
-from typing import Any
+"""Unit tests for :mod:`gateway_api.controller`."""
 
 import pytest
-from flask import request as flask_request
-from requests import Response
+from pytest_mock import MockerFixture
 
-import gateway_api.controller as controller_module
-from gateway_api.app import app
-from gateway_api.common.common import json_str
-from gateway_api.common.error import (
-    NoAsidFound,
-    NoCurrentEndpoint,
-    NoCurrentProvider,
-    NoOrganisationFound,
-    NoPatientFound,
-)
+from gateway_api.common.error import NoCurrentProvider
 from gateway_api.controller import Controller
-from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+from gateway_api.pds import PdsSearchResults
 from gateway_api.sds import SdsSearchResults
 
 
-# -----------------------------
-# Fake downstream dependencies
-# -----------------------------
-def _make_pds_result(gp_ods_code: str | None) -> Any:
-    """
-    Construct a minimal PDS-result-like object for tests.
+def test_get_pds_details_returns_provider_ods_code_for_happy_path(
+    mocker: MockerFixture,
+    auth_token: str,
+) -> None:
+    nhs_number = "9000000009"
+    pds_search_result = PdsSearchResults(
+        given_names="Jane",
+        family_name="Smith",
+        nhs_number=nhs_number,
+        gp_ods_code="A12345",
+    )
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=pds_search_result,
+    )
+    controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
 
-    The controller only relies on the ``gp_ods_code`` attribute.
+    actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
 
-    :param gp_ods_code: Provider ODS code to expose on the result.
-    :returns: An object with a ``gp_ods_code`` attribute.
-    """
-    return SimpleNamespace(gp_ods_code=gp_ods_code)
-
-
-class FakePdsClient:
-    """
-    Test double for :class:`gateway_api.pds_search.PdsClient`.
-
-    The controller instantiates this class and calls ``search_patient_by_nhs_number``.
-    Tests configure the returned patient details using ``set_patient_details``.
-    """
-
-    last_init: dict[str, Any] | None = None
-
-    def __init__(self, **kwargs: Any) -> None:
-        FakePdsClient.last_init = dict(kwargs)
-        self._patient_details: Any | None = None
-
-    def set_patient_details(self, value: Any) -> None:
-        self._patient_details = value
-
-    def search_patient_by_nhs_number(
-        self,
-        nhs_number: int,  # noqa: ARG002 (unused in fake)
-    ) -> Any | None:
-        return self._patient_details
+    assert actual == "A12345"
 
 
-class FakeSdsClient:
-    """
-    Test double for :class:`gateway_api.controller.SdsClient`.
-
-    Tests configure per-ODS results using ``set_org_details`` and the controller
-    retrieves them via ``get_org_details``.
-    """
-
-    last_init: dict[str, Any] | None = None
-
-    def __init__(
-        self,
-        auth_token: str | None = None,
-        base_url: str = "test_url",
-        timeout: int = 10,
-    ) -> None:
-        FakeSdsClient.last_init = {
-            "auth_token": auth_token,
-            "base_url": base_url,
-            "timeout": timeout,
-        }
-        self.auth_token = auth_token
-        self.base_url = base_url
-        self.timeout = timeout
-        self._org_details_by_ods: dict[str, SdsSearchResults | None] = {}
-
-    def set_org_details(
-        self, ods_code: str, org_details: SdsSearchResults | None
-    ) -> None:
-        self._org_details_by_ods[ods_code] = org_details
-
-    def get_org_details(self, ods_code: str) -> SdsSearchResults | None:
-        return self._org_details_by_ods.get(ods_code)
-
-
-class FakeGpProviderClient:
-    """
-    Test double for :class:`gateway_api.controller.GpProviderClient`.
-
-    The controller instantiates this class and calls ``access_structured_record``.
-    Tests configure the returned HTTP response using class-level attributes.
-    """
-
-    last_init: dict[str, str] | None = None
-    last_call: dict[str, str] | None = None
-
-    # Configure per-test.
-    return_none: bool = False
-    response_status_code: int = 200
-    response_body: bytes = b"ok"
-    response_headers: dict[str, str] = {"Content-Type": "application/fhir+json"}
-
-    def __init__(
-        self, provider_endpoint: str, provider_asid: str, consumer_asid: str
-    ) -> None:
-        FakeGpProviderClient.last_init = {
-            "provider_endpoint": provider_endpoint,
-            "provider_asid": provider_asid,
-            "consumer_asid": consumer_asid,
-        }
-
-    def access_structured_record(
-        self,
-        trace_id: str,
-        body: json_str,
-    ) -> Response | None:
-        FakeGpProviderClient.last_call = {"trace_id": trace_id, "body": body}
-
-        if FakeGpProviderClient.return_none:
-            return None
-
-        resp = Response()
-        resp.status_code = FakeGpProviderClient.response_status_code
-        resp._content = FakeGpProviderClient.response_body  # noqa: SLF001
-        resp.encoding = "utf-8"
-        resp.headers.update(FakeGpProviderClient.response_headers)
-        resp.url = "https://example.invalid/fake"
-        return resp
-
-
-@dataclass
-class SdsSetup:
-    """
-    Helper dataclass to hold SDS setup data for tests.
-    """
-
-    ods_code: str
-    search_results: SdsSearchResults
-
-
-class sds_factory:
-    """
-    Factory to create a :class:`FakeSdsClient` pre-configured with up to two
-    organisations.
-    """
-
-    def __init__(
-        self,
-        org1: SdsSetup | None = None,
-        org2: SdsSetup | None = None,
-    ) -> None:
-        self.org1 = org1
-        self.org2 = org2
-
-    def __call__(self, **kwargs: Any) -> FakeSdsClient:
-        self.inst = FakeSdsClient(**kwargs)
-        if self.org1 is not None:
-            self.inst.set_org_details(
-                self.org1.ods_code,
-                SdsSearchResults(
-                    asid=self.org1.search_results.asid,
-                    endpoint=self.org1.search_results.endpoint,
-                ),
-            )
-
-        if self.org2 is not None:
-            self.inst.set_org_details(
-                self.org2.ods_code,
-                SdsSearchResults(
-                    asid=self.org2.search_results.asid,
-                    endpoint=self.org2.search_results.endpoint,
-                ),
-            )
-        return self.inst
-
-
-class pds_factory:
-    """
-    Factory to create a :class:`FakePdsClient` pre-configured with patient details.
-    """
-
-    def __init__(self, ods_code: str | None) -> None:
-        self.ods_code = ods_code
-
-    def __call__(self, **kwargs: Any) -> FakePdsClient:
-        self.inst = FakePdsClient(**kwargs)
-        self.inst.set_patient_details(_make_pds_result(self.ods_code))
-        return self.inst
-
-
-@pytest.fixture
-def patched_deps(monkeypatch: pytest.MonkeyPatch) -> None:
-    """
-    Patch controller dependencies to use test fakes.
-    """
-    monkeypatch.setattr(controller_module, "PdsClient", FakePdsClient)
-    monkeypatch.setattr(controller_module, "SdsClient", FakeSdsClient)
-    monkeypatch.setattr(controller_module, "GpProviderClient", FakeGpProviderClient)
-
-
-@pytest.fixture
-def controller() -> Controller:
-    """
-    Construct a controller instance configured for unit tests.
-    """
-    return Controller(
-        pds_base_url="https://pds.example",
-        sds_base_url="https://sds.example",
-        timeout=3,
+def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds(
+    mocker: MockerFixture,
+    auth_token: str,
+) -> None:
+    nhs_number = "9000000009"
+    pds_search_result_without_ods_code = PdsSearchResults(
+        given_names="Jane",
+        family_name="Smith",
+        nhs_number=nhs_number,
+        gp_ods_code=None,
+    )
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=pds_search_result_without_ods_code,
     )
 
-
-@pytest.fixture
-def gp_provider_returns_none() -> Generator[None, None, None]:
-    """
-    Configure FakeGpProviderClient to return None and reset after the test.
-    """
-    FakeGpProviderClient.return_none = True
-    yield
-    FakeGpProviderClient.return_none = False
-
-
-@pytest.fixture
-def get_structured_record_request(
-    request: pytest.FixtureRequest,
-) -> GetStructuredRecordRequest:
-    # Pass two dicts to this fixture that give dicts to add to
-    # header and body respectively.
-    header_update, body_update = request.param
-
-    headers = {
-        "Ssp-TraceID": "3d7f2a6e-0f4e-4af3-9b7b-2a3d5f6a7b8c",
-        "ODS-from": "CONSUMER",
-    }
-
-    headers.update(header_update)
-
-    body = {
-        "resourceType": "Parameters",
-        "parameter": [
-            {
-                "valueIdentifier": {
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
-                    "value": "9999999999",
-                },
-            }
-        ],
-    }
-
-    body.update(body_update)
-
-    with app.test_request_context(
-        path="/patient/$gpc.getstructuredrecord",
-        method="POST",
-        headers=headers,
-        json=body,
-    ):
-        return GetStructuredRecordRequest(flask_request)
-
-
-# -----------------------------
-# Unit tests
-# -----------------------------
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_controller_run_raises_error_when_request_body_is_empty(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If PDS returns no patient record, the controller should return 404.
-    """
-    with pytest.raises(
-        NoPatientFound, match="No PDS patient found for NHS number 9999999999"
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_gp_ods_code_missing(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If PDS returns a patient without a provider (GP) ODS code, return 404.
-    """
-    pds = pds_factory(ods_code="")
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    controller = Controller()
 
     with pytest.raises(
         NoCurrentProvider,
-        match="PDS patient 9999999999 did not contain a current provider ODS code",
+        match="PDS patient 9000000009 did not contain a current provider ODS code",
     ):
-        _ = controller.run(get_structured_record_request)
+        _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
 
 
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_sds_returns_none_for_provider(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
+def test_get_sds_details_returns_consumer_and_provider_deatils_for_happy_path(
+    mocker: MockerFixture,
+    auth_token: str,
 ) -> None:
-    """
-    If SDS returns no provider org details, the controller should return 404.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds = sds_factory()
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    with pytest.raises(
-        NoOrganisationFound,
-        match="No SDS org found for provider ODS code PROVIDER",
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_sds_provider_asid_blank(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If provider ASID is blank/whitespace, the controller should return 404.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="   ", endpoint="https://provider.example/ep"
-        ),
+    provider_ods = "ProviderODS"
+    provider_sds_results = SdsSearchResults(
+        asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
     )
-    sds = sds_factory(org1=sds_org1)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    with pytest.raises(
-        NoAsidFound,
-        match=(
-            "SDS result for provider ODS code PROVIDER did not contain a current ASID"
-        ),
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_502_when_gp_provider_returns_none(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-    gp_provider_returns_none: None,  # NOQA ARG001 (Fixture handling setup/teardown)
-) -> None:
-    """
-    If GP provider returns no response object, the controller should return 502.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
+    consumer_ods = "ConsumerODS"
+    consumer_sds_results = SdsSearchResults(
+        asid="ConsumerASID", endpoint="https://example.consumer.org/endpoint"
     )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
+    sds_results = [provider_sds_results, consumer_sds_results]
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=sds_results,
     )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
+    controller = Controller()
 
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 502
-    assert r.data == "GP provider service error"
-    assert r.headers is None
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({}, {"parameter": [{"valueIdentifier": {"value": "1234567890"}}]})],
-    indirect=["get_structured_record_request"],
-)
-def test_controller_run_raises_patient_not_found_error_when_patient_doesnt_exist(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If PDS returns no patient record, error message should include NHS number parsed
-    from the FHIR Parameters request body.
-    """
-    with pytest.raises(
-        NoPatientFound, match="No PDS patient found for NHS number 1234567890"
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_sds_provider_endpoint_blank(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If provider endpoint is blank/whitespace, the controller should return 404.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(asid="asid_PROV", endpoint="   "),
-    )
-    sds = sds_factory(org1=sds_org1)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    with pytest.raises(
-        NoCurrentEndpoint,
-        match=(
-            "SDS result for provider ODS code PROVIDER did not contain "
-            "a current endpoint"
-        ),
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_sds_returns_none_for_consumer(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If SDS returns no consumer org details, the controller should return 404.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
-    )
-    sds = sds_factory(org1=sds_org1)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    with pytest.raises(
-        NoOrganisationFound, match="No SDS org found for consumer ODS code CONSUMER"
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_returns_404_when_sds_consumer_asid_blank(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    If consumer ASID is blank/whitespace, the controller should return 404.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
-    )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="   ", endpoint=None),
-    )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    with pytest.raises(
-        NoAsidFound,
-        match=(
-            "SDS result for consumer ODS code CONSUMER did not contain a current ASID"
-        ),
-    ):
-        _ = controller.run(get_structured_record_request)
-
-
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
-def test_call_gp_provider_passthroughs_non_200_gp_provider_response(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
-) -> None:
-    """
-    Validate that non-200 responses from GP provider are passed through.
-    """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
-    )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
-    )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
-
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
-
-    FakeGpProviderClient.response_status_code = 404
-    FakeGpProviderClient.response_body = b"Not Found"
-    FakeGpProviderClient.response_headers = {
-        "Content-Type": "text/plain",
-        "X-Downstream": "gp-provider",
-    }
-
-    r = controller.run(get_structured_record_request)
-
-    assert r.status_code == 404
-    assert r.data == "Not Found"
-    assert r.headers is not None
-    assert r.headers.get("Content-Type") == "text/plain"
-    assert r.headers.get("X-Downstream") == "gp-provider"
+    expected = ("ConsumerASID", "ProviderASID", "https://example.provider.org/endpoint")
+    actual = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+    assert actual == expected

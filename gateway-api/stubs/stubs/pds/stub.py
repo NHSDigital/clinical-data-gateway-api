@@ -70,17 +70,20 @@ class PdsFhirApiStub:
 
         # Seed a deterministic example matching the spec's id example.
         # Tests may overwrite this record via upsert_patient.
-        self.upsert_patient(
-            nhs_number="9000000009",
-            patient=Patients.JANE_SMITH_9000000009,
-            version_id=1,
-        )
-
-        self.upsert_patient(
-            nhs_number="9999999999",
-            patient=Patients.ALICE_JONES_9999999999,
-            version_id=1,
-        )
+        test_patients = [
+            ("9999999999", Patients.ALICE_JONES_9999999999),
+            ("9000000009", Patients.JANE_SMITH_9000000009),
+            ("9000000010", Patients.NO_SDS_RESULT_9000000010),
+            ("9000000011", Patients.BLANK_ASID_SDS_RESULT_9000000011),
+            ("9000000012", Patients.INDUCE_PROVIDER_ERROR_9000000012),
+            ("9000000013", Patients.BLANK_ENDPOINT_SDS_RESULT_9000000013),
+        ]
+        for nhs_number, patient in test_patients:
+            self.upsert_patient(
+                nhs_number=nhs_number,
+                patient=patient,
+                version_id=1,
+            )
 
     # ---------------------------
     # Public API for tests

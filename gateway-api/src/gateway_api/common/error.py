@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
-from http.client import BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
+from enum import StrEnum
+from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
 from typing import TYPE_CHECKING
 
 from flask import Response
@@ -9,12 +10,17 @@ if TYPE_CHECKING:
     from fhir.operation_outcome import OperationOutcome
 
 
+class ErrorCode(StrEnum):
+    INVALID = "invalid"
+    EXCEPTION = "exception"
+
+
 @dataclass
 class BaseError(Exception):
     _message = "Internal Server Error"
     status_code: int = INTERNAL_SERVER_ERROR
     severity: str = "error"
-    error_code: str = "exception"
+    error_code: ErrorCode = ErrorCode.EXCEPTION
 
     def __init__(self, **additional_details: str):
         self.additional_details = additional_details
@@ -56,6 +62,7 @@ class NoPatientFound(BaseError):
 
 class InvalidRequestJSON(BaseError):
     _message = "Invalid JSON body sent in request"
+    error_code = ErrorCode.INVALID
     status_code = BAD_REQUEST
 
 
@@ -91,9 +98,9 @@ class NoCurrentEndpoint(BaseError):
 
 class PdsRequestFailed(BaseError):
     _message = "PDS FHIR API request failed: {error_reason}"
-    status_code = INTERNAL_SERVER_ERROR
+    status_code = BAD_GATEWAY
 
 
-class SdsRequestFailed(BaseError):
-    _message = "SDS FHIR API request failed: {error_reason}"
-    status_code = INTERNAL_SERVER_ERROR
+class ProviderRequestFailed(BaseError):
+    _message = "Provider request failed: {error_reason}"
+    status_code = BAD_GATEWAY

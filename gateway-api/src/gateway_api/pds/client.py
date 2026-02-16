@@ -244,7 +244,7 @@ class PdsClient:
             family_name = ""
 
         # Extract GP ODS code if a current GP record exists.
-        gp_ods_code = self._get_gp_ods_code(patient["generalPractitioner"])
+        gp_ods_code = self._get_gp_ods_code(patient.get("generalPractitioner", []))
 
         return PdsSearchResults(
             given_names=given_names,

@@ -212,7 +212,7 @@ class TestGetStructuredRecord:
             "issue": [
                 {
                     "severity": "error",
-                    "code": "exception",
+                    "code": "invalid",
                     "diagnostics": "Invalid JSON body sent in request",
                 }
             ],

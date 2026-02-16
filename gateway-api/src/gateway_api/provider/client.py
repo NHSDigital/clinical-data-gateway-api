@@ -28,7 +28,7 @@ from urllib.parse import urljoin
 from requests import HTTPError, Response, post
 from stubs.provider.stub import stub_post
 
-from gateway_api.common.error import SdsRequestFailed
+from gateway_api.common.error import ProviderRequestFailed
 
 ARS_INTERACTION_ID = (
     "urn:nhs:names:services:gpconnect:structured"
@@ -127,6 +127,6 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            raise SdsRequestFailed(error_reason=err.response.reason) from err
+            raise ProviderRequestFailed(error_reason=err.response.reason) from err
 
         return response

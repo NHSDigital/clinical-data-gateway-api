@@ -247,3 +247,28 @@ paths:
                         diagnostics:
                           type: string
                           example: "Internal server error"
+
+        '502':
+          description: Received an error response from a downstream server
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: "OperationOutcome"
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: "exception"
+                        diagnostics:
+                          type: string
+                          example: "PDS FHIR API request failed: Bad Gateway"

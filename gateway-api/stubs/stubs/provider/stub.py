@@ -78,13 +78,6 @@ class GpProviderStub:
             Response: The stub patient bundle wrapped in a Response object.
         """
 
-        stub_response = _create_response(
-            status_code=200,
-            headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-            content=json.dumps(Bundles.ALICE_JONES_9999999999).encode("utf-8"),
-            reason="OK",
-        )
-
         if trace_id == "invalid for test":
             return _create_response(
                 status_code=400,
@@ -97,7 +90,38 @@ class GpProviderStub:
                 reason="Bad Request",
             )
 
-        return stub_response
+        try:
+            nhs_number = json.loads(body)["parameter"][0]["valueIdentifier"]["value"]
+        except (json.JSONDecodeError, KeyError, IndexError):
+            return _create_response(
+                status_code=400,
+                headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
+                content=(
+                    b'{"resourceType":"OperationOutcome","issue":['
+                    b'{"severity":"error","code":"invalid",'
+                    b'"diagnostics":"Malformed request body"}]}'
+                ),
+                reason="Bad Request",
+            )
+
+        if nhs_number == "9999999999":
+            return _create_response(
+                status_code=200,
+                headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
+                content=json.dumps(Bundles.ALICE_JONES_9999999999).encode("utf-8"),
+                reason="OK",
+            )
+
+        return _create_response(
+            status_code=404,
+            headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
+            content=(
+                b'{"resourceType":"OperationOutcome","issue":['
+                b'{"severity":"error","code":"not-found",'
+                b'"diagnostics":"Patient not found"}]}'
+            ),
+            reason="Not Found",
+        )
 
 
 def stub_post(
