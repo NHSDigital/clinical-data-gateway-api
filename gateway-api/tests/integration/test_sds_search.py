@@ -62,9 +62,7 @@ class TestSdsIntegration:
 
         :param sds_client: SDS client fixture configured with stub.
         """
-        import os
 
-        print(f"Stub env var: {os.environ.get('STUB_SDS')}")
         sds_client = SdsClient(api_key=API_KEY)
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
