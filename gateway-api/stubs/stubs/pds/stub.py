@@ -202,7 +202,7 @@ class PdsFhirApiStub:
         headers_out["ETag"] = f'W/"{version_id}"'
         return _create_response(status_code=200, headers=headers_out, json_data=patient)
 
-    def get(
+    def post(
         self,
         url: str,
         headers: dict[str, Any] | None = None,

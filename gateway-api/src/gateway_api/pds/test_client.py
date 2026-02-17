@@ -5,12 +5,13 @@ Unit tests for :mod:`gateway_api.pds_search`.
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 import requests
+from fhir import OperationOutcome, Patient
+from pytest_mock import MockerFixture
 from requests.structures import CaseInsensitiveDict
-from stubs.pds.stub import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds.client import PdsClient
@@ -34,10 +35,10 @@ class FakeResponse:
 
     status_code: int
     headers: dict[str, str] | CaseInsensitiveDict[str]
-    _json: dict[str, Any]
+    _json: dict[str, Any] | Patient | OperationOutcome
     reason: str = ""
 
-    def json(self) -> dict[str, Any]:
+    def json(self) -> dict[str, Any] | Patient | OperationOutcome:
         """
         Return the response JSON body.
 
@@ -59,302 +60,114 @@ class FakeResponse:
             raise err
 
 
-@pytest.fixture
-def stub() -> PdsFhirApiStub:
-    """
-    Create a stub backend instance.
-
-    :return: A :class:`stubs.stub_pds.PdsFhirApiStub` with strict header validation
-        enabled.
-    """
-    # Strict header validation helps ensure PdsClient sends X-Request-ID correctly.
-    return PdsFhirApiStub(strict_headers=True)
-
-
-@pytest.fixture
-def mock_requests_get(
-    monkeypatch: pytest.MonkeyPatch, stub: PdsFhirApiStub
-) -> dict[str, Any]:
-    """
-    Patch ``PdsFhirApiStub`` so the PdsClient uses the test stub fixture.
-
-    The fixture returns a "capture" dict recording the most recent request information.
-    This is used by header-related tests.
-
-    :param monkeypatch: Pytest monkeypatch fixture.
-    :param stub: Stub backend used to serve GET requests.
-    :return: A capture dictionary containing the last call details
-        (url/headers/params/timeout).
-    """
-    capture: dict[str, Any] = {}
-
-    # Wrap the stub's get method to capture call parameters
-    original_stub_get = stub.get
-
-    def _capturing_get(
-        url: str,
-        headers: dict[str, str] | None = None,
-        params: Any = None,
-        timeout: Any = None,
-    ) -> requests.Response:
-        """
-        Wrapper around stub.get that captures parameters.
-
-        :param url: URL passed by the client.
-        :param headers: Headers passed by the client.
-        :param params: Query parameters.
-        :param timeout: Timeout.
-        :return: Response from the stub.
-        """
-        headers = headers or {}
-        capture["url"] = url
-        capture["headers"] = dict(headers)
-        capture["params"] = params
-        capture["timeout"] = timeout
-
-        return original_stub_get(url, headers, params, timeout)
-
-    stub.get = _capturing_get  # type: ignore[method-assign]
-
-    # Monkeypatch PdsFhirApiStub so PdsClient uses our test stub
-    import gateway_api.pds.client as pds_module
-
-    monkeypatch.setattr(
-        pds_module,
-        "PdsFhirApiStub",
-        lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
-    )
-
-    return capture
-
-
-def _insert_basic_patient(
-    stub: PdsFhirApiStub,
-    nhs_number: str,
-    family: str,
-    given: list[str],
-    general_practitioner: list[dict[str, Any]] | None = None,
+def test_search_patient_by_nhs_number_happy_path(
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: Patient,
 ) -> None:
-    """
-    Insert a basic Patient record into the stub.
-
-    :param stub: Stub backend to insert into.
-    :param nhs_number: NHS number (10-digit string).
-    :param family: Family name for the Patient.name record.
-    :param given: Given names for the Patient.name record.
-    :param general_practitioner: Optional list stored under
-        ``Patient.generalPractitioner``.
-    :return: ``None``.
-    """
-    stub.upsert_patient(
-        nhs_number=nhs_number,
-        patient={
-            "resourceType": "Patient",
-            "name": [
-                {
-                    "use": "official",
-                    "family": family,
-                    "given": given,
-                    "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                }
-            ],
-            "generalPractitioner": general_practitioner or [],
-        },
-        version_id=1,
+    happy_path_response = FakeResponse(
+        status_code=200, headers={}, _json=happy_path_pds_response_body
     )
+    mocker.patch("gateway_api.pds.client.post", return_value=happy_path_response)
 
-
-def test_search_patient_by_nhs_number_get_patient_success(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
-) -> None:
-    """
-    Verify ``GET /Patient/{nhs_number}`` returns 200 and demographics are extracted.
-
-    This test explicitly inserts the patient into the stub and asserts that the client
-    returns a populated :class:`gateway_api.pds_search.PdsSearchResults`.
-
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture
-        (ensures patching is active).
-    :return: ``None``.
-    """
-    _insert_basic_patient(
-        stub=stub,
-        nhs_number="9000000009",
-        family="Smith",
-        given=["Jane"],
-        general_practitioner=[],
-    )
-
-    client = PdsClient(
-        auth_token="test-token",  # noqa: S106  (test token hardcoded)
-        base_url="https://example.test/personal-demographics/FHIR/R4",
-    )
-
-    result = client.search_patient_by_nhs_number("9000000009")
+    client = PdsClient(auth_token)
+    result = client.search_patient_by_nhs_number("9999999999")
 
     assert result is not None
-    assert result.nhs_number == "9000000009"
-    assert result.family_name == "Smith"
-    assert result.given_names == "Jane"
-    assert result.gp_ods_code is None
+    assert result.nhs_number == "9999999999"
+    assert result.family_name == "Johnson"
+    assert result.given_names == "Alice"
+    assert result.gp_ods_code == "A12345"
 
 
-def test_search_patient_by_nhs_number_no_current_gp_returns_gp_ods_code_none(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: Patient,
 ) -> None:
-    """
-    Verify that ``gp_ods_code`` is ``None`` when no GP record is current.
-
-    The generalPractitioner list may be:
-    * empty
-    * non-empty with no current record
-    * non-empty with exactly one current record
-
-    This test covers the "non-empty, none current" case by
-    inserting only a historical GP record.
-
-    :param monkeypatch: Pytest monkeypatch fixture.
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture.
-    :return: ``None``.
-    """
-    _insert_basic_patient(
-        stub=stub,
-        nhs_number="9000000018",
-        family="Taylor",
-        given=["Ben"],
-        general_practitioner=[
-            {
-                "id": "1",
-                "type": "Organization",
-                "identifier": {
-                    "value": "OLDGP",
-                    "period": {"start": "2010-01-01", "end": "2012-01-01"},
-                },
-            }
-        ],
+    gp_less_response_body = happy_path_pds_response_body.copy()
+    del gp_less_response_body["generalPractitioner"]
+    gp_less_response = FakeResponse(
+        status_code=200, headers={}, _json=gp_less_response_body
     )
+    mocker.patch("gateway_api.pds.client.post", return_value=gp_less_response)
 
-    client = PdsClient(
-        auth_token="test-token",  # noqa: S106  (test token hardcoded)
-        base_url="https://example.test/personal-demographics/FHIR/R4",
-    )
-
-    result = client.search_patient_by_nhs_number("9000000018")
+    client = PdsClient(auth_token)
+    result = client.search_patient_by_nhs_number("9999999999")
 
     assert result is not None
-    assert result.nhs_number == "9000000018"
-    assert result.family_name == "Taylor"
-    assert result.given_names == "Ben"
+    assert result.nhs_number == "9999999999"
+    assert result.family_name == "Johnson"
+    assert result.given_names == "Alice"
     assert result.gp_ods_code is None
 
 
 def test_search_patient_by_nhs_number_sends_expected_headers(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: Patient,
 ) -> None:
-    """
-    Verify that the client sends the expected headers to PDS.
-
-    Asserts that the request contains:
-    * Authorization header
-    * NHSD-End-User-Organisation-ODS header
-    * Accept header
-    * caller-provided X-Request-ID and X-Correlation-ID headers
-
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
-        headers.
-    :return: ``None``.
-    """
-    _insert_basic_patient(
-        stub=stub,
-        nhs_number="9000000009",
-        family="Smith",
-        given=["Jane"],
-        general_practitioner=[],
+    happy_path_response = FakeResponse(
+        status_code=200, headers={}, _json=happy_path_pds_response_body
+    )
+    mocked_post = mocker.patch(
+        "gateway_api.pds.client.post", return_value=happy_path_response
     )
 
-    client = PdsClient(
-        auth_token="test-token",  # noqa: S106
-        base_url="https://example.test/personal-demographics/FHIR/R4",
-    )
+    request_id = str(uuid4())
+    correlation_id = "corr-123"
 
-    req_id = str(uuid4())
-    corr_id = "corr-123"
-
-    result = client.search_patient_by_nhs_number(
+    client = PdsClient(auth_token)
+    _ = client.search_patient_by_nhs_number(
         "9000000009",
-        request_id=req_id,
-        correlation_id=corr_id,
+        request_id=request_id,
+        correlation_id=correlation_id,
     )
-    assert result is not None
 
-    headers = mock_requests_get["headers"]
-    assert headers["Authorization"] == "Bearer test-token"
-    assert headers["Accept"] == "application/fhir+json"
-    assert headers["X-Request-ID"] == req_id
-    assert headers["X-Correlation-ID"] == corr_id
+    expected_headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Accept": "application/fhir+json",
+        "X-Request-ID": request_id,
+        "X-Correlation-ID": correlation_id,
+    }
+
+    assert mocked_post.call_args.kwargs["headers"] == expected_headers
 
 
 def test_search_patient_by_nhs_number_generates_request_id(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: Patient,
 ) -> None:
-    """
-    Verify that the client generates an X-Request-ID when not provided.
-
-    The stub is in strict mode, so a missing or invalid X-Request-ID would cause a 400.
-    This test confirms a request ID is present and looks UUID-like.
-
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
-        headers.
-    :return: ``None``.
-    """
-    _insert_basic_patient(
-        stub=stub,
-        nhs_number="9000000009",
-        family="Smith",
-        given=["Jane"],
-        general_practitioner=[],
+    happy_path_response = FakeResponse(
+        status_code=200, headers={}, _json=happy_path_pds_response_body
+    )
+    mocked_post = mocker.patch(
+        "gateway_api.pds.client.post", return_value=happy_path_response
     )
 
-    client = PdsClient(
-        auth_token="test-token",  # noqa: S106
-        base_url="https://example.test/personal-demographics/FHIR/R4",
-    )
+    client = PdsClient(auth_token)
 
-    result = client.search_patient_by_nhs_number("9000000009")
-    assert result is not None
+    _ = client.search_patient_by_nhs_number("9000000009")
 
-    headers = mock_requests_get["headers"]
-    assert "X-Request-ID" in headers
-    assert isinstance(headers["X-Request-ID"], str)
-    assert len(headers["X-Request-ID"]) >= 32
+    try:
+        _ = UUID(mocked_post.call_args.kwargs["headers"]["X-Request-ID"], version=4)
+    except ValueError:
+        pytest.fail("X-Request-ID is not a valid UUID4")
 
 
 def test_search_patient_by_nhs_number_not_found_raises_error(
-    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+    auth_token: str,
+    mocker: MockerFixture,
 ) -> None:
-    """
-    Verify that a 404 response results in :class:`PDSRequestFailed`.
-
-    The stub returns a 404 OperationOutcome for unknown NHS numbers. The client calls
-    ``raise_for_status()``, which raises ``requests.HTTPError``; the client wraps that
-    into :class:`PDSRequestFailed`.
-
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture.
-    :return: ``None``.
-    """
-    pds = PdsClient(
-        auth_token="test-token",  # noqa: S106
-        base_url="https://example.test/personal-demographics/FHIR/R4",
+    not_found_response = FakeResponse(
+        status_code=404,
+        headers={},
+        _json={"resourceType": "OperationOutcome", "issue": []},
+        reason="Not Found",
     )
+    mocker.patch("gateway_api.pds.client.post", return_value=not_found_response)
+    pds = PdsClient(auth_token)
 
     with pytest.raises(
         PdsRequestFailed, match="PDS FHIR API request failed: Not Found"
@@ -362,68 +175,43 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         pds.search_patient_by_nhs_number("9900000001")
 
 
-def test_search_patient_by_nhs_number_extracts_current_gp_ods_code(
-    stub: PdsFhirApiStub,
-    mock_requests_get: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+def test_search_patient_by_nhs_number_finds_current_gp_ods_code_when_pds_returns_two(
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: Patient,
 ) -> None:
-    """
-    Verify that a current GP record is selected and its ODS code returned.
-
-    The test inserts a patient with two GP records:
-    * one historical (not current)
-    * one current (period covers today)
-
-    :param monkeypatch: Pytest monkeypatch fixture.
-    :param stub: Stub backend fixture.
-    :param mock_requests_get: Patched ``requests.get`` fixture.
-    :return: ``None``.
-    """
-    stub.upsert_patient(
-        nhs_number="9000000017",
-        patient={
-            "resourceType": "Patient",
-            "name": [
-                {
-                    "use": "official",
-                    "family": "Taylor",
-                    "given": ["Ben", "A."],
-                    "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                }
-            ],
-            "generalPractitioner": [
-                # Old
-                {
-                    "id": "1",
-                    "type": "Organization",
-                    "identifier": {
-                        "value": "OLDGP",
-                        "period": {"start": "2010-01-01", "end": "2012-01-01"},
-                    },
-                },
-                # Current
-                {
-                    "id": "2",
-                    "type": "Organization",
-                    "identifier": {
-                        "value": "CURRGP",
-                        "period": {"start": "2020-01-01", "end": "9999-01-01"},
-                    },
-                },
-            ],
+    old_gp: GeneralPractitioner = {
+        "id": "1",
+        "type": "Organization",
+        "identifier": {
+            "value": "OLDGP",
+            "period": {"start": "2010-01-01", "end": "2012-01-01"},
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
         },
-        version_id=1,
+    }
+    current_gp: GeneralPractitioner = {
+        "id": "2",
+        "type": "Organization",
+        "identifier": {
+            "value": "CURRGP",
+            "period": {"start": "2020-01-01", "end": "9999-01-01"},
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+        },
+    }
+    pds_response_body_with_two_gps = happy_path_pds_response_body.copy()
+    pds_response_body_with_two_gps["generalPractitioner"] = [old_gp, current_gp]
+    pds_response_with_two_gps = FakeResponse(
+        status_code=200, headers={}, _json=pds_response_body_with_two_gps
     )
+    mocker.patch("gateway_api.pds.client.post", return_value=pds_response_with_two_gps)
 
-    client = PdsClient(
-        auth_token="test-token",  # noqa: S106
-        base_url="https://example.test/personal-demographics/FHIR/R4",
-    )
+    client = PdsClient(auth_token)
 
-    result = client.search_patient_by_nhs_number("9000000017")
+    result = client.search_patient_by_nhs_number("9999999999")
     assert result is not None
-    assert result.nhs_number == "9000000017"
-    assert result.family_name == "Taylor"
-    assert result.given_names == "Ben A."
+    assert result.nhs_number == "9999999999"
+    assert result.family_name == "Johnson"
+    assert result.given_names == "Alice"
     assert result.gp_ods_code == "CURRGP"
 
 

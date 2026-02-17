@@ -18,6 +18,7 @@ If required keys are missing, a ``KeyError`` is raised intentionally. This is tr
 malformed upstream data (or malformed test fixtures) and should be corrected at source.
 """
 
+import os
 import uuid
 from collections.abc import Callable
 from datetime import date, datetime, timezone
@@ -25,10 +26,22 @@ from typing import cast
 
 import requests
 from fhir import Bundle, BundleEntry, GeneralPractitioner, HumanName, Patient
-from stubs.pds.stub import PdsFhirApiStub
 
 from gateway_api.common.error import PdsRequestFailed
 from gateway_api.pds.search_results import PdsSearchResults
+
+# TODO: Once stub servers/containers made for PDS, SDS and provider
+#       we should remove the STUB_PDS environment variable and just
+#       use the stub client
+STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
+if not STUB_PDS:
+    post = requests.post
+else:
+    from stubs.pds.stub import PdsFhirApiStub
+
+    pds = PdsFhirApiStub()
+    post = pds.post  # type: ignore
+
 
 # Type for stub get method
 type GetCallable = Callable[..., requests.Response]
@@ -84,13 +97,6 @@ class PdsClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.ignore_dates = ignore_dates
-        self.stub = PdsFhirApiStub()
-
-        # TODO: Put this back to using the environment variable
-        # if os.environ.get("STUB_PDS", None):
-        self.get_method: GetCallable = self.stub.get
-        # else:
-        #     self.get_method: GetCallable = requests.get
 
     def _build_headers(
         self,
@@ -148,8 +154,9 @@ class PdsClient:
         url = f"{self.base_url}/Patient/{nhs_number}"
 
         # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
-        response = self.get_method(
-            url,
+        response = post(
+            url,  # TODO: URL points to sandbox env even when STUB_PDS
+            #       is true, should we change this to point to the stub instead?
             headers=headers,
             params={},
             timeout=timeout or self.timeout,

@@ -1,8 +1,7 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
 import pytest
-from fhir.bundle import Bundle
-from fhir.parameters import Parameters
+from fhir import Bundle, Parameters, Patient
 
 
 @pytest.fixture
@@ -70,6 +69,36 @@ def valid_headers() -> dict[str, str]:
         "Ssp-TraceID": "test-trace-id",
         "ODS-from": "test-ods",
         "Content-type": "application/fhir+json",
+    }
+
+
+@pytest.fixture
+def happy_path_pds_response_body() -> Patient:
+    return {
+        "resourceType": "Patient",
+        "id": "9999999999",
+        "identifier": [{"value": "9999999999", "system": "urn:nhs:numbers"}],
+        "name": [
+            {
+                "family": "Johnson",
+                "given": ["Alice"],
+                "use": "Ally",
+                "period": {"start": "2020-01-01", "end": "9999-12-31"},
+            }
+        ],
+        "generalPractitioner": [
+            {
+                "id": "1",
+                "type": "Organization",
+                "identifier": {
+                    "value": "A12345",
+                    "period": {"start": "2020-01-01", "end": "9999-12-31"},
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                },
+            }
+        ],
+        "gender": "female",
+        "birthDate": "1990-05-15",
     }
 
 

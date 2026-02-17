@@ -12,6 +12,7 @@ WORKDIR /resources/build/gateway-api
 ENV PYTHONPATH=/resources/build/gateway-api
 ENV FLASK_HOST="0.0.0.0"
 ENV FLASK_PORT="8080"
+ENV STUB_PDS="true"
 
 ARG COMMIT_VERSION
 ENV COMMIT_VERSION=$COMMIT_VERSION
