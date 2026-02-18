@@ -8,7 +8,6 @@ from gateway_api.common.error import (
     NoCurrentEndpoint,
     NoCurrentProvider,
     NoOrganisationFound,
-    NoPatientFound,
 )
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 from gateway_api.pds import PdsClient, PdsSearchResults
@@ -97,19 +96,12 @@ class Controller:
             ignore_dates=True,
         )
 
-        pds_result: PdsSearchResults | None = pds.search_patient_by_nhs_number(
-            nhs_number
-        )
+        pds_result: PdsSearchResults = pds.search_patient_by_nhs_number(nhs_number)
 
-        if pds_result is None:
-            raise NoPatientFound(nhs_number=nhs_number)
-
-        if pds_result.gp_ods_code:
-            provider_ods_code = pds_result.gp_ods_code
-        else:
+        if not pds_result.gp_ods_code:
             raise NoCurrentProvider(nhs_number=nhs_number)
 
-        return provider_ods_code
+        return pds_result.gp_ods_code
 
     def _get_sds_details(
         self, auth_token: str, consumer_ods: str, provider_ods: str

@@ -55,11 +55,6 @@ class BaseError(Exception):
         return self.message
 
 
-class NoPatientFound(BaseError):
-    _message = "No PDS patient found for NHS number {nhs_number}"
-    status_code = BAD_REQUEST
-
-
 class InvalidRequestJSON(BaseError):
     _message = "Invalid JSON body sent in request"
     error_code = ErrorCode.INVALID

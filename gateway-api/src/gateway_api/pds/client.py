@@ -108,7 +108,7 @@ class PdsClient:
         request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
-    ) -> PdsSearchResults | None:
+    ) -> PdsSearchResults:
         """
         Retrieve a patient by NHS number.
 
@@ -166,9 +166,7 @@ class PdsClient:
 
         return None if ods_code == "None" else ods_code
 
-    def _extract_single_search_result(
-        self, body: Patient | Bundle
-    ) -> PdsSearchResults | None:
+    def _extract_single_search_result(self, body: Patient | Bundle) -> PdsSearchResults:
         """
         Extract a single :class:`PdsSearchResults` from a Patient response.
 
