@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any, cast
 
 import requests
@@ -28,7 +28,7 @@ type ResultList = list[ResultStructureDict]
 type GetCallable = Callable[..., requests.Response]
 
 
-class SdsResourceType(str, Enum):
+class SdsResourceType(StrEnum):
     """SDS FHIR resource types."""
 
     DEVICE = "Device"
