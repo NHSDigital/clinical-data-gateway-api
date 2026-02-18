@@ -14,7 +14,7 @@ from requests.structures import CaseInsensitiveDict
 from stubs.stub_provider import GpProviderStub
 
 from gateway_api import provider_request
-from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.provider_request import ExternalServiceError, GpProviderClient
 
 

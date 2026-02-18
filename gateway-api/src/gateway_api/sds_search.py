@@ -17,7 +17,7 @@ from typing import Any, cast
 import requests
 from stubs.stub_sds import SdsFhirApiStub
 
-from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
 type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]

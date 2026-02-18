@@ -28,9 +28,7 @@ from urllib.parse import urljoin
 from requests import HTTPError, Response, post
 from stubs.stub_provider import GpProviderStub
 
-from gateway_api.common.common import (
-    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-)
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"

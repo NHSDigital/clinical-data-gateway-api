@@ -6,12 +6,17 @@ from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
 
 from gateway_api.common.common import (
-    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
     FlaskResponse,
 )
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
+
+# Access record structured interaction ID from
+# https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
+ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
+    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+)
 
 
 class RequestValidationError(Exception):
