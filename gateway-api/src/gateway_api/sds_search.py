@@ -4,9 +4,6 @@ SDS (Spine Directory Service) FHIR R4 device and endpoint lookup client.
 This module provides a client for querying the Spine Directory Service to retrieve:
 - Device records (including ASID - Accredited System ID)
 - Endpoint records (including endpoint URLs for routing)
-
-The client is structured similarly to :mod:`gateway_api.pds_search` and supports
-stubbing for testing purposes.
 """
 
 from __future__ import annotations
@@ -33,10 +30,6 @@ type GetCallable = Callable[..., requests.Response]
 class ExternalServiceError(Exception):
     """
     Raised when the downstream SDS request fails.
-
-    This module catches :class:`requests.HTTPError` thrown by
-    ``response.raise_for_status()`` and re-raises it as ``ExternalServiceError`` so
-    callers are not coupled to ``requests`` exception types.
     """
 
 
@@ -44,10 +37,6 @@ class ExternalServiceError(Exception):
 class SdsSearchResults:
     """
     SDS lookup results containing ASID and endpoint information.
-
-    :param asid: Accredited System ID extracted from the Device resource.
-    :param endpoint: Endpoint URL extracted from the Endpoint resource, or ``None``
-        if no endpoint is available.
     """
 
     asid: str | None
@@ -65,10 +54,17 @@ class SdsClient:
     This method returns a :class:`SdsSearchResults` instance when data can be
     extracted, otherwise ``None``.
 
+    **Stubbing**:
+
+    For testing, set the environment variable ``$STUB_SDS`` to use the
+    :class:`SdsFhirApiStub` instead of making real HTTP requests.
+
     **Usage example**::
 
         sds = SdsClient(
             base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4",
+            timeout=10,
+            service_interaction_id="urn:nhs:names:services:gpconnect:fhir:rest:read:metadata-1",
         )
 
         result = sds.get_org_details("A12345")
@@ -103,14 +99,6 @@ class SdsClient:
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
-        """
-        Create an SDS client.
-
-        :param base_url: Base URL for the SDS API. Trailing slashes are stripped.
-        :param timeout: Default timeout in seconds for HTTP calls.
-        :param service_interaction_id: Service interaction ID to use for lookups.
-            If not provided, uses :attr:`DEFAULT_SERVICE_INTERACTION_ID`.
-        """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.service_interaction_id = (
@@ -129,9 +117,6 @@ class SdsClient:
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
         Build mandatory and optional headers for an SDS request.
-
-        :param correlation_id: Optional ``X-Correlation-Id`` for cross-system tracing.
-        :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
             "Accept": "application/fhir+json",
@@ -156,16 +141,6 @@ class SdsClient:
         This method performs two SDS queries:
         1. Query /Device to get the ASID for the organization
         2. Query /Endpoint to get the endpoint URL (if available)
-
-        :param ods_code: ODS code of the organization to look up.
-        :param correlation_id: Optional correlation ID for tracing.
-        :param timeout: Optional per-call timeout in seconds. If not provided,
-            :attr:`timeout` is used.
-        :param get_endpoint: Whether to perform the second query to retrieve the
-            endpoint URL.
-        :return: A :class:`SdsSearchResults` instance if data can be extracted,
-            otherwise ``None``.
-        :raises ExternalServiceError: If the HTTP request returns an error status.
         """
         # Step 1: Get Device to obtain ASID
         device_bundle = self._query_sds(
@@ -226,13 +201,6 @@ class SdsClient:
     ) -> ResultStructureDict:
         """
         Query SDS /Device or /Endpoint endpoint.
-
-        :param ods_code: ODS code to search for.
-        :param party_key: Party key to search for.
-        :param correlation_id: Optional correlation ID.
-        :param timeout: Optional timeout.
-        :return: Parsed JSON response as a dictionary.
-        :raises ExternalServiceError: If the request fails.
         """
         headers = self._build_headers(correlation_id=correlation_id)
         url = f"{self.base_url}/{querytype}"
@@ -257,17 +225,12 @@ class SdsClient:
         body = response.json()
         return cast("ResultStructureDict", body)
 
-    # --------------- internal helpers for result extraction -----------------
-
     @staticmethod
     def _extract_first_entry(
         bundle: ResultStructureDict,
     ) -> ResultStructureDict:  # TODO: Post-steel-thread this may return a None as well
         """
-        Extract the first Device resource from a Bundle.
-
-        :param bundle: FHIR Bundle containing Device resources.
-        :return: First Device resource, or ``None`` if the bundle is empty.
+        Extract the first resource from a Bundle.
         """
         entries = cast("ResultList", bundle.get("entry", []))
 
@@ -282,10 +245,6 @@ class SdsClient:
     ) -> str | None:
         """
         Extract an identifier value from a Device resource for a given system.
-
-        :param device: Device resource dictionary.
-        :param system: The identifier system to look for.
-        :return: Identifier value if found, otherwise ``None``.
         """
         identifiers = cast("ResultList", device.get("identifier", []))
 
