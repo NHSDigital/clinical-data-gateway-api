@@ -75,18 +75,15 @@ class FakeSdsClient:
 
     def __init__(
         self,
-        api_key: str,
         base_url: str = "test_url",
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
         FakeSdsClient.last_init = {
-            "api_key": api_key,
             "base_url": base_url,
             "timeout": timeout,
             "service_interaction_id": service_interaction_id,
         }
-        self.api_key = api_key
         self.base_url = base_url
         self.timeout = timeout
         self.service_interaction_id = service_interaction_id

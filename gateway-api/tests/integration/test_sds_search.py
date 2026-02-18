@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from gateway_api.sds_search import SdsClient, SdsSearchResults
 
-API_KEY = "test-integration-key"
-
 
 class TestSdsIntegration:
     """Integration tests for SDS search operations."""
@@ -16,7 +14,7 @@ class TestSdsIntegration:
 
         :param sds_client: SDS client fixture configured with stub.
         """
-        sds_client = SdsClient(api_key=API_KEY)
+        sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
@@ -31,7 +29,7 @@ class TestSdsIntegration:
 
         :param sds_client: SDS client fixture configured with stub.
         """
-        sds_client = SdsClient(api_key=API_KEY)
+        sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
@@ -48,7 +46,7 @@ class TestSdsIntegration:
 
         :param sds_client: SDS client fixture configured with stub.
         """
-        sds_client = SdsClient(api_key=API_KEY)
+        sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="CONSUMER")
 
         assert result is not None
@@ -63,7 +61,7 @@ class TestSdsIntegration:
         :param sds_client: SDS client fixture configured with stub.
         """
 
-        sds_client = SdsClient(api_key=API_KEY)
+        sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None

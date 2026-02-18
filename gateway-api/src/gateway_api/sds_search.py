@@ -68,7 +68,6 @@ class SdsClient:
     **Usage example**::
 
         sds = SdsClient(
-            api_key="YOUR_API_KEY",
             base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4",
         )
 
@@ -78,11 +77,9 @@ class SdsClient:
             print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
-    # URLs for different SDS environments
+    # URLs for different SDS environments. Will move to a config file eventually.
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
-    DEP_UAT_URL = "https://dep.api.service.nhs.uk/spine-directory/FHIR/R4"
-    PROD_URL = "https://api.service.nhs.uk/spine-directory/FHIR/R4"
 
     # FHIR identifier systems
     ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
@@ -102,7 +99,6 @@ class SdsClient:
 
     def __init__(
         self,
-        api_key: str,
         base_url: str = SANDBOX_URL,
         timeout: int = 10,
         service_interaction_id: str | None = None,
@@ -110,19 +106,19 @@ class SdsClient:
         """
         Create an SDS client.
 
-        :param api_key: API key for SDS authentication (header 'apikey').
         :param base_url: Base URL for the SDS API. Trailing slashes are stripped.
         :param timeout: Default timeout in seconds for HTTP calls.
         :param service_interaction_id: Service interaction ID to use for lookups.
             If not provided, uses :attr:`DEFAULT_SERVICE_INTERACTION_ID`.
         """
-        self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.service_interaction_id = (
             service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
         )
         self.stub = None
+
+        self.api_key = self._get_api_key()
 
         if os.environ.get("STUB_SDS", None):
             self.stub = SdsFhirApiStub()
@@ -188,21 +184,37 @@ class SdsClient:
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
-        if get_endpoint:
-            endpoint_bundle = self._query_sds(
-                ods_code=ods_code,
-                party_key=party_key,
-                correlation_id=correlation_id,
-                timeout=timeout,
-                querytype=self.ENDPOINT,
-            )
-            endpoint = self._extract_first_entry(endpoint_bundle)
-            if endpoint:
-                address = endpoint.get("address")
-                if address:
-                    endpoint_url = str(address).strip()
+
+        if not get_endpoint:
+            return SdsSearchResults(asid=asid, endpoint=None)
+
+        endpoint_bundle = self._query_sds(
+            ods_code=ods_code,
+            party_key=party_key,
+            correlation_id=correlation_id,
+            timeout=timeout,
+            querytype=self.ENDPOINT,
+        )
+        endpoint = self._extract_first_entry(endpoint_bundle)
+        if endpoint:
+            address = endpoint.get("address")
+            if address:
+                endpoint_url = str(address).strip()
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
+
+    @staticmethod
+    def _get_api_key() -> str:
+        """
+        Retrieve the API key to use for SDS requests.
+
+        This is a placeholder at present because we don't have a real API key.
+        Ultimately it will probably obtain the key from AWS secrets
+        """
+
+        # TODO: Obtain key from AWS secrets
+        # DO NOT PUT A REAL KEY HERE, IT WILL BE VISIBLE ON GITHUB
+        return "test_api_key_DO_NOT_REPLACE_HERE"
 
     def _query_sds(
         self,

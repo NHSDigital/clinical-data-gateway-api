@@ -38,7 +38,7 @@ def test_sds_client_get_org_details_success(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
     result = client.get_org_details(ods_code="PROVIDER")
 
@@ -115,7 +115,7 @@ def test_sds_client_get_org_details_with_endpoint(
         },
     )
 
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
     result = client.get_org_details(ods_code="TESTORG")
 
     assert result is not None
@@ -132,15 +132,17 @@ def test_sds_client_sends_correct_headers(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    api_key = "my-secret-key"
-    client = SdsClient(api_key=api_key, base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
     correlation_id = "test-correlation-123"
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
     # Check that the headers were
     assert stub.get_headers["X-Correlation-Id"] == correlation_id
-    assert stub.get_headers["apikey"] == api_key
+
+    # In future when _get_api_key calls AWS secrets, this will break.
+    # That's a good thing, because we'll want to mock that call.
+    assert stub.get_headers["apikey"] == "test_api_key_DO_NOT_REPLACE_HERE"
 
 
 def test_sds_client_timeout_parameter(
@@ -152,7 +154,7 @@ def test_sds_client_timeout_parameter(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL, timeout=30)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL, timeout=30)
 
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
@@ -195,7 +197,6 @@ def test_sds_client_custom_service_interaction_id(
     )
 
     client = SdsClient(
-        api_key="test-key",
         base_url=SdsClient.SANDBOX_URL,
         service_interaction_id=custom_interaction,
     )
@@ -222,7 +223,7 @@ def test_sds_client_builds_correct_device_query_params(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
     client.get_org_details(ods_code="PROVIDER")
 
@@ -253,7 +254,7 @@ def test_sds_client_extract_party_key_from_device(
     :param mock_requests_get: Capture fixture for request details.
     """
     # The default seeded PROVIDER device has a party key
-    client = SdsClient(api_key="test-key", base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
     stub.upsert_device(
         organization_ods="WITHPARTYKEY",

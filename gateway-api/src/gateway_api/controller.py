@@ -104,7 +104,7 @@ class Controller:
 
         try:
             consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-                auth_token, request.ods_from.strip(), provider_ods
+                request.ods_from.strip(), provider_ods
             )
         except RequestError as err:
             return FlaskResponse(status_code=err.status_code, data=str(err))
@@ -188,7 +188,7 @@ class Controller:
         return provider_ods_code
 
     def _get_sds_details(
-        self, auth_token: str, consumer_ods: str, provider_ods: str
+        self, consumer_ods: str, provider_ods: str
     ) -> tuple[str, str, str]:
         """
         Call SDS to obtain consumer ASID, provider ASID, and provider endpoint.
@@ -197,7 +197,6 @@ class Controller:
         - provider details (ASID + endpoint)
         - consumer details (ASID)
 
-        :param auth_token: Authorization token to use for SDS (used as API key).
         :param consumer_ods: Consumer organisation ODS code (from request headers).
         :param provider_ods: Provider organisation ODS code (from PDS).
         :returns: Tuple of (consumer_asid, provider_asid, provider_endpoint).
@@ -205,7 +204,6 @@ class Controller:
         """
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(
-            api_key=auth_token,
             base_url=self.sds_base_url,
             timeout=self.timeout,
         )
