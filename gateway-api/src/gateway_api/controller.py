@@ -122,8 +122,7 @@ class Controller:
         )
 
         if pds_result is None:
-            error = NoPatientFound(nhs_number=nhs_number)
-            raise error
+            raise NoPatientFound(nhs_number=nhs_number)
 
         if pds_result.gp_ods_code:
             provider_ods_code = pds_result.gp_ods_code

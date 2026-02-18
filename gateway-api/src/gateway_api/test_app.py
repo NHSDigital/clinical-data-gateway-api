@@ -139,7 +139,6 @@ class TestGetStructuredRecord:
         self,
         get_structured_record_response_from_missing_header: Flask,
     ) -> None:
-
         assert get_structured_record_response_from_missing_header.status_code == 400
 
     @pytest.mark.parametrize(

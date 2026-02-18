@@ -295,6 +295,7 @@ class PdsClient:
         for record in gerneral_practitioners:
             period = record["identifier"]["period"]  # TODO: spell check lint
             start = date.fromisoformat(period["start"])
+            # TODO: period is not required to have end
             end = date.fromisoformat(period["end"])
             if start <= today <= end:
                 return record
