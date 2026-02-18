@@ -22,13 +22,24 @@ Usage:
         The response from the provider FHIR API.
 """
 
-from collections.abc import Callable
+import os
 from urllib.parse import urljoin
 
-from requests import HTTPError, Response, post
-from stubs.provider.stub import stub_post
+from requests import HTTPError, Response
 
 from gateway_api.common.error import ProviderRequestFailed
+
+# TODO: Once stub servers/containers made for PDS, SDS and provider
+#       we should remove the STUB_PROVIDER environment variable and just
+#       use the stub client
+STUB_PROVIDER = os.environ.get("STUB_PROVIDER", "false").lower() == "true"
+if not STUB_PROVIDER:
+    from requests import post
+else:
+    from stubs.provider.stub import GpProviderStub
+
+    provider_stub = GpProviderStub()
+    post = provider_stub.post  # type: ignore
 
 ARS_INTERACTION_ID = (
     "urn:nhs:names:services:gpconnect:structured"
@@ -38,14 +49,6 @@ ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
-
-# TODO: Put the environment variable check back in
-# if os.environ.get("STUB_PROVIDER", None):
-if True:  # NOSONAR S5797 (Yes, I know it's always true, this is temporary)
-    # Direct all requests to the stub provider for steel threading in dev.
-    # Replace with `from requests import post` for real requests.
-    PostCallable = Callable[..., Response]
-    post: PostCallable = stub_post  # type: ignore[no-redef]
 
 
 class GpProviderClient:

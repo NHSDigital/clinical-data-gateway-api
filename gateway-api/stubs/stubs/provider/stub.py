@@ -123,14 +123,14 @@ class GpProviderStub:
             reason="Not Found",
         )
 
-
-def stub_post(
-    url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
-    headers: dict[str, Any],
-    data: json_str,
-    timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
-) -> Response:
-    """A stubbed requests.post function that routes to the GPProviderStub."""
-    _provider_stub = GpProviderStub()
-    trace_id = headers.get("Ssp-TraceID", "no-trace-id")
-    return _provider_stub.access_record_structured(trace_id, data)
+    def post(
+        self,
+        url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+        headers: dict[str, Any],
+        data: json_str,
+        timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+    ) -> Response:
+        """A stubbed requests.post function that routes to the GPProviderStub."""
+        _provider_stub = GpProviderStub()
+        trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+        return _provider_stub.access_record_structured(trace_id, data)

@@ -20,7 +20,6 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 
 import os
 import uuid
-from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import cast
 
@@ -41,10 +40,6 @@ else:
 
     pds = PdsFhirApiStub()
     post = pds.post  # type: ignore
-
-
-# Type for stub get method
-type GetCallable = Callable[..., requests.Response]
 
 
 class PdsClient:
