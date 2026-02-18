@@ -81,14 +81,6 @@ class GpProviderClient:
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
-
-        Args:
-            trace_id (str): A unique identifier for the request.
-
-        Returns:
-            dict[str, str]: A dictionary containing the headers for the request,
-            including content type, interaction ID, and ASIDs for the provider
-            and consumer.
         """
         return {
             "Content-Type": "application/fhir+json",
@@ -106,13 +98,6 @@ class GpProviderClient:
     ) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
-
-        Args:
-            trace_id (str): A unique identifier for the request, passed in the headers.
-            body (str): The request body in FHIR format.
-
-        Returns:
-            Response: The response from the GPProvider FHIR API.
         """
 
         headers = self._build_headers(trace_id)

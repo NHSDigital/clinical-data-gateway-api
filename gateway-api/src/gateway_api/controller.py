@@ -19,9 +19,6 @@ from gateway_api.sds import SdsClient, SdsSearchResults
 class Controller:
     """
     Orchestrates calls to PDS -> SDS -> GP provider.
-
-    Entry point:
-        - ``call_gp_provider(request_body_json, headers, auth_token) -> FlaskResponse``
     """
 
     gp_provider_client: GpProviderClient | None
@@ -34,10 +31,6 @@ class Controller:
     ) -> None:
         """
         Create a controller instance.
-
-        :param pds_base_url: Base URL for PDS client.
-        :param sds_base_url: Base URL for SDS client.
-        :param timeout: Timeout in seconds for downstream calls.
         """
         self.pds_base_url = pds_base_url
         self.sds_base_url = sds_base_url
@@ -56,10 +49,6 @@ class Controller:
         2) Call SDS using provider ODS to obtain provider ASID + provider endpoint.
         3) Call SDS using consumer ODS to obtain consumer ASID.
         4) Call GP provider to obtain patient records.
-
-        :param request: A GetStructuredRecordRequest instance.
-        :returns: A :class:`~gateway_api.common.common.FlaskResponse` representing the
-            outcome.
         """
         auth_token = self.get_auth_token()
 
@@ -93,18 +82,12 @@ class Controller:
 
         This is a placeholder implementation. Replace with actual logic to obtain
         the auth token as needed.
-
-        :returns: Authorization token as a string.
         """
         return "AUTH_TOKEN123"
 
     def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
-
-        :param auth_token: Authorization token to use for PDS.
-        :param nhs_number: NHS number
-        :returns: Provider ODS code (GP ODS code).
         """
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
@@ -137,11 +120,6 @@ class Controller:
         This method performs two SDS lookups:
         - provider details (ASID + endpoint)
         - consumer details (ASID)
-
-        :param auth_token: Authorization token to use for SDS.
-        :param consumer_ods: Consumer organisation ODS code (from request headers).
-        :param provider_ods: Provider organisation ODS code (from PDS).
-        :returns: Tuple of (consumer_asid, provider_asid, provider_endpoint).
         """
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(

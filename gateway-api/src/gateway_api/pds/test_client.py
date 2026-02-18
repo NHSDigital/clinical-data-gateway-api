@@ -27,10 +27,6 @@ class FakeResponse:
 
     Only the methods accessed by :class:`gateway_api.pds_search.PdsClient` are
     implemented.
-
-    :param status_code: HTTP status code.
-    :param headers: Response headers (dict or CaseInsensitiveDict).
-    :param _json: Parsed JSON body returned by :meth:`json`.
     """
 
     status_code: int
@@ -39,20 +35,9 @@ class FakeResponse:
     reason: str = ""
 
     def json(self) -> dict[str, Any] | Patient | OperationOutcome:
-        """
-        Return the response JSON body.
-
-        :return: Parsed JSON body.
-        """
         return self._json
 
     def raise_for_status(self) -> None:
-        """
-        Emulate :meth:`requests.Response.raise_for_status`.
-
-        :return: ``None``.
-        :raises requests.HTTPError: If the response status is not 200.
-        """
         if self.status_code != 200:
             err = requests.HTTPError(f"{self.status_code} Error")
             # requests attaches a Response to HTTPError.response; the client expects it
@@ -218,8 +203,6 @@ def test_search_patient_by_nhs_number_finds_current_gp_ods_code_when_pds_returns
 def test_find_current_gp_with_today_override() -> None:
     """
     Verify that ``find_current_gp`` honours an explicit ``today`` value.
-
-    :return: ``None``.
     """
     pds = PdsClient("test-token", "A12345")
     pds_ignore_dates = PdsClient("test-token", "A12345", ignore_dates=True)
@@ -255,8 +238,6 @@ def test_find_current_name_record_no_current_name() -> None:
     """
     Verify that ``find_current_name_record`` returns ``None`` when no current name
     exists.
-
-    :return: ``None``.
     """
     pds = PdsClient("test-token", "A12345")
     pds_ignore_date = PdsClient("test-token", "A12345", ignore_dates=True)

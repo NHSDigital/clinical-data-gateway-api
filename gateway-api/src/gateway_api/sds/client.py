@@ -18,10 +18,6 @@ class SdsClient:
     ) -> None:
         """
         Create an SDS client.
-
-        :param auth_token: Authentication token to present to SDS.
-        :param base_url: Base URL for SDS.
-        :param timeout: Timeout in seconds for SDS calls.
         """
         self.auth_token = auth_token
         self.base_url = base_url
@@ -32,9 +28,6 @@ class SdsClient:
         Retrieve SDS org details for a given ODS code.
 
         This is a placeholder implementation that always returns an ASID and endpoint.
-
-        :param ods_code: ODS code to look up.
-        :returns: SDS search results or ``None`` if not found.
         """
         # Placeholder implementation
         return SdsSearchResults(

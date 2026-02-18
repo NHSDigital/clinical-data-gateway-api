@@ -39,9 +39,6 @@ def mock_request_post(
     This fixture intercepts calls to `requests.post` and routes them to the
     stub provider. It also captures the most recent request details, such as
     headers, body, and URL, for verification in tests.
-
-    Returns:
-        dict[str, Any]: A dictionary containing the captured request details.
     """
     capture: dict[str, Any] = {}
 

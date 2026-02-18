@@ -78,16 +78,6 @@ class PdsClient:
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
-        """
-        Create a PDS client.
-
-        :param auth_token: OAuth2 bearer token (without the ``"Bearer "`` prefix).
-        :param base_url: Base URL for the PDS API (one of :attr:`SANDBOX_URL`,
-            :attr:`INT_URL`, :attr:`PROD_URL`). Trailing slashes are stripped.
-        :param timeout: Default timeout in seconds for HTTP calls.
-        :param ignore_dates: If ``True`` just get the most recent name or GP record,
-            ignoring the date ranges.
-        """
         self.auth_token = auth_token
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -100,11 +90,6 @@ class PdsClient:
     ) -> dict[str, str]:
         """
         Build mandatory and optional headers for a PDS request.
-
-        :param request_id: Optional ``X-Request-ID``. If not supplied a new UUID is
-                            generated.
-        :param correlation_id: Optional ``X-Correlation-ID`` for cross-system tracing.
-        :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
             "X-Request-ID": request_id or str(uuid.uuid4()),
@@ -112,8 +97,6 @@ class PdsClient:
             "Authorization": f"Bearer {self.auth_token}",
         }
 
-        # Correlation ID is used to track the same request across multiple systems.
-        # Can be safely omitted, mirrored back in response if included.
         if correlation_id:
             headers["X-Correlation-ID"] = correlation_id
 
@@ -131,15 +114,6 @@ class PdsClient:
 
         Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
         resource on success, then extracts a single :class:`PdsSearchResults`.
-
-        :param nhs_number: NHS number to search for.
-        :param request_id: Optional request ID to reuse for retries; if not supplied a
-            UUID is generated.
-        :param correlation_id: Optional correlation ID for tracing.
-        :param timeout: Optional per-call timeout in seconds. If not provided,
-            :attr:`timeout` is used.
-        :return: A :class:`PdsSearchResults` instance if a patient can be extracted,
-            otherwise ``None``.
         """
         headers = self._build_headers(
             request_id=request_id,
@@ -180,11 +154,6 @@ class PdsClient:
         * If exactly one record is current, return its ``identifier.value``.
 
         In future this may change to return the most recent record if none is current.
-
-        :param general_practitioners: List of ``generalPractitioner`` records from a
-            Patient resource.
-        :return: ODS code string if a current record exists, otherwise ``None``.
-        :raises KeyError: If a record is missing required ``identifier.period`` fields.
         """
         if len(general_practitioners) == 0:
             return None
@@ -209,10 +178,6 @@ class PdsClient:
 
         For Bundle inputs, the code assumes either zero matches (empty entry list) or a
         single match; if multiple entries are present, the first entry is used.
-        :param body: Parsed JSON body containing either a Patient resource or a Bundle
-            whose first entry contains a Patient resource under ``resource``.
-        :return: A populated :class:`PdsSearchResults` if extraction succeeds, otherwise
-            ``None``.
         """
         # Accept either:
         # 1) Patient (GET /Patient/{id})
@@ -257,43 +222,20 @@ class PdsClient:
 
     def find_current_gp(
         self,
-        gerneral_practitioners: list[GeneralPractitioner],
+        general_practitioners: list[GeneralPractitioner],
         today: date | None = None,
     ) -> GeneralPractitioner | None:
-        """
-        Select the current record from a ``generalPractitioner`` list.
-
-        A record is "current" if its ``identifier.period`` covers ``today`` (inclusive):
-
-        ``start <= today <= end``
-
-        Or else if self.ignore_dates is True, the last record in the list is returned.
-
-        The list may be in any of the following states:
-
-        * empty
-        * contains one or more records, none current
-        * contains one or more records, exactly one current
-
-        :param records: List of ``generalPractitioner`` records.
-        :param today: Optional override date, intended for deterministic tests.
-            If not supplied, the current UTC date is used.
-        :return: The first record whose ``identifier.period`` covers ``today``, or
-            ``None`` if no record is current.
-        :raises KeyError: If required keys are missing for a record being evaluated.
-        :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
-        """
         if today is None:
             today = datetime.now(timezone.utc).date()
 
         if self.ignore_dates:
-            if len(gerneral_practitioners) > 0:
-                return gerneral_practitioners[-1]
+            if len(general_practitioners) > 0:
+                return general_practitioners[-1]
             else:
                 return None
 
-        for record in gerneral_practitioners:
-            period = record["identifier"]["period"]  # TODO: spell check lint
+        for record in general_practitioners:
+            period = record["identifier"]["period"]
             start = date.fromisoformat(period["start"])
             # TODO: period is not required to have end
             end = date.fromisoformat(period["end"])
@@ -305,24 +247,6 @@ class PdsClient:
     def find_current_name_record(
         self, names: list[HumanName], today: date | None = None
     ) -> HumanName | None:
-        """
-        Select the current record from a ``Patient.name`` list.
-
-        A record is "current" if its ``period`` covers ``today`` (inclusive):
-
-        ``start <= today <= end``
-
-        Or else if self.ignore_dates is True, the last record in the list is returned.
-
-        :param records: List of ``Patient.name`` records.
-        :param today: Optional override date, intended for deterministic tests.
-            If not supplied, the current UTC date is used.
-        :return: The first name record whose ``period`` covers ``today``, or ``None`` if
-            no record is current.
-        :raises KeyError: If required keys (``period.start`` / ``period.end``) are
-            missing.
-        :raises ValueError: If ``start`` or ``end`` are not valid ISO date strings.
-        """
         if today is None:
             today = datetime.now(timezone.utc).date()
 
