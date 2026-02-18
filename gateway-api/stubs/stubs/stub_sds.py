@@ -6,11 +6,12 @@ The stub does **not** implement the full SDS API surface, nor full FHIR validati
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from gateway_api.common.common import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
-from .base_stub import GetStub, StubBase
+from stubs.base_stub import GetStub, StubBase
 
 if TYPE_CHECKING:
     from requests import Response
@@ -57,15 +58,17 @@ class SdsFhirApiStub(StubBase, GetStub):
         """
         # Internal store: (org_ods, interaction_id, party_key) -> list[device_resource]
         # party_key may be None if not specified
-        self._devices: dict[tuple[str, str, str | None], list[dict[str, Any]]] = {}
+        self._devices: defaultdict[
+            tuple[str, str, str | None], list[dict[str, Any]]
+        ] = defaultdict(list)
 
         # Internal store for endpoints:
         #   (org_ods, interaction_id, party_key) -> list[endpoint_resource]
         # org_ods and/or interaction_id may be None since they're optional for
         # endpoint queries
-        self._endpoints: dict[
+        self._endpoints: defaultdict[
             tuple[str | None, str | None, str | None], list[dict[str, Any]]
-        ] = {}
+        ] = defaultdict(list)
 
         # Seed some deterministic examples matching common test scenarios
         self._seed_default_devices()
@@ -115,8 +118,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         :param device: Device resource dictionary.
         """
         key = (organization_ods, service_interaction_id, party_key)
-        if key not in self._devices:
-            self._devices[key] = []
         self._devices[key].append(device)
 
     def clear_devices(self) -> None:
@@ -142,8 +143,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         :param endpoint: Endpoint resource dictionary.
         """
         key = (organization_ods, service_interaction_id, party_key)
-        if key not in self._endpoints:
-            self._endpoints[key] = []
         self._endpoints[key].append(endpoint)
 
     def clear_endpoints(self) -> None:

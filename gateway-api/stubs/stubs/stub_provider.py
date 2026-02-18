@@ -25,7 +25,7 @@ from typing import Any
 
 from requests import Response
 
-from .base_stub import StubBase
+from stubs.base_stub import StubBase
 
 
 class GpProviderStub(StubBase):

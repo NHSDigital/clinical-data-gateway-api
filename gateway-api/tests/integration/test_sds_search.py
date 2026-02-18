@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from gateway_api.sds_search import SdsClient, SdsSearchResults
+from gateway_api.sds_search import SdsClient
 
 
 class TestSdsIntegration:
@@ -18,27 +18,8 @@ class TestSdsIntegration:
         result = sds_client.get_org_details(ods_code="PROVIDER")
 
         assert result is not None
-        assert isinstance(result, SdsSearchResults)
-        assert result.asid is not None
         assert result.asid == "asid_PROV"
-        assert len(result.asid) > 0
-
-    def test_get_device_with_party_key_returns_endpoint(self) -> None:
-        """
-        Test that a device with party key returns both ASID and endpoint.
-
-        :param sds_client: SDS client fixture configured with stub.
-        """
-        sds_client = SdsClient()
-        result = sds_client.get_org_details(ods_code="PROVIDER")
-
-        assert result is not None
-        assert result.asid == "asid_PROV"
-        assert result.endpoint is not None
         assert result.endpoint == "https://provider.example.com/fhir"
-        # Verify endpoint is a valid URL format
-        assert result.endpoint.startswith("https://")
-        assert "fhir" in result.endpoint
 
     def test_consumer_organization_lookup(self) -> None:
         """
@@ -51,7 +32,6 @@ class TestSdsIntegration:
 
         assert result is not None
         assert result.asid == "asid_CONS"
-        assert result.endpoint is not None
         assert result.endpoint == "https://consumer.example.com/fhir"
 
     def test_result_contains_both_asid_and_endpoint_when_available(self) -> None:

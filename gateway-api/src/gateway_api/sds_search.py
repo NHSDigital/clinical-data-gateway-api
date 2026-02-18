@@ -11,7 +11,8 @@ from __future__ import annotations
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from enum import Enum
+from typing import Any, cast
 
 import requests
 from stubs.stub_sds import SdsFhirApiStub
@@ -25,6 +26,13 @@ type ResultList = list[ResultStructureDict]
 
 # Type for stub get method
 type GetCallable = Callable[..., requests.Response]
+
+
+class SdsResourceType(str, Enum):
+    """SDS FHIR resource types."""
+
+    DEVICE = "Device"
+    ENDPOINT = "Endpoint"
 
 
 class ExternalServiceError(Exception):
@@ -82,10 +90,6 @@ class SdsClient:
     INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
     PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
     ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
-
-    # SDS resource types
-    DEVICE: Literal["Device"] = "Device"
-    ENDPOINT: Literal["Endpoint"] = "Endpoint"
 
     # Define here so it's neater
     get_method: GetCallable
@@ -147,7 +151,7 @@ class SdsClient:
             ods_code=ods_code,
             correlation_id=correlation_id,
             timeout=timeout,
-            querytype=self.DEVICE,
+            querytype=SdsResourceType.DEVICE,
         )
 
         device = self._extract_first_entry(device_bundle)
@@ -168,7 +172,7 @@ class SdsClient:
             party_key=party_key,
             correlation_id=correlation_id,
             timeout=timeout,
-            querytype=self.ENDPOINT,
+            querytype=SdsResourceType.ENDPOINT,
         )
         endpoint = self._extract_first_entry(endpoint_bundle)
         if endpoint:
@@ -197,13 +201,13 @@ class SdsClient:
         party_key: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = 10,
-        querytype: Literal["Device", "Endpoint"] = DEVICE,
+        querytype: SdsResourceType = SdsResourceType.DEVICE,
     ) -> ResultStructureDict:
         """
         Query SDS /Device or /Endpoint endpoint.
         """
         headers = self._build_headers(correlation_id=correlation_id)
-        url = f"{self.base_url}/{querytype}"
+        url = f"{self.base_url}/{querytype.value}"
 
         params: dict[str, Any] = {
             "organization": f"{self.ODS_SYSTEM}|{ods_code}",
