@@ -147,12 +147,6 @@ RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" && 
     # Change default shell to bash for gateway-dev user.
     && chsh -s /bin/bash gateway-dev
 
-# Configure external services to use stubs
-# To disable, comment these out - if they're set at all, it'll use the stub
-ENV STUB_SDS=1
-ENV STUB_PDS=1
-ENV STUB_PROVIDER=1
-
 # Update gateway-dev user's bash configuration.
 COPY /resources/.bashrc /home/gateway-dev/.bashrc
 
