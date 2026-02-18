@@ -81,13 +81,10 @@ class Controller:
             body=request.request_body,
         )
 
-        # If we get a None from the GP provider, that means that either the service did
-        # not respond or we didn't make the request to the service in the first place.
-        # Therefore a None is a 502, any real response just pass straight back.
         return FlaskResponse(
-            status_code=response.status_code if response is not None else 502,
-            data=response.text if response is not None else "GP provider service error",
-            headers=dict(response.headers) if response is not None else None,
+            status_code=response.status_code,
+            data=response.text,
+            headers=dict(response.headers),
         )
 
     def get_auth_token(self) -> str:
