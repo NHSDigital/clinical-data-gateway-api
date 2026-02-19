@@ -26,12 +26,10 @@ from collections.abc import Callable
 from urllib.parse import urljoin
 
 from requests import HTTPError, Response, post
-from stubs.stub_provider import stub_post
+from stubs.stub_provider import GpProviderStub
 
-ARS_INTERACTION_ID = (
-    "urn:nhs:names:services:gpconnect:structured"
-    ":fhir:operation:gpc.getstructuredrecord-1"
-)
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+
 ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
@@ -43,7 +41,8 @@ if True:  # NOSONAR S5797 (Yes, I know it's always true, this is temporary)
     # Direct all requests to the stub provider for steel threading in dev.
     # Replace with `from requests import post` for real requests.
     PostCallable = Callable[..., Response]
-    post: PostCallable = stub_post  # type: ignore[no-redef]
+    _gp_provider_stub = GpProviderStub()
+    post: PostCallable = _gp_provider_stub.post  # type: ignore[no-redef]
 
 
 class ExternalServiceError(Exception):
@@ -94,7 +93,7 @@ class GpProviderClient:
         return {
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json",
-            "Ssp-InteractionID": ARS_INTERACTION_ID,
+            "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
             "Ssp-TraceID": trace_id,

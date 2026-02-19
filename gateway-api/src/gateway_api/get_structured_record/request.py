@@ -5,10 +5,18 @@ from fhir import OperationOutcome, Parameters
 from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
 
-from gateway_api.common.common import FlaskResponse
+from gateway_api.common.common import (
+    FlaskResponse,
+)
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
+
+# Access record structured interaction ID from
+# https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
+ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
+    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+)
 
 
 class RequestValidationError(Exception):
@@ -16,7 +24,7 @@ class RequestValidationError(Exception):
 
 
 class GetStructuredRecordRequest:
-    INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
+    INTERACTION_ID: str = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
     RESOURCE: str = "patient"
     FHIR_OPERATION: str = "$gpc.getstructuredrecord"
 

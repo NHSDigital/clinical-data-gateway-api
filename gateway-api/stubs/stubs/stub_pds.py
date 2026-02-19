@@ -6,41 +6,18 @@ The stub does **not** implement the full PDS API surface, nor full FHIR validati
 
 from __future__ import annotations
 
-import json
 import re
 import uuid
 from datetime import datetime, timezone
-from http.client import responses as http_responses
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from requests import Response
-from requests.structures import CaseInsensitiveDict
+from .base_stub import StubBase
 
-
-def _create_response(
-    status_code: int,
-    headers: dict[str, str],
-    json_data: dict[str, Any],
-) -> Response:
-    """
-    Create a :class:`requests.Response` object for the stub.
-
-    :param status_code: HTTP status code.
-    :param headers: Response headers dictionary.
-    :param json_data: JSON body data.
-    :return: A :class:`requests.Response` instance.
-    """
-    response = Response()
-    response.status_code = status_code
-    response.headers = CaseInsensitiveDict(headers)
-    response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001
-    response.encoding = "utf-8"
-    # Set a reason phrase for HTTP error handling
-    response.reason = http_responses.get(status_code, "Unknown")
-    return response
+if TYPE_CHECKING:
+    from requests import Response
 
 
-class PdsFhirApiStub:
+class PdsFhirApiStub(StubBase):
     """
     Minimal in-memory stub for the PDS FHIR API, implementing only ``GET /Patient/{id}``
 
@@ -253,7 +230,9 @@ class PdsFhirApiStub:
 
         # ETag mirrors the "W/\"<n>\"" shape and aligns to meta.versionId.
         headers_out["ETag"] = f'W/"{version_id}"'
-        return _create_response(status_code=200, headers=headers_out, json_data=patient)
+        return self._create_response(
+            status_code=200, headers=headers_out, json_data=patient
+        )
 
     def get(
         self,
@@ -286,6 +265,24 @@ class PdsFhirApiStub:
             role_id=role_id,
             end_user_org_ods=end_user_org_ods,
         )
+
+    def post(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        data: Any,
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub.
+
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param data: Request body data.
+        :param timeout: Request timeout in seconds.
+        :raises NotImplementedError: POST requests are not supported by this stub.
+        """
+        raise NotImplementedError("POST requests are not supported by PdsFhirApiStub")
 
     # ---------------------------
     # Internal helpers
@@ -356,9 +353,13 @@ class PdsFhirApiStub:
             display=message,
         )
 
-    @staticmethod
     def _operation_outcome(
-        *, status_code: int, headers: dict[str, str], spine_code: str, display: str
+        self,
+        *,
+        status_code: int,
+        headers: dict[str, str],
+        spine_code: str,
+        display: str,
     ) -> Response:
         """
         Construct an OperationOutcome response body.
@@ -388,6 +389,6 @@ class PdsFhirApiStub:
                 }
             ],
         }
-        return _create_response(
+        return self._create_response(
             status_code=status_code, headers=dict(headers), json_data=body
         )

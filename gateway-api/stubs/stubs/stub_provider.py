@@ -21,39 +21,14 @@ Headers:
 Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 """
 
-import json
 from typing import Any
 
-from gateway_api.common.common import json_str
 from requests import Response
-from requests.structures import CaseInsensitiveDict
+
+from stubs.base_stub import StubBase
 
 
-def _create_response(
-    status_code: int,
-    headers: dict[str, str] | CaseInsensitiveDict[str],
-    content: bytes,
-    reason: str = "",
-) -> Response:
-    """
-    Create a :class:`requests.Response` object for the stub.
-
-    :param status_code: HTTP status code.
-    :param headers: Response headers dictionary.
-    :param content: Response body as bytes.
-    :param reason: HTTP reason phrase (e.g., "OK", "Bad Request").
-    :return: A :class:`requests.Response` instance.
-    """
-    response = Response()
-    response.status_code = status_code
-    response.headers = CaseInsensitiveDict(headers)
-    response._content = content  # noqa: SLF001
-    response.reason = reason
-    response.encoding = "utf-8"
-    return response
-
-
-class GpProviderStub:
+class GpProviderStub(StubBase):
     """
     A minimal in-memory stub for a Provider GP System FHIR API,
     implementing only accessRecordStructured to read basic
@@ -118,36 +93,61 @@ class GpProviderStub:
         returns:
             Response: The stub patient bundle wrapped in a Response object.
         """
-
-        stub_response = _create_response(
-            status_code=200,
-            headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-            content=json.dumps(self.patient_bundle).encode("utf-8"),
-            reason="OK",
-        )
-
         if trace_id == "invalid for test":
-            return _create_response(
+            return self._create_response(
                 status_code=400,
-                headers=CaseInsensitiveDict({"Content-Type": "application/fhir+json"}),
-                content=(
-                    b'{"resourceType":"OperationOutcome","issue":['
-                    b'{"severity":"error","code":"invalid",'
-                    b'"diagnostics":"Invalid for testing"}]}'
-                ),
-                reason="Bad Request",
+                headers={"Content-Type": "application/fhir+json"},
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": "Invalid for testing",
+                        }
+                    ],
+                },
             )
 
-        return stub_response
+        return self._create_response(
+            status_code=200,
+            headers={"Content-Type": "application/fhir+json"},
+            json_data=self.patient_bundle,
+        )
 
+    def post(
+        self,
+        url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+        headers: dict[str, Any],
+        data: str,
+        timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub.
 
-def stub_post(
-    url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
-    headers: dict[str, Any],
-    data: json_str,
-    timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
-) -> Response:
-    """A stubbed requests.post function that routes to the GPProviderStub."""
-    _provider_stub = GpProviderStub()
-    trace_id = headers.get("Ssp-TraceID", "no-trace-id")
-    return _provider_stub.access_record_structured(trace_id, data)
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param data: Request body data.
+        :param timeout: Request timeout in seconds.
+        :return: A :class:`requests.Response` instance.
+        """
+        trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+        return self.access_record_structured(trace_id, data)
+
+    def get(
+        self,
+        url: str,
+        headers: dict[str, str],
+        params: dict[str, Any],
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP GET requests for the stub.
+
+        :param url: Request URL.
+        :param headers: Request headers.
+        :param params: Query parameters.
+        :param timeout: Request timeout in seconds.
+        :raises NotImplementedError: GET requests are not supported by this stub.
+        """
+        raise NotImplementedError("GET requests are not supported by GpProviderStub")

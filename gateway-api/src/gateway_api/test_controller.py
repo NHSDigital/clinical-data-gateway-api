@@ -14,11 +14,9 @@ from requests import Response
 
 import gateway_api.controller as controller_module
 from gateway_api.app import app
-from gateway_api.controller import (
-    Controller,
-    SdsSearchResults,
-)
+from gateway_api.controller import Controller
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
+from gateway_api.sds_search import SdsSearchResults
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -77,18 +75,18 @@ class FakeSdsClient:
 
     def __init__(
         self,
-        auth_token: str | None = None,
         base_url: str = "test_url",
         timeout: int = 10,
+        service_interaction_id: str | None = None,
     ) -> None:
         FakeSdsClient.last_init = {
-            "auth_token": auth_token,
             "base_url": base_url,
             "timeout": timeout,
+            "service_interaction_id": service_interaction_id,
         }
-        self.auth_token = auth_token
         self.base_url = base_url
         self.timeout = timeout
+        self.service_interaction_id = service_interaction_id
         self._org_details_by_ods: dict[str, SdsSearchResults | None] = {}
 
     def set_org_details(
@@ -96,7 +94,11 @@ class FakeSdsClient:
     ) -> None:
         self._org_details_by_ods[ods_code] = org_details
 
-    def get_org_details(self, ods_code: str) -> SdsSearchResults | None:
+    def get_org_details(
+        self,
+        ods_code: str,
+        get_endpoint: bool = True,  # NOQA ARG002 (unused in fake),
+    ) -> SdsSearchResults | None:
         return self._org_details_by_ods.get(ods_code)
 
 
