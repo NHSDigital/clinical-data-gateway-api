@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any, cast
+from uuid import UUID
 
 import pytest
 import requests
@@ -305,12 +306,13 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     assert headers["Accept"] == "application/fhir+json"
     # X-Request-ID should be auto-generated as a UUID
     assert "X-Request-ID" in headers
-    assert isinstance(headers["X-Request-ID"], str)
-    assert len(headers["X-Request-ID"]) >= 32
-    # Verify it's a valid UUID by trying to parse it
-    from uuid import UUID
 
-    UUID(headers["X-Request-ID"])  # Should not raise
+    # Verify it's a valid UUID by trying to parse it
+    try:
+        UUID(headers["X-Request-ID"])  # Should not raise
+    except ValueError:
+        pytest.fail("X-Request-ID header was not a valid UUID")
+
     assert headers["X-Correlation-ID"] == corr_id
 
 

@@ -142,11 +142,6 @@ class PdsClient:
     ) -> dict[str, str]:
         """
         Build mandatory and optional headers for a PDS request.
-
-        A new UUID is generated for ``X-Request-ID`` with each call.
-
-        :param correlation_id: Optional ``X-Correlation-ID`` for cross-system tracing.
-        :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
             "X-Request-ID": str(uuid.uuid4()),
@@ -180,17 +175,6 @@ class PdsClient:
 
         Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
         resource on success, then extracts a single :class:`PdsSearchResults`.
-
-        A new UUID is generated for the ``X-Request-ID`` header with each call.
-
-        :param nhs_number: NHS number to search for.
-        :param correlation_id: Optional correlation ID for tracing.
-        :param timeout: Optional per-call timeout in seconds. If not provided,
-            :attr:`timeout` is used.
-        :return: A :class:`PdsSearchResults` instance if a patient can be extracted,
-            otherwise ``None``.
-        :raises ExternalServiceError: If the HTTP request returns an error status and
-            ``raise_for_status()`` raises :class:`requests.HTTPError`.
         """
         headers = self._build_headers(
             correlation_id=correlation_id,
