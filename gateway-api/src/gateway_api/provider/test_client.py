@@ -18,11 +18,6 @@ from stubs.provider.stub import GpProviderStub
 from gateway_api.common.error import ProviderRequestFailed
 from gateway_api.provider import GpProviderClient, client
 
-ars_interactionId = (
-    "urn:nhs:names:services:gpconnect:structured"
-    ":fhir:operation:gpc.getstructuredrecord-1"
-)
-
 
 @pytest.fixture
 def stub() -> GpProviderStub:
@@ -126,7 +121,9 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
-        "Ssp-InteractionID": ars_interactionId,
+        "Ssp-InteractionID": (
+            "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+        ),
     }
 
     result = client.access_structured_record(

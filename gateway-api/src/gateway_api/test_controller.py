@@ -1,6 +1,8 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
 import pytest
+from fhir.bundle import Bundle
+from fhir.parameters import Parameters
 from pytest_mock import MockerFixture
 
 from gateway_api.common.error import (
@@ -9,9 +11,60 @@ from gateway_api.common.error import (
     NoCurrentProvider,
     NoOrganisationFound,
 )
+from gateway_api.conftest import FakeResponse, create_mock_request
 from gateway_api.controller import Controller
+from gateway_api.get_structured_record import GetStructuredRecordRequest
 from gateway_api.pds import PdsSearchResults
 from gateway_api.sds import SdsSearchResults
+
+
+def test_controller_run_returns_happy_path_response(
+    mocker: MockerFixture,
+    valid_simple_request_payload: Parameters,
+    valid_simple_response_payload: Bundle,
+) -> None:
+    nhs_number = "9000000009"
+    provider_ods = "ProviderODS"
+    provider_sds_results = SdsSearchResults(
+        asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
+    )
+    consumer_ods = "ConsumerODS"
+    consumer_sds_results = SdsSearchResults(
+        asid="ConsumerASID", endpoint="https://example.consumer.org/endpoint"
+    )
+    sds_results = [provider_sds_results, consumer_sds_results]
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=PdsSearchResults(
+            given_names="Jane",
+            family_name="Smith",
+            nhs_number=nhs_number,
+            gp_ods_code=provider_ods,
+        ),
+    )
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=sds_results,
+    )
+
+    provider_response = FakeResponse(
+        status_code=200,
+        headers={"Content-Type": "application/fhir+json"},
+        _json=valid_simple_response_payload,
+    )
+    mocker.patch(
+        "gateway_api.provider.GpProviderClient.access_structured_record",
+        return_value=provider_response,
+    )
+
+    controller = Controller()
+    http_request = create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=valid_simple_request_payload,
+    )
+    actual_response = controller.run(GetStructuredRecordRequest(http_request))
+
+    assert actual_response.status_code == 200
 
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
@@ -63,7 +116,6 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
 
 def test_get_sds_details_returns_consumer_and_provider_deatils_for_happy_path(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     provider_sds_results = SdsSearchResults(
@@ -82,13 +134,12 @@ def test_get_sds_details_returns_consumer_and_provider_deatils_for_happy_path(
     controller = Controller()
 
     expected = ("ConsumerASID", "ProviderASID", "https://example.provider.org/endpoint")
-    actual = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+    actual = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
     assert actual == expected
 
 
 def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
@@ -103,12 +154,11 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
         NoOrganisationFound,
         match="No SDS org found for provider ODS code ProviderODS",
     ):
-        _ = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
 
 
 def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
@@ -129,12 +179,11 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
             "a current ASID"
         ),
     ):
-        _ = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
 
 
 def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpoint(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
@@ -153,12 +202,11 @@ def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpo
             "not contain a current endpoint"
         ),
     ):
-        _ = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
 
 
 def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
@@ -178,12 +226,11 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
         NoOrganisationFound,
         match="No SDS org found for consumer ODS code ConsumerODS",
     ):
-        _ = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
 
 
 def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_asid(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
@@ -208,4 +255,4 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
             "a current ASID"
         ),
     ):
-        _ = controller._get_sds_details(auth_token, consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001

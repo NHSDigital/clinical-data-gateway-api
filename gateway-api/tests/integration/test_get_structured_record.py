@@ -13,7 +13,9 @@ from tests.conftest import Client
 
 class TestGetStructuredRecord:
     def test_happy_path_returns_200(
-        self, client: Client, simple_request_payload: Parameters
+        self,
+        client: Client,
+        simple_request_payload: Parameters,
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
@@ -31,7 +33,9 @@ class TestGetStructuredRecord:
         assert response.json() == Bundles.ALICE_JONES_9999999999
 
     def test_happy_path_content_type(
-        self, client: Client, simple_request_payload: Parameters
+        self,
+        client: Client,
+        simple_request_payload: Parameters,
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
@@ -340,7 +344,9 @@ class TestGetStructuredRecord:
 
     @pytest.fixture
     def get_structured_record_requestor(
-        self, client: Client, simple_request_payload: Parameters
+        self,
+        client: Client,
+        simple_request_payload: Parameters,
     ) -> Callable[[str], Response]:
         def requestor(nhs_number: str) -> Response:
             simple_request_payload["parameter"][0]["valueIdentifier"]["value"] = (

@@ -2,47 +2,20 @@
 Unit tests for :mod:`gateway_api.pds_search`.
 """
 
-from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 import pytest
-import requests
-from fhir import OperationOutcome, Patient
+from fhir import Patient
 from pytest_mock import MockerFixture
-from requests.structures import CaseInsensitiveDict
 
 from gateway_api.common.error import PdsRequestFailed
+from gateway_api.conftest import FakeResponse
 from gateway_api.pds.client import PdsClient
 
 if TYPE_CHECKING:
     from fhir import GeneralPractitioner, HumanName
-
-
-@dataclass
-class FakeResponse:
-    """
-    Minimal substitute for :class:`requests.Response` used by tests.
-
-    Only the methods accessed by :class:`gateway_api.pds_search.PdsClient` are
-    implemented.
-    """
-
-    status_code: int
-    headers: dict[str, str] | CaseInsensitiveDict[str]
-    _json: dict[str, Any] | Patient | OperationOutcome
-    reason: str = ""
-
-    def json(self) -> dict[str, Any] | Patient | OperationOutcome:
-        return self._json
-
-    def raise_for_status(self) -> None:
-        if self.status_code != 200:
-            err = requests.HTTPError(f"{self.status_code} Error")
-            # requests attaches a Response to HTTPError.response; the client expects it
-            err.response = self
-            raise err
 
 
 def test_search_patient_by_nhs_number_happy_path(

@@ -28,6 +28,7 @@ from urllib.parse import urljoin
 from requests import HTTPError, Response
 
 from gateway_api.common.error import ProviderRequestFailed
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the STUB_PROVIDER environment variable and just
@@ -41,10 +42,6 @@ else:
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
 
-ARS_INTERACTION_ID = (
-    "urn:nhs:names:services:gpconnect:structured"
-    ":fhir:operation:gpc.getstructuredrecord-1"
-)
 ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
@@ -85,7 +82,7 @@ class GpProviderClient:
         return {
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json",
-            "Ssp-InteractionID": ARS_INTERACTION_ID,
+            "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
             "Ssp-TraceID": trace_id,

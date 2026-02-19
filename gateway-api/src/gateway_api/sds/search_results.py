@@ -9,5 +9,5 @@ class SdsSearchResults:
     Replace this with the real one once it's implemented.
     """
 
-    asid: str
+    asid: str | None
     endpoint: str | None

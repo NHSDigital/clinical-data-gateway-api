@@ -65,8 +65,12 @@
   // Code spell checker configuration
   "cSpell.language": "en-GB",
   "cSpell.words": [
-    "usefixtures",
+    "asid",
     "fhir",
-    "asid"
-  ]
+    "getstructuredrecord",
+    "gpconnect",
+    "usefixtures",
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": [],
 }

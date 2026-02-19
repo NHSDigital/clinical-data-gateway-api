@@ -25,7 +25,7 @@ class Controller:
     def __init__(
         self,
         pds_base_url: str = PdsClient.SANDBOX_URL,
-        sds_base_url: str = "https://example.invalid/sds",
+        sds_base_url: str = SdsClient.SANDBOX_URL,
         timeout: int = 10,
     ) -> None:
         """
@@ -54,7 +54,7 @@ class Controller:
         provider_ods = self._get_pds_details(auth_token, request.nhs_number)
 
         consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
-            auth_token, request.ods_from.strip(), provider_ods
+            request.ods_from.strip(), provider_ods
         )
 
         # Call GP provider with correct parameters
@@ -104,7 +104,7 @@ class Controller:
         return pds_result.gp_ods_code
 
     def _get_sds_details(
-        self, auth_token: str, consumer_ods: str, provider_ods: str
+        self, consumer_ods: str, provider_ods: str
     ) -> tuple[str, str, str]:
         """
         Call SDS to obtain consumer ASID, provider ASID, and provider endpoint.
@@ -115,12 +115,13 @@ class Controller:
         """
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(
-            auth_token=auth_token,
             base_url=self.sds_base_url,
             timeout=self.timeout,
         )
 
-        provider_details: SdsSearchResults | None = sds.get_org_details(provider_ods)
+        provider_details: SdsSearchResults | None = sds.get_org_details(
+            provider_ods, get_endpoint=True
+        )
         if provider_details is None:
             raise NoOrganisationFound(org_type="provider", ods_code=provider_ods)
 
@@ -133,7 +134,9 @@ class Controller:
             raise NoCurrentEndpoint(provider_ods=provider_ods)
 
         # SDS: Get consumer details (ASID) for consumer ODS
-        consumer_details: SdsSearchResults | None = sds.get_org_details(consumer_ods)
+        consumer_details: SdsSearchResults | None = sds.get_org_details(
+            consumer_ods, get_endpoint=False
+        )
         if consumer_details is None:
             raise NoOrganisationFound(org_type="consumer", ods_code=consumer_ods)
 

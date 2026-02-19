@@ -26,7 +26,7 @@
             "id": "1",
             "type": "Organization",
             "identifier": {
-                "value": "InduceProviderError",
+                "value": "A12345",
                 "period": {"start": "2020-01-01"}
             }
         }

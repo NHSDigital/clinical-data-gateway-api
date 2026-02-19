@@ -4,27 +4,14 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from fhir.parameters import Parameters
 from flask import Request
-from werkzeug.test import EnvironBuilder
 
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import BaseError
+from gateway_api.conftest import create_mock_request
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
-
-
-def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:
-    """Create a proper Flask Request object with headers and JSON body."""
-    builder = EnvironBuilder(
-        method="POST",
-        path="/patient/$gpc.getstructuredrecord",
-        data=json.dumps(body),
-        content_type="application/fhir+json",
-        headers=headers,
-    )
-    env = builder.get_environ()
-    return Request(env)
 
 
 @pytest.fixture

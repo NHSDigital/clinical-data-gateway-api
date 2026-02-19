@@ -6,10 +6,10 @@
     "configurations": [
 
         {
-            "name": "Python Debugger: Flask",
+            "name": "Run Gateway API",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/infrastructure/images/gateway-api/resources/build/gateway-api/gateway_api/app.py",
+            "program": "${workspaceFolder}/gateway-api/src/gateway_api/app.py",
             "envFile": "${workspaceFolder}/.env",
             "jinja": true,
             "console": "integratedTerminal"

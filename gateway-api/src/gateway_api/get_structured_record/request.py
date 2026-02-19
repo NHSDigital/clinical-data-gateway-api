@@ -12,9 +12,15 @@ from gateway_api.common.error import InvalidRequestJSON, MissingOrEmptyHeader
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
 
+# Access record structured interaction ID from
+# https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
+ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
+    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+)
+
 
 class GetStructuredRecordRequest:
-    INTERACTION_ID: str = "urn:nhs:names:services:gpconnect:gpc.getstructuredrecord-1"
+    INTERACTION_ID: str = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
     RESOURCE: str = "patient"
     FHIR_OPERATION: str = "$gpc.getstructuredrecord"
 
@@ -51,7 +57,6 @@ class GetStructuredRecordRequest:
         return json.dumps(self._request_body)
 
     def _validate_headers(self) -> None:
-        """Validate required headers are present and non-empty."""
         trace_id = self._headers.get("Ssp-TraceID", "").strip()
         if not trace_id:
             raise MissingOrEmptyHeader(header="Ssp-TraceID")

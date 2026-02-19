@@ -240,7 +240,6 @@ class TestGetStructuredRecord:
         missing_headers: dict[str, str],
         valid_simple_request_payload: Parameters,
     ) -> Flask:
-
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
             data=json.dumps(valid_simple_request_payload),
