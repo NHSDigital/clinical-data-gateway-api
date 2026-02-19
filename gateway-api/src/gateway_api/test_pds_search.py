@@ -304,7 +304,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     assert headers["Authorization"] == "Bearer test-token"
     assert headers["NHSD-End-User-Organisation-ODS"] == "A12345"
     assert headers["Accept"] == "application/fhir+json"
-    # X-Request-ID should be auto-generated as a UUID
+    # X-Request-ID should be an auto-generated UUID
     assert "X-Request-ID" in headers
 
     # Verify it's a valid UUID by trying to parse it
