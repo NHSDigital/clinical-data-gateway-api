@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any, cast
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 import requests
@@ -270,7 +270,8 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     * Authorization header
     * NHSD-End-User-Organisation-ODS header
     * Accept header
-    * caller-provided X-Request-ID and X-Correlation-ID headers
+    * auto-generated X-Request-ID (UUID format)
+    * caller-provided X-Correlation-ID header
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound
@@ -291,12 +292,10 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         base_url="https://example.test/personal-demographics/FHIR/R4",
     )
 
-    req_id = str(uuid4())
     corr_id = "corr-123"
 
     result = client.search_patient_by_nhs_number(
         "9000000009",
-        request_id=req_id,
         correlation_id=corr_id,
     )
     assert result is not None
@@ -305,7 +304,15 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     assert headers["Authorization"] == "Bearer test-token"
     assert headers["NHSD-End-User-Organisation-ODS"] == "A12345"
     assert headers["Accept"] == "application/fhir+json"
-    assert headers["X-Request-ID"] == req_id
+    # X-Request-ID should be an auto-generated UUID
+    assert "X-Request-ID" in headers
+
+    # Verify it's a valid UUID by trying to parse it
+    try:
+        UUID(headers["X-Request-ID"])  # Should not raise
+    except ValueError:
+        pytest.fail("X-Request-ID header was not a valid UUID")
+
     assert headers["X-Correlation-ID"] == corr_id
 
 
@@ -314,10 +321,10 @@ def test_search_patient_by_nhs_number_generates_request_id(
     mock_requests_get: dict[str, Any],
 ) -> None:
     """
-    Verify that the client generates an X-Request-ID when not provided.
+    Verify that the client generates a new X-Request-ID for each request.
 
     The stub is in strict mode, so a missing or invalid X-Request-ID would cause a 400.
-    This test confirms a request ID is present and looks UUID-like.
+    This test confirms a request ID is present and is a valid UUID.
 
     :param stub: Stub backend fixture.
     :param mock_requests_get: Patched ``requests.get`` fixture capturing outbound

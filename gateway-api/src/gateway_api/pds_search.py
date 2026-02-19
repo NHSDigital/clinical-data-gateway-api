@@ -138,19 +138,13 @@ class PdsClient:
 
     def _build_headers(
         self,
-        request_id: str | None = None,
         correlation_id: str | None = None,
     ) -> dict[str, str]:
         """
         Build mandatory and optional headers for a PDS request.
-
-        :param request_id: Optional ``X-Request-ID``. If not supplied a new UUID is
-                            generated.
-        :param correlation_id: Optional ``X-Correlation-ID`` for cross-system tracing.
-        :return: Dictionary of HTTP headers for the outbound request.
         """
         headers = {
-            "X-Request-ID": request_id or str(uuid.uuid4()),
+            "X-Request-ID": str(uuid.uuid4()),
             "NHSD-End-User-Organisation-ODS": self.end_user_org_ods,
             "Accept": "application/fhir+json",
         }
@@ -173,7 +167,6 @@ class PdsClient:
     def search_patient_by_nhs_number(
         self,
         nhs_number: str,
-        request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
     ) -> PdsSearchResults | None:
@@ -182,20 +175,8 @@ class PdsClient:
 
         Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
         resource on success, then extracts a single :class:`PdsSearchResults`.
-
-        :param nhs_number: NHS number to search for.
-        :param request_id: Optional request ID to reuse for retries; if not supplied a
-            UUID is generated.
-        :param correlation_id: Optional correlation ID for tracing.
-        :param timeout: Optional per-call timeout in seconds. If not provided,
-            :attr:`timeout` is used.
-        :return: A :class:`PdsSearchResults` instance if a patient can be extracted,
-            otherwise ``None``.
-        :raises ExternalServiceError: If the HTTP request returns an error status and
-            ``raise_for_status()`` raises :class:`requests.HTTPError`.
         """
         headers = self._build_headers(
-            request_id=request_id,
             correlation_id=correlation_id,
         )
 
