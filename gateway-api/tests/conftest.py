@@ -2,12 +2,14 @@
 
 import os
 from datetime import timedelta
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import requests
 from dotenv import find_dotenv, load_dotenv
-from fhir.parameters import Parameters
+
+if TYPE_CHECKING:
+    from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
 # find_dotenv searches upward from current directory for .env file
