@@ -1,5 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pytest
-import requests
+
+if TYPE_CHECKING:
+    import requests
 
 
 class ResponseContext:

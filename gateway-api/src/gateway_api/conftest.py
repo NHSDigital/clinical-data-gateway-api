@@ -2,14 +2,17 @@
 
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import pytest
 import requests
-from fhir import Bundle, OperationOutcome, Parameters, Patient
+from fhir import Bundle, OperationOutcome, Patient
 from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
+
+if TYPE_CHECKING:
+    from fhir.parameters import Parameters
 
 
 @dataclass

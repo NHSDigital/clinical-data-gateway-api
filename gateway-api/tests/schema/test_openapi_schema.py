@@ -8,7 +8,7 @@ from pathlib import Path
 
 import schemathesis
 import yaml
-from schemathesis.generation.case import Case
+from schemathesis.generation.case import Case  # NOQA TC002 (Is needed)
 from schemathesis.openapi import from_dict
 
 # Load the OpenAPI schema from the local file

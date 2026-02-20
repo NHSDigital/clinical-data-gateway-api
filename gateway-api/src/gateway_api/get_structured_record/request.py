@@ -12,6 +12,8 @@ from gateway_api.common.error import InvalidRequestJSONError, MissingOrEmptyHead
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
 
+    from gateway_api.common.common import FlaskResponse
+
 # Access record structured interaction ID from
 # https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
 ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (

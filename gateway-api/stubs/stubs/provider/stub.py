@@ -24,10 +24,11 @@ Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 import json
 from typing import Any
 
-from requests import Response
-
 from stubs.base_stub import StubBase
 from stubs.data.bundles import Bundles
+
+if TYPE_CHECKING:
+    from requests import Response
 
 
 class GpProviderStub(StubBase):

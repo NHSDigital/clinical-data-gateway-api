@@ -18,6 +18,10 @@ from stubs.provider.stub import GpProviderStub
 from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.provider import GpProviderClient, client
 
+if TYPE_CHECKING:
+    from requests import Response
+    from requests.structures import CaseInsensitiveDict
+
 
 @pytest.fixture
 def stub() -> GpProviderStub:

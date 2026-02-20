@@ -2,7 +2,6 @@ import json
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from fhir.parameters import Parameters
 from flask import Request
 
 from gateway_api.common.common import FlaskResponse
@@ -12,6 +11,7 @@ from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
     from fhir.bundle import Bundle
+    from fhir.parameters import Parameters
 
 
 @pytest.fixture

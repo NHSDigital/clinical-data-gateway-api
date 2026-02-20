@@ -1,3 +1,5 @@
+target-version = "py314"
+
 [lint]
 select = [
   # Standard configuration taken from https://docs.astral.sh/ruff/linter/#rule-selection.
