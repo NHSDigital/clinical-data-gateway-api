@@ -127,8 +127,7 @@ class PdsClient:
 
         # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
         response = get(
-            url,  # TODO: URL points to sandbox env even when STUB_PDS
-            #       is true, should we change this to point to the stub instead?
+            url,
             headers=headers,
             params={},
             timeout=timeout or self.timeout,
