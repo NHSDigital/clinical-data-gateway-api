@@ -185,7 +185,9 @@ class PdsClient:
         else:
             entries = cast("list[BundleEntry]", body.get("entry", []))
             if not entries:
-                raise RuntimeError("PDS response contains no patient entries")
+                raise PdsRequestFailed(
+                    error_response="PDS response contains no patient entries"
+                )
 
             # Use the first patient entry. Search by NHS number is unique. Search by
             # demographics for an application is allowed to return max one entry from
@@ -197,7 +199,9 @@ class PdsClient:
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
-            raise RuntimeError("PDS patient resource missing NHS number")
+            raise PdsRequestFailed(
+                error_reason="PDS Patient resource missing NHS number"
+            )
 
         current_name = self.find_current_name_record(patient["name"])
 

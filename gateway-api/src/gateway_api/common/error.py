@@ -16,13 +16,21 @@ class ErrorCode(StrEnum):
 
 
 @dataclass
-class BaseError(Exception):
-    _message = "Internal Server Error"
-    status_code: int = INTERNAL_SERVER_ERROR
+class AbstractCDGError(Exception):
+    """
+    Abstract class for all errors.
+    """
+
+    _message: str
+    status_code: int
+    error_code: ErrorCode
     severity: str = "error"
-    error_code: ErrorCode = ErrorCode.EXCEPTION
 
     def __init__(self, **additional_details: str):
+        """
+        Pass additional details while instantiating the object. These will be used to
+        complete the error message with relevant information, such as NHS number.
+        """
         self.additional_details = additional_details
         super().__init__(self)
 
@@ -55,47 +63,61 @@ class BaseError(Exception):
         return self.message
 
 
-class InvalidRequestJSON(BaseError):
+class InvalidRequestJSON(AbstractCDGError):
     _message = "Invalid JSON body sent in request"
     error_code = ErrorCode.INVALID
     status_code = BAD_REQUEST
 
 
-class MissingOrEmptyHeader(BaseError):
+class MissingOrEmptyHeader(AbstractCDGError):
     _message = 'Missing or empty required header "{header}"'
     status_code = BAD_REQUEST
+    error_code = ErrorCode.EXCEPTION
 
 
-class NoCurrentProvider(BaseError):
+class NoCurrentProvider(AbstractCDGError):
     _message = "PDS patient {nhs_number} did not contain a current provider ODS code"
     status_code = NOT_FOUND
+    error_code = ErrorCode.EXCEPTION
 
 
-class NoOrganisationFound(BaseError):
+class NoOrganisationFound(AbstractCDGError):
     _message = "No SDS org found for {org_type} ODS code {ods_code}"
     status_code = NOT_FOUND
+    error_code = ErrorCode.EXCEPTION
 
 
-class NoAsidFound(BaseError):
+class NoAsidFound(AbstractCDGError):
     _message = (
         "SDS result for {org_type} ODS code {ods_code} did not contain a current ASID"
     )
     status_code = NOT_FOUND
+    error_code = ErrorCode.EXCEPTION
 
 
-class NoCurrentEndpoint(BaseError):
+class NoCurrentEndpoint(AbstractCDGError):
     _message = (
         "SDS result for provider ODS code {provider_ods} did not contain "
         "a current endpoint"
     )
     status_code = NOT_FOUND
+    error_code = ErrorCode.EXCEPTION
 
 
-class PdsRequestFailed(BaseError):
+class PdsRequestFailed(AbstractCDGError):
     _message = "PDS FHIR API request failed: {error_reason}"
     status_code = BAD_GATEWAY
+    error_code = ErrorCode.EXCEPTION
 
 
-class ProviderRequestFailed(BaseError):
+class ProviderRequestFailed(AbstractCDGError):
     _message = "Provider request failed: {error_reason}"
     status_code = BAD_GATEWAY
+    error_code = ErrorCode.EXCEPTION
+
+
+class UnexpectedError(AbstractCDGError):
+    _message = "Internal Server Error"
+    status_code = INTERNAL_SERVER_ERROR
+    severity = "error"
+    error_code = ErrorCode.EXCEPTION

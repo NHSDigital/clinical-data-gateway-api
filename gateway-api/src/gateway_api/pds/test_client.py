@@ -234,17 +234,19 @@ def test_find_current_name_record_no_current_name() -> None:
     assert pds_ignore_date.find_current_name_record(records) is not None
 
 
-def test_extract_single_search_result_invalid_body_raises_runtime_error() -> None:
+def test_extract_single_search_result_with_invalid_body_raises_pds_request_failed() -> (
+    None
+):
     """
-    Verify that ``PdsClient._extract_single_search_result`` raises ``RuntimeError`` when
-    mandatory patient content is missing.
+    Verify that ``PdsClient._extract_single_search_result`` raises ``PdsRequestFailed``
+    when mandatory patient content is missing.
 
-    This test asserts that a ``RuntimeError`` is raised when:
+    This test asserts that a ``PdsRequestFailed`` is raised when:
 
     * The body is a bundle containing no entries (``entry`` is empty).
     * The body is a patient resource with no NHS number (missing/blank ``id``).
     * The body is a patient resource with an NHS number,
-        but the patient has no *current*
+        but the patient has no *current* name record.
     """
     client = PdsClient(
         auth_token="test-token",  # noqa: S106 (test token hardcoded)
@@ -253,7 +255,7 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
 
     # 1) Bundle contains no entries.
     bundle_no_entries: Any = {"resourceType": "Bundle", "entry": []}
-    with pytest.raises(RuntimeError):
+    with pytest.raises(PdsRequestFailed):
         client._extract_single_search_result(bundle_no_entries)  # noqa SLF001 (testing private method)
 
     # 2) Patient has no NHS number (Patient.id missing/blank).
@@ -269,7 +271,7 @@ def test_extract_single_search_result_invalid_body_raises_runtime_error() -> Non
         ],
         "generalPractitioner": [],
     }
-    with pytest.raises(RuntimeError):
+    with pytest.raises(PdsRequestFailed):
         client._extract_single_search_result(patient_missing_nhs_number)  # noqa SLF001 (testing private method)
 
     # 3) Bundle entry exists with NHS number, but no current name record.
