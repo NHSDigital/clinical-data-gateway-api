@@ -64,6 +64,19 @@
 
   // Code spell checker configuration
   "cSpell.language": "en-GB",
+  "cSpell.customDictionaries": {
+    "vale-accepted-words": {
+      "path": "${workspaceFolder}/scripts/config/vale/styles/config/vocabularies/words/accept.txt",
+      "description": "Accepted words for the Vale spell checker.",
+      "addWords": false
+    },
+    "code-accepted-words": {
+      "path": "${workspaceFolder}/.vscode/cspell-dictionary.txt",
+      "addWords": true,
+      "description": "Accepted words for the code spell checker.",
+    }
+  },
+
   "cSpell.words": [
     "asid",
     "fhir",
