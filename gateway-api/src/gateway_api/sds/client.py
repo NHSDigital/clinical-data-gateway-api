@@ -30,9 +30,9 @@ else:
     get = sds.get  # type: ignore
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
-type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
 type ResultStructureDict = dict[str, ResultStructure]
 type ResultList = list[ResultStructureDict]
+type ResultStructure = str | ResultStructureDict | list["ResultStructure"]
 
 
 class SdsResourceType(StrEnum):
