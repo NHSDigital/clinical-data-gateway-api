@@ -1,4 +1,5 @@
 import json
+import traceback
 from dataclasses import dataclass
 from enum import StrEnum
 from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
@@ -53,7 +54,7 @@ class AbstractCDGError(Exception):
         return response
 
     def log(self) -> None:
-        print(self)  # TODO: Use traceback.print_exec()
+        print(traceback.format_exc(), flush=True)
 
     @property
     def message(self) -> str:
@@ -117,7 +118,7 @@ class ProviderRequestFailed(AbstractCDGError):
 
 
 class UnexpectedError(AbstractCDGError):
-    _message = "Internal Server Error"
+    _message = "Internal Server Error: {traceback}"
     status_code = INTERNAL_SERVER_ERROR
     severity = "error"
     error_code = ErrorCode.EXCEPTION

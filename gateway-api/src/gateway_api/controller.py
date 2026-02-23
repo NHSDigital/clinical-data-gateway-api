@@ -49,6 +49,8 @@ class Controller:
         3) Call SDS using consumer ODS to obtain consumer ASID.
         4) Call GP provider to obtain patient records.
         """
+        x: dict[str, str] = {}
+        _ = x["abc"]
         auth_token = self.get_auth_token()
 
         provider_ods = self._get_pds_details(auth_token, request.nhs_number)

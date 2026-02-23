@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import TypedDict
 
 from flask import Flask, request
@@ -45,7 +46,7 @@ def get_structured_record() -> Response:
         e.log()
         return e.build_response()
     except Exception:
-        error = UnexpectedError()
+        error = UnexpectedError(traceback=traceback.format_exc())
         error.log()
         return error.build_response()
 
