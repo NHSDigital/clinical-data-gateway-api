@@ -82,8 +82,6 @@ class SdsClient:
     PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
     ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
 
-    # Define here so it's neater
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
