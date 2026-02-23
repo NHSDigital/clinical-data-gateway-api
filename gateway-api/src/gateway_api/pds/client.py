@@ -20,6 +20,7 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 
 import os
 import uuid
+from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import cast
 
@@ -33,13 +34,15 @@ from gateway_api.pds.search_results import PdsSearchResults
 #       we should remove the STUB_PDS environment variable and just
 #       use the stub client
 STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
+
+get: Callable[..., requests.Response]
 if not STUB_PDS:
     get = requests.get
 else:
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
-    get = pds.get  # type: ignore
+    get = pds.get
 
 
 class PdsClient:
