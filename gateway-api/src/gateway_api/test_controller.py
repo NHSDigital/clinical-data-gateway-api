@@ -1,8 +1,11 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
+import json
+
 import pytest
 from fhir.bundle import Bundle
 from fhir.parameters import Parameters
+from flask import Request
 from pytest_mock import MockerFixture
 
 from gateway_api.common.error import (
@@ -18,53 +21,26 @@ from gateway_api.pds import PdsSearchResults
 from gateway_api.sds import SdsSearchResults
 
 
-def test_controller_run_returns_happy_path_response(
-    mocker: MockerFixture,
-    valid_simple_request_payload: Parameters,
+def test_controller_run_happy_path_returns_200_status_code(
+    mock_happy_path_get_structured_record_request: Request,
+) -> None:
+    controller = Controller()
+    actual_response = controller.run(
+        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
+    )
+    assert actual_response.status_code == 200
+
+
+def test_controller_run_happy_path_returns_returns_expected_body(
+    mock_happy_path_get_structured_record_request: Request,
     valid_simple_response_payload: Bundle,
 ) -> None:
-    nhs_number = "9000000009"
-    provider_ods = "ProviderODS"
-    provider_sds_results = SdsSearchResults(
-        asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
-    )
-    consumer_ods = "ConsumerODS"
-    consumer_sds_results = SdsSearchResults(
-        asid="ConsumerASID", endpoint="https://example.consumer.org/endpoint"
-    )
-    sds_results = [provider_sds_results, consumer_sds_results]
-    mocker.patch(
-        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=PdsSearchResults(
-            given_names="Jane",
-            family_name="Smith",
-            nhs_number=nhs_number,
-            gp_ods_code=provider_ods,
-        ),
-    )
-    mocker.patch(
-        "gateway_api.sds.SdsClient.get_org_details",
-        side_effect=sds_results,
-    )
-
-    provider_response = FakeResponse(
-        status_code=200,
-        headers={"Content-Type": "application/fhir+json"},
-        _json=valid_simple_response_payload,
-    )
-    mocker.patch(
-        "gateway_api.provider.GpProviderClient.access_structured_record",
-        return_value=provider_response,
-    )
-
     controller = Controller()
-    http_request = create_mock_request(
-        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
-        body=valid_simple_request_payload,
+    actual_response = controller.run(
+        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
     )
-    actual_response = controller.run(GetStructuredRecordRequest(http_request))
-
-    assert actual_response.status_code == 200
+    assert isinstance(actual_response.data, str)
+    assert json.loads(actual_response.data) == valid_simple_response_payload
 
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
@@ -256,3 +232,50 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
         ),
     ):
         _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+
+
+@pytest.fixture
+def mock_happy_path_get_structured_record_request(
+    mocker: MockerFixture,
+    valid_simple_request_payload: Parameters,
+    valid_simple_response_payload: Bundle,
+) -> Request:
+    nhs_number = "9000000009"
+    provider_ods = "ProviderODS"
+    provider_sds_results = SdsSearchResults(
+        asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
+    )
+    consumer_ods = "ConsumerODS"
+    consumer_sds_results = SdsSearchResults(
+        asid="ConsumerASID", endpoint="https://example.consumer.org/endpoint"
+    )
+    sds_results = [provider_sds_results, consumer_sds_results]
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=PdsSearchResults(
+            given_names="Jane",
+            family_name="Smith",
+            nhs_number=nhs_number,
+            gp_ods_code=provider_ods,
+        ),
+    )
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=sds_results,
+    )
+
+    provider_response = FakeResponse(
+        status_code=200,
+        headers={"Content-Type": "application/fhir+json"},
+        _json=valid_simple_response_payload,
+    )
+    mocker.patch(
+        "gateway_api.provider.GpProviderClient.access_structured_record",
+        return_value=provider_response,
+    )
+
+    happy_path_request = create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=valid_simple_request_payload,
+    )
+    return happy_path_request

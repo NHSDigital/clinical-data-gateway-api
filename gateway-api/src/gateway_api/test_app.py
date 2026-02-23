@@ -58,52 +58,10 @@ class TestGetStructuredRecord:
     def test_valid_get_structured_record_request_returns_expected_bundle(
         self,
         get_structured_record_response: Flask,
+        valid_simple_response_payload: Bundle,
     ) -> None:
-        expected_body = {
-            "resourceType": "Bundle",
-            "id": "example-patient-bundle",
-            "type": "collection",
-            "timestamp": "2026-02-05T22:45:42.766330+00:00",
-            "entry": [
-                {
-                    "fullUrl": "https://example.com/Patient/9999999999",
-                    "resource": {
-                        "generalPractitioner": [
-                            {
-                                "id": "1",
-                                "type": "Organization",
-                                "identifier": {
-                                    "value": "A12345",
-                                    "period": {
-                                        "start": "2020-01-01",
-                                        "end": "9999-12-31",
-                                    },
-                                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                                },
-                            }
-                        ],
-                        "name": [
-                            {
-                                "family": "Alice",
-                                "given": ["Johnson"],
-                                "use": "Ally",
-                                "period": {"start": "2020-01-01"},
-                            }
-                        ],
-                        "gender": "female",
-                        "birthDate": "1990-05-15",
-                        "resourceType": "Patient",
-                        "id": "9999999999",
-                        "identifier": [
-                            {"value": "9999999999", "system": "urn:nhs:numbers"}
-                        ],
-                    },
-                }
-            ],
-        }
-
-        actual_body = get_structured_record_response.get_json()
-        assert actual_body == expected_body
+        actual_bundle = get_structured_record_response.get_json()
+        assert actual_bundle == valid_simple_response_payload
 
     @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
     def test_valid_get_structured_record_request_returns_200(
