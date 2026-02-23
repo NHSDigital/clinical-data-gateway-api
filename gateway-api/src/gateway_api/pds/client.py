@@ -34,12 +34,12 @@ from gateway_api.pds.search_results import PdsSearchResults
 #       use the stub client
 STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
 if not STUB_PDS:
-    post = requests.post
+    get = requests.get
 else:
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
-    post = pds.post  # type: ignore
+    get = pds.get  # type: ignore
 
 
 class PdsClient:
@@ -123,7 +123,7 @@ class PdsClient:
         url = f"{self.base_url}/Patient/{nhs_number}"
 
         # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
-        response = post(
+        response = get(
             url,  # TODO: URL points to sandbox env even when STUB_PDS
             #       is true, should we change this to point to the stub instead?
             headers=headers,

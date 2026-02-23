@@ -26,7 +26,7 @@ def test_search_patient_by_nhs_number_happy_path(
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
-    mocker.patch("gateway_api.pds.client.post", return_value=happy_path_response)
+    mocker.patch("gateway_api.pds.client.get", return_value=happy_path_response)
 
     client = PdsClient(auth_token)
     result = client.search_patient_by_nhs_number("9999999999")
@@ -48,7 +48,7 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
     gp_less_response = FakeResponse(
         status_code=200, headers={}, _json=gp_less_response_body
     )
-    mocker.patch("gateway_api.pds.client.post", return_value=gp_less_response)
+    mocker.patch("gateway_api.pds.client.get", return_value=gp_less_response)
 
     client = PdsClient(auth_token)
     result = client.search_patient_by_nhs_number("9999999999")
@@ -68,8 +68,8 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
-    mocked_post = mocker.patch(
-        "gateway_api.pds.client.post", return_value=happy_path_response
+    mocked_get = mocker.patch(
+        "gateway_api.pds.client.get", return_value=happy_path_response
     )
 
     request_id = str(uuid4())
@@ -89,7 +89,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         "X-Correlation-ID": correlation_id,
     }
 
-    assert mocked_post.call_args.kwargs["headers"] == expected_headers
+    assert mocked_get.call_args.kwargs["headers"] == expected_headers
 
 
 def test_search_patient_by_nhs_number_generates_request_id(
@@ -100,8 +100,8 @@ def test_search_patient_by_nhs_number_generates_request_id(
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
-    mocked_post = mocker.patch(
-        "gateway_api.pds.client.post", return_value=happy_path_response
+    mocked_get = mocker.patch(
+        "gateway_api.pds.client.get", return_value=happy_path_response
     )
 
     client = PdsClient(auth_token)
@@ -109,7 +109,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
     _ = client.search_patient_by_nhs_number("9000000009")
 
     try:
-        _ = UUID(mocked_post.call_args.kwargs["headers"]["X-Request-ID"], version=4)
+        _ = UUID(mocked_get.call_args.kwargs["headers"]["X-Request-ID"], version=4)
     except ValueError:
         pytest.fail("X-Request-ID is not a valid UUID4")
 
@@ -124,7 +124,7 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         _json={"resourceType": "OperationOutcome", "issue": []},
         reason="Not Found",
     )
-    mocker.patch("gateway_api.pds.client.post", return_value=not_found_response)
+    mocker.patch("gateway_api.pds.client.get", return_value=not_found_response)
     pds = PdsClient(auth_token)
 
     with pytest.raises(
@@ -161,7 +161,7 @@ def test_search_patient_by_nhs_number_finds_current_gp_ods_code_when_pds_returns
     pds_response_with_two_gps = FakeResponse(
         status_code=200, headers={}, _json=pds_response_body_with_two_gps
     )
-    mocker.patch("gateway_api.pds.client.post", return_value=pds_response_with_two_gps)
+    mocker.patch("gateway_api.pds.client.get", return_value=pds_response_with_two_gps)
 
     client = PdsClient(auth_token)
 

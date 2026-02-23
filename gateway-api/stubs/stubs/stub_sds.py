@@ -243,7 +243,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         bundle = self._build_bundle(devices)
 
         return self._create_response(
-            status_code=200, additional_headers=headers_out, json_data=bundle
+            status_code=200, json_data=bundle, additional_headers=headers_out
         )
 
     def get_endpoint_bundle(
@@ -326,7 +326,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         bundle = self._build_endpoint_bundle(endpoints)
 
         return self._create_response(
-            status_code=200, additional_headers=headers_out, json_data=bundle
+            status_code=200, json_data=bundle, additional_headers=headers_out
         )
 
     def get(
@@ -711,5 +711,5 @@ class SdsFhirApiStub(StubBase, GetStub):
             ],
         }
         return self._create_response(
-            status_code=status_code, additional_headers=dict(headers), json_data=body
+            status_code=status_code, json_data=body, additional_headers=dict(headers)
         )
