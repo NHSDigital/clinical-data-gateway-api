@@ -55,7 +55,7 @@ class TestAppInitialization:
 
 class TestGetStructuredRecord:
     @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
-    def test_valid_get_structured_record_request_returns_bundle(
+    def test_valid_get_structured_record_request_returns_expected_bundle(
         self,
         get_structured_record_response: Flask,
     ) -> None:
