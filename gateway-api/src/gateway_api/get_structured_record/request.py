@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from fhir import OperationOutcome, Parameters
 from fhir.operation_outcome import OperationOutcomeIssue
@@ -20,9 +20,9 @@ ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
 
 
 class GetStructuredRecordRequest:
-    INTERACTION_ID: str = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-    RESOURCE: str = "patient"
-    FHIR_OPERATION: str = "$gpc.getstructuredrecord"
+    INTERACTION_ID: ClassVar[str] = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+    RESOURCE: ClassVar[str] = "patient"
+    FHIR_OPERATION: ClassVar[str] = "$gpc.getstructuredrecord"
 
     def __init__(self, request: Request) -> None:
         self._http_request = request
