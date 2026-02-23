@@ -4,10 +4,10 @@ Controller layer for orchestrating calls to external services
 
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
-    NoAsidFound,
-    NoCurrentEndpoint,
-    NoCurrentProvider,
-    NoOrganisationFound,
+    NoAsidFoundError,
+    NoCurrentEndpointError,
+    NoCurrentProviderError,
+    NoOrganisationFoundError,
 )
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 from gateway_api.pds import PdsClient, PdsSearchResults
@@ -99,7 +99,7 @@ class Controller:
         pds_result: PdsSearchResults = pds.search_patient_by_nhs_number(nhs_number)
 
         if not pds_result.gp_ods_code:
-            raise NoCurrentProvider(nhs_number=nhs_number)
+            raise NoCurrentProviderError(nhs_number=nhs_number)
 
         return pds_result.gp_ods_code
 
@@ -123,25 +123,25 @@ class Controller:
             provider_ods, get_endpoint=True
         )
         if provider_details is None:
-            raise NoOrganisationFound(org_type="provider", ods_code=provider_ods)
+            raise NoOrganisationFoundError(org_type="provider", ods_code=provider_ods)
 
         provider_asid = (provider_details.asid or "").strip()
         if not provider_asid:
-            raise NoAsidFound(org_type="provider", ods_code=provider_ods)
+            raise NoAsidFoundError(org_type="provider", ods_code=provider_ods)
 
         provider_endpoint = (provider_details.endpoint or "").strip()
         if not provider_endpoint:
-            raise NoCurrentEndpoint(provider_ods=provider_ods)
+            raise NoCurrentEndpointError(provider_ods=provider_ods)
 
         # SDS: Get consumer details (ASID) for consumer ODS
         consumer_details: SdsSearchResults | None = sds.get_org_details(
             consumer_ods, get_endpoint=False
         )
         if consumer_details is None:
-            raise NoOrganisationFound(org_type="consumer", ods_code=consumer_ods)
+            raise NoOrganisationFoundError(org_type="consumer", ods_code=consumer_ods)
 
         consumer_asid = (consumer_details.asid or "").strip()
         if not consumer_asid:
-            raise NoAsidFound(org_type="consumer", ods_code=consumer_ods)
+            raise NoAsidFoundError(org_type="consumer", ods_code=consumer_ods)
 
         return consumer_asid, provider_asid, provider_endpoint

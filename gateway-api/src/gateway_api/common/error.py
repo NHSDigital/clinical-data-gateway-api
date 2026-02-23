@@ -64,31 +64,31 @@ class AbstractCDGError(Exception):
         return self.message
 
 
-class InvalidRequestJSON(AbstractCDGError):
+class InvalidRequestJSONError(AbstractCDGError):
     _message = "Invalid JSON body sent in request"
     error_code = ErrorCode.INVALID
     status_code = BAD_REQUEST
 
 
-class MissingOrEmptyHeader(AbstractCDGError):
+class MissingOrEmptyHeaderError(AbstractCDGError):
     _message = 'Missing or empty required header "{header}"'
     status_code = BAD_REQUEST
     error_code = ErrorCode.EXCEPTION
 
 
-class NoCurrentProvider(AbstractCDGError):
+class NoCurrentProviderError(AbstractCDGError):
     _message = "PDS patient {nhs_number} did not contain a current provider ODS code"
     status_code = NOT_FOUND
     error_code = ErrorCode.EXCEPTION
 
 
-class NoOrganisationFound(AbstractCDGError):
+class NoOrganisationFoundError(AbstractCDGError):
     _message = "No SDS org found for {org_type} ODS code {ods_code}"
     status_code = NOT_FOUND
     error_code = ErrorCode.EXCEPTION
 
 
-class NoAsidFound(AbstractCDGError):
+class NoAsidFoundError(AbstractCDGError):
     _message = (
         "SDS result for {org_type} ODS code {ods_code} did not contain a current ASID"
     )
@@ -96,7 +96,7 @@ class NoAsidFound(AbstractCDGError):
     error_code = ErrorCode.EXCEPTION
 
 
-class NoCurrentEndpoint(AbstractCDGError):
+class NoCurrentEndpointError(AbstractCDGError):
     _message = (
         "SDS result for provider ODS code {provider_ods} did not contain "
         "a current endpoint"
@@ -105,13 +105,13 @@ class NoCurrentEndpoint(AbstractCDGError):
     error_code = ErrorCode.EXCEPTION
 
 
-class PdsRequestFailed(AbstractCDGError):
+class PdsRequestFailedError(AbstractCDGError):
     _message = "PDS FHIR API request failed: {error_reason}"
     status_code = BAD_GATEWAY
     error_code = ErrorCode.EXCEPTION
 
 
-class ProviderRequestFailed(AbstractCDGError):
+class ProviderRequestFailedError(AbstractCDGError):
     _message = "Provider request failed: {error_reason}"
     status_code = BAD_GATEWAY
     error_code = ErrorCode.EXCEPTION

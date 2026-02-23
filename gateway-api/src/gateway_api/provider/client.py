@@ -27,7 +27,7 @@ from urllib.parse import urljoin
 
 from requests import HTTPError, Response
 
-from gateway_api.common.error import ProviderRequestFailed
+from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
@@ -112,6 +112,6 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            raise ProviderRequestFailed(error_reason=err.response.reason) from err
+            raise ProviderRequestFailedError(error_reason=err.response.reason) from err
 
         return response

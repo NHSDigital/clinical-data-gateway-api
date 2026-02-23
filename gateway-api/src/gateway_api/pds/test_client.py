@@ -10,7 +10,7 @@ import pytest
 from fhir import Patient
 from pytest_mock import MockerFixture
 
-from gateway_api.common.error import PdsRequestFailed
+from gateway_api.common.error import PdsRequestFailedError
 from gateway_api.conftest import FakeResponse
 from gateway_api.pds.client import PdsClient
 
@@ -128,7 +128,7 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
     pds = PdsClient(auth_token)
 
     with pytest.raises(
-        PdsRequestFailed, match="PDS FHIR API request failed: Not Found"
+        PdsRequestFailedError, match="PDS FHIR API request failed: Not Found"
     ):
         pds.search_patient_by_nhs_number("9900000001")
 
@@ -255,7 +255,7 @@ def test_extract_single_search_result_with_invalid_body_raises_pds_request_faile
 
     # 1) Bundle contains no entries.
     bundle_no_entries: Any = {"resourceType": "Bundle", "entry": []}
-    with pytest.raises(PdsRequestFailed):
+    with pytest.raises(PdsRequestFailedError):
         client._extract_single_search_result(bundle_no_entries)  # noqa SLF001 (testing private method)
 
     # 2) Patient has no NHS number (Patient.id missing/blank).
@@ -271,7 +271,7 @@ def test_extract_single_search_result_with_invalid_body_raises_pds_request_faile
         ],
         "generalPractitioner": [],
     }
-    with pytest.raises(PdsRequestFailed):
+    with pytest.raises(PdsRequestFailedError):
         client._extract_single_search_result(patient_missing_nhs_number)  # noqa SLF001 (testing private method)
 
     # 3) Bundle entry exists with NHS number, but no current name record.

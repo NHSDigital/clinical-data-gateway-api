@@ -6,10 +6,10 @@ from fhir.parameters import Parameters
 from pytest_mock import MockerFixture
 
 from gateway_api.common.error import (
-    NoAsidFound,
-    NoCurrentEndpoint,
-    NoCurrentProvider,
-    NoOrganisationFound,
+    NoAsidFoundError,
+    NoCurrentEndpointError,
+    NoCurrentProviderError,
+    NoOrganisationFoundError,
 )
 from gateway_api.conftest import FakeResponse, create_mock_request
 from gateway_api.controller import Controller
@@ -108,7 +108,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
     controller = Controller()
 
     with pytest.raises(
-        NoCurrentProvider,
+        NoCurrentProviderError,
         match="PDS patient 9000000009 did not contain a current provider ODS code",
     ):
         _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
@@ -151,7 +151,7 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
     controller = Controller()
 
     with pytest.raises(
-        NoOrganisationFound,
+        NoOrganisationFoundError,
         match="No SDS org found for provider ODS code ProviderODS",
     ):
         _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
@@ -173,7 +173,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
     controller = Controller()
 
     with pytest.raises(
-        NoAsidFound,
+        NoAsidFoundError,
         match=(
             "SDS result for provider ODS code ProviderODS did not contain "
             "a current ASID"
@@ -196,7 +196,7 @@ def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpo
     controller = Controller()
 
     with pytest.raises(
-        NoCurrentEndpoint,
+        NoCurrentEndpointError,
         match=(
             "SDS result for provider ODS code ProviderODS did "
             "not contain a current endpoint"
@@ -223,7 +223,7 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
     controller = Controller()
 
     with pytest.raises(
-        NoOrganisationFound,
+        NoOrganisationFoundError,
         match="No SDS org found for consumer ODS code ConsumerODS",
     ):
         _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
@@ -249,7 +249,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
     controller = Controller()
 
     with pytest.raises(
-        NoAsidFound,
+        NoAsidFoundError,
         match=(
             "SDS result for consumer ODS code ConsumerODS did not contain "
             "a current ASID"

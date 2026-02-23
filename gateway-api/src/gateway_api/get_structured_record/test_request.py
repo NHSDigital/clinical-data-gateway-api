@@ -6,7 +6,7 @@ from fhir.parameters import Parameters
 from flask import Request
 
 from gateway_api.common.common import FlaskResponse
-from gateway_api.common.error import MissingOrEmptyHeader
+from gateway_api.common.error import MissingOrEmptyHeaderError
 from gateway_api.conftest import create_mock_request
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
@@ -67,7 +67,8 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            MissingOrEmptyHeader, match='Missing or empty required header "ODS-from"'
+            MissingOrEmptyHeaderError,
+            match='Missing or empty required header "ODS-from"',
         ):
             GetStructuredRecordRequest(request=mock_request)
 
@@ -84,7 +85,8 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            MissingOrEmptyHeader, match='Missing or empty required header "ODS-from"'
+            MissingOrEmptyHeaderError,
+            match='Missing or empty required header "ODS-from"',
         ):
             GetStructuredRecordRequest(request=mock_request)
 
@@ -98,7 +100,7 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            MissingOrEmptyHeader,
+            MissingOrEmptyHeaderError,
             match='Missing or empty required header "Ssp-TraceID"',
         ):
             GetStructuredRecordRequest(request=mock_request)
@@ -116,7 +118,7 @@ class TestGetStructuredRecordRequest:
         mock_request = create_mock_request(headers, valid_simple_request_payload)
 
         with pytest.raises(
-            MissingOrEmptyHeader,
+            MissingOrEmptyHeaderError,
             match='Missing or empty required header "Ssp-TraceID"',
         ):
             GetStructuredRecordRequest(request=mock_request)

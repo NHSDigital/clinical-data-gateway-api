@@ -26,7 +26,7 @@ from typing import cast
 import requests
 from fhir import Bundle, BundleEntry, GeneralPractitioner, HumanName, Patient
 
-from gateway_api.common.error import PdsRequestFailed
+from gateway_api.common.error import PdsRequestFailedError
 from gateway_api.pds.search_results import PdsSearchResults
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
@@ -134,7 +134,7 @@ class PdsClient:
         try:
             response.raise_for_status()
         except requests.HTTPError as err:
-            raise PdsRequestFailed(error_reason=err.response.reason) from err
+            raise PdsRequestFailedError(error_reason=err.response.reason) from err
 
         body = response.json()
         return self._extract_single_search_result(body)
@@ -185,7 +185,7 @@ class PdsClient:
         else:
             entries = cast("list[BundleEntry]", body.get("entry", []))
             if not entries:
-                raise PdsRequestFailed(
+                raise PdsRequestFailedError(
                     error_response="PDS response contains no patient entries"
                 )
 
@@ -199,7 +199,7 @@ class PdsClient:
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
-            raise PdsRequestFailed(
+            raise PdsRequestFailedError(
                 error_reason="PDS Patient resource missing NHS number"
             )
 

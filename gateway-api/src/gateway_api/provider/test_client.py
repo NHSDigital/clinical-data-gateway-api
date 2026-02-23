@@ -15,7 +15,7 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.provider.stub import GpProviderStub
 
-from gateway_api.common.error import ProviderRequestFailed
+from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.provider import GpProviderClient, client
 
 
@@ -222,7 +222,7 @@ def test_access_structured_record_raises_external_service_error(
     )
 
     with pytest.raises(
-        ProviderRequestFailed,
+        ProviderRequestFailedError,
         match="Provider request failed: Bad Request",
     ):
         client.access_structured_record(trace_id, "body")
