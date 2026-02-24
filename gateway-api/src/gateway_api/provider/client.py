@@ -59,6 +59,7 @@ class GpProviderClient:
         provider_endpoint (str): The FHIR API endpoint for the provider.
         provider_asid (str): The ASID for the provider.
         consumer_asid (str): The ASID for the consumer.
+        token (str): The JWT token for authentication with the provider API.
 
     Methods:
         access_structured_record(trace_id: str, body: str) -> Response:
@@ -66,19 +67,18 @@ class GpProviderClient:
     """
 
     def __init__(
-        self,
-        provider_endpoint: str,
-        provider_asid: str,
-        consumer_asid: str,
+        self, provider_endpoint: str, provider_asid: str, consumer_asid: str, token: str
     ) -> None:
         self.provider_endpoint = provider_endpoint
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
+        self.token = token
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
         """
+        # TODO: Post-steel-thread, probably check whether JWT is valid/not expired
         return {
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json",
@@ -86,6 +86,7 @@ class GpProviderClient:
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
             "Ssp-TraceID": trace_id,
+            "Authorization": f"Bearer {self.token}",
         }
 
     def access_structured_record(
