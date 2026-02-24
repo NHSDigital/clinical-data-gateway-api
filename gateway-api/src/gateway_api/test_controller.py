@@ -60,7 +60,7 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     )
     controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
 
-    actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
+    actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
 
     assert actual == "A12345"
 
@@ -87,7 +87,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         NoCurrentProviderError,
         match="PDS patient 9000000009 did not contain a current provider ODS code",
     ):
-        _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
+        _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
@@ -110,7 +110,7 @@ def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
     controller = Controller()
 
     expected = ("ConsumerASID", "ProviderASID", "https://example.provider.org/endpoint")
-    actual = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+    actual = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
     assert actual == expected
 
 
@@ -130,7 +130,7 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
         NoOrganisationFoundError,
         match="No SDS org found for provider ODS code ProviderODS",
     ):
-        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
@@ -155,7 +155,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
             "a current ASID"
         ),
     ):
-        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpoint(
@@ -178,7 +178,7 @@ def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpo
             "not contain a current endpoint"
         ),
     ):
-        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
@@ -202,7 +202,7 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
         NoOrganisationFoundError,
         match="No SDS org found for consumer ODS code ConsumerODS",
     ):
-        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_asid(
@@ -231,7 +231,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
             "a current ASID"
         ),
     ):
-        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001
+        _ = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
 
 
 @pytest.fixture
