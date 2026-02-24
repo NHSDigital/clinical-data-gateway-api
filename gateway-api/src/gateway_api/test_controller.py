@@ -90,7 +90,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001
 
 
-def test_get_sds_details_returns_consumer_and_provider_deatils_for_happy_path(
+def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
     mocker: MockerFixture,
 ) -> None:
     provider_ods = "ProviderODS"
