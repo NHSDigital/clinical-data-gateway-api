@@ -11,3 +11,7 @@ class SdsSearchResults:
 
     asid: str | None
     endpoint: str | None
+
+    @property
+    def is_not_found(self) -> bool:
+        return self.asid is None and self.endpoint is None

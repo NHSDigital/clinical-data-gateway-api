@@ -119,9 +119,10 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
 ) -> None:
     provider_ods = "ProviderODS"
     consumer_ods = "ConsumerODS"
+    no_results_for_provider = SdsSearchResults(asid=None, endpoint=None)
     mocker.patch(
         "gateway_api.sds.SdsClient.get_org_details",
-        return_value=None,
+        return_value=no_results_for_provider,
     )
 
     controller = Controller()
@@ -190,7 +191,7 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
     happy_path_provider_sds_result = SdsSearchResults(
         asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
     )
-    none_result_for_consumer = None
+    none_result_for_consumer = SdsSearchResults(asid=None, endpoint=None)
     mocker.patch(
         "gateway_api.sds.SdsClient.get_org_details",
         side_effect=[happy_path_provider_sds_result, none_result_for_consumer],

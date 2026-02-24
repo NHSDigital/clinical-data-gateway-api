@@ -119,10 +119,10 @@ class Controller:
             timeout=self.timeout,
         )
 
-        provider_details: SdsSearchResults | None = sds.get_org_details(
+        provider_details: SdsSearchResults = sds.get_org_details(
             provider_ods, get_endpoint=True
         )
-        if provider_details is None:
+        if provider_details.is_not_found:
             raise NoOrganisationFoundError(org_type="provider", ods_code=provider_ods)
 
         provider_asid = (provider_details.asid or "").strip()
@@ -134,10 +134,10 @@ class Controller:
             raise NoCurrentEndpointError(provider_ods=provider_ods)
 
         # SDS: Get consumer details (ASID) for consumer ODS
-        consumer_details: SdsSearchResults | None = sds.get_org_details(
+        consumer_details: SdsSearchResults = sds.get_org_details(
             consumer_ods, get_endpoint=False
         )
-        if consumer_details is None:
+        if consumer_details.is_not_found:
             raise NoOrganisationFoundError(org_type="consumer", ods_code=consumer_ods)
 
         consumer_asid = (consumer_details.asid or "").strip()

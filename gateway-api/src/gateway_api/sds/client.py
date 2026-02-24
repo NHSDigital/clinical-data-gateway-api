@@ -118,7 +118,7 @@ class SdsClient:
         correlation_id: str | None = None,
         timeout: int | None = None,
         get_endpoint: bool = True,
-    ) -> SdsSearchResults | None:
+    ) -> SdsSearchResults:
         """
         Retrieve ASID and endpoint for an organization by ODS code.
 
@@ -220,7 +220,10 @@ class SdsClient:
 
         # TODO: Post-steel-thread handle case where bundle contains no entries
 
-        # TODO: consider business logic for handling multiple entries in beta
+        # TODO: more carefully consider business logic for handling multiple
+        #       entries in beta
+        if not entries:
+            return {}
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
 
@@ -235,8 +238,6 @@ class SdsClient:
         for identifier in identifiers:
             id_system = str(identifier.get("system", ""))
             if id_system == system:
-                value = identifier.get("value")
-                if value:
-                    return str(value).strip()
+                return cast("str", identifier.get("value", ""))
 
         return None
