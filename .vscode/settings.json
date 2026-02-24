@@ -76,14 +76,4 @@
       "description": "Accepted words for the code spell checker.",
     }
   },
-
-  "cSpell.words": [
-    "asid",
-    "fhir",
-    "getstructuredrecord",
-    "gpconnect",
-    "usefixtures",
-  ],
-  "python-envs.defaultEnvManager": "ms-python.python:system",
-  "python-envs.pythonProjects": [],
 }
