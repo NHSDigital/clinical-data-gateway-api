@@ -77,11 +77,13 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
+    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
+        token=token,
     )
 
     result = client.access_structured_record(
@@ -113,11 +115,13 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
+    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
+        token=token,
     )
     expected_headers = {
         "Content-Type": "application/fhir+json",
@@ -128,6 +132,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-InteractionID": (
             "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
         ),
+        "Authorization": f"Bearer {token}",
     }
 
     result = client.access_structured_record(
@@ -155,6 +160,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
+    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     request_body = json.dumps(valid_simple_request_payload)
 
@@ -162,6 +168,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
+        token=token,
     )
 
     result = client.access_structured_record(trace_id, request_body)
@@ -188,11 +195,13 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
+    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
+        token=token,
     )
 
     expected_response = stub.access_record_structured(
@@ -218,11 +227,13 @@ def test_access_structured_record_raises_external_service_error(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "invalid for test"
+    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
+        token=token,
     )
 
     with pytest.raises(
@@ -230,3 +241,32 @@ def test_access_structured_record_raises_external_service_error(
         match="Provider request failed: Bad Request",
     ):
         client.access_structured_record(trace_id, "body")
+
+
+def test_gpprovider_client_includes_authorization_header_with_bearer_token(
+    mock_request_post: dict[str, Any],
+) -> None:
+    """
+    Test that the GpProviderClient includes an Authorization header with the
+    Bearer token.
+    """
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://test.com"
+    trace_id = "test-trace-id"
+    token = "my-jwt-token-value"  # NOQA S105 (dummy token value for testing)
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+        token=token,
+    )
+
+    result = client.access_structured_record(trace_id, "body")
+
+    captured_headers = mock_request_post["headers"]
+
+    assert "Authorization" in captured_headers
+    assert captured_headers["Authorization"] == f"Bearer {token}"
+    assert result.status_code == 200

@@ -280,3 +280,58 @@ def mock_happy_path_get_structured_record_request(
         body=valid_simple_request_payload,
     )
     return happy_path_request
+
+@pytest.mark.parametrize(
+    "get_structured_record_request",
+    [({"ODS-from": "CONSUMER"}, {})],
+    indirect=["get_structured_record_request"],
+)
+def test_controller_creates_jwt_token_with_correct_claims(
+    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
+    monkeypatch: pytest.MonkeyPatch,
+    controller: Controller,
+    get_structured_record_request: GetStructuredRecordRequest,
+) -> None:
+    """
+    Test that the controller creates a JWT token with the correct claims.
+    """
+    from gateway_api.clinical_jwt import JWT
+
+    pds = pds_factory(ods_code="PROVIDER")
+    sds_org1 = SdsSetup(
+        ods_code="PROVIDER",
+        search_results=SdsSearchResults(
+            asid="asid_PROV", endpoint="https://provider.example/ep"
+        ),
+    )
+    sds_org2 = SdsSetup(
+        ods_code="CONSUMER",
+        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
+    )
+    sds = sds_factory(org1=sds_org1, org2=sds_org2)
+
+    monkeypatch.setattr(controller_module, "PdsClient", pds)
+    monkeypatch.setattr(controller_module, "SdsClient", sds)
+
+    _ = controller.run(get_structured_record_request)
+
+    # Verify that a JWT token was created and passed to GpProviderClient
+    assert FakeGpProviderClient.last_init is not None
+    token_str = FakeGpProviderClient.last_init["token"]
+
+    # Decode the token to verify its contents
+    decoded_token = JWT.decode(token_str)
+
+    # Verify the standard JWT claims
+    assert decoded_token.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
+    assert decoded_token.subject == "10019"  # From Controller.get_jwt()
+    assert decoded_token.audience == "https://provider.example/ep"
+
+    # Verify the requesting organization matches the consumer ODS
+    assert decoded_token.requesting_organization == "CONSUMER"
+
+    # Verify device and practitioner JSON are present
+    assert "requesting_device" in decoded_token.requesting_device
+    assert "Device" in decoded_token.requesting_device
+    assert "requesting_practitioner" in decoded_token.requesting_practitioner
+    assert "Practitioner" in decoded_token.requesting_practitioner
