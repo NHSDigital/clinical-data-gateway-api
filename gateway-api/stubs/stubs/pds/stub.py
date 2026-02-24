@@ -11,9 +11,8 @@ from typing import Any
 
 from requests import Response
 
+from stubs.base_stub import StubBase
 from stubs.data.patients import Patients
-
-from ..base_stub import StubBase
 
 
 class PdsFhirApiStub(StubBase):

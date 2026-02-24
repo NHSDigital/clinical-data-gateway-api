@@ -1,6 +1,6 @@
-from .base_stub import StubBase
-from .pds.stub import PdsFhirApiStub
-from .provider.stub import GpProviderStub
-from .sds.stub import SdsFhirApiStub
+from stubs.base_stub import StubBase
+from stubs.pds.stub import PdsFhirApiStub
+from stubs.provider.stub import GpProviderStub
+from stubs.sds.stub import SdsFhirApiStub
 
 __all__ = ["StubBase", "PdsFhirApiStub", "SdsFhirApiStub", "GpProviderStub"]
