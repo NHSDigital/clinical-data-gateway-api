@@ -24,7 +24,7 @@ STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
 if not STUB_SDS:
     from requests import get
 else:
-    from stubs.stub_sds import SdsFhirApiStub
+    from stubs.sds.stub import SdsFhirApiStub
 
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore

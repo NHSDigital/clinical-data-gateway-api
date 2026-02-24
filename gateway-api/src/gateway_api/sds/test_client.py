@@ -5,7 +5,7 @@ Unit tests for :mod:`gateway_api.sds_search`.
 from __future__ import annotations
 
 import pytest
-from stubs.stub_sds import SdsFhirApiStub
+from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds import (
