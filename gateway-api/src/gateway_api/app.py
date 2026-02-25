@@ -38,6 +38,7 @@ def get_app_port() -> int:
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Response:
     try:
+        print(f"Headers: {request.headers}", flush=True)
         get_structured_record_request = GetStructuredRecordRequest(request)
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
