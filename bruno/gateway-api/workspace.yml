@@ -4,10 +4,8 @@ info:
   type: workspace
 
 collections:
-  - name: "steel_thread"
-    path: "collections\\steel_thread"
-  - name: "steel_thread"
-    path: "collections\\preview-env"
+  - name: "Steel_Thread"
+    path: "collections/Steel_Thread"
 
 specs:
 
