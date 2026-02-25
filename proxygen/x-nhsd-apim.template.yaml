@@ -11,3 +11,8 @@ x-nhsd-apim:
     security:
       type: mtls
       secret: <replace-with-secret-name>
+    target-identity:
+      - name: cis2-uuid
+      - name: cis2-urid
+      - name: cis2-acr
+      - name: id-token
