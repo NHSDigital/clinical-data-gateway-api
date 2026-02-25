@@ -6,7 +6,7 @@ from fhir.period import Period
 
 
 class GeneralPractitionerIdentifier(TypedDict):
-    """Identifier for GeneralPractitioner with optional period."""
+    """Identifier for GeneralPractitioner"""
 
     system: str
     value: str
