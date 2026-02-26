@@ -295,8 +295,6 @@ def test_controller_creates_jwt_token_with_correct_claims(
     """
     Test that the controller creates a JWT token with the correct claims.
     """
-    from gateway_api.clinical_jwt import JWT
-
     pds = pds_factory(ods_code="PROVIDER")
     sds_org1 = SdsSetup(
         ods_code="PROVIDER",
@@ -317,21 +315,21 @@ def test_controller_creates_jwt_token_with_correct_claims(
 
     # Verify that a JWT token was created and passed to GpProviderClient
     assert FakeGpProviderClient.last_init is not None
-    token_str = FakeGpProviderClient.last_init["token"]
+    last_jwt = FakeGpProviderClient.last_init["token"]
 
     # Decode the token to verify its contents
-    decoded_token = JWT.decode(token_str)
+    # decoded_token = JWT.decode(token_str)
 
     # Verify the standard JWT claims
-    assert decoded_token.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
-    assert decoded_token.subject == "10019"  # From Controller.get_jwt()
-    assert decoded_token.audience == "https://provider.example/ep"
+    assert last_jwt.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
+    assert last_jwt.subject == "10019"  # From Controller.get_jwt()
+    assert last_jwt.audience == "https://provider.example/ep"
 
     # Verify the requesting organization matches the consumer ODS
-    assert decoded_token.requesting_organization == "CONSUMER"
+    assert last_jwt.requesting_organization == "CONSUMER"
 
     # Verify device and practitioner JSON are present
-    assert "requesting_device" in decoded_token.requesting_device
-    assert "Device" in decoded_token.requesting_device
-    assert "requesting_practitioner" in decoded_token.requesting_practitioner
-    assert "Practitioner" in decoded_token.requesting_practitioner
+    assert "requesting_device" in last_jwt.requesting_device
+    assert "Device" in last_jwt.requesting_device
+    assert "requesting_practitioner" in last_jwt.requesting_practitioner
+    assert "Practitioner" in last_jwt.requesting_practitioner

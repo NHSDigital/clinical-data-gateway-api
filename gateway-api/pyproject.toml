@@ -6,7 +6,7 @@ authors = [
     {name = "Your Name", email = "you@example.com"}
 ]
 readme = "README.md"
-requires-python = ">3.13,<4.0.0"
+requires-python = ">=3.14,<4.0.0"
 
 [tool.poetry.dependencies]
 clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.1.0" }

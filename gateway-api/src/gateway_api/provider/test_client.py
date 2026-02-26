@@ -17,6 +17,7 @@ from stubs.provider.stub import GpProviderStub
 
 from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.provider import GpProviderClient, client
+from gateway_api.clinical_jwt import JWT
 
 if TYPE_CHECKING:
     from requests import Response
@@ -62,9 +63,22 @@ def mock_request_post(
     return capture
 
 
+@pytest.fixture
+def dummy_jwt() -> JWT:
+    return JWT(
+        issuer="https://example.com",
+        subject="user-123",
+        audience="https://provider.example.com",
+        requesting_device='{"device": "info"}',
+        requesting_organization="ORG-123",
+        requesting_practitioner='{"practitioner": "info"}',
+    )
+
+
 def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
     mock_request_post: dict[str, Any],
     valid_simple_request_payload: Parameters,
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the `access_structured_record` method constructs the correct URL
@@ -77,13 +91,12 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
-    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
 
     result = client.access_structured_record(
@@ -102,6 +115,7 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
     valid_simple_request_payload: Parameters,
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct headers
@@ -115,13 +129,12 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
-    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
     expected_headers = {
         "Content-Type": "application/fhir+json",
@@ -132,7 +145,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-InteractionID": (
             "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
         ),
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {dummy_jwt}",
     }
 
     result = client.access_structured_record(
@@ -148,6 +161,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
 def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     mock_request_post: dict[str, Any],
     valid_simple_request_payload: Parameters,
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct body
@@ -160,7 +174,6 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
-    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     request_body = json.dumps(valid_simple_request_payload)
 
@@ -168,7 +181,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
 
     result = client.access_structured_record(trace_id, request_body)
@@ -183,6 +196,7 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
     stub: GpProviderStub,
     valid_simple_request_payload: Parameters,
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the `access_structured_record` method returns the same response
@@ -195,13 +209,12 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
-    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
 
     expected_response = stub.access_record_structured(
@@ -218,6 +231,7 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 def test_access_structured_record_raises_external_service_error(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the `access_structured_record` method raises an `SdsRequestFailed`
@@ -227,13 +241,12 @@ def test_access_structured_record_raises_external_service_error(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "invalid for test"
-    token = "test-jwt-token"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
 
     with pytest.raises(
@@ -245,6 +258,7 @@ def test_access_structured_record_raises_external_service_error(
 
 def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     mock_request_post: dict[str, Any],
+    dummy_jwt: JWT,
 ) -> None:
     """
     Test that the GpProviderClient includes an Authorization header with the
@@ -254,13 +268,12 @@ def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     consumer_asid = "200000001152"
     provider_endpoint = "https://test.com"
     trace_id = "test-trace-id"
-    token = "my-jwt-token-value"  # NOQA S105 (dummy token value for testing)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
         provider_asid=provider_asid,
         consumer_asid=consumer_asid,
-        token=token,
+        token=dummy_jwt,
     )
 
     result = client.access_structured_record(trace_id, "body")
@@ -268,5 +281,5 @@ def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     captured_headers = mock_request_post["headers"]
 
     assert "Authorization" in captured_headers
-    assert captured_headers["Authorization"] == f"Bearer {token}"
+    assert captured_headers["Authorization"] == f"Bearer {dummy_jwt}"
     assert result.status_code == 200

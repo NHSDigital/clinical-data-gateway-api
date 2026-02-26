@@ -59,7 +59,7 @@ class GpProviderClient:
         provider_endpoint (str): The FHIR API endpoint for the provider.
         provider_asid (str): The ASID for the provider.
         consumer_asid (str): The ASID for the consumer.
-        token (str): The JWT token for authentication with the provider API.
+        token (JWT): JWT object for authentication with the provider API.
 
     Methods:
         access_structured_record(trace_id: str, body: str) -> Response:
@@ -67,7 +67,7 @@ class GpProviderClient:
     """
 
     def __init__(
-        self, provider_endpoint: str, provider_asid: str, consumer_asid: str, token: str
+        self, provider_endpoint: str, provider_asid: str, consumer_asid: str, token: JWT
     ) -> None:
         self.provider_endpoint = provider_endpoint
         self.provider_asid = provider_asid

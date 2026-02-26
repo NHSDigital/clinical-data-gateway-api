@@ -57,7 +57,7 @@ class Controller:
             request.ods_from.strip(), provider_ods
         )
 
-        token = self.get_jwt(provider_endpoint, request.ods_from.strip())
+        token = self.get_jwt_for_provider(provider_endpoint, request.ods_from.strip())
 
         # Call GP provider with correct parameters
         self.gp_provider_client = GpProviderClient(
@@ -87,7 +87,7 @@ class Controller:
         """
         return "AUTH_TOKEN123"
 
-    def get_jwt(self, provider_endpoint: str, consumer_ods: str) -> str:
+    def get_jwt_for_provider(self, provider_endpoint: str, consumer_ods: str) -> JWT:
         # For requesting device details, see:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_device-claim
         # For requesting practitioner details, see:
@@ -125,7 +125,7 @@ class Controller:
             requesting_device=requesting_device.json,
             requesting_organization=requesting_organization,
             requesting_practitioner=requesting_practitioner.json,
-        ).encode()
+        )
         return token
 
     def _get_pds_details(

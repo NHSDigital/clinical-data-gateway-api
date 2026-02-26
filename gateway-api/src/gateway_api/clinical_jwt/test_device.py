@@ -35,14 +35,19 @@ def test_device_json_property_returns_valid_json_structure() -> None:
 
     json_output = device.json
 
-    # Verify it contains the expected fields
-    assert '"requesting_device"' in json_output
-    assert '"resourceType": "Device"' in json_output
-    assert '"identifier"' in json_output
-    assert f'"system": "{device.system}"' in json_output
-    assert f'"value": "{device.value}"' in json_output
-    assert f'"model": "{device.model}"' in json_output
-    assert f'"version": "{device.version}"' in json_output
+    expected_json = """"requesting_device": {
+            "resourceType": "Device",
+        "identifier": [
+            {
+                "system": "https://consumersupplier.com/Id/device-identifier",
+            "value": "CONS-APP-4"
+            }
+        ],
+        "model": "Consumer product name",
+        "version": "5.3.0"
+        }"""
+
+    assert json_output == expected_json
 
 
 def test_device_str_returns_json() -> None:

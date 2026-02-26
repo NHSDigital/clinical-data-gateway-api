@@ -72,3 +72,6 @@ class JWT:
             "reason_for_request": self.reason_for_request,
             "requested_scope": self.requested_scope,
         }
+
+    def __str__(self) -> str:
+        return self.encode()

@@ -5,11 +5,14 @@ from the OpenAPI specification and validate the API implementation.
 """
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import schemathesis
 import yaml
-from schemathesis.generation.case import Case  # NOQA TC002 (Is needed)
 from schemathesis.openapi import from_dict
+
+if TYPE_CHECKING:
+    from schemathesis.generation.case import Case
 
 # Load the OpenAPI schema from the local file
 schema_path = Path(__file__).parent.parent.parent / "openapi.yaml"

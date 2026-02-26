@@ -5,6 +5,7 @@ Unit tests for :mod:`gateway_api.clinical_jwt.jwt`.
 from unittest.mock import Mock, patch
 
 import jwt as pyjwt
+import pytest
 
 from gateway_api.clinical_jwt import JWT
 
@@ -105,16 +106,20 @@ def test_jwt_payload_contains_all_required_fields() -> None:
 
     payload = token.payload()
 
-    assert payload["iss"] == token.issuer
-    assert payload["sub"] == token.subject
-    assert payload["aud"] == token.audience
-    assert payload["exp"] == token.expiration
-    assert payload["iat"] == token.issued_at
-    assert payload["requesting_device"] == token.requesting_device
-    assert payload["requesting_organization"] == token.requesting_organization
-    assert payload["requesting_practitioner"] == token.requesting_practitioner
-    assert payload["reason_for_request"] == token.reason_for_request
-    assert payload["requested_scope"] == token.requested_scope
+    expected = {
+        "iss": token.issuer,
+        "sub": token.subject,
+        "aud": token.audience,
+        "exp": token.expiration,
+        "iat": token.issued_at,
+        "requesting_device": token.requesting_device,
+        "requesting_organization": token.requesting_organization,
+        "requesting_practitioner": token.requesting_practitioner,
+        "reason_for_request": token.reason_for_request,
+        "requested_scope": token.requested_scope,
+    }
+
+    assert payload == expected
 
 
 def test_jwt_encode_returns_string() -> None:
@@ -135,10 +140,15 @@ def test_jwt_encode_returns_string() -> None:
     encoded = token.encode()
 
     # Use PyJWT to decode and verify the token structure
-    pyjwt.decode(
-        encoded,
-        options={"verify_signature": False},  # NOSONAR S5659 (not signed)
-    )
+    try:
+        pyjwt.decode(
+            encoded,
+            options={"verify_signature": False},  # NOSONAR S5659 (not signed)
+        )
+    except pyjwt.DecodeError as err:
+        pytest.fail(f"Failed to decode JWT: {err}")
+    except Exception as err:
+        pytest.fail(f"Unexpected error during JWT decoding: {err}")
 
 
 def test_jwt_decode_reconstructs_token() -> None:
@@ -159,11 +169,6 @@ def test_jwt_decode_reconstructs_token() -> None:
     encoded = original.encode()
     decoded = JWT.decode(encoded)
 
-    assert decoded.issuer == original.issuer
-    assert decoded.subject == original.subject
-    assert decoded.audience == original.audience
-    assert decoded.requesting_device == original.requesting_device
-    assert decoded.requesting_organization == original.requesting_organization
-    assert decoded.requesting_practitioner == original.requesting_practitioner
-    assert decoded.issued_at == original.issued_at
-    assert decoded.expiration == original.expiration
+    assert decoded == original, (
+        f"The decoded token, {decoded}, does not match the original, {original}"
+    )
