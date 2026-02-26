@@ -234,6 +234,14 @@ jobs:
             /cds/gateway/dev/mtls/client1-key-public
           name-transformation: lowercase
 
+      # Prepare cert files for the following test suites
+      - name: Prepare mTLS cert files for tests
+        if: github.event.action != 'closed'
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+          chmod 600 /tmp/client1-key.pem /tmp/client1-cert.pem
+
       - name: Smoke test preview URL
         if: github.event.action != 'closed'
         id: smoke-test
@@ -247,9 +255,6 @@ jobs:
             exit 0
           fi
 
-          # Reachability check: allow 404 (app routes might not exist yet) but fail otherwise
-          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
-          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
           STATUS=$(curl \
                       --cert /tmp/client1-cert.pem \
                       --key /tmp/client1-key.pem \
@@ -258,8 +263,6 @@ jobs:
                       --write-out '%{http_code}' \
                       --head \
                       --max-time 30 "$PREVIEW_URL"/health || true)
-          rm -f /tmp/client1-key.pem
-          rm -f /tmp/client1-cert.pem
 
           if [ "$STATUS" = "404" ]; then
             echo "Preview responded with expected 404"
@@ -284,6 +287,157 @@ jobs:
           echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
           echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
           exit 0
+
+      # ---------- QUALITY CHECKS (Test Suites) ----------
+
+      # UNIT TESTS
+      - name: Run unit tests
+        if: github.event.action != 'closed'
+        run: make test-unit
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: unit-test-results
+          path: gateway-api/test-artefacts/unit-tests*
+          retention-days: 30
+
+      - name: Check unit-tests.xml exists
+        id: check-unit
+        if: always()
+        run: |
+          [ -f "gateway-api/test-artefacts/unit-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish unit test results to summary
+        if: ${{ always() && steps.check-unit.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/unit-tests.xml
+
+      # CONTRACT TESTS
+      - name: Run contract tests against preview
+        if: github.event.action != 'closed'
+        env:
+          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: make test-contract
+
+      - name: Upload contract test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: contract-test-results
+          path: gateway-api/test-artefacts/contract-tests*
+          retention-days: 30
+
+      - name: Check contract-tests.xml exists
+        id: check-contract
+        if: always()
+        run: |
+          [ -f "gateway-api/test-artefacts/contract-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish contract test results to summary
+        if: ${{ always() && steps.check-contract.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/contract-tests.xml
+
+      # SCHEMA TESTS
+      - name: Run schema validation against preview
+        if: github.event.action != 'closed'
+        env:
+          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: make test-schema
+
+      - name: Upload schema test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: schema-test-results
+          path: gateway-api/test-artefacts/schema-tests*
+          retention-days: 30
+
+      - name: Check schema-tests.xml exists
+        id: check-schema
+        if: always()
+        run: |
+          [ -f "gateway-api/test-artefacts/schema-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish schema test results to summary
+        if: ${{ always() && steps.check-schema.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/schema-tests.xml
+
+      # INTEGRATION TESTS
+      - name: Run integration tests against preview
+        if: github.event.action != 'closed'
+        env:
+          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+          STUB_SDS: "true"
+          STUB_PDS: "true"
+          STUB_PROVIDER: "true"
+        run: make test-integration
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: integration-test-results
+          path: gateway-api/test-artefacts/integration-tests*
+          retention-days: 30
+
+      - name: Check integration-tests.xml exists
+        id: check-integration
+        if: always()
+        run: |
+            [ -f "gateway-api/test-artefacts/integration-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish integration test results to summary
+        if: ${{ always() && steps.check-integration.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/integration-tests.xml
+
+      # ACCEPTANCE TESTS
+      - name: Run acceptance tests against preview
+        if: github.event.action != 'closed'
+        env:
+          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
+          MTLS_CERT: /tmp/client1-cert.pem
+          MTLS_KEY: /tmp/client1-key.pem
+        run: make test-acceptance
+
+      - name: Upload acceptance test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: acceptance-test-results
+          path: gateway-api/test-artefacts/acceptance-tests*
+          retention-days: 30
+
+      - name: Check acceptance-tests.xml exists
+        id: check-acceptance
+        if: always()
+        run: |
+          [ -f "gateway-api/test-artefacts/acceptance-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish acceptance test results to summary
+        if: ${{ always() && steps.check-acceptance.outputs.exists == 'true' }}
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        with:
+          paths: gateway-api/test-artefacts/acceptance-tests.xml
+
+      # Cleanup after tests
+      - name: Remove mTLS temp files
+        if: github.event.action != 'closed'
+        run: rm -f /tmp/client1-key.pem /tmp/client1-cert.pem
 
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
@@ -368,3 +522,4 @@ jobs:
         with:
           image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
           artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
+
