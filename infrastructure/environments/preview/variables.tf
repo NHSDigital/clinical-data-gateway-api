@@ -55,3 +55,52 @@ variable "log_kms_key_id" {
   type        = string
   default     = null
 }
+
+variable "provider_url" {
+  description = "The URL of the provider service to connect to."
+  type        = string
+  default     = "https://provider.dev.endpoints.clinical-data-gateway.national.nhs.uk"
+}
+
+variable "provider_mtls_cert" {
+  description = "Name of the secret containing the client certificate for mTLS authentication with the provider."
+  type        = string
+  default     = null
+}
+
+variable "provider_mtls_key" {
+  description = "Name of the secret containing the private key for mTLS authentication with the provider."
+  type        = string
+  default     = null
+}
+
+variable "sds_url" {
+  description = "The URL of the SDS service to connect to."
+  type        = string
+  default     = null
+}
+
+variable "sds_api_token" {
+  description = "API token used to authenticate with SDS."
+  type        = string
+  default     = null
+}
+
+variable "pds_url" {
+  description = "The URL of the PDS service to connect to."
+  type        = string
+  default     = null
+}
+
+variable "pds_api_token" {
+  description = "API token used to authenticate with PDS."
+  type        = string
+  default     = null
+}
+
+variable "pds_api_secret" {
+  description = "API secret used to authenticate with PDS."
+  type        = string
+  default     = null
+}
+
