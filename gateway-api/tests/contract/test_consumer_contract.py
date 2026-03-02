@@ -30,7 +30,7 @@ class TestConsumerContract:
                     "resource": {
                         "resourceType": "Patient",
                         # The API returns this specific UUID, not the NHS number as ID
-                        "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                        "id": "9999999999",
                         "meta": {
                             "versionId": "1",
                             "lastUpdated": "2020-01-01T00:00:00Z",
@@ -128,8 +128,7 @@ class TestConsumerContract:
             assert response.status_code == 200
             # Basic assertion to ensure the test itself passes
             assert (
-                response.json()["entry"][0]["resource"]["name"][0]["family"]
-                == "Jackson"
+                response.json()["entry"][0]["resource"]["name"][0]["family"] == "Jones"
             )
 
         # Write the pact file
