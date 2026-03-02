@@ -11,8 +11,6 @@ class TestSdsIntegration:
     def test_get_device_by_ods_code_returns_valid_asid(self) -> None:
         """
         Test that querying by ODS code returns a valid ASID.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
         sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="PROVIDER")
@@ -24,8 +22,6 @@ class TestSdsIntegration:
     def test_consumer_organization_lookup(self) -> None:
         """
         Test that CONSUMER organization can be looked up successfully.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
         sds_client = SdsClient()
         result = sds_client.get_org_details(ods_code="CONSUMER")
@@ -37,8 +33,6 @@ class TestSdsIntegration:
     def test_result_contains_both_asid_and_endpoint_when_available(self) -> None:
         """
         Test that results contain both ASID and endpoint when both are available.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
 
         sds_client = SdsClient()
