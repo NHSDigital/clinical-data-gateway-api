@@ -2,7 +2,7 @@
 
 ## `gateway-api` Workspace
 
-### Steal Thread Collection
+### Steel Thread Collection
 
 #### Environment Setup
 
