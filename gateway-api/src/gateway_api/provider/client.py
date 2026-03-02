@@ -22,33 +22,30 @@ Usage:
         The response from the provider FHIR API.
 """
 
-from collections.abc import Callable
+import os
 from urllib.parse import urljoin
 
-from requests import HTTPError, Response, post
-from stubs.stub_provider import GpProviderStub
+from requests import HTTPError, Response
 
+from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+
+# TODO: Once stub servers/containers made for PDS, SDS and provider
+#       we should remove the STUB_PROVIDER environment variable and just
+#       use the stub client
+STUB_PROVIDER = os.environ.get("STUB_PROVIDER", "false").lower() == "true"
+if not STUB_PROVIDER:
+    from requests import post
+else:
+    from stubs.provider.stub import GpProviderStub
+
+    provider_stub = GpProviderStub()
+    post = provider_stub.post  # type: ignore
 
 ARS_FHIR_BASE = "FHIR/STU3"
 FHIR_RESOURCE = "patient"
 ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
-
-# TODO: Put the environment variable check back in
-# if os.environ.get("STUB_PROVIDER", None):
-if True:  # NOSONAR S5797 (Yes, I know it's always true, this is temporary)
-    # Direct all requests to the stub provider for steel threading in dev.
-    # Replace with `from requests import post` for real requests.
-    PostCallable = Callable[..., Response]
-    _gp_provider_stub = GpProviderStub()
-    post: PostCallable = _gp_provider_stub.post  # type: ignore[no-redef]
-
-
-class ExternalServiceError(Exception):
-    """
-    Exception raised when the downstream GPProvider FHIR API request fails.
-    """
 
 
 class GpProviderClient:
@@ -81,14 +78,6 @@ class GpProviderClient:
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
-
-        Args:
-            trace_id (str): A unique identifier for the request.
-
-        Returns:
-            dict[str, str]: A dictionary containing the headers for the request,
-            including content type, interaction ID, and ASIDs for the provider
-            and consumer.
         """
         return {
             "Content-Type": "application/fhir+json",
@@ -106,16 +95,6 @@ class GpProviderClient:
     ) -> Response:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
-
-        Args:
-            trace_id (str): A unique identifier for the request, passed in the headers.
-            body (str): The request body in FHIR format.
-
-        Returns:
-            Response: The response from the GPProvider FHIR API.
-
-        Raises:
-            ExternalServiceError: If the API request fails with an HTTP error.
         """
 
         headers = self._build_headers(trace_id)
@@ -133,8 +112,6 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            raise ExternalServiceError(
-                f"GPProvider FHIR API request failed:{err.response.reason}"
-            ) from err
+            raise ProviderRequestFailedError(error_reason=err.response.reason) from err
 
         return response

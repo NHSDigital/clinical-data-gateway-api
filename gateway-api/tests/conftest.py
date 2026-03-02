@@ -11,7 +11,7 @@ from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
 # find_dotenv searches upward from current directory for .env file
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(usecwd=True))
 
 
 class Client:
@@ -37,7 +37,7 @@ class Client:
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
         default_headers = {
             "Content-Type": "application/fhir+json",
-            "Ods-from": "CONSUMER",
+            "Ods-from": "A12345",
             "Ssp-TraceID": "test-trace-id",
         }
         if headers:
@@ -85,6 +85,15 @@ def simple_request_payload() -> Parameters:
                 },
             },
         ],
+    }
+
+
+@pytest.fixture
+def happy_path_headers() -> dict[str, str]:
+    return {
+        "Content-Type": "application/fhir+json",
+        "Ods-from": "A12345",
+        "Ssp-TraceID": "test-trace-id",
     }
 
 

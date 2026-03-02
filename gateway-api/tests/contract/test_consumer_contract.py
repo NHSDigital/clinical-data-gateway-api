@@ -30,12 +30,10 @@ class TestConsumerContract:
                     "resource": {
                         "resourceType": "Patient",
                         # The API returns this specific UUID, not the NHS number as ID
-                        "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
+                        "id": "9999999999",
                         "meta": {
-                            "versionId": "1469448000000",
-                            "profile": [
-                                "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                            ],
+                            "versionId": "1",
+                            "lastUpdated": "2020-01-01T00:00:00Z",
                         },
                         "identifier": [
                             {
@@ -43,18 +41,29 @@ class TestConsumerContract:
                                 "value": "9999999999",
                             }
                         ],
-                        "active": True,
                         "name": [
                             {
                                 "use": "official",
-                                "text": "JACKSON Jane (Miss)",
-                                "family": "Jackson",
-                                "given": ["Jane"],
-                                "prefix": ["Miss"],
+                                "family": "Jones",
+                                "given": ["Alice"],
+                                "period": {"start": "1900-01-01", "end": "9999-12-31"},
                             }
                         ],
                         "gender": "female",
-                        "birthDate": "1952-05-31",
+                        "birthDate": "1980-01-01",
+                        "generalPractitioner": [
+                            {
+                                "id": "1",
+                                "type": "Organization",
+                                "identifier": {
+                                    "value": "A12345",
+                                    "period": {
+                                        "start": "2020-01-01",
+                                        "end": "9999-12-31",
+                                    },
+                                },
+                            }
+                        ],
                     }
                 }
             ],
@@ -119,8 +128,7 @@ class TestConsumerContract:
             assert response.status_code == 200
             # Basic assertion to ensure the test itself passes
             assert (
-                response.json()["entry"][0]["resource"]["name"][0]["family"]
-                == "Jackson"
+                response.json()["entry"][0]["resource"]["name"][0]["family"] == "Jones"
             )
 
         # Write the pact file

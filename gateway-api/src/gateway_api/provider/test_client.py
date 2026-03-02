@@ -6,16 +6,17 @@ for interacting with the GPProvider FHIR API.
 
 """
 
+import json
 from typing import Any
 
 import pytest
+from fhir import Parameters
 from requests import Response
 from requests.structures import CaseInsensitiveDict
-from stubs.stub_provider import GpProviderStub
+from stubs.provider.stub import GpProviderStub
 
-from gateway_api import provider_request
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-from gateway_api.provider_request import ExternalServiceError, GpProviderClient
+from gateway_api.common.error import ProviderRequestFailedError
+from gateway_api.provider import GpProviderClient, client
 
 
 @pytest.fixture
@@ -33,9 +34,6 @@ def mock_request_post(
     This fixture intercepts calls to `requests.post` and routes them to the
     stub provider. It also captures the most recent request details, such as
     headers, body, and URL, for verification in tests.
-
-    Returns:
-        dict[str, Any]: A dictionary containing the captured request details.
     """
     capture: dict[str, Any] = {}
 
@@ -56,12 +54,13 @@ def mock_request_post(
             trace_id=headers.get("Ssp-TraceID", "dummy-trace-id"), body=data
         )
 
-    monkeypatch.setattr(provider_request, "post", _fake_post)
+    monkeypatch.setattr(client, "post", _fake_post)
     return capture
 
 
 def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
     mock_request_post: dict[str, Any],
+    valid_simple_request_payload: Parameters,
 ) -> None:
     """
     Test that the `access_structured_record` method constructs the correct URL
@@ -81,7 +80,9 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
         consumer_asid=consumer_asid,
     )
 
-    result = client.access_structured_record(trace_id, "body")
+    result = client.access_structured_record(
+        trace_id, json.dumps(valid_simple_request_payload)
+    )
 
     captured_url = mock_request_post.get("url", provider_endpoint)
 
@@ -94,6 +95,7 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
+    valid_simple_request_payload: Parameters,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct headers
@@ -119,10 +121,14 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
-        "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        "Ssp-InteractionID": (
+            "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+        ),
     }
 
-    result = client.access_structured_record(trace_id, "body")
+    result = client.access_structured_record(
+        trace_id, json.dumps(valid_simple_request_payload)
+    )
 
     captured_headers = mock_request_post["headers"]
 
@@ -132,6 +138,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
 
 def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     mock_request_post: dict[str, Any],
+    valid_simple_request_payload: Parameters,
 ) -> None:
     """
     Test that the `access_structured_record` method includes the correct body
@@ -145,7 +152,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     provider_endpoint = "https://test.com"
     trace_id = "some_uuid_value"
 
-    request_body = "some_FHIR_request_params"
+    request_body = json.dumps(valid_simple_request_payload)
 
     client = GpProviderClient(
         provider_endpoint=provider_endpoint,
@@ -164,6 +171,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
 def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
     stub: GpProviderStub,
+    valid_simple_request_payload: Parameters,
 ) -> None:
     """
     Test that the `access_structured_record` method returns the same response
@@ -183,9 +191,13 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
         consumer_asid=consumer_asid,
     )
 
-    expected_response = stub.access_record_structured(trace_id, "body")
+    expected_response = stub.access_record_structured(
+        trace_id, json.dumps(valid_simple_request_payload)
+    )
 
-    result = client.access_structured_record(trace_id, "body")
+    result = client.access_structured_record(
+        trace_id, json.dumps(valid_simple_request_payload)
+    )
 
     assert result.status_code == 200
     assert result.content == expected_response.content
@@ -195,7 +207,7 @@ def test_access_structured_record_raises_external_service_error(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
 ) -> None:
     """
-    Test that the `access_structured_record` method raises an `ExternalServiceError`
+    Test that the `access_structured_record` method raises an `SdsRequestFailed`
     when the GPProvider FHIR API request fails with an HTTP error.
     """
     provider_asid = "200000001154"
@@ -210,7 +222,7 @@ def test_access_structured_record_raises_external_service_error(
     )
 
     with pytest.raises(
-        ExternalServiceError,
-        match="GPProvider FHIR API request failed:Bad Request",
+        ProviderRequestFailedError,
+        match="Provider request failed: Bad Request",
     ):
         client.access_structured_record(trace_id, "body")

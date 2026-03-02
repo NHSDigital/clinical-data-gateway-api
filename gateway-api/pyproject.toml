@@ -55,6 +55,7 @@ dev = [
     "schemathesis>=4.4.1",
     "types-requests (>=2.32.4.20250913,<3.0.0.0)",
     "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)",
+    "pytest-mock (>=3.15.1,<4.0.0)",
 ]
 
 [tool.mypy]

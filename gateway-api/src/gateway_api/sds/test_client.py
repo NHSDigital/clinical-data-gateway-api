@@ -5,10 +5,10 @@ Unit tests for :mod:`gateway_api.sds_search`.
 from __future__ import annotations
 
 import pytest
-from stubs.stub_sds import SdsFhirApiStub
+from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-from gateway_api.sds_search import (
+from gateway_api.sds import (
     SdsClient,
     SdsSearchResults,
 )
@@ -17,12 +17,9 @@ from gateway_api.sds_search import (
 @pytest.fixture
 def stub(monkeypatch: pytest.MonkeyPatch) -> SdsFhirApiStub:
     stub = SdsFhirApiStub()
-    import gateway_api.sds_search as sds_module
-
     monkeypatch.setattr(
-        sds_module,
-        "SdsFhirApiStub",
-        lambda *args, **kwargs: stub,  # NOQA ARG005 (maintain signature)
+        "gateway_api.sds.client.get",
+        lambda *args, **kwargs: stub.get(*args, **kwargs),  # NOQA ARG005 (maintain signature)
     )
     monkeypatch.setattr("requests.get", stub.get)
 
@@ -30,13 +27,12 @@ def stub(monkeypatch: pytest.MonkeyPatch) -> SdsFhirApiStub:
 
 
 def test_sds_client_get_org_details_success(
-    stub: SdsFhirApiStub,  # noqa: ARG001
+    stub: SdsFhirApiStub,
 ) -> None:
     """
     Test SdsClient can successfully look up organization details.
 
     :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
     """
     client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
