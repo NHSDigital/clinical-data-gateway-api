@@ -1,9 +1,8 @@
 """FHIR Bundle resource."""
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
-if TYPE_CHECKING:
-    from fhir.patient import Patient
+from fhir.patient import Patient
 
 
 class BundleEntry(TypedDict):
