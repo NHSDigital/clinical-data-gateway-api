@@ -18,7 +18,8 @@
         "ms-python.vscode-python-envs",
         "ms-python.mypy-type-checker",
         "sonarsource.sonarlint-vscode",
-        "alexkrechik.cucumberautocomplete"
+        "alexkrechik.cucumberautocomplete",
+        "streetsidesoftware.code-spell-checker"
       ],
       "extensions.ignoreRecommendations": true,
       "settings": {

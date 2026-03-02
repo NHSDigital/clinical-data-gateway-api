@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from gateway_api.sds_search import SdsClient
+from gateway_api.sds import SdsClient
 
 
 class TestSdsIntegration:

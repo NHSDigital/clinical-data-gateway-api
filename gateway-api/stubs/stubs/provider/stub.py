@@ -21,11 +21,13 @@ Headers:
 Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 """
 
+import json
 from typing import Any
 
 from requests import Response
 
 from stubs.base_stub import StubBase
+from stubs.data.bundles import Bundles
 
 
 class GpProviderStub(StubBase):
@@ -39,49 +41,6 @@ class GpProviderStub(StubBase):
     # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
     """
 
-    # Example patient resource
-    patient_bundle = {
-        "resourceType": "Bundle",
-        "type": "collection",
-        "meta": {
-            "profile": [
-                "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
-            ]
-        },
-        "entry": [
-            {
-                "resource": {
-                    "resourceType": "Patient",
-                    "id": "04603d77-1a4e-4d63-b246-d7504f8bd833",
-                    "meta": {
-                        "versionId": "1469448000000",
-                        "profile": [
-                            "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
-                        ],
-                    },
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9999999999",
-                        }
-                    ],
-                    "active": True,
-                    "name": [
-                        {
-                            "use": "official",
-                            "text": "JACKSON Jane (Miss)",
-                            "family": "Jackson",
-                            "given": ["Jane"],
-                            "prefix": ["Miss"],
-                        }
-                    ],
-                    "gender": "female",
-                    "birthDate": "1952-05-31",
-                }
-            }
-        ],
-    }
-
     def access_record_structured(
         self,
         trace_id: str,
@@ -93,10 +52,10 @@ class GpProviderStub(StubBase):
         returns:
             Response: The stub patient bundle wrapped in a Response object.
         """
+
         if trace_id == "invalid for test":
             return self._create_response(
                 status_code=400,
-                headers={"Content-Type": "application/fhir+json"},
                 json_data={
                     "resourceType": "OperationOutcome",
                     "issue": [
@@ -109,18 +68,49 @@ class GpProviderStub(StubBase):
                 },
             )
 
+        try:
+            nhs_number = json.loads(body)["parameter"][0]["valueIdentifier"]["value"]
+        except (json.JSONDecodeError, KeyError, IndexError):
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": "Malformed request body",
+                        }
+                    ],
+                },
+            )
+
+        if nhs_number == "9999999999":
+            return self._create_response(
+                status_code=200,
+                json_data=Bundles.ALICE_JONES_9999999999,
+            )
+
         return self._create_response(
-            status_code=200,
-            headers={"Content-Type": "application/fhir+json"},
-            json_data=self.patient_bundle,
+            status_code=404,
+            json_data={
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    {
+                        "severity": "error",
+                        "code": "not-found",
+                        "diagnostics": "Patient not found",
+                    }
+                ],
+            },
         )
 
     def post(
         self,
-        url: str,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
-        headers: dict[str, Any],
+        _url: str,
         data: str,
-        timeout: int,  # NOQA ARG001 # NOSONAR S1172 (unused in stub)
+        _json: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
         """
         Handle HTTP POST requests for the stub.
@@ -131,7 +121,7 @@ class GpProviderStub(StubBase):
         :param timeout: Request timeout in seconds.
         :return: A :class:`requests.Response` instance.
         """
-        trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+        trace_id = kwargs.get("headers", {}).get("Ssp-TraceID", "no-trace-id")
         return self.access_record_structured(trace_id, data)
 
     def get(

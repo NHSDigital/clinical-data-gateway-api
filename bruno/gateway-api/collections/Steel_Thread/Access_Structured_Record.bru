@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://{{apigee_env}}.api.service.nhs.uk/{{proxy_base_path}}/patient/$gpc.getstructuredrecord
+  url: {{base_url}}/patient/$gpc.getstructuredrecord
   body: json
   auth: inherit
 }

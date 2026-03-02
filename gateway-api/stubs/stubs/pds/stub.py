@@ -4,17 +4,15 @@ In-memory PDS FHIR R4 API stub.
 The stub does **not** implement the full PDS API surface, nor full FHIR validation.
 """
 
-from __future__ import annotations
-
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from .base_stub import StubBase
+from requests import Response
 
-if TYPE_CHECKING:
-    from requests import Response
+from stubs.base_stub import StubBase
+from stubs.data.patients import Patients
 
 
 class PdsFhirApiStub(StubBase):
@@ -47,73 +45,20 @@ class PdsFhirApiStub(StubBase):
 
         # Seed a deterministic example matching the spec's id example.
         # Tests may overwrite this record via upsert_patient.
-        self.upsert_patient(
-            nhs_number="9000000009",
-            patient={
-                "resourceType": "Patient",
-                "id": "9000000009",
-                "meta": {
-                    "versionId": "1",
-                    "lastUpdated": "2020-01-01T00:00:00Z",
-                },
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9000000009",
-                    }
-                ],
-                "name": [
-                    {
-                        "use": "official",
-                        "family": "Smith",
-                        "given": ["Jane"],
-                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                    }
-                ],
-                "gender": "female",
-                "birthDate": "1970-01-01",
-            },
-            version_id=1,
-        )
-
-        self.upsert_patient(
-            nhs_number="9999999999",
-            patient={
-                "resourceType": "Patient",
-                "id": "9999999999",
-                "meta": {
-                    "versionId": "1",
-                    "lastUpdated": "2020-01-01T00:00:00Z",
-                },
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9999999999",
-                    }
-                ],
-                "name": [
-                    {
-                        "use": "official",
-                        "family": "Jones",
-                        "given": ["Alice"],
-                        "period": {"start": "1900-01-01", "end": "9999-12-31"},
-                    }
-                ],
-                "gender": "female",
-                "birthDate": "1980-01-01",
-                "generalPractitioner": [
-                    {
-                        "id": "1",
-                        "type": "Organization",
-                        "identifier": {
-                            "value": "A12345",
-                            "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                        },
-                    }
-                ],
-            },
-            version_id=1,
-        )
+        test_patients = [
+            ("9999999999", Patients.ALICE_JONES_9999999999),
+            ("9000000009", Patients.JANE_SMITH_9000000009),
+            ("9000000010", Patients.NO_SDS_RESULT_9000000010),
+            ("9000000011", Patients.BLANK_ASID_SDS_RESULT_9000000011),
+            ("9000000012", Patients.INDUCE_PROVIDER_ERROR_9000000012),
+            ("9000000013", Patients.BLANK_ENDPOINT_SDS_RESULT_9000000013),
+        ]
+        for nhs_number, patient in test_patients:
+            self.upsert_patient(
+                nhs_number=nhs_number,
+                patient=patient,
+                version_id=1,
+            )
 
     # ---------------------------
     # Public API for tests
@@ -231,7 +176,7 @@ class PdsFhirApiStub(StubBase):
         # ETag mirrors the "W/\"<n>\"" shape and aligns to meta.versionId.
         headers_out["ETag"] = f'W/"{version_id}"'
         return self._create_response(
-            status_code=200, headers=headers_out, json_data=patient
+            status_code=200, json_data=patient, additional_headers=headers_out
         )
 
     def get(
@@ -254,8 +199,6 @@ class PdsFhirApiStub(StubBase):
             request_id = headers.get("X-Request-ID")
             correlation_id = headers.get("X-Correlation-ID")
             authorization = headers.get("Authorization")
-            role_id = headers.get("NHSD-Session-URID")
-            end_user_org_ods = headers.get("NHSD-End-User-Organisation-ODS")
 
         return self.get_patient(
             nhs_number=nhs_number,
@@ -390,5 +333,5 @@ class PdsFhirApiStub(StubBase):
             ],
         }
         return self._create_response(
-            status_code=status_code, headers=dict(headers), json_data=body
+            status_code=status_code, json_data=body, additional_headers=dict(headers)
         )

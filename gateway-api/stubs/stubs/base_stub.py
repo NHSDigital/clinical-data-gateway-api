@@ -28,14 +28,17 @@ class StubBase:
     @staticmethod
     def _create_response(
         status_code: int,
-        headers: dict[str, str],
         json_data: dict[str, Any],
+        additional_headers: dict[str, str] | None = None,
     ) -> Response:
         """
         Create a :class:`requests.Response` object for the stub.
         """
         response = Response()
         response.status_code = status_code
+        headers = {"Content-Type": "application/fhir+json"}
+        if additional_headers is not None:
+            headers.update(additional_headers)
         response.headers = CaseInsensitiveDict(headers)
         response._content = json.dumps(json_data).encode("utf-8")  # noqa: SLF001 to customise stub
         response.encoding = "utf-8"
@@ -87,9 +90,9 @@ class PostStub(Protocol):
     def post(
         self,
         url: str,
-        headers: dict[str, Any],
-        data: str,
-        timeout: int,
+        data: bytes | dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> Response:
         """
         Handle HTTP POST requests for the stub.
@@ -113,7 +116,7 @@ class PostStub(Protocol):
     @abstractmethod
     def post_data(self) -> str:
         """
-        Last post request body stub.gpostet was called with. Empty if not called yet.
+        Last post request body stub.post was called with. Empty if not called yet.
         """
 
     @property
