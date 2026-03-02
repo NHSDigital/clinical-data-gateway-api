@@ -1,11 +1,10 @@
 """FHIR Patient resource."""
 
-from typing import TYPE_CHECKING, TypedDict, NotRequired
+from typing import NotRequired, TypedDict
 
-if TYPE_CHECKING:
-    from fhir.general_practitioner import GeneralPractitioner
-    from fhir.human_name import HumanName
-    from fhir.identifier import Identifier
+from fhir.general_practitioner import GeneralPractitioner
+from fhir.human_name import HumanName
+from fhir.identifier import Identifier
 
 
 class Patient(TypedDict):
