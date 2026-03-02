@@ -27,6 +27,7 @@ from urllib.parse import urljoin
 
 from requests import HTTPError, Response
 
+from gateway_api.clinical_jwt import JWT
 from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 

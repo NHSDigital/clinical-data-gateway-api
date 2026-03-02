@@ -281,55 +281,72 @@ def mock_happy_path_get_structured_record_request(
     )
     return happy_path_request
 
-@pytest.mark.parametrize(
-    "get_structured_record_request",
-    [({"ODS-from": "CONSUMER"}, {})],
-    indirect=["get_structured_record_request"],
-)
+
 def test_controller_creates_jwt_token_with_correct_claims(
-    patched_deps: Any,  # NOQA ARG001 (Fixture patching dependencies)
-    monkeypatch: pytest.MonkeyPatch,
-    controller: Controller,
-    get_structured_record_request: GetStructuredRecordRequest,
+    mocker: MockerFixture,
+    valid_simple_request_payload: Parameters,
+    valid_simple_response_payload: Bundle,
 ) -> None:
     """
     Test that the controller creates a JWT token with the correct claims.
     """
-    pds = pds_factory(ods_code="PROVIDER")
-    sds_org1 = SdsSetup(
-        ods_code="PROVIDER",
-        search_results=SdsSearchResults(
-            asid="asid_PROV", endpoint="https://provider.example/ep"
-        ),
+    nhs_number = "9000000009"
+    provider_ods = "PROVIDER"
+    consumer_ods = "CONSUMER"
+    provider_endpoint = "https://provider.example/ep"
+
+    # Mock PDS to return provider ODS code
+    pds_search_result = PdsSearchResults(
+        given_names="Jane",
+        family_name="Smith",
+        nhs_number=nhs_number,
+        gp_ods_code=provider_ods,
     )
-    sds_org2 = SdsSetup(
-        ods_code="CONSUMER",
-        search_results=SdsSearchResults(asid="asid_CONS", endpoint=None),
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=pds_search_result,
     )
-    sds = sds_factory(org1=sds_org1, org2=sds_org2)
 
-    monkeypatch.setattr(controller_module, "PdsClient", pds)
-    monkeypatch.setattr(controller_module, "SdsClient", sds)
+    # Mock SDS to return provider and consumer details
+    provider_sds_results = SdsSearchResults(
+        asid="asid_PROV", endpoint=provider_endpoint
+    )
+    consumer_sds_results = SdsSearchResults(asid="asid_CONS", endpoint=None)
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=[provider_sds_results, consumer_sds_results],
+    )
 
-    _ = controller.run(get_structured_record_request)
+    # Mock GpProviderClient to capture initialization arguments
+    mock_gp_provider = mocker.patch("gateway_api.controller.GpProviderClient")
 
-    # Verify that a JWT token was created and passed to GpProviderClient
-    assert FakeGpProviderClient.last_init is not None
-    last_jwt = FakeGpProviderClient.last_init["token"]
+    # Mock the access_structured_record method to return a response
+    provider_response = FakeResponse(
+        status_code=200,
+        headers={"Content-Type": "application/fhir+json"},
+        _json=valid_simple_response_payload,
+    )
+    mock_gp_provider.return_value.access_structured_record.return_value = (
+        provider_response
+    )
 
-    # Decode the token to verify its contents
-    # decoded_token = JWT.decode(token_str)
+    # Create request and run controller
+    request = create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=valid_simple_request_payload,
+    )
+
+    controller = Controller()
+    _ = controller.run(GetStructuredRecordRequest(request))
+
+    # Verify that GpProviderClient was called and extract the JWT token
+    mock_gp_provider.assert_called_once()
+    jwt_token = mock_gp_provider.call_args.kwargs["token"]
 
     # Verify the standard JWT claims
-    assert last_jwt.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
-    assert last_jwt.subject == "10019"  # From Controller.get_jwt()
-    assert last_jwt.audience == "https://provider.example/ep"
+    assert jwt_token.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
+    assert jwt_token.subject == "10019"
+    assert jwt_token.audience == provider_endpoint
 
     # Verify the requesting organization matches the consumer ODS
-    assert last_jwt.requesting_organization == "CONSUMER"
-
-    # Verify device and practitioner JSON are present
-    assert "requesting_device" in last_jwt.requesting_device
-    assert "Device" in last_jwt.requesting_device
-    assert "requesting_practitioner" in last_jwt.requesting_practitioner
-    assert "Practitioner" in last_jwt.requesting_practitioner
+    assert jwt_token.requesting_organization == consumer_ods

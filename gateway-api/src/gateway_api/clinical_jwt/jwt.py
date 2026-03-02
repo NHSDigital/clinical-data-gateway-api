@@ -42,7 +42,7 @@ class JWT:
         )
 
     @staticmethod
-    def decode(token: str) -> JWT:
+    def decode(token: str) -> "JWT":
         token_dict = pyjwt.decode(
             token,
             options={"verify_signature": False},  # NOSONAR S5659 (not signed)

@@ -9,16 +9,14 @@ from werkzeug.exceptions import BadRequest
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import InvalidRequestJSONError, MissingOrEmptyHeaderError
 
-if TYPE_CHECKING:
-    from fhir.bundle import Bundle
-
-    from gateway_api.common.common import FlaskResponse
-
 # Access record structured interaction ID from
 # https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
 ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
     "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
 )
+
+if TYPE_CHECKING:
+    from fhir.bundle import Bundle
 
 
 class GetStructuredRecordRequest:

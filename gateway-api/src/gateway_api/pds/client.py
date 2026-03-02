@@ -21,7 +21,7 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 import os
 import uuid
 from collections.abc import Callable
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import cast
 
 import requests
@@ -230,7 +230,7 @@ class PdsClient:
         today: date | None = None,
     ) -> GeneralPractitioner | None:
         if today is None:
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
 
         if self.ignore_dates:
             if len(general_practitioners) > 0:
@@ -252,7 +252,7 @@ class PdsClient:
         self, names: list[HumanName], today: date | None = None
     ) -> HumanName | None:
         if today is None:
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
 
         if self.ignore_dates:
             if len(names) > 0:

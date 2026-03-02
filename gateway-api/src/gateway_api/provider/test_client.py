@@ -15,13 +15,9 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.provider.stub import GpProviderStub
 
+from gateway_api.clinical_jwt import JWT
 from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.provider import GpProviderClient, client
-from gateway_api.clinical_jwt import JWT
-
-if TYPE_CHECKING:
-    from requests import Response
-    from requests.structures import CaseInsensitiveDict
 
 
 @pytest.fixture

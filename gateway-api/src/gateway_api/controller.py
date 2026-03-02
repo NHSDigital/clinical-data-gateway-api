@@ -2,6 +2,7 @@
 Controller layer for orchestrating calls to external services
 """
 
+from gateway_api.clinical_jwt import JWT, Device, Practitioner
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
@@ -128,9 +129,7 @@ class Controller:
         )
         return token
 
-    def _get_pds_details(
-        self, auth_token: str, consumer_ods: str, nhs_number: str
-    ) -> str:
+    def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
         """

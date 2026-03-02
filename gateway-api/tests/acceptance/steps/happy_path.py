@@ -2,17 +2,14 @@
 
 import json
 from datetime import timedelta
-from typing import TYPE_CHECKING
 
 import requests
+from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
 from stubs.data.bundles import Bundles
 
-if TYPE_CHECKING:
-    from fhir.parameters import Parameters
-
-    from tests.acceptance.conftest import ResponseContext
-    from tests.conftest import Client
+from tests.acceptance.conftest import ResponseContext
+from tests.conftest import Client
 
 
 @given("the API is running")

@@ -1,9 +1,8 @@
 """FHIR Parameters resource."""
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
-if TYPE_CHECKING:
-    from fhir.identifier import Identifier
+from fhir.identifier import Identifier
 
 
 class Parameter(TypedDict):
