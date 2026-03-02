@@ -227,6 +227,7 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 def test_access_structured_record_raises_external_service_error(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+    valid_simple_request_payload: Parameters,
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -249,11 +250,14 @@ def test_access_structured_record_raises_external_service_error(
         ProviderRequestFailedError,
         match="Provider request failed: Bad Request",
     ):
-        client.access_structured_record(trace_id, "body")
+        client.access_structured_record(
+            trace_id, json.dumps(valid_simple_request_payload)
+        )
 
 
 def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     mock_request_post: dict[str, Any],
+    valid_simple_request_payload: Parameters,
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -272,7 +276,9 @@ def test_gpprovider_client_includes_authorization_header_with_bearer_token(
         token=dummy_jwt,
     )
 
-    result = client.access_structured_record(trace_id, "body")
+    result = client.access_structured_record(
+        trace_id, json.dumps(valid_simple_request_payload)
+    )
 
     captured_headers = mock_request_post["headers"]
 
