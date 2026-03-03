@@ -1,6 +1,7 @@
 anonymised
 Apigee
 APIs
+API's
 base_url
 binutils
 Bitwarden
@@ -12,6 +13,9 @@ Cyber
 Dependabot
 [Dd]ev
 dotfiles
+Dockerfiles
+[Dd]ocstring([s]?)
+env
 Gitleaks
 Grype
 hostname
