@@ -134,6 +134,7 @@ jobs:
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
         run: |
           terraform apply \
+            -var-file="preview.tfvars" \
             -auto-approve
 
       - name: Capture preview TF outputs
@@ -213,7 +214,9 @@ jobs:
           TF_VAR_image_tag: ${{ steps.meta.outputs.branch_name }}
           TF_VAR_alb_rule_priority: ${{ steps.meta.outputs.alb_rule_priority }}
         run: |
-          terraform destroy -auto-approve
+          terraform destroy \
+            -var-file="preview.tfvars" \
+            -auto-approve
 
       # ---------- Wait on AWS tasks and notify ----------
       - name: Await deployment completion
@@ -397,7 +400,7 @@ jobs:
         id: check-integration
         if: always()
         run: |
-            [ -f "gateway-api/test-artefacts/integration-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+          [ -f "gateway-api/test-artefacts/integration-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
 
       - name: Publish integration test results to summary
         if: ${{ always() && steps.check-integration.outputs.exists == 'true' }}
@@ -522,4 +525,3 @@ jobs:
         with:
           image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
           artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
-
