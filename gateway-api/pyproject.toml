@@ -57,7 +57,16 @@ dev = [
     "types-requests (>=2.32.4.20250913,<3.0.0.0)",
     "types-pyyaml (>=6.0.12.20250915,<7.0.0.0)",
     "pytest-mock (>=3.15.1,<4.0.0)",
+    "pytest-nhsd-apim (>=6.0.6,<7.0.0)",
 ]
 
 [tool.mypy]
 strict = true
+
+[tool.pytest.ini_options]
+bdd_features_base_dir = "tests/acceptance/features"
+markers = [
+    "remote_only: test only runs in remote environment (skipped when --env=local)",
+    "status_auth_headers",
+    "status_merged_auth_headers",
+]

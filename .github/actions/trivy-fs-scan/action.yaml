@@ -1,0 +1,143 @@
+name: Trivy fs Scan
+description: Performs Trivy security scanning for filesystems with comprehensive reporting
+
+inputs:
+  filesystem-ref:
+    description: 'Filesystem reference to scan (e.g., /path/to/filesystem)'
+    required: true
+  severity:
+    description: 'Comma-separated list of severity levels to report'
+    required: false
+    default: 'HIGH,CRITICAL,MEDIUM,LOW,UNKNOWN'
+  trivy-config:
+    description: 'Path to Trivy configuration file'
+    required: false
+    default: 'trivy.yaml'
+  artifact-name:
+    description: 'Name for the uploaded artifact'
+    required: false
+    default: 'trivy-fs-scan-results'
+  fail-on-critical-high:
+    description: 'Whether to fail the action on critical/high findings'
+    required: false
+    default: 'true'
+  ignore-unfixed:
+    description: 'Ignore unfixed vulnerabilities'
+    required: false
+    default: 'true'
+
+outputs:
+  critical-count:
+    description: 'Number of critical severity findings'
+    value: ${{ steps.report.outputs.crit }}
+  high-count:
+    description: 'Number of high severity findings'
+    value: ${{ steps.report.outputs.high }}
+  report-path:
+    description: 'Path to the generated markdown report'
+    value: 'trivy_fs_report.md'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check if Trivy config exists
+      id: trivy-config-check
+      shell: bash
+      run: |
+        if [[ -f "${{ inputs.trivy-config }}" ]]; then
+          echo "config-exists=true" >> "$GITHUB_OUTPUT"
+          echo "config-arg=${{ inputs.trivy-config }}" >> "$GITHUB_OUTPUT"
+        else
+          echo "config-exists=false" >> "$GITHUB_OUTPUT"
+          echo "config-arg=" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Trivy fs scan
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        scan-type: 'fs'
+        scan-ref: ${{ inputs.filesystem-ref }}
+        format: json
+        output: trivy-fs-scan.json
+        exit-code: 0
+        ignore-unfixed: ${{ inputs.ignore-unfixed }}
+        severity: ${{ inputs.severity }}
+        trivy-config: ${{ steps.trivy-config-check.outputs.config-arg }}
+
+    - name: Upload Trivy Scan Artifact
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: trivy-fs-scan.json
+
+    - name: Build summary & counts
+      id: report
+      shell: bash
+      run: |
+        # Filesystem scan report
+        jq -r '
+        def clean: (.|tostring) | gsub("\\|";"\\|") | gsub("\r?\n";" ");
+        def sev: ["CRITICAL","HIGH","MEDIUM","LOW","UNKNOWN"];
+        def counts:
+          ([.Results[]? | .Vulnerabilities[]? | .Severity // "UNKNOWN"]
+          | reduce .[] as $s ({CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0,UNKNOWN:0}; .[$s]+=1));
+        . as $root
+        | (counts) as $c
+        |
+        # ---- TOP BANNER (only if High/Critical present) ----
+        (
+          if (($c.CRITICAL + $c.HIGH) > 0) then
+            "🚫 **Trivy gate:** **\($c.CRITICAL) Critical**, **\($c.HIGH) High** vulnerability(s) found.\n\n"
+          else
+            "✅ **Trivy gate:** no Critical/High vulnerabilities.\n\n"
+          end
+        )
+        # ---- SUMMARY REPORT ----
+        + "### Trivy Filesystem Scan Summary\n\n"
+        + "**Filesystem:** " + ($root.ArtifactName // "'"'"'${{ inputs.filesystem-ref }}'"'"'") + "\n\n"
+        + "| Severity | Count |\n|---|---|\n"
+        + (sev | map("| " + . + " | " + ($c[.]|tostring) + " |") | join("\n"))
+        + (if ([.Results[]? | .Vulnerabilities[]?] | length) == 0
+          then "\n\n✅ No vulnerabilities found.\n"
+          else
+            "\n\n<details><summary>Findings (top 50)</summary>\n\n"
+            + "| Severity | ID | Package | Installed | Fixed | Source |\n|---|---|---|---|---|---|\n"
+            + (
+                [ .Results[]? as $r
+                  | $r.Vulnerabilities[]?
+                  | "| \(.Severity) | \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \((.FixedVersion // "") | clean) | \(($r.Target) | clean) |"
+                ] | .[:50] | join("\n")
+              )
+            + "\n\n</details>\n"
+          end)
+        ' trivy-fs-scan.json > trivy_fs_report.md
+
+        # Extract counts for gating/other steps
+        read CRIT HIGH < <(jq -r '
+          [.Results[]? | .Vulnerabilities[]? | .Severity // "UNKNOWN"]
+          | reduce .[] as $s ({CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0,UNKNOWN:0}; .[$s]+=1)
+          | "\(.CRITICAL) \(.HIGH)"
+        ' trivy-fs-scan.json)
+
+        echo "crit=$CRIT" >> "$GITHUB_OUTPUT"
+        echo "high=$HIGH" >> "$GITHUB_OUTPUT"
+
+    - name: Publish Trivy Summary
+      if: always()
+      shell: bash
+      run: cat trivy_fs_report.md >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Update Trivy PR comment
+      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: ${{ inputs.artifact-name }}
+        path: trivy_fs_report.md
+
+    - name: Check Trivy Issue Thresholds
+      if: ${{ inputs.fail-on-critical-high == 'true' && (steps.report.outputs.crit != '0' || steps.report.outputs.high != '0') }}
+      shell: bash
+      run: |
+        echo "Critical vulnerabilities detected: ${{ steps.report.outputs.crit }}"
+        echo "High vulnerabilities detected: ${{ steps.report.outputs.high }}"
+        exit 1
