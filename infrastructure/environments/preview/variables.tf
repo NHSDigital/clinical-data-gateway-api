@@ -99,8 +99,13 @@ variable "pds_api_token" {
 }
 
 variable "pds_api_secret" {
-  description = "API secret used to authenticate with PDS."
+  description = "API secret key used to authenticate with PDS."
   type        = string
   default     = null
 }
 
+variable "pds_api_kid" {
+  description = "API key ID used to authenticate with PDS."
+  type        = string
+  default     = null
+}

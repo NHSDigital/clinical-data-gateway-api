@@ -268,6 +268,10 @@ resource "aws_ecs_task_definition" "branch" {
           value = var.pds_api_secret
         },
         {
+          name  = "PDS_API_KID"
+          value = var.pds_api_kid
+        },
+        {
           name  = "PROVIDER_URL"
           value = var.provider_url
         },
