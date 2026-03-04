@@ -1,13 +1,14 @@
 import os
+import traceback
 from typing import TypedDict
 
 from flask import Flask, request
 from flask.wrappers import Response
 
+from gateway_api.common.error import AbstractCDGError, UnexpectedError
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
-    RequestValidationError,
 )
 
 app = Flask(__name__)
@@ -38,27 +39,16 @@ def get_app_port() -> int:
 def get_structured_record() -> Response:
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
-    except RequestValidationError as e:
-        response = Response(
-            response=str(e),
-            status=400,
-            content_type="text/plain",
-        )
-        return response
-    except Exception as e:
-        response = Response(
-            response=f"Internal Server Error: {e}",
-            status=500,
-            content_type="text/plain",
-        )
-        return response
-
-    try:
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
         get_structured_record_request.set_response_from_flaskresponse(flask_response)
-    except Exception as e:
-        get_structured_record_request.set_negative_response(str(e))
+    except AbstractCDGError as e:
+        e.log()
+        return e.build_response()
+    except Exception:
+        error = UnexpectedError(traceback=traceback.format_exc())
+        error.log()
+        return error.build_response()
 
     return get_structured_record_request.build_response()
 
@@ -66,7 +56,7 @@ def get_structured_record() -> Response:
 @app.route("/health", methods=["GET"])
 def health_check() -> HealthCheckResponse:
     """Health check endpoint."""
-    version: str = "unkonwn"
+    version: str = "unknown"
 
     commit_version: str | None = os.getenv("COMMIT_VERSION")
     build_date: str | None = os.getenv("BUILD_DATE")

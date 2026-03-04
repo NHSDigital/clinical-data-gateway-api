@@ -9,23 +9,30 @@ This module provides a client for querying the Spine Directory Service to retrie
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, cast
 
-import requests
-from stubs.stub_sds import SdsFhirApiStub
+from stubs import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.sds.search_results import SdsSearchResults
+
+# TODO: Once stub servers/containers made for PDS, SDS and provider
+#       we should remove the STUB_SDS environment variable and just
+#       use the stub client
+STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+if not STUB_SDS:
+    from requests import get
+else:
+    from stubs.sds.stub import SdsFhirApiStub
+
+    sds = SdsFhirApiStub()
+    get = sds.get  # type: ignore
 
 # Recursive JSON-like structure typing used for parsed FHIR bodies.
-type ResultStructure = str | dict[str, "ResultStructure"] | list["ResultStructure"]
 type ResultStructureDict = dict[str, ResultStructure]
 type ResultList = list[ResultStructureDict]
-
-# Type for stub get method
-type GetCallable = Callable[..., requests.Response]
+type ResultStructure = str | ResultStructureDict | list["ResultStructure"]
 
 
 class SdsResourceType(StrEnum):
@@ -33,22 +40,6 @@ class SdsResourceType(StrEnum):
 
     DEVICE = "Device"
     ENDPOINT = "Endpoint"
-
-
-class ExternalServiceError(Exception):
-    """
-    Raised when the downstream SDS request fails.
-    """
-
-
-@dataclass
-class SdsSearchResults:
-    """
-    SDS lookup results containing ASID and endpoint information.
-    """
-
-    asid: str | None
-    endpoint: str | None
 
 
 class SdsClient:
@@ -91,9 +82,6 @@ class SdsClient:
     PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
     ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
 
-    # Define here so it's neater
-    get_method: GetCallable
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
@@ -108,15 +96,7 @@ class SdsClient:
         self.service_interaction_id = (
             service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
         )
-        self.stub = None
-
         self.api_key = self._get_api_key()
-
-        if os.environ.get("STUB_SDS", None):
-            self.stub = SdsFhirApiStub()
-            self.get_method = self.stub.get
-        else:
-            self.get_method = requests.get
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -138,7 +118,7 @@ class SdsClient:
         correlation_id: str | None = None,
         timeout: int | None = None,
         get_endpoint: bool = True,
-    ) -> SdsSearchResults | None:
+    ) -> SdsSearchResults:
         """
         Retrieve ASID and endpoint for an organization by ODS code.
 
@@ -217,7 +197,7 @@ class SdsClient:
         if party_key is not None:
             params["identifier"].append(f"{self.PARTYKEY_SYSTEM}|{party_key}")
 
-        response = self.get_method(
+        response = get(
             url,
             headers=headers,
             params=params,
@@ -240,7 +220,10 @@ class SdsClient:
 
         # TODO: Post-steel-thread handle case where bundle contains no entries
 
-        # TODO: consider business logic for handling multiple entries in beta
+        # TODO: more carefully consider business logic for handling multiple
+        #       entries in beta
+        if not entries:
+            return {}
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
 
@@ -255,8 +238,6 @@ class SdsClient:
         for identifier in identifiers:
             id_system = str(identifier.get("system", ""))
             if id_system == system:
-                value = identifier.get("value")
-                if value:
-                    return str(value).strip()
+                return cast("str", identifier.get("value", ""))
 
         return None

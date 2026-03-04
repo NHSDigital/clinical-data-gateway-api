@@ -60,5 +60,20 @@
     "projectKey": "NHSDigital_clinical-data-gateway-api"
   },
   // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
-  "remote.autoForwardPorts": false
+  "remote.autoForwardPorts": false,
+
+  // Code spell checker configuration
+  "cSpell.language": "en-GB",
+  "cSpell.customDictionaries": {
+    "vale-accepted-words": {
+      "path": "${workspaceFolder}/scripts/config/vale/styles/config/vocabularies/words/accept.txt",
+      "description": "Accepted words for the Vale spell checker.",
+      "addWords": false
+    },
+    "code-accepted-words": {
+      "path": "${workspaceFolder}/.vscode/cspell-dictionary.txt",
+      "addWords": true,
+      "description": "Accepted words for the code spell checker.",
+    }
+  },
 }

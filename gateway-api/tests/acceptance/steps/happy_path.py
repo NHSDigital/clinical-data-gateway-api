@@ -6,7 +6,7 @@ from datetime import timedelta
 import requests
 from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
-from stubs.stub_provider import GpProviderStub
+from stubs.data.bundles import Bundles
 
 from tests.acceptance.conftest import ResponseContext
 from tests.conftest import Client
@@ -61,6 +61,6 @@ def check_status_code(response_context: ResponseContext, expected_status: int) -
 @then("the response should contain the patient bundle from the provider")
 def check_response_matches_provider(response_context: ResponseContext) -> None:
     assert response_context.response, "Response has not been set."
-    assert response_context.response.json() == GpProviderStub.patient_bundle, (
+    assert response_context.response.json() == Bundles.ALICE_JONES_9999999999, (
         "Expected response payload does not match actual response payload."
     )

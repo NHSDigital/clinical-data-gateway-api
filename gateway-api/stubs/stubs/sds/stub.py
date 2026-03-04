@@ -243,7 +243,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         bundle = self._build_bundle(devices)
 
         return self._create_response(
-            status_code=200, headers=headers_out, json_data=bundle
+            status_code=200, json_data=bundle, additional_headers=headers_out
         )
 
     def get_endpoint_bundle(
@@ -326,7 +326,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         bundle = self._build_endpoint_bundle(endpoints)
 
         return self._create_response(
-            status_code=200, headers=headers_out, json_data=bundle
+            status_code=200, json_data=bundle, additional_headers=headers_out
         )
 
     def get(
@@ -388,6 +388,20 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "device_id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_A12345",
                 "display": "Example GP Practice A12345",
+            },
+            {
+                "org_ods": "BlankAsidInSDS",
+                "party_key": "BlankAsidInSDS",
+                "device_id": "1f453b59-3bc5-48ff-9835-3d9d0ef636ef",
+                "asid": "",
+                "display": "GP with blank ASID - testing error handling",
+            },
+            {
+                "org_ods": "BlankEndpointInSDS",
+                "party_key": "BlankEndpointInSDS",
+                "device_id": "74b40e5d-d72a-4667-beb5-b15ae6b4e25d",
+                "asid": "ASIDforGPWithoutEndpoint",
+                "display": "GP with no provider endpoint - testing error handling",
             },
         ]
 
@@ -711,5 +725,5 @@ class SdsFhirApiStub(StubBase, GetStub):
             ],
         }
         return self._create_response(
-            status_code=status_code, headers=dict(headers), json_data=body
+            status_code=status_code, json_data=body, additional_headers=dict(headers)
         )
