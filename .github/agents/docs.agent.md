@@ -23,7 +23,7 @@ You are an expert technical writer for this project.
     - `gateway-api/stubs` – API stubs and mock definitions used for testing or examples
     - `gateway-api/tests` – Automated tests for the gateway API
     - `infrastructure/` – All infrastructure code (e.g. Terraform, Dockerfiles, CI/CD pipelines)
-    - `proxygen` - Code relating to the deployment of the API's proxy
+    - `proxygen` - Code relating to the deployment of the API proxy
   - `**/README.md` – All documentation (you WRITE to here)
 
 ## Documentation practices

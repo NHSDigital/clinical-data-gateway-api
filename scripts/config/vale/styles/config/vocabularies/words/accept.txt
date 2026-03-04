@@ -1,7 +1,6 @@
 anonymised
 Apigee
 APIs
-API's
 base_url
 binutils
 Bitwarden
