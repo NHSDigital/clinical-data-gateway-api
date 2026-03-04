@@ -26,7 +26,6 @@ Where possible, write unit tests that
 
 - Are independent and can be run in isolation
 - Cover edge cases and error handling, not just the happy path
-- Use a single assertion per test to ensure clarity and ease of debugging when a test fails
 - Are well-named to clearly indicate what they are testing and the expected outcome
 - Use `pytest` fixtures to set up any necessary test data or state, and to clean up after tests if needed
 - Pass a message to the assertion to provide additional context when a test fails, making it easier to diagnose issues
