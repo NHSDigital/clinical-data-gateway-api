@@ -1,4 +1,4 @@
-# NHSE Gateway API
+# NHSE Clinical Data Gateway API
 
 Our core programming language is Python.
 
@@ -12,6 +12,16 @@ We use other NHSE services to assist in the validation and processing of the req
 
 After deploying the container locally, `make test` will run all tests and capture their coverage. Note: env variables control the use of stubs for the PDS FHIR API, SDS FHIR API, Healthcare Worker FHIR API and Provider system services.
 
+Individual test suites can be run with:
+
+- Unit tests: `make unit`
+- Acceptance tests: `make acceptance`
+- Integration tests: `make integration`
+- Schema tests: `make schema`
+- Contract tests: `make contract`
+
+The container must be running in order to successfully run any of the test suites other than the unit tests.
+
 The schema for this API can be found in `gateway-api/openapi.yaml`.
 
 ## Docstrings and comments
@@ -23,3 +33,7 @@ The schema for this API can be found in `gateway-api/openapi.yaml`.
 ## Commits
 
 Prepend `[AI-generated]` to the commit message when committing changes made by an AI agent.
+
+## Security
+
+This repository is public. Do not commit any secrets, tokens or credentials.
