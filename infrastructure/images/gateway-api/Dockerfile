@@ -2,8 +2,10 @@
 ARG PYTHON_VERSION=invalid
 FROM python:${PYTHON_VERSION}-alpine3.23 AS gateway-api
 
-RUN addgroup -S nonroot \
-    && adduser -S gateway_api_user -G nonroot
+RUN apk upgrade --no-cache && \
+    pip install --no-cache-dir --upgrade pip && \
+    addgroup -S nonroot && \
+    adduser -S gateway_api_user -G nonroot
 
 COPY resources/ /resources
 
@@ -24,4 +26,3 @@ ENV BUILD_DATE=$BUILD_DATE
 USER gateway_api_user
 ENTRYPOINT ["python"]
 CMD ["gateway_api/app.py"]
-
