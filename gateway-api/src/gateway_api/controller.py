@@ -95,11 +95,18 @@ class Controller:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_practitioner-claim
 
         # TODO: Get requesting device details from consumer, somehow?
+        # requesting_device = Device(
+        #     system="https://consumersupplier.com/Id/device-identifier",
+        #     value="CONS-APP-4",
+        #     model="Consumer product name",
+        #     version="5.3.0",
+        # )
+
         requesting_device = Device(
-            system="https://consumersupplier.com/Id/device-identifier",
-            value="CONS-APP-4",
-            model="Consumer product name",
-            version="5.3.0",
+            system="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+            value="gpcdemonstrator-1-orange",
+            model="GP Connect Demonstrator",
+            version="1.5.0",
         )
 
         # TODO: Get practitioner details from consumer, somehow?

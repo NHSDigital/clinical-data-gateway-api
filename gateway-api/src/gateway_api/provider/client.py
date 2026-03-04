@@ -28,6 +28,7 @@ from urllib.parse import urljoin
 from requests import HTTPError, Response
 
 from gateway_api.clinical_jwt import JWT
+from gateway_api.common.common import get_http_text
 from gateway_api.common.error import ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
@@ -114,6 +115,10 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            raise ProviderRequestFailedError(error_reason=err.response.reason) from err
+            errstr = "GPProvider FHIR API request failed:\n"
+            errstr += f"{response.status_code}: "
+            errstr += f"{get_http_text(response.status_code)}: {response.reason}\n"
+            errstr += response.text
+            raise ProviderRequestFailedError(error_reason=errstr) from err
 
         return response
