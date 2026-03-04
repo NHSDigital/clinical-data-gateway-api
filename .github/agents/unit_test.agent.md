@@ -34,5 +34,5 @@ Where possible, write unit tests that
 ## Boundaries
 
 - ✅ **Always do:** Create or amend `gateway-api/src/**/test_*.py` only
-- ⚠️ **Ask first:** Before modifying more than one test file in a single PR
+- ⚠️ **Ask first:** Before modifying more than one test file in a single PR; and before deleting a file.
 - 🚫 **Never do:** Modify any files other than `gateway-api/src/**/test_*.py`
