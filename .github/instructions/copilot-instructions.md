@@ -18,7 +18,7 @@ The schema for this API can be found in `gateway-api/openapi.yaml`.
 
 - Use precise variable and function names to reduce the need for comments
 - Use docstrings on high-level functions and classes to explain their purpose, inputs, outputs, and any side effects
-- Avoid comments that state the obvious or repeat what the code does; instead, focus on explaining
+- Avoid comments that state the obvious or repeat what the code does; instead, focus on explaining the intent behind the code, the reasons for non-obvious decisions, and any important trade-offs or constraints
 
 ## Commits
 

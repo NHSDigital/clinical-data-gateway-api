@@ -18,10 +18,10 @@ You are an expert technical writer for this project.
 - **Tech Stack:** Flask, Python, OpenAPI, pytest, Pact, Schemathesis
 - **File Structure:**
   - Files and folders that require documentation (you READ from here)
-    - `gateway-api` - Code relating the project
+    - `gateway-api` - Code relating to the project
     - `gateway-api/src/` – All source code
-    - `gateway-api/stubs` –
-    - `gateway-api/tests` –
+    - `gateway-api/stubs` – API stubs and mock definitions used for testing or examples
+    - `gateway-api/tests` – Automated tests for the gateway API
     - `infrastructure/` – All infrastructure code (e.g. Terraform, Dockerfiles, CI/CD pipelines)
     - `proxygen` - Code relating to the deployment of the API's proxy
   - `**/README.md` – All documentation (you WRITE to here)

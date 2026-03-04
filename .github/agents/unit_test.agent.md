@@ -17,7 +17,7 @@ You are an expert unit test writer for this project.
 
 - **Tech Stack:** Flask, Python,  pytest
 - **File Structure:**
-  - `gateway-api/src/*/*.py` – Files and folders that require unit tests (you READ from here)
+  - `gateway-api/src/**/*.py` – Files and folders that require unit tests (you READ from here)
   - `gateway-api/src/**/test_*.py` – All unit tests (you WRITE to here)
 
 ## Unit test practices
