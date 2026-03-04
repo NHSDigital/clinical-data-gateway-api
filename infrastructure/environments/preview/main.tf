@@ -238,6 +238,52 @@ resource "aws_ecs_task_definition" "branch" {
           "awslogs-stream-prefix" = local.branch_safe
         }
       }
+      environment = [
+        {
+          name  = "ENVIRONMENT"
+          value = "preview"
+        },
+        {
+          name  = "BRANCH_NAME"
+          value = var.branch_name
+        },
+        {
+          name  = "SDS_URL"
+          value = var.sds_url
+        },
+        {
+          name  = "SDS_API_TOKEN"
+          value = var.sds_api_token
+        },
+        {
+          name  = "PDS_URL"
+          value = var.pds_url
+        },
+        {
+          name  = "PDS_API_TOKEN"
+          value = var.pds_api_token
+        },
+        {
+          name  = "PDS_API_SECRET"
+          value = var.pds_api_secret
+        },
+        {
+          name  = "PDS_API_KID"
+          value = var.pds_api_kid
+        },
+        {
+          name  = "PROVIDER_URL"
+          value = var.provider_url
+        },
+        {
+          name  = "PROVIDER_MTLS_CERT"
+          value = var.provider_mtls_cert
+        },
+        {
+          name  = "PROVIDER_MTLS_KEY"
+          value = var.provider_mtls_key
+        }
+      ]
     }
   ])
 
