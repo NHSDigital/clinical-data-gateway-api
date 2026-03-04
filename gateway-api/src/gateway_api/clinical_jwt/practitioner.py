@@ -23,7 +23,7 @@ class Practitioner:
         role_id_system = "https://fhir.nhs.uk/Id/sds-role-profile-id"
 
         outstr = f"""
-        "requesting_practitioner": {{
+        {{
         "resourceType": "Practitioner",
         "id": "{self.id}",
         "identifier": [

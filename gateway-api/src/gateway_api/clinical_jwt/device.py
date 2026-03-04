@@ -11,12 +11,12 @@ class Device:
     @property
     def json(self) -> str:
         outstr = f"""
-        "requesting_device": {{
-            "resourceType": "Device",
+        {{
+        "resourceType": "Device",
         "identifier": [
             {{
                 "system": "{self.system}",
-            "value": "{self.value}"
+                "value": "{self.value}"
             }}
         ],
         "model": "{self.model}",

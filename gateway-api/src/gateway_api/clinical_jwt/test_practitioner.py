@@ -2,6 +2,8 @@
 Unit tests for :mod:`gateway_api.clinical_jwt.practitioner`.
 """
 
+from json import loads
+
 from gateway_api.clinical_jwt import Practitioner
 
 
@@ -35,7 +37,7 @@ def test_practitioner_json_property_returns_valid_structure() -> None:
     Test that the json property returns a valid JSON structure for
     requesting_practitioner.
     """
-    practitioner = Practitioner(
+    input_practitioner = Practitioner(
         id="10019",
         sds_userid="111222333444",
         role_profile_id="444555666777",
@@ -46,23 +48,20 @@ def test_practitioner_json_property_returns_valid_structure() -> None:
         prefix="Mr",
     )
 
-    json_output = practitioner.json
+    json_output = input_practitioner.json
+    jdict = loads(json_output)
+    output_practitioner = Practitioner(
+        id=jdict["id"],
+        sds_userid=jdict["identifier"][0]["value"],
+        role_profile_id=jdict["identifier"][1]["value"],
+        userid_url=jdict["identifier"][2]["system"],
+        userid_value=jdict["identifier"][2]["value"],
+        family_name=jdict["name"][0]["family"],
+        given_name=jdict["name"][0].get("given", [None])[0],
+        prefix=jdict["name"][0].get("prefix", [None])[0],
+    )
 
-    # Verify it's a string
-    assert isinstance(json_output, str)
-
-    # Verify it contains the expected fields
-    assert '"requesting_practitioner"' in json_output
-    assert '"resourceType": "Practitioner"' in json_output
-    assert f'"id": "{practitioner.id}"' in json_output
-    assert '"identifier"' in json_output
-    assert practitioner.sds_userid in json_output
-    assert practitioner.role_profile_id in json_output
-    assert practitioner.userid_url in json_output
-    assert practitioner.userid_value in json_output
-    assert f'"family": "{practitioner.family_name}"' in json_output
-    assert f'"given":["{practitioner.given_name}"]' in json_output
-    assert f'"prefix":["{practitioner.prefix}"]' in json_output
+    assert input_practitioner == output_practitioner
 
 
 def test_practitioner_str_returns_json() -> None:
