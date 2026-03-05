@@ -2,7 +2,7 @@
 Controller layer for orchestrating calls to external services
 """
 
-from gateway_api.clinical_jwt import JWT, Device, Practitioner
+from gateway_api.clinical_jwt import JWT, Device, Organization, Practitioner
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
@@ -121,18 +121,22 @@ class Controller:
             prefix="Mr",
         )
 
+        # TODO: Get consumer organization details properly
+        requesting_organization = Organization(
+            ods_code=consumer_ods, name="Consumer organisation name"
+        )
+
         # TODO: Get consumer URL for issuer. Use CDG API URL for now.
         issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
         audience = provider_endpoint
-        requesting_organization = consumer_ods
 
         token = JWT(
             issuer=issuer,
             subject=requesting_practitioner.id,
             audience=audience,
-            requesting_device=requesting_device.json,
-            requesting_organization=requesting_organization,
-            requesting_practitioner=requesting_practitioner.json,
+            requesting_device=requesting_device.to_dict(),
+            requesting_organization=requesting_organization.to_dict(),
+            requesting_practitioner=requesting_practitioner.to_dict(),
         )
         return token
 

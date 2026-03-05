@@ -11,9 +11,9 @@ class JWT:
     issuer: str
     subject: str
     audience: str
-    requesting_device: str
-    requesting_organization: str
-    requesting_practitioner: str
+    requesting_device: dict[str, Any]
+    requesting_organization: dict[str, Any]
+    requesting_practitioner: dict[str, Any]
 
     # Time fields
     issued_at: int = field(default_factory=lambda: int(time()))

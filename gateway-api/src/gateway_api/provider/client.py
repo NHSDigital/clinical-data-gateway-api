@@ -44,9 +44,8 @@ else:
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
 
-ARS_FHIR_BASE = "FHIR/STU3"
-FHIR_RESOURCE = "patient"
-ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
+# Default endpoint path for access record structured interaction (standard GP Connect)
+ARS_ENDPOINT_PATH = "FHIR/STU3/patient/$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
 
 
@@ -58,10 +57,12 @@ class GpProviderClient:
     including fetching structured patient records.
 
     Attributes:
-        provider_endpoint (str): The FHIR API endpoint for the provider.
+        provider_endpoint (str): The base URL for the provider (from SDS).
         provider_asid (str): The ASID for the provider.
         consumer_asid (str): The ASID for the consumer.
         token (JWT): JWT object for authentication with the provider API.
+        endpoint_path (str): The endpoint path for the operation
+            (default: "FHIR/STU3/patient/$gpc.getstructuredrecord").
 
     Methods:
         access_structured_record(trace_id: str, body: str) -> Response:
@@ -69,12 +70,18 @@ class GpProviderClient:
     """
 
     def __init__(
-        self, provider_endpoint: str, provider_asid: str, consumer_asid: str, token: JWT
+        self,
+        provider_endpoint: str,
+        provider_asid: str,
+        consumer_asid: str,
+        token: JWT,
+        endpoint_path: str = ARS_ENDPOINT_PATH,
     ) -> None:
         self.provider_endpoint = provider_endpoint
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
         self.token = token
+        self.endpoint_path = endpoint_path
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
@@ -82,8 +89,8 @@ class GpProviderClient:
         """
         # TODO: Post-steel-thread, probably check whether JWT is valid/not expired
         return {
-            "Content-Type": "application/fhir+json",
-            "Accept": "application/fhir+json",
+            "Content-Type": "application/fhir+json;charset=utf-8",
+            "Accept": "application/fhir+json;charset=utf-8",
             "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
@@ -102,8 +109,7 @@ class GpProviderClient:
 
         headers = self._build_headers(trace_id)
 
-        endpoint_path = "/".join([ARS_FHIR_BASE, FHIR_RESOURCE, ARS_FHIR_OPERATION])
-        url = urljoin(self.provider_endpoint, endpoint_path)
+        url = urljoin(self.provider_endpoint, self.endpoint_path)
 
         response = post(
             url,
@@ -119,6 +125,11 @@ class GpProviderClient:
             errstr += f"{response.status_code}: "
             errstr += f"{get_http_text(response.status_code)}: {response.reason}\n"
             errstr += response.text
+            errstr += "\nHeaders were:\n"
+            for header, value in headers.items():
+                errstr += f"{header}: {value}\n"
+            errstr += "\nBody payload was:\n"
+            errstr += body
             raise ProviderRequestFailedError(error_reason=errstr) from err
 
         return response
