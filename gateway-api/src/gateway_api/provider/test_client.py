@@ -69,9 +69,9 @@ def dummy_jwt() -> JWT:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
     )
 
 

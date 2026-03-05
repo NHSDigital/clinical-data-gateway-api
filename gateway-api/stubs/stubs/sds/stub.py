@@ -403,6 +403,20 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "asid": "ASIDforGPWithoutEndpoint",
                 "display": "GP with no provider endpoint - testing error handling",
             },
+            {
+                "org_ods": "S44444",
+                "party_key": "S44444-0000809",
+                "device_id": "B2B2E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "200000000359",
+                "display": "Dummy ODS/ASID for Orange Box",
+            },
+            {
+                "org_ods": "S55555",
+                "party_key": "S55555-0000809",
+                "device_id": "B3B3E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "918999198738",
+                "display": "Dummy ODS/ASID for Orange Box",
+            },
         ]
 
         # Iterate through test data and create devices
@@ -444,6 +458,13 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "endpoint_id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_A12345",
                 "address": "https://a12345.example.com/fhir",
+            },
+            {
+                "org_ods": "S55555",
+                "party_key": "S55555-0000809",
+                "endpoint_id": "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "918999198738",
+                "address": "https://orange.testlab.nhs.uk/B82617/STU3/1/gpconnect/structured/fhir/",
             },
         ]
 
