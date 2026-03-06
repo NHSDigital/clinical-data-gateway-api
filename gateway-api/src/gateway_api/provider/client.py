@@ -45,7 +45,7 @@ else:
     post = provider_stub.post  # type: ignore
 
 # Default endpoint path for access record structured interaction (standard GP Connect)
-ARS_ENDPOINT_PATH = "FHIR/STU3/patient/$gpc.getstructuredrecord"
+ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
 
 

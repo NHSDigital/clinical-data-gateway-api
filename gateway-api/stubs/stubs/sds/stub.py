@@ -415,7 +415,7 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "party_key": "S55555-0000809",
                 "device_id": "B3B3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
-                "display": "Dummy ODS/ASID for Orange Box",
+                "display": "ODS/ASID triggering Orange Box",
             },
         ]
 

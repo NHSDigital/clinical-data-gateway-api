@@ -26,3 +26,4 @@ class Patients:
         "blank_endpoint_sds_result_9000000013.json"
     )
     ALICE_JONES_9999999999 = load_patient("alice_jones_9999999999.json")
+    ORANGE_BOX_TRIGGER_9690937278 = load_patient("orange_box_trigger_9690937278.json")
