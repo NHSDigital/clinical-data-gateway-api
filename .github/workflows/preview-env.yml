@@ -300,7 +300,7 @@ jobs:
 
       - name: Upload unit test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results
           path: gateway-api/test-artefacts/unit-tests*
@@ -329,7 +329,7 @@ jobs:
 
       - name: Upload contract test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: contract-test-results
           path: gateway-api/test-artefacts/contract-tests*
@@ -358,7 +358,7 @@ jobs:
 
       - name: Upload schema test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: schema-test-results
           path: gateway-api/test-artefacts/schema-tests*
@@ -390,7 +390,7 @@ jobs:
 
       - name: Upload integration test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: integration-test-results
           path: gateway-api/test-artefacts/integration-tests*
@@ -419,7 +419,7 @@ jobs:
 
       - name: Upload acceptance test results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: acceptance-test-results
           path: gateway-api/test-artefacts/acceptance-tests*
