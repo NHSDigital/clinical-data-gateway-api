@@ -56,9 +56,17 @@ publish: # Publish the project artefact @Pipeline
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
 	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \
+		if [[ -n "$${STUB_PROVIDER}" ]]; then \
+			$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -e STUB_PROVIDER=$${STUB_PROVIDER} -d ${IMAGE_NAME} ; \
+		else \
+			$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \
+		fi ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -d ${IMAGE_NAME} ; \
+		if [[ -n "$${STUB_PROVIDER}" ]]; then \
+			$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -e STUB_PROVIDER=$${STUB_PROVIDER} -d ${IMAGE_NAME} ; \
+		else \
+			$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -d ${IMAGE_NAME} ; \
+		fi ; \
 	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
