@@ -2,6 +2,7 @@
 Controller layer for orchestrating calls to external services
 """
 
+from gateway_api.clinical_jwt import JWT, Device, Practitioner
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
@@ -57,11 +58,14 @@ class Controller:
             request.ods_from.strip(), provider_ods
         )
 
+        token = self.get_jwt_for_provider(provider_endpoint, request.ods_from.strip())
+
         # Call GP provider with correct parameters
         self.gp_provider_client = GpProviderClient(
             provider_endpoint=provider_endpoint,
             provider_asid=provider_asid,
             consumer_asid=consumer_asid,
+            token=token,
         )
 
         response = self.gp_provider_client.access_structured_record(
@@ -83,6 +87,47 @@ class Controller:
         the auth token as needed.
         """
         return "AUTH_TOKEN123"
+
+    def get_jwt_for_provider(self, provider_endpoint: str, consumer_ods: str) -> JWT:
+        # For requesting device details, see:
+        # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_device-claim
+        # For requesting practitioner details, see:
+        # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_practitioner-claim
+
+        # TODO: Get requesting device details from consumer, somehow?
+        requesting_device = Device(
+            system="https://consumersupplier.com/Id/device-identifier",
+            value="CONS-APP-4",
+            model="Consumer product name",
+            version="5.3.0",
+        )
+
+        # TODO: Get practitioner details from consumer, somehow?
+        requesting_practitioner = Practitioner(
+            id="10019",
+            sds_userid="111222333444",
+            role_profile_id="444555666777",
+            userid_url="https://consumersupplier.com/Id/user-guid",
+            userid_value="98ed4f78-814d-4266-8d5b-cde742f3093c",
+            family_name="Doe",
+            given_name="John",
+            prefix="Mr",
+        )
+
+        # TODO: Get consumer URL for issuer. Use CDG API URL for now.
+        issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
+        audience = provider_endpoint
+        requesting_organization = consumer_ods
+
+        token = JWT(
+            issuer=issuer,
+            subject=requesting_practitioner.id,
+            audience=audience,
+            requesting_device=requesting_device.json,
+            requesting_organization=requesting_organization,
+            requesting_practitioner=requesting_practitioner.json,
+        )
+        return token
 
     def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
         """

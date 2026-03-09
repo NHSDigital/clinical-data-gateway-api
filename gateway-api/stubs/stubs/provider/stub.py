@@ -70,7 +70,7 @@ class GpProviderStub(StubBase):
 
         try:
             nhs_number = json.loads(body)["parameter"][0]["valueIdentifier"]["value"]
-        except (json.JSONDecodeError, KeyError, IndexError):
+        except json.JSONDecodeError, KeyError, IndexError:
             return self._create_response(
                 status_code=400,
                 json_data={

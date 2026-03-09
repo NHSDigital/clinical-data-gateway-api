@@ -76,7 +76,7 @@ class MtlsProxyHandler(BaseHTTPRequestHandler):
 
 
 @pytest.fixture(scope="module")
-def mtls_proxy(base_url: str) -> Generator[str, None, None]:
+def mtls_proxy(base_url: str) -> Generator[str]:
     """
     Spins up a local HTTP server in a separate thread.
     Returns the URL of this local proxy.
