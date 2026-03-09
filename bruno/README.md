@@ -1,18 +1,38 @@
 # Bruno
 
+## Bruno/ Structure
+
+```text
+bruno/
+├── README.md
+└── gateway-api/
+    ├── workspace.yml                                  # Bruno workspace configuration
+    └── collections/
+        ├── Steel_Thread/                              # Steel Thread request collection
+        │   ├── bruno.json                             # Bruno collection metadata
+        │   ├── collection.bru                         # Collection-level headers, auth config
+        │   ├── .env.template                          # Template for required env vars (see below)
+        │   ├── Access_Structured_Record.bru            # Request: POST $gpc.getstructuredrecord
+        │   └── environments/                          # Per-target environment configs
+        │       ├── local.bru                           # Points at local container
+        │       └── PR_Proxy.bru                        # Points at Apigee PR proxy
+```
+
+> **Note:** `.env` files are git-ignored and must be created locally from the `.env.template`.
+
 ## `gateway-api` Workspace
 
 ### Steel Thread Collection
 
 #### Environment Setup
 
-The collection pulls in secrets from a `.env` file from the top level of the collection, `bruno/gateway-api/preview-env`. To reference these variables within the collection you use `{{process.env.<key>}}`, where `<key>` is the environment variable name in `.env`.
+The collection pulls in secrets from a `.env` file at the top level of the collection (`bruno/gateway-api/collections/Steel_Thread/.env`). To reference these variables within the collection you use `{{process.env.<key>}}`, where `<key>` is the environment variable name in `.env`.
 
-There is a template `.env` file, `bruno/gateway-api/collections/preview-env/.env.template`, to fill in as described below.
+There is a template `.env` file, `bruno/gateway-api/collections/Steel_Thread/.env.template`, to fill in as described below.
 
 ##### Test application
 
-The proxy for Gateway API is hosted in Apigee. In order to call an Apigee proxy, a consumer of the API needs an Apigee application. As such, we need an Apigee application through which we can test our API. A static test application has been created for this purpose. You can view its details by going through In order to view its details, go to [the Clinical Data Sharing APIs applications](https://dos-internal.ptl.api.platform.nhs.uk/). when making a call to the API through the proxy, the test applications API key and secret are fed in to the OAuth 2.0 journey as the `CLIENT_KEY` and `CLIENT_SECRET` respectively. As such, you will need a `bruno/gateway-api/preview-preview-env/.env` file containing
+The proxy for Gateway API is hosted in Apigee. In order to call an Apigee proxy, a consumer of the API needs an Apigee application. As such, we need an Apigee application through which we can test our API. A static test application has been created for this purpose. You can view its details by going through In order to view its details, go to [the Clinical Data Sharing APIs applications](https://dos-internal.ptl.api.platform.nhs.uk/). when making a call to the API through the proxy, the test applications API key and secret are fed in to the OAuth 2.0 journey as the `CLIENT_KEY` and `CLIENT_SECRET` respectively. As such, you will need a `bruno/gateway-api/collections/Steel_Thread/.env` file containing
 
 ```plaintext
 CLIENT_ID=<test application's api key>
