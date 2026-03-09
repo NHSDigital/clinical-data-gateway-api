@@ -22,6 +22,7 @@ Hotspots
 IDE
 idempotence
 JUnit
+mypy
 namespaces
 OAuth
 Octokit
@@ -30,6 +31,7 @@ Podman
 Proxygen
 [Pp]ytest
 Python
+repo
 repos
 Schemathesis
 sed
