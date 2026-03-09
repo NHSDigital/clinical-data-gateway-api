@@ -29,7 +29,7 @@ def test_jwt_creation_with_required_fields() -> None:
     assert token.requesting_device == {"device": "info"}
     assert token.requesting_organization == {"org": "info"}
     assert token.requesting_practitioner == {"practitioner": "info"}
-    assert token.algorithm is None
+    assert token.algorithm == "none"
     assert token.type == "JWT"
     assert token.reason_for_request == "directcare"
     assert token.requested_scope == "patient/*.read"

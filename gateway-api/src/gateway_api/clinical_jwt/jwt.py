@@ -20,7 +20,7 @@ class JWT:
     expiration: int = field(default_factory=lambda: int(time()) + 300)
 
     # These are here for future proofing but are not expected ever to be changed
-    algorithm: str | None = None
+    algorithm: str = "none"
     type: str = "JWT"
     reason_for_request: str = "directcare"
     requested_scope: str = "patient/*.read"
