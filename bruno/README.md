@@ -32,7 +32,7 @@ There is a template `.env` file, `bruno/gateway-api/collections/Steel_Thread/.en
 
 ##### Test application
 
-The proxy for Gateway API is hosted in Apigee. In order to call an Apigee proxy, a consumer of the API needs an Apigee application. As such, we need an Apigee application through which we can test our API. A static test application has been created for this purpose. You can view its details by going through In order to view its details, go to [the Clinical Data Sharing APIs applications](https://dos-internal.ptl.api.platform.nhs.uk/). when making a call to the API through the proxy, the test applications API key and secret are fed in to the OAuth 2.0 journey as the `CLIENT_KEY` and `CLIENT_SECRET` respectively. As such, you will need a `bruno/gateway-api/collections/Steel_Thread/.env` file containing
+The proxy for Gateway API is hosted in Apigee. To call this proxy, you need an Apigee application. A static test application has been created for this purpose. You can view its details in [the Clinical Data Sharing APIs applications](https://dos-internal.ptl.api.platform.nhs.uk/). When making a call to the API through the proxy, the test application's API key and secret are fed into the OAuth 2.0 journey as the `CLIENT_KEY` and `CLIENT_SECRET` respectively. As such, you will need a `bruno/gateway-api/collections/Steel_Thread/.env` file containing
 
 ```plaintext
 CLIENT_ID=<test application's api key>
