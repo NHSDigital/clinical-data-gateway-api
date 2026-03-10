@@ -56,7 +56,7 @@ sequenceDiagram
 
 | Component | Technology |
 |---|---|
-| Language | Python 3.14 |
+| Language | Python 3.14+ |
 | Web framework | [Flask](https://flask.palletsprojects.com/) |
 | Dependency management | [Poetry](https://python-poetry.org/) |
 | API specification | [OpenAPI 3.0](gateway-api/openapi.yaml) |
