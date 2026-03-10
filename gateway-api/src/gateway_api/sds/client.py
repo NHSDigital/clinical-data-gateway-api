@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import os
 from enum import StrEnum
-from typing import Any, cast
+from typing import Any
 
+from fhir.resources import Bundle, Device, Endpoint, Resource
 from stubs import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
@@ -28,11 +29,6 @@ else:
 
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore
-
-# Recursive JSON-like structure typing used for parsed FHIR bodies.
-type ResultStructureDict = dict[str, ResultStructure]
-type ResultList = list[ResultStructureDict]
-type ResultStructure = str | ResultStructureDict | list["ResultStructure"]
 
 
 class SdsResourceType(StrEnum):
@@ -134,12 +130,14 @@ class SdsClient:
             querytype=SdsResourceType.DEVICE,
         )
 
-        device = self._extract_first_entry(device_bundle)
+        device = self._extract_first_resource(device_bundle, Device)
 
-        # TODO: Post-steel-thread handle case where no device is found for ODS code
+        if not device:
+            empty_search_results = SdsSearchResults(asid=None, endpoint=None)
+            return empty_search_results
 
-        asid = self._extract_identifier(device, self.ASID_SYSTEM)
-        party_key = self._extract_identifier(device, self.PARTYKEY_SYSTEM)
+        asid = self._extract_device_identifier(device, self.ASID_SYSTEM)
+        party_key = self._extract_device_identifier(device, self.PARTYKEY_SYSTEM)
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
@@ -154,11 +152,9 @@ class SdsClient:
             timeout=timeout,
             querytype=SdsResourceType.ENDPOINT,
         )
-        endpoint = self._extract_first_entry(endpoint_bundle)
-        if endpoint:
-            address = endpoint.get("address")
-            if address:
-                endpoint_url = str(address).strip()
+        endpoint = self._extract_first_resource(endpoint_bundle, Endpoint)
+        if endpoint and endpoint.address:
+            endpoint_url = str(endpoint.address).strip()
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
 
@@ -182,7 +178,7 @@ class SdsClient:
         correlation_id: str | None = None,
         timeout: int | None = 10,
         querytype: SdsResourceType = SdsResourceType.DEVICE,
-    ) -> ResultStructureDict:
+    ) -> Bundle:
         """
         Query SDS /Device or /Endpoint endpoint.
         """
@@ -206,38 +202,29 @@ class SdsClient:
 
         # TODO: Post-steel-thread we probably want a raise_for_status() here
 
-        body = response.json()
-        return cast("ResultStructureDict", body)
+        bundle = Bundle.model_validate(response.json())
+        return bundle
 
     @staticmethod
-    def _extract_first_entry(
-        bundle: ResultStructureDict,
-    ) -> ResultStructureDict:  # TODO: Post-steel-thread this may return a None as well
-        """
-        Extract the first resource from a Bundle.
-        """
-        entries = cast("ResultList", bundle.get("entry", []))
-
+    def _extract_first_resource[T: Resource](
+        bundle: Bundle, resource: type[T]
+    ) -> T | None:
         # TODO: Post-steel-thread handle case where bundle contains no entries
 
         # TODO: more carefully consider business logic for handling multiple
         #       entries in beta
-        if not entries:
-            return {}
-        first_entry = entries[0]
-        return cast("ResultStructureDict", first_entry.get("resource", {}))
+        resources = bundle.find_resources(resource)
+        if not resources:
+            return None
+        first_entry = resources[0]
+        return first_entry
 
-    def _extract_identifier(
-        self, device: ResultStructureDict, system: str
-    ) -> str | None:
+    def _extract_device_identifier(self, device: Device, system: str) -> str | None:
         """
         Extract an identifier value from a Device resource for a given system.
         """
-        identifiers = cast("ResultList", device.get("identifier", []))
-
-        for identifier in identifiers:
-            id_system = str(identifier.get("system", ""))
-            if id_system == system:
-                return cast("str", identifier.get("value", ""))
+        for identifier in device.identifier:
+            if identifier.system == system:
+                return identifier.value or ""
 
         return None

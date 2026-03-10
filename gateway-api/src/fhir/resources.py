@@ -82,7 +82,7 @@ class Resource(BaseModel):
         return value
 
 
-type BundleType = Literal["document", "transaction"]
+type BundleType = Literal["document", "transaction", "searchset"]
 
 
 class Bundle(Resource, resource_type="Bundle"):
@@ -115,6 +115,30 @@ class Bundle(Resource, resource_type="Bundle"):
     def empty(cls, bundle_type: BundleType) -> "Bundle":
         """Create an empty Bundle of the specified type."""
         return cls.create(type=bundle_type, entry=None)
+
+
+class Device(Resource, resource_type="Device"):
+    """A FHIR R4 Device resource."""
+
+    class ASIDIdentifier(
+        Identifier, expected_system="https://fhir.nhs.uk/Id/nhsSpineASID"
+    ):
+        """A FHIR R4 ASID Identifier."""
+
+    class PartyKeyIdentifier(
+        Identifier, expected_system="https://fhir.nhs.uk/Id/nhsMhsPartyKey"
+    ):
+        """A FHIR R4 Party Key Identifier."""
+
+    identifier: Annotated[
+        list[ASIDIdentifier | PartyKeyIdentifier], Field(frozen=True, min_length=1)
+    ]
+
+
+class Endpoint(Resource, resource_type="Endpoint"):
+    """A FHIR R4 Endpoint resource."""
+
+    address: str | None = Field(None, frozen=True)
 
 
 class OperationOutcome(Resource, resource_type="OperationOutcome"):

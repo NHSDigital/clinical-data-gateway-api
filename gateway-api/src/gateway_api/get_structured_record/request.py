@@ -2,6 +2,8 @@ import json
 from typing import TYPE_CHECKING, ClassVar
 
 from fhir import OperationOutcome, Parameters
+
+# TODO: may be able to remove the use of the FHIR type entirely.
 from fhir.operation_outcome import OperationOutcomeIssue
 from flask.wrappers import Request, Response
 from werkzeug.exceptions import BadRequest
