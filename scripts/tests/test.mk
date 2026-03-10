@@ -98,3 +98,51 @@ ${VERBOSE}.SILENT: \
 	test-unit \
 	test-acceptance \
 	test-schema\
+
+# ---------------------------------------------------------------------------
+# Local vs remote environment helpers
+# ---------------------------------------------------------------------------
+# Usage:
+#   make test-local     - activate .env.local, run tests against local app
+#   make test-remote    - activate .env.remote, obtain an APIGEE token, run
+#                         tests against remote app and APIM proxy
+#
+#   .env.local          - local env config (ENV=local, BASE_URL, HOST)
+#   .env.remote         - remote env config (ENV=remote, BASE_URL, HOST, PR_NUMBER, PROXYGEN_API_NAME)
+#   .env                - active env, overwritten by env-local/env-remote
+#
+# The .env file is deterministically overwritten each time you switch
+# environments so the test runner always sees a consistent configuration.
+# ===========================================================================
+
+.PHONY: env-local env-remote test-local test-remote
+
+env-local:
+	@if [ ! -f .env.local ]; then \
+		echo "ERROR: .env.local not found. Needs creating." >&2; \
+		exit 1; \
+	fi
+	cp -f .env.local .env
+	@echo "Activated local environment: .env.local -> .env (ENV=local)"
+
+env-remote:
+	@if [ ! -f .env.remote ]; then \
+		echo "ERROR: .env.remote not found. Needs creating." >&2; \
+		exit 1; \
+	fi
+	cp -f .env.remote .env
+	@echo "Activated remote environment: .env.remote -> .env (ENV=remote)"
+
+# Run tests against local lambda
+test-local: env-local
+	@set -a && source .env && set +a && \
+		$(MAKE) test
+
+# Run tests against remote lambda, exporting APIGEE_ACCESS_TOKEN only
+test-remote: env-remote
+	@echo "Obtaining APIGEE access token..."
+	@set -a && source .env && set +a && \
+		APIGEE_ACCESS_TOKEN="$$(./scripts/get_apigee_token.sh)" && \
+		BASE_URL="$${BASE_URL}-pr-$${PR_NUMBER}" && \
+		export APIGEE_ACCESS_TOKEN BASE_URL && \
+		$(MAKE) test

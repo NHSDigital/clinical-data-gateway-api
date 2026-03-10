@@ -35,20 +35,27 @@ mkdir -p test-artefacts
 
 echo "Running ${TEST_TYPE} tests..."
 
-# Set coverage path based on test type
 if [[ "$TEST_TYPE" = "unit" ]]; then
   COV_PATH="."
+
+  poetry run pytest ${TEST_PATH} -v \
+    --cov=${COV_PATH} \
+    --cov-report=html:test-artefacts/coverage-html \
+    --cov-report=term \
+    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
+    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
 else
   COV_PATH="src/gateway_api"
-fi
+  TEST_ENV="${ENV:-local}"
 
-# Note: TEST_PATH is intentionally unquoted to allow glob expansion for unit tests
-poetry run pytest ${TEST_PATH} -v \
-  --cov=${COV_PATH} \
-  --cov-report=html:test-artefacts/coverage-html \
-  --cov-report=term \
-  --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
-  --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
+  poetry run pytest ${TEST_PATH} -v \
+    --env="${TEST_ENV}" \
+    --cov=${COV_PATH} \
+    --cov-report=html:test-artefacts/coverage-html \
+    --cov-report=term \
+    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
+    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
+fi
 
 # Save coverage data file for merging
 mv .coverage "test-artefacts/coverage.${TEST_TYPE}"
