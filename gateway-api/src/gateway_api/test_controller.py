@@ -1,10 +1,9 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
 import json
+from typing import Any
 
 import pytest
-from fhir.bundle import Bundle
-from fhir.parameters import Parameters
 from fhir.resources import Patient
 from flask import Request
 from pytest_mock import MockerFixture
@@ -52,7 +51,7 @@ def test_controller_run_happy_path_returns_200_status_code(
 
 def test_controller_run_happy_path_returns_returns_expected_body(
     mock_happy_path_get_structured_record_request: Request,
-    valid_simple_response_payload: Bundle,
+    valid_simple_response_payload: dict[str, Any],
 ) -> None:
     controller = Controller()
     actual_response = controller.run(
@@ -245,8 +244,8 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
 @pytest.fixture
 def mock_happy_path_get_structured_record_request(
     mocker: MockerFixture,
-    valid_simple_request_payload: Parameters,
-    valid_simple_response_payload: Bundle,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
 ) -> Request:
     nhs_number = "9000000009"
     provider_ods = "ProviderODS"
@@ -286,8 +285,8 @@ def mock_happy_path_get_structured_record_request(
 
 def test_controller_creates_jwt_token_with_correct_claims(
     mocker: MockerFixture,
-    valid_simple_request_payload: Parameters,
-    valid_simple_response_payload: Bundle,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
 ) -> None:
     """
     Test that the controller creates a JWT token with the correct claims.

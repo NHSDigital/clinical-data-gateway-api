@@ -2,4 +2,5 @@ asid
 fhir
 getstructuredrecord
 gpconnect
+searchset
 usefixtures

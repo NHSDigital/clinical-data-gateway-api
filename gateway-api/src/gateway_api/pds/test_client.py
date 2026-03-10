@@ -2,10 +2,10 @@
 Unit tests for :mod:`gateway_api.pds_search`.
 """
 
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from fhir import PatientTypedDict
 from fhir.resources import Patient
 from pytest_mock import MockerFixture
 
@@ -17,7 +17,7 @@ from gateway_api.pds.client import PdsClient
 def test_search_patient_by_nhs_number_happy_path(
     auth_token: str,
     mocker: MockerFixture,
-    happy_path_pds_response_body: PatientTypedDict,
+    happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
@@ -35,7 +35,7 @@ def test_search_patient_by_nhs_number_happy_path(
 def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
     auth_token: str,
     mocker: MockerFixture,
-    happy_path_pds_response_body: PatientTypedDict,
+    happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     gp_less_response_body = happy_path_pds_response_body.copy()
     del gp_less_response_body["generalPractitioner"]
@@ -55,7 +55,7 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
 def test_search_patient_by_nhs_number_sends_expected_headers(
     auth_token: str,
     mocker: MockerFixture,
-    happy_path_pds_response_body: PatientTypedDict,
+    happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
@@ -87,7 +87,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
 def test_search_patient_by_nhs_number_generates_request_id(
     auth_token: str,
     mocker: MockerFixture,
-    happy_path_pds_response_body: PatientTypedDict,
+    happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
@@ -128,7 +128,7 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
 def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
     auth_token: str,
     mocker: MockerFixture,
-    happy_path_pds_response_body: PatientTypedDict,
+    happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     response_body_missing_nhs_number = happy_path_pds_response_body.copy()
     response_body_missing_nhs_number["identifier"] = []
