@@ -105,10 +105,7 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 
     captured_url = mock_request_post.get("url", provider_endpoint)
 
-    assert (
-        captured_url
-        == provider_endpoint + "/FHIR/STU3/patient/$gpc.getstructuredrecord"
-    )
+    assert captured_url == provider_endpoint + "/Patient/$gpc.getstructuredrecord"
     assert result.status_code == 200
 
 
@@ -137,8 +134,8 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         token=dummy_jwt,
     )
     expected_headers = {
-        "Content-Type": "application/fhir+json",
-        "Accept": "application/fhir+json",
+        "Content-Type": "application/fhir+json;charset=utf-8",
+        "Accept": "application/fhir+json;charset=utf-8",
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
@@ -251,8 +248,7 @@ def test_access_structured_record_raises_external_service_error(
     )
 
     with pytest.raises(
-        ProviderRequestFailedError,
-        match="Provider request failed: Bad Request",
+        ProviderRequestFailedError, match=r"Provider request failed: Bad Request"
     ):
         client.access_structured_record(
             trace_id, json.dumps(valid_simple_request_payload)
