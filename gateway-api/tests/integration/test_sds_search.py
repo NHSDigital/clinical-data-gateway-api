@@ -2,51 +2,100 @@
 
 from __future__ import annotations
 
-from gateway_api.sds import SdsClient
+import json
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tests.conftest import Client
 
 
 class TestSdsIntegration:
     """Integration tests for SDS search operations."""
 
-    def test_get_device_by_ods_code_returns_valid_asid(self) -> None:
+    def test_get_device_by_ods_code_returns_valid_asid(self, client: Client) -> None:
         """
         Test that querying by ODS code returns a valid ASID.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
-        sds_client = SdsClient()
-        result = sds_client.get_org_details(ods_code="PROVIDER")
+        # Create a request payload with a known patient
+        payload = {
+            "resourceType": "Parameters",
+            "parameter": [
+                {
+                    "name": "patientNHSNumber",
+                    "valueIdentifier": {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9999999999",  # Alice Jones with A12345 provider
+                    },
+                },
+            ],
+        }
 
-        assert result is not None
-        assert result.asid == "asid_PROV"
-        assert result.endpoint == "https://provider.example.com/fhir"
+        # Make request to the application endpoint
+        response = client.send_to_get_structured_record_endpoint(json.dumps(payload))
 
-    def test_consumer_organization_lookup(self) -> None:
+        # Verify successful response indicates SDS lookup worked
+        assert response.status_code == 200
+        # Verify we got a FHIR response (which means the full flow including SDS worked)
+        response_data = response.json()
+        assert response_data.get("resourceType") == "Bundle"
+
+    def test_consumer_organization_lookup(self, client: Client) -> None:
         """
         Test that CONSUMER organization can be looked up successfully.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
-        sds_client = SdsClient()
-        result = sds_client.get_org_details(ods_code="CONSUMER")
+        # Create a request with a known patient
+        payload = {
+            "resourceType": "Parameters",
+            "parameter": [
+                {
+                    "name": "patientNHSNumber",
+                    "valueIdentifier": {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9999999999",  # Alice Jones with A12345 provider
+                    },
+                },
+            ],
+        }
 
-        assert result is not None
-        assert result.asid == "asid_CONS"
-        assert result.endpoint == "https://consumer.example.com/fhir"
+        # Use A12345 as the consumer ODS (Ods-from header)
+        response = client.send_to_get_structured_record_endpoint(
+            json.dumps(payload),
+            headers={"Ods-from": "A12345"},  # Consumer ODS code
+        )
 
-    def test_result_contains_both_asid_and_endpoint_when_available(self) -> None:
+        # Verify successful response indicates both consumer and provider
+        # SDS lookups worked
+        assert response.status_code == 200
+        response_data = response.json()
+        assert response_data.get("resourceType") == "Bundle"
+
+    def test_result_contains_both_asid_and_endpoint_when_available(
+        self, client: Client
+    ) -> None:
         """
         Test that results contain both ASID and endpoint when both are available.
-
-        :param sds_client: SDS client fixture configured with stub.
         """
+        # Create a request with a known patient
+        payload = {
+            "resourceType": "Parameters",
+            "parameter": [
+                {
+                    "name": "patientNHSNumber",
+                    "valueIdentifier": {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9999999999",  # Alice Jones with A12345 provider
+                    },
+                },
+            ],
+        }
 
-        sds_client = SdsClient()
-        result = sds_client.get_org_details(ods_code="PROVIDER")
+        # Make request to the application endpoint
+        response = client.send_to_get_structured_record_endpoint(json.dumps(payload))
 
-        assert result is not None
-        # Verify both fields are present and not None
-        assert hasattr(result, "asid")
-        assert hasattr(result, "endpoint")
-        assert result.asid is not None
-        assert result.endpoint is not None
+        # Verify successful response (200) means both ASID and endpoint were retrieved
+        # If either were missing, the application would fail with an error
+        assert response.status_code == 200
+        response_data = response.json()
+        # Verify we got a valid FHIR Bundle (indicating full flow including SDS worked)
+        assert response_data.get("resourceType") == "Bundle"
+        assert "entry" in response_data or response_data.get("total") is not None

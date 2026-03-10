@@ -6,7 +6,7 @@ The stub does **not** implement the full PDS API surface, nor full FHIR validati
 
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from requests import Response
@@ -239,10 +239,7 @@ class PdsFhirApiStub(StubBase):
         :return: Timestamp string in the format ``YYYY-MM-DDTHH:MM:SSZ``.
         """
         return (
-            datetime.now(timezone.utc)
-            .replace(microsecond=0)
-            .isoformat()
-            .replace("+00:00", "Z")
+            datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
         )
 
     @staticmethod

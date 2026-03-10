@@ -12,6 +12,9 @@ Cyber
 Dependabot
 [Dd]ev
 dotfiles
+Dockerfiles
+[Dd]ocstring([s]?)
+env
 Gitleaks
 Grype
 hostname

@@ -280,3 +280,73 @@ def mock_happy_path_get_structured_record_request(
         body=valid_simple_request_payload,
     )
     return happy_path_request
+
+
+def test_controller_creates_jwt_token_with_correct_claims(
+    mocker: MockerFixture,
+    valid_simple_request_payload: Parameters,
+    valid_simple_response_payload: Bundle,
+) -> None:
+    """
+    Test that the controller creates a JWT token with the correct claims.
+    """
+    nhs_number = "9000000009"
+    provider_ods = "PROVIDER"
+    consumer_ods = "CONSUMER"
+    provider_endpoint = "https://provider.example/ep"
+
+    # Mock PDS to return provider ODS code
+    pds_search_result = PdsSearchResults(
+        given_names="Jane",
+        family_name="Smith",
+        nhs_number=nhs_number,
+        gp_ods_code=provider_ods,
+    )
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=pds_search_result,
+    )
+
+    # Mock SDS to return provider and consumer details
+    provider_sds_results = SdsSearchResults(
+        asid="asid_PROV", endpoint=provider_endpoint
+    )
+    consumer_sds_results = SdsSearchResults(asid="asid_CONS", endpoint=None)
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=[provider_sds_results, consumer_sds_results],
+    )
+
+    # Mock GpProviderClient to capture initialization arguments
+    mock_gp_provider = mocker.patch("gateway_api.controller.GpProviderClient")
+
+    # Mock the access_structured_record method to return a response
+    provider_response = FakeResponse(
+        status_code=200,
+        headers={"Content-Type": "application/fhir+json"},
+        _json=valid_simple_response_payload,
+    )
+    mock_gp_provider.return_value.access_structured_record.return_value = (
+        provider_response
+    )
+
+    # Create request and run controller
+    request = create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=valid_simple_request_payload,
+    )
+
+    controller = Controller()
+    _ = controller.run(GetStructuredRecordRequest(request))
+
+    # Verify that GpProviderClient was called and extract the JWT token
+    mock_gp_provider.assert_called_once()
+    jwt_token = mock_gp_provider.call_args.kwargs["token"]
+
+    # Verify the standard JWT claims
+    assert jwt_token.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
+    assert jwt_token.subject == "10019"
+    assert jwt_token.audience == provider_endpoint
+
+    # Verify the requesting organization matches the consumer ODS
+    assert jwt_token.requesting_organization == consumer_ods

@@ -6,7 +6,8 @@ from typing import Any
 
 import pytest
 import requests
-from fhir import Bundle, OperationOutcome, Parameters, Patient
+from fhir import Bundle, OperationOutcome, Patient
+from fhir.parameters import Parameters
 from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder

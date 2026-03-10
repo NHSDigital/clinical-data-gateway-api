@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def client() -> Generator[FlaskClient[Flask], None, None]:
+def client() -> Generator[FlaskClient[Flask]]:
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
