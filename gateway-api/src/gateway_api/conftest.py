@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 import requests
-from fhir import Bundle, OperationOutcome, Patient
+from fhir import Bundle, OperationOutcome, PatientTypedDict
 from fhir.parameters import Parameters
 from flask import Request
 from requests.structures import CaseInsensitiveDict
@@ -21,10 +21,10 @@ class FakeResponse:
 
     status_code: int
     headers: dict[str, str] | CaseInsensitiveDict[str]
-    _json: dict[str, Any] | Patient | OperationOutcome | Bundle
+    _json: dict[str, Any] | PatientTypedDict | OperationOutcome | Bundle
     reason: str = ""
 
-    def json(self) -> dict[str, Any] | Patient | OperationOutcome | Bundle:
+    def json(self) -> dict[str, Any] | PatientTypedDict | OperationOutcome | Bundle:
         return self._json
 
     def raise_for_status(self) -> None:
@@ -92,7 +92,10 @@ def valid_simple_response_payload() -> Bundle:
                     "resourceType": "Patient",
                     "id": "9999999999",
                     "identifier": [
-                        {"value": "9999999999", "system": "urn:nhs:numbers"}
+                        {
+                            "value": "9999999999",
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        }
                     ],
                     "generalPractitioner": [
                         {
@@ -121,11 +124,13 @@ def valid_headers() -> dict[str, str]:
 
 
 @pytest.fixture
-def happy_path_pds_response_body() -> Patient:
+def happy_path_pds_response_body() -> PatientTypedDict:
     return {
         "resourceType": "Patient",
         "id": "9999999999",
-        "identifier": [{"value": "9999999999", "system": "urn:nhs:numbers"}],
+        "identifier": [
+            {"value": "9999999999", "system": "https://fhir.nhs.uk/Id/nhs-number"}
+        ],
         "name": [
             {
                 "family": "Johnson",

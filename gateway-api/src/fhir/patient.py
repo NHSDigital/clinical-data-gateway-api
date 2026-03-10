@@ -7,7 +7,7 @@ from fhir.human_name import HumanName
 from fhir.identifier import Identifier
 
 
-class Patient(TypedDict):
+class PatientTypedDict(TypedDict):
     resourceType: str
     id: str
     identifier: list[Identifier]
