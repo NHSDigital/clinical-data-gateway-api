@@ -6,8 +6,6 @@ from typing import Any
 
 import pytest
 import requests
-from fhir import Bundle, OperationOutcome, PatientTypedDict
-from fhir.parameters import Parameters
 from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
@@ -21,10 +19,12 @@ class FakeResponse:
 
     status_code: int
     headers: dict[str, str] | CaseInsensitiveDict[str]
-    _json: dict[str, Any] | PatientTypedDict | OperationOutcome | Bundle
+    _json: dict[str, Any]
     reason: str = ""
 
-    def json(self) -> dict[str, Any] | PatientTypedDict | OperationOutcome | Bundle:
+    def json(
+        self,
+    ) -> dict[str, Any]:
         return self._json
 
     def raise_for_status(self) -> None:
@@ -39,7 +39,7 @@ class FakeResponse:
         return json.dumps(self._json)
 
 
-def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:
+def create_mock_request(headers: dict[str, str], body: dict[str, Any]) -> Request:
     """Create a proper Flask Request object with headers and JSON body."""
     builder = EnvironBuilder(
         method="POST",
@@ -53,7 +53,7 @@ def create_mock_request(headers: dict[str, str], body: Parameters) -> Request:
 
 
 @pytest.fixture
-def valid_simple_request_payload() -> Parameters:
+def valid_simple_request_payload() -> dict[str, Any]:
     return {
         "resourceType": "Parameters",
         "parameter": [
@@ -69,7 +69,7 @@ def valid_simple_request_payload() -> Parameters:
 
 
 @pytest.fixture
-def valid_simple_response_payload() -> Bundle:
+def valid_simple_response_payload() -> dict[str, Any]:
     return {
         "resourceType": "Bundle",
         "id": "example-patient-bundle",
@@ -124,7 +124,7 @@ def valid_headers() -> dict[str, str]:
 
 
 @pytest.fixture
-def happy_path_pds_response_body() -> PatientTypedDict:
+def happy_path_pds_response_body() -> dict[str, Any]:
     return {
         "resourceType": "Patient",
         "id": "9999999999",

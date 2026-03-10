@@ -10,7 +10,6 @@ import json
 from typing import Any
 
 import pytest
-from fhir import Parameters
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.provider.stub import GpProviderStub
@@ -73,7 +72,7 @@ def dummy_jwt() -> JWT:
 
 def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -110,7 +109,7 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -156,7 +155,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
 
 def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -191,7 +190,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
 def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
     stub: GpProviderStub,
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -227,7 +226,7 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 def test_access_structured_record_raises_external_service_error(
     mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
@@ -257,7 +256,7 @@ def test_access_structured_record_raises_external_service_error(
 
 def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     dummy_jwt: JWT,
 ) -> None:
     """
