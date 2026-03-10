@@ -4,11 +4,9 @@ import json
 import os
 from collections.abc import Generator
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from fhir.bundle import Bundle
-from fhir.parameters import Parameters
 from flask import Flask
 from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
@@ -58,7 +56,7 @@ class TestGetStructuredRecord:
     def test_valid_get_structured_record_request_returns_expected_bundle(
         self,
         get_structured_record_response: Flask,
-        valid_simple_response_payload: Bundle,
+        valid_simple_response_payload: dict[str, Any],
     ) -> None:
         actual_bundle = get_structured_record_response.get_json()
         assert actual_bundle == valid_simple_response_payload
@@ -182,7 +180,7 @@ class TestGetStructuredRecord:
     def get_structured_record_response(
         client: FlaskClient[Flask],
         valid_headers: dict[str, str],
-        valid_simple_request_payload: Parameters,
+        valid_simple_request_payload: dict[str, Any],
     ) -> Flask:
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
@@ -196,7 +194,7 @@ class TestGetStructuredRecord:
     def get_structured_record_response_from_missing_header(
         client: FlaskClient[Flask],
         missing_headers: dict[str, str],
-        valid_simple_request_payload: Parameters,
+        valid_simple_request_payload: dict[str, Any],
     ) -> Flask:
         response = client.post(
             "/patient/$gpc.getstructuredrecord",
@@ -225,7 +223,7 @@ class TestGetStructuredRecord:
     def mock_positive_return_value_from_controller_run(
         mocker: MockerFixture,
         valid_headers: dict[str, str],
-        valid_simple_response_payload: Bundle,
+        valid_simple_response_payload: dict[str, Any],
     ) -> None:
         postive_response = FlaskResponse(
             status_code=200,

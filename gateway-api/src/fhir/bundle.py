@@ -10,7 +10,7 @@ class BundleEntry(TypedDict):
     resource: PatientTypedDict
 
 
-class Bundle(TypedDict):
+class BundleTypedDict(TypedDict):
     resourceType: str
     id: str
     type: str

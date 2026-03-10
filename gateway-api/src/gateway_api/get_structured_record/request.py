@@ -18,7 +18,7 @@ ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
 )
 
 if TYPE_CHECKING:
-    from fhir.bundle import Bundle
+    from fhir.bundle import BundleTypedDict
 
 
 class GetStructuredRecordRequest:
@@ -34,7 +34,7 @@ class GetStructuredRecordRequest:
         except BadRequest as error:
             raise InvalidRequestJSONError() from error
 
-        self._response_body: Bundle | OperationOutcome | None = None
+        self._response_body: BundleTypedDict | OperationOutcome | None = None
         self._status_code: int | None = None
 
         self._validate_headers()

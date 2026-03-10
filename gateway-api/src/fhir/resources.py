@@ -36,6 +36,11 @@ class Resource(BaseModel):
         kwargs.setdefault("exclude_none", True)
         return super().model_dump_json(*args, **kwargs)
 
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        # FHIR resources should not return empty fields
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(*args, **kwargs)
+
     @model_validator(mode="wrap")
     @classmethod
     def validate_with_subtype(
@@ -82,7 +87,7 @@ class Resource(BaseModel):
         return value
 
 
-type BundleType = Literal["document", "transaction", "searchset"]
+type BundleType = Literal["document", "transaction", "searchset", "collection"]
 
 
 class Bundle(Resource, resource_type="Bundle"):

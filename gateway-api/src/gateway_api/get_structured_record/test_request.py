@@ -1,8 +1,7 @@
 import json
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
-from fhir.parameters import Parameters
 from flask import Request
 
 from gateway_api.common.common import FlaskResponse
@@ -11,11 +10,11 @@ from gateway_api.conftest import create_mock_request
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
 
 if TYPE_CHECKING:
-    from fhir.bundle import Bundle
+    from fhir.bundle import BundleTypedDict
 
 
 @pytest.fixture
-def mock_request_with_headers(valid_simple_request_payload: Parameters) -> Request:
+def mock_request_with_headers(valid_simple_request_payload: dict[str, Any]) -> Request:
     headers = {
         "Ssp-TraceID": "test-trace-id",
         "ODS-from": "test-ods",
@@ -58,7 +57,7 @@ class TestGetStructuredRecordRequest:
         assert actual == expected
 
     def test_raises_value_error_when_ods_from_header_is_missing(
-        self, valid_simple_request_payload: Parameters
+        self, valid_simple_request_payload: dict[str, Any]
     ) -> None:
         """Test that ValueError is raised when ODS-from header is missing."""
         headers = {
@@ -73,7 +72,7 @@ class TestGetStructuredRecordRequest:
             GetStructuredRecordRequest(request=mock_request)
 
     def test_raises_value_error_when_ods_from_header_is_whitespace(
-        self, valid_simple_request_payload: Parameters
+        self, valid_simple_request_payload: dict[str, Any]
     ) -> None:
         """
         Test that ValueError is raised when ODS-from header contains only whitespace.
@@ -91,7 +90,7 @@ class TestGetStructuredRecordRequest:
             GetStructuredRecordRequest(request=mock_request)
 
     def test_raises_value_error_when_trace_id_header_is_missing(
-        self, valid_simple_request_payload: Parameters
+        self, valid_simple_request_payload: dict[str, Any]
     ) -> None:
         """Test that ValueError is raised when Ssp-TraceID header is missing."""
         headers = {
@@ -106,7 +105,7 @@ class TestGetStructuredRecordRequest:
             GetStructuredRecordRequest(request=mock_request)
 
     def test_raises_value_error_when_trace_id_header_is_whitespace(
-        self, valid_simple_request_payload: Parameters
+        self, valid_simple_request_payload: dict[str, Any]
     ) -> None:
         """
         Test that ValueError is raised when Ssp-TraceID header contains only whitespace.
@@ -132,7 +131,7 @@ class TestSetResponseFromFlaskResponse:
 
         request_obj = GetStructuredRecordRequest(request=mock_request_with_headers)
 
-        bundle_data: Bundle = {
+        bundle_data: BundleTypedDict = {
             "resourceType": "Bundle",
             "id": "test-bundle",
             "type": "collection",
