@@ -12,11 +12,13 @@ Cyber
 Dependabot
 [Dd]ev
 dotfiles
-Dockerfiles
+Dockerfiles?
 [Dd]ocstring([s]?)
 env
-Gitleaks
+[Gg]itleaks
 Grype
+hadolint
+[Hh]ardcoded
 hostname
 Hotspots
 IDE
