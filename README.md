@@ -3,122 +3,214 @@
 [![CI/CD Pull Request](https://github.com/NHSDigital/clinical-data-gateway-api/actions/workflows/cicd-1-pull-request.yaml/badge.svg)](https://github.com/NHSDigital/clinical-data-gateway-api/actions/workflows/cicd-1-pull-request.yaml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NHSDigital_clinical-data-gateway-api&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=NHSDigital_clinical-data-gateway-api)
 
-Repository housing all code responsible for handling the Clinical Data Gateway APIs. This repository houses the various Python modules responsible for managing logic within the APIs, as well as all the Terraform code responsible for deploying the APIs within an environment.
+The Clinical Data Gateway API exposes [GP Connect](https://digital.nhs.uk/services/gp-connect) services over the internet via the NHS [API Management platform](https://digital.nhs.uk/services/api-platform). It receives requests from consumer systems, validates and enriches them using NHS spine services, and forwards them to the patient's GP provider system to retrieve structured clinical records.
 
-The Clinical Data Gateway APIs look to provide the [GP Connect](https://digital.nhs.uk/services/gp-connect) APIs over the internet, via the [API Management platform](https://digital.nhs.uk/services/api-platform). More details on the GP Connect specifications can be found on the [GP connect specifications for developers](https://digital.nhs.uk/services/gp-connect/develop-gp-connect-services/specifications-for-developers) page.
+For detailed GP Connect specifications, see [GP Connect specifications for developers](https://digital.nhs.uk/services/gp-connect/develop-gp-connect-services/specifications-for-developers).
 
 ## Table of Contents
 
-- [Clinical Data Gateway API](#clinical-data-gateway-api)
-  - [Table of Contents](#table-of-contents)
-  - [Setup](#setup)
-    - [Prerequisites](#prerequisites)
-    - [Configuration](#configuration)
-  - [Usage](#usage)
-    - [Testing](#testing)
-  - [Design](#design)
-    - [Diagrams](#diagrams)
-    - [Modularity](#modularity)
-  - [Contributing](#contributing)
-  - [Contacts](#contacts)
-  - [Licence](#licence)
+- [Architecture Overview](#architecture-overview)
+- [Tech Stack](#tech-stack)
+- [Repository Structure](#repository-structure)
+- [Setup](#setup)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Design](#design)
+- [CI/CD](#cicd)
+- [Contributing](#contributing)
+- [Licence](#licence)
 
-## Setup
+## Architecture Overview
 
-Clone the repository.
-
-```shell
-git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
-cd clinical-data-gateway-api.git
-```
-
-### External Dependencies
-
-This project depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library, which provides shared code and utilities used across various clinical data API products. The dependency is managed via Poetry and installed directly from the GitHub repository.
-
-The library is referenced in `gateway-api/pyproject.toml` as a git dependency. The CI/CD pipeline is currently configured to pull the latest version from the specified branch automatically.
-
-The project can then be built within a [Dev Container](https://containers.dev/) as defined within the file outlined under `.devcontainer/devcontainer.json`. When opening the project within Visual Studio Code, if the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) is installed, you should be prompted to re-open the folder within a Dev Container if you wish. If accepted, this should build the Dev Container locally which will include all required libraries and tools for development.
-
-> [!NOTE]<br>
-> If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container when the `INCLUDE_DEV_CERTS` docker build argument is set to `true`.
->
-> If running in Windows Subsystem for Linux (WSL) on Windows the vscode Dev containers extension should be configured to use WSL {"dev.containers.executeInWSL": true}.
-> It is also necessary for the repository to be cloned into the WSL filesystem and on the first build of the container (and any subsequent complete rebuilds without cache). vscode should then be connected to WSL, before subsequently opening the repository folder. The container can then be built as described above.
-
-### Prerequisites
-
-The following software packages, or their equivalents, are expected to be installed and configured:
-
-- A container manager for running containers locally, such as [Colima](https://github.com/abiosoft/colima) on Mac OS, or [Docker](https://docs.docker.com/engine/install/) within WSL on Windows or Linux natively.
-
-### Configuration
-
-Installation and configuration of the toolchain dependencies is completed as part of building the Dev container as described above.
-
-## Usage
-
-Once the build container has been built and is up and running, A few different `make` targets are provided for installing dependencies and building the codebase.
-
-- `dependencies` - installs all dependencies required for the project
-- `build` - builds the codebase so that it is ready for deployment
-- `deploy` - builds the codebase and deploys it within a separate container locally.
-- `clean` - stops and removes any containers outside of the Dev container locally.
-
-### Testing
-
-There are `make` tasks for you to configure to run your tests.  Run `make test` to see how they work.  You should be able to use the same entry points for local development as in your CI pipeline.
-
-#### Continuous Integration
-
-More documentation on the GitHub actions utilised to support continuous integration can be found on the [Continuous Integration](./.github/github_actions.md) page.
-
-## Design
-
-### Diagrams
-
-The [C4 model](https://c4model.com/) is a simple and intuitive way to create software architecture diagrams that are clear, consistent, scalable and most importantly collaborative. This should result in documenting all the system interfaces, external dependencies and integration points.
-
-![Repository Template](./docs/diagrams/Repository_Template_GitHub_Generic.png)
-
-The source for diagrams should be in Git for change control and review purposes. Recommendations are [draw.io](https://app.diagrams.net/) (example above in [docs](.docs/diagrams/) folder) and [Mermaids](https://github.com/mermaid-js/mermaid). Here is an example Mermaids sequence diagram:
+When a consumer system sends a request to the Gateway API, the following orchestration takes place:
 
 ```mermaid
 sequenceDiagram
-    User->>+Service: GET /users?params=...
-    Service->>Service: auth request
-    Service->>Database: get all users
-    Database-->>Service: list of users
-    Service->>Service: filter users
-    Service-->>-User: list[User]
+    participant Consumer as Consumer System
+    participant Gateway as Gateway API
+    participant PDS as PDS FHIR API
+    participant SDS as SDS FHIR API
+    participant Provider as GP Provider System
+
+    Consumer->>+Gateway: POST /patient/$gpc.getstructuredrecord
+    Gateway->>+PDS: Look up patient's GP practice (ODS code)
+    PDS-->>-Gateway: GP practice ODS code
+    Gateway->>+SDS: Look up provider ASID & endpoint (provider ODS)
+    SDS-->>-Gateway: Provider ASID + endpoint
+    Gateway->>+SDS: Look up consumer ASID (consumer ODS)
+    SDS-->>-Gateway: Consumer ASID
+    Gateway->>+Provider: Forward request with ASIDs
+    Provider-->>-Gateway: FHIR Bundle (structured record)
+    Gateway-->>-Consumer: FHIR Bundle response
 ```
 
-### Modularity
+**Key NHS services used:**
 
-Most of the projects are built with customisability and extendability in mind. At a minimum, this can be achieved by implementing service level configuration options and settings. The intention of this section is to show how this can be used. If the system processes data, you could mention here for example how the input is prepared for testing - anonymised, synthetic or live data.
+| Service | Purpose |
+|---|---|
+| [PDS FHIR API](https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir) | Looks up the patient's registered GP practice code |
+| [SDS FHIR API](https://digital.nhs.uk/developer/api-catalogue/spine-directory-service-fhir) | Resolves provider/consumer endpoint details and ASID values |
+| GP Provider System | The patient's GP system that returns the clinical record |
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Language | Python 3.13+ |
+| Web framework | [Flask](https://flask.palletsprojects.com/) |
+| Dependency management | [Poetry](https://python-poetry.org/) |
+| API specification | [OpenAPI 3.0](gateway-api/openapi.yaml) |
+| Data models | FHIR (Fast Healthcare Interoperability Resources) |
+| Infrastructure | Terraform, Docker |
+| Testing | pytest, pytest-bdd, Pact, Schemathesis |
+| Static analysis | mypy (strict mode), Ruff |
+
+## Repository Structure
+
+```text
+├── gateway-api/                  # Application code and tests
+│   ├── openapi.yaml              # OpenAPI specification
+│   ├── pyproject.toml            # Python project and dependency definitions
+│   ├── src/
+│   │   ├── gateway_api/          # Flask application
+│   │   │   ├── app.py            # Flask routes and entrypoint
+│   │   │   ├── controller.py     # Orchestrates PDS → SDS → Provider calls
+│   │   │   ├── get_structured_record/  # Request model
+│   │   │   ├── pds/              # PDS FHIR API client
+│   │   │   ├── sds/              # SDS FHIR API client
+│   │   │   ├── provider/         # GP Provider client
+│   │   │   └── common/           # Shared utilities and error handling
+│   │   └── fhir/                 # FHIR resource data models
+│   ├── stubs/                    # API stubs for local testing
+│   └── tests/                    # Test suites (see Testing section)
+├── infrastructure/               # Terraform modules and Docker images
+│   ├── environments/             # Environment-specific config (dev, preview)
+│   ├── images/                   # Dockerfiles (build container, gateway-api)
+│   └── modules/                  # Terraform modules
+├── proxygen/                     # API proxy deployment configuration
+├── scripts/                      # Build, test, and CI/CD scripts
+├── bruno/                        # Bruno API collection for manual testing
+└── docs/                         # Architecture decision records and guides
+```
+
+For more detail on the test suites, see the [tests README](gateway-api/tests/README.md).
+
+## Setup
+
+### Clone the Repository
+
+```shell
+git clone git@github.com:NHSDigital/clinical-data-gateway-api.git
+cd clinical-data-gateway-api
+```
+
+### Dev Container (Recommended)
+
+The project is configured to run inside a [Dev Container](https://containers.dev/) defined in `.devcontainer/devcontainer.json`. When you open the project in VS Code with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you will be prompted to reopen in the container. This automatically installs all required libraries and tools.
+
+> [!NOTE]
+> **Certificates:** If additional certificates are needed, add them to `infrastructure/images/build-container/resources/dev-certificates` and set the `INCLUDE_DEV_CERTS` Docker build argument to `true`.
+>
+> **WSL users:** Configure the Dev Containers extension with `{"dev.containers.executeInWSL": true}`, clone the repository into the WSL filesystem, connect VS Code to WSL first, then open the repository folder and build the container.
+
+### Prerequisites
+
+- A container runtime such as [Docker](https://docs.docker.com/engine/install/) (Linux/WSL) or [Colima](https://github.com/abiosoft/colima) (macOS)
+
+### External Dependencies
+
+This project depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library for shared utilities. It is declared as a Git dependency in `gateway-api/pyproject.toml` and installed automatically by Poetry.
+
+## Usage
+
+The project uses `make` targets to build, deploy, and manage the application. Run these from the repository root:
+
+| Command | Description |
+|---|---|
+| `make dependencies` | Install all project dependencies via Poetry |
+| `make build` | Type-check, package, and build the Docker image |
+| `make deploy` | Build and start the Gateway API container at `localhost:5000` |
+| `make clean` | Stop and remove the Gateway API container |
+| `make config` | Configure the development environment |
+
+### API Endpoints
+
+Once deployed, the API exposes:
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/patient/$gpc.getstructuredrecord` | Retrieve a patient's structured clinical record |
+| `GET` | `/health` | Health check endpoint |
+
+The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi.yaml).
+
+### Environment Variables
+
+| Variable | Description |
+|---|---|
+| `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`) |
+| `HOST` | hostname portion of `BASE_URL` |
+| `FLASK_HOST` | Host the Flask app binds to |
+| `FLASK_PORT` | Port the Flask app listens on |
+
+Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
+
+## Testing
+
+The project has five test suites, each targeting a different layer of confidence. The API container must be running for all suites except unit tests.
+
+| Command | Suite | Framework | Description |
+|---|---|---|---|
+| `make test-unit` | Unit | pytest | Tests individual modules in isolation |
+| `make test-acceptance` | Acceptance | pytest-bdd | BDD tests using Gherkin feature files |
+| `make test-integration` | Integration | pytest | HTTP-level tests against the running API |
+| `make test-schema` | Schema | Schemathesis | Auto-generated tests from the OpenAPI spec |
+| `make test-contract` | Contract | Pact | Consumer/provider contract verification |
+| `make test` | All | — | Runs every test suite |
+
+For detailed information about each test type, directory layout, and how to run them, see the [tests README](gateway-api/tests/README.md).
+
+## Design
+
+### Architecture Diagrams
+
+Architecture diagrams follow the [C4 model](https://c4model.com/). Diagram source files are stored in [docs/diagrams/](docs/diagrams/) for version control and review. Diagrams can be created using [draw.io](https://app.diagrams.net/) or [Mermaid](https://github.com/mermaid-js/mermaid).
+
+![Repository Template](./docs/diagrams/Repository_Template_GitHub_Generic.png)
+
+### Stubs
+
+The `gateway-api/stubs/` directory contains stub implementations of the external services (PDS, SDS, GP Provider). These are used during local development and testing so that tests can run without connecting to live NHS services. Stubs are activated via environment variables.
+
+### Architecture Decision Records
+
+Design decisions are documented as Architecture Decision Records (ADRs) in the [docs/adr/](docs/adr/) directory.
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment, organised into reusable stages:
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| [Pull Request](.github/workflows/cicd-1-pull-request.yaml) | PR opened/reopened | Runs commit checks, tests, build, and acceptance |
+| [Publish](.github/workflows/cicd-2-publish.yaml) | PR merged to main | Creates a release and tags the artefact |
+| [Deploy](.github/workflows/cicd-3-deploy.yaml) | Manual dispatch | Deploys a selected tag to an environment |
+
+For full details on each workflow and composite action, see the [CI/CD documentation](.github/github_actions.md).
 
 ## Contributing
 
-Describe or link templates on how to raise an issue, feature request or make a contribution to the codebase. Reference the other documentation files, like
+Contributions are welcome. To get started:
 
-- Environment setup for contribution, i.e. `CONTRIBUTING.md`
-- Coding standards, branching, linting, practices for development and testing
-- Release process, versioning, changelog
-- Backlog, board, roadmap, ways of working
-- High-level requirements, guiding principles, decision records, etc.
+1. Set up your development environment using the [Dev Container instructions](#dev-container-recommended) above
+2. Ensure your commits are **signed** — see the [commit signing guide](https://github.com/NHSDigital/software-engineering-quality-framework/blob/main/practices/guides/commit-signing.md)
+3. Run `make githooks-config` to enable pre-commit hooks for secret scanning and formatting checks
+4. Open a pull request with a clear description of the change
 
-### Signed Commits
-
-To be able to contribute to the repository, any commits created need to be signed. See the [commit signing setup guide page](https://github.com/NHSDigital/software-engineering-quality-framework/blob/main/practices/guides/commit-signing.md) for guidance on setting up this up.
-
-## Contacts
-
-Provide a way to contact the owners of this project. It can be a team, an individual or information on the means of getting in touch via active communication channels, e.g. opening a GitHub discussion, raising an issue, etc.
+Design decisions and their rationale are captured in [Architecture Decision Records](docs/adr/).
 
 ## Licence
 
-> The [LICENCE.md](./LICENCE.md) file will need to be updated with the correct year and owner
+Unless stated otherwise, the codebase is released under the MIT License. This covers both the codebase and any sample code in the documentation. See [LICENCE.md](./LICENCE.md).
 
-Unless stated otherwise, the codebase is released under the MIT License. This covers both the codebase and any sample code in the documentation.
-
-Any HTML or Markdown documentation is [© Crown Copyright](https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/) and available under the terms of the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
+Any HTML or Markdown documentation is [© Crown Copyright](https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/) and available under the terms of the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
