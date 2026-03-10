@@ -28,7 +28,7 @@ OAuth
 Octokit
 onboarding
 Podman
-Proxygen
+[Pp]roxygen
 [Pp]ytest
 Python
 repo
