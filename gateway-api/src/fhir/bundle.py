@@ -2,12 +2,12 @@
 
 from typing import TypedDict
 
-from fhir.patient import Patient
+from fhir.patient import PatientTypedDict
 
 
 class BundleEntry(TypedDict):
     fullUrl: str
-    resource: Patient
+    resource: PatientTypedDict
 
 
 class Bundle(TypedDict):

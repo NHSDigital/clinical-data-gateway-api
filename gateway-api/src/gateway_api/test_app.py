@@ -133,7 +133,7 @@ class TestGetStructuredRecord:
         get_structured_record_response_from_missing_header: Flask,
         expected_message: str,
     ) -> None:
-        expected_body: OperationOutcome = {
+        expected_body = {
             "resourceType": "OperationOutcome",
             "issue": [
                 {

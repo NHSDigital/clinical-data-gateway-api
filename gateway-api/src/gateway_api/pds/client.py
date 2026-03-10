@@ -25,7 +25,9 @@ from datetime import UTC, date, datetime
 from typing import cast
 
 import requests
-from fhir import Bundle, BundleEntry, GeneralPractitioner, HumanName, Patient
+from fhir import BundleEntry, GeneralPractitioner, HumanName, PatientTypedDict
+from fhir.resources import Patient
+from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError
 from gateway_api.pds.search_results import PdsSearchResults
@@ -111,7 +113,7 @@ class PdsClient:
         request_id: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = None,
-    ) -> PdsSearchResults:
+    ) -> Patient:
         """
         Retrieve a patient by NHS number.
 
@@ -138,8 +140,24 @@ class PdsClient:
         except requests.HTTPError as err:
             raise PdsRequestFailedError(error_reason=err.response.reason) from err
 
-        body = response.json()
-        return self._extract_single_search_result(body)
+        try:
+            patient = Patient.model_validate(response.json())
+        except ValidationError as err:
+            first_error = err.errors()[0]
+            error_is_identifier = first_error["loc"] == ("identifier",)
+            no_patient_identifier = (
+                "at least 1 item" in first_error["msg"] and error_is_identifier
+            )
+            nhs_number_is_missing = "Field required" in str(err) and first_error[
+                "loc"
+            ] == ("identifier",)
+            if nhs_number_is_missing or no_patient_identifier:
+                raise PdsRequestFailedError(
+                    error_reason="PDS Patient resource missing NHS number"
+                ) from err
+            raise err
+
+        return patient
 
     # --------------- internal helpers for result extraction -----------------
 
@@ -168,7 +186,7 @@ class PdsClient:
 
         return None if ods_code == "None" else ods_code
 
-    def _extract_single_search_result(self, body: Patient | Bundle) -> PdsSearchResults:
+    def _extract_single_search_result(self, body: PatientTypedDict) -> PdsSearchResults:
         """
         Extract a single :class:`PdsSearchResults` from a Patient response.
 
@@ -183,7 +201,7 @@ class PdsClient:
         # 1) Patient (GET /Patient/{id})
         # 2) Bundle with Patient in entry[0].resource (search endpoints)
         if str(body.get("resourceType", "")) == "Patient":
-            patient = cast("Patient", body)
+            patient = body
         else:
             entries = cast("list[BundleEntry]", body.get("entry", []))
             if not entries:
@@ -197,7 +215,7 @@ class PdsClient:
             # application.
             # See MaxResults parameter in the PDS OpenAPI spec.
             entry = entries[0]
-            patient = cast("Patient", entry.get("resource", {}))
+            patient = entry.get("resource", {})
 
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
