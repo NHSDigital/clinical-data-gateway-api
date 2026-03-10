@@ -21,16 +21,12 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 import os
 import uuid
 from collections.abc import Callable
-from datetime import UTC, date, datetime
-from typing import cast
 
 import requests
-from fhir import BundleEntry, GeneralPractitioner, HumanName, PatientTypedDict
 from fhir.resources import Patient
 from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError
-from gateway_api.pds.search_results import PdsSearchResults
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the STUB_PDS environment variable and just
@@ -55,7 +51,7 @@ class PdsClient:
 
     * :meth:`search_patient_by_nhs_number` - calls ``GET /Patient/{nhs_number}``
 
-    This method returns a :class:`PdsSearchResults` instance when a patient can be
+    This method returns a :class:`Patient` instance when a patient can be
     extracted, otherwise ``None``.
 
     **Usage example**::
@@ -118,7 +114,7 @@ class PdsClient:
         Retrieve a patient by NHS number.
 
         Calls ``GET /Patient/{nhs_number}``, which returns a single FHIR Patient
-        resource on success, then extracts a single :class:`PdsSearchResults`.
+        resource on success, then builds and returns a single :class:`Patient`.
         """
         headers = self._build_headers(
             request_id=request_id,
@@ -143,6 +139,7 @@ class PdsClient:
         try:
             patient = Patient.model_validate(response.json())
         except ValidationError as err:
+            # TODO: improve this hacky handling.
             first_error = err.errors()[0]
             error_is_identifier = first_error["loc"] == ("identifier",)
             no_patient_identifier = (
@@ -158,131 +155,3 @@ class PdsClient:
             raise err
 
         return patient
-
-    # --------------- internal helpers for result extraction -----------------
-
-    def _get_gp_ods_code(
-        self, general_practitioners: list[GeneralPractitioner]
-    ) -> str | None:
-        """
-        Extract the current GP ODS code from ``Patient.generalPractitioner``.
-
-        This function implements the business rule:
-
-        * If the list is empty, return ``None``.
-        * If the list is non-empty and no record is current, return ``None``.
-        * If exactly one record is current, return its ``identifier.value``.
-
-        In future this may change to return the most recent record if none is current.
-        """
-        if len(general_practitioners) == 0:
-            return None
-
-        gp = self.find_current_gp(general_practitioners)
-        if gp is None:
-            return None
-
-        ods_code = gp["identifier"]["value"]
-
-        return None if ods_code == "None" else ods_code
-
-    def _extract_single_search_result(self, body: PatientTypedDict) -> PdsSearchResults:
-        """
-        Extract a single :class:`PdsSearchResults` from a Patient response.
-
-        This helper accepts either:
-        * a single FHIR Patient resource (as returned by ``GET /Patient/{id}``), or
-        * a FHIR Bundle containing Patient entries (as typically returned by searches).
-
-        For Bundle inputs, the code assumes either zero matches (empty entry list) or a
-        single match; if multiple entries are present, the first entry is used.
-        """
-        # Accept either:
-        # 1) Patient (GET /Patient/{id})
-        # 2) Bundle with Patient in entry[0].resource (search endpoints)
-        if str(body.get("resourceType", "")) == "Patient":
-            patient = body
-        else:
-            entries = cast("list[BundleEntry]", body.get("entry", []))
-            if not entries:
-                raise PdsRequestFailedError(
-                    error_response="PDS response contains no patient entries"
-                )
-
-            # Use the first patient entry. Search by NHS number is unique. Search by
-            # demographics for an application is allowed to return max one entry from
-            # PDS. Search by a human can return more, but presumably we count as an
-            # application.
-            # See MaxResults parameter in the PDS OpenAPI spec.
-            entry = entries[0]
-            patient = entry.get("resource", {})
-
-        nhs_number = str(patient.get("id", "")).strip()
-        if not nhs_number:
-            raise PdsRequestFailedError(
-                error_reason="PDS Patient resource missing NHS number"
-            )
-
-        current_name = self.find_current_name_record(patient["name"])
-
-        if current_name is not None:
-            given_names = " ".join(current_name.get("given", [])).strip()
-            family_name = current_name.get("family", "")
-        else:
-            given_names = ""
-            family_name = ""
-
-        # Extract GP ODS code if a current GP record exists.
-        gp_ods_code = self._get_gp_ods_code(patient.get("generalPractitioner", []))
-
-        return PdsSearchResults(
-            given_names=given_names,
-            family_name=family_name,
-            nhs_number=nhs_number,
-            gp_ods_code=gp_ods_code,
-        )
-
-    def find_current_gp(
-        self,
-        general_practitioners: list[GeneralPractitioner],
-        today: date | None = None,
-    ) -> GeneralPractitioner | None:
-        if today is None:
-            today = datetime.now(UTC).date()
-
-        if self.ignore_dates:
-            if len(general_practitioners) > 0:
-                return general_practitioners[-1]
-            else:
-                return None
-
-        for record in general_practitioners:
-            period = record["identifier"]["period"]
-            start = date.fromisoformat(period["start"])
-            # TODO: period is not required to have end
-            end = date.fromisoformat(period["end"])
-            if start <= today <= end:
-                return record
-
-        return None
-
-    def find_current_name_record(
-        self, names: list[HumanName], today: date | None = None
-    ) -> HumanName | None:
-        if today is None:
-            today = datetime.now(UTC).date()
-
-        if self.ignore_dates:
-            if len(names) > 0:
-                return names[-1]
-            else:
-                return None
-
-        for name in names:
-            period = cast("dict[str, str]", name["period"])
-            start = date.fromisoformat(period["start"])
-            end = date.fromisoformat(period["end"])
-            if start <= today <= end:
-                return name
-
-        return None
