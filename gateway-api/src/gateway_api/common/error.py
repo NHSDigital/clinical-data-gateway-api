@@ -4,7 +4,6 @@ from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOU
 
 from fhir.elements import Issue, IssueCode, IssueSeverity
 from fhir.resources import OperationOutcome
-from flask import Response
 
 
 @dataclass
@@ -26,7 +25,8 @@ class AbstractCDGError(Exception):
         self.additional_details = additional_details
         super().__init__(self)
 
-    def build_response(self) -> Response:
+    @property
+    def operation_outcome(self) -> OperationOutcome:
         operation_outcome = OperationOutcome.create(
             issue=[
                 Issue(
@@ -36,13 +36,7 @@ class AbstractCDGError(Exception):
                 )
             ]
         )
-
-        response = Response(
-            response=operation_outcome.model_dump_json(),
-            status=self.status_code,
-            content_type="application/fhir+json",
-        )
-        return response
+        return operation_outcome
 
     def log(self) -> None:
         print(traceback.format_exc(), flush=True)
