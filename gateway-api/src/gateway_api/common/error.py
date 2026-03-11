@@ -2,8 +2,7 @@ import traceback
 from dataclasses import dataclass
 from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
 
-from fhir.elements import Issue, IssueCode, IssueSeverity
-from fhir.resources import OperationOutcome
+from fhir import Issue, IssueCode, IssueSeverity, OperationOutcome
 
 
 @dataclass
