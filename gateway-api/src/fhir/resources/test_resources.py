@@ -4,7 +4,9 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from .resources import Bundle, Patient, Resource
+from fhir.resources.bundle import Bundle
+from fhir.resources.patient import Patient
+from fhir.resources.resource import Resource
 
 
 class TestResource:
