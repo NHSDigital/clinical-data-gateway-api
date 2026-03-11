@@ -4,7 +4,7 @@ import json
 import os
 from collections.abc import Generator
 from copy import copy
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -13,9 +13,6 @@ from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
 
 from gateway_api.app import app, get_app_host, get_app_port
-
-if TYPE_CHECKING:
-    from fhir.operation_outcome import OperationOutcome
 
 
 @pytest.fixture
@@ -162,7 +159,7 @@ class TestGetStructuredRecord:
     def test_get_structured_record_returns_internal_server_error_when_invalid_json_sent(
         self, get_structured_record_response_using_invalid_json_body: Flask
     ) -> None:
-        expected: OperationOutcome = {
+        expected = {
             "resourceType": "OperationOutcome",
             "issue": [
                 {

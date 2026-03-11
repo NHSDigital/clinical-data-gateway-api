@@ -1,12 +1,11 @@
-import json
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
-if TYPE_CHECKING:
-    from fhir import Parameters
+from fhir.resources import Parameters
 
 # TODO: may be able to remove the use of the FHIR type entirely.
 from flask.wrappers import Request
+from pydantic import ValidationError
 from requests.structures import CaseInsensitiveDict
 from werkzeug.exceptions import BadRequest
 
@@ -31,8 +30,8 @@ class GetStructuredRecordRequest:
         self._http_request = request
         self._headers = CaseInsensitiveDict(request.headers)
         try:
-            self._request_body: Parameters = request.get_json()
-        except BadRequest as error:
+            self.parameters = Parameters.model_validate(request.get_json())
+        except (BadRequest, ValidationError) as error:
             raise InvalidRequestJSONError() from error
 
         self._status_code: int | None = None
@@ -46,7 +45,7 @@ class GetStructuredRecordRequest:
 
     @property
     def nhs_number(self) -> str:
-        nhs_number: str = self._request_body["parameter"][0]["valueIdentifier"]["value"]
+        nhs_number = self.parameters.parameter[0].valueIdentifier.value
         return nhs_number
 
     @property
@@ -56,7 +55,7 @@ class GetStructuredRecordRequest:
 
     @property
     def request_body(self) -> str:
-        return json.dumps(self._request_body)
+        return self.parameters.model_dump_json()
 
     @property
     def headers(self) -> Mapping[str, str]:

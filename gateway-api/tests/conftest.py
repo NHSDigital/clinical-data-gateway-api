@@ -2,12 +2,11 @@
 
 import os
 from datetime import timedelta
-from typing import cast
+from typing import Any, cast
 
 import pytest
 import requests
 from dotenv import find_dotenv, load_dotenv
-from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
 # find_dotenv searches upward from current directory for .env file
@@ -73,7 +72,7 @@ def mtls_cert() -> tuple[str, str] | None:
 
 
 @pytest.fixture
-def simple_request_payload() -> Parameters:
+def simple_request_payload() -> dict[str, Any]:
     return {
         "resourceType": "Parameters",
         "parameter": [

@@ -1,3 +1,5 @@
+from abc import ABC
+from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Literal, Self
 
 from pydantic import (
@@ -10,7 +12,7 @@ from pydantic import (
     model_validator,
 )
 
-from .elements import Identifier, Issue, Meta, UUIDIdentifier
+from .elements import Identifier, Issue, Meta, NHSNumberValueIdentifier, UUIDIdentifier
 
 
 class Resource(BaseModel):
@@ -150,6 +152,18 @@ class OperationOutcome(Resource, resource_type="OperationOutcome"):
     """A FHIR R4 OperationOutcome resource."""
 
     issue: Annotated[list[Issue], Field(frozen=True)]
+
+
+class Parameters(Resource, resource_type="Parameters"):
+    """A FHIR R4 Parameters resource."""
+
+    @dataclass(frozen=True)
+    class Parameter(ABC):
+        """A FHIR R4 Parameter resource."""
+
+        valueIdentifier: Annotated[NHSNumberValueIdentifier, Field(frozen=True)]
+
+    parameter: Annotated[list[Parameter], Field(frozen=True)]
 
 
 class Reference(BaseModel):
