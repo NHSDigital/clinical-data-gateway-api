@@ -23,7 +23,7 @@ import uuid
 from collections.abc import Callable
 
 import requests
-from fhir.resources import Patient
+from fhir import Patient
 from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError

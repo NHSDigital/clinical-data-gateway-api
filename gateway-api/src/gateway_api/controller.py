@@ -5,7 +5,7 @@ Controller layer for orchestrating calls to external services
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fhir.resources import Patient
+    from fhir import Patient
 
 from requests import Response
 
