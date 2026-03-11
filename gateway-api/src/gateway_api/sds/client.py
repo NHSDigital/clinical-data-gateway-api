@@ -12,7 +12,7 @@ import os
 from enum import StrEnum
 from typing import Any
 
-from fhir.resources import Bundle, Device, Endpoint, Resource
+from fhir import Bundle, Device, Endpoint, Resource
 from stubs import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID

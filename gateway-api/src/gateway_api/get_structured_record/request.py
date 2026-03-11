@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import ClassVar
 
-from fhir.resources import Parameters
+from fhir import Parameters
 
 # TODO: may be able to remove the use of the FHIR type entirely.
 from flask.wrappers import Request
