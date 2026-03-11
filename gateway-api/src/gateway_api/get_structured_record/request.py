@@ -1,24 +1,25 @@
 import json
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, ClassVar
 
-from fhir import OperationOutcome, Parameters
+if TYPE_CHECKING:
+    from fhir import Parameters
 
 # TODO: may be able to remove the use of the FHIR type entirely.
-from fhir.operation_outcome import OperationOutcomeIssue
-from flask.wrappers import Request, Response
+from flask.wrappers import Request
+from requests.structures import CaseInsensitiveDict
 from werkzeug.exceptions import BadRequest
 
-from gateway_api.common.common import FlaskResponse
-from gateway_api.common.error import InvalidRequestJSONError, MissingOrEmptyHeaderError
+from gateway_api.common.error import (
+    InvalidRequestJSONError,
+    MissingOrEmptyHeaderError,
+)
 
 # Access record structured interaction ID from
 # https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
 ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
     "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
 )
-
-if TYPE_CHECKING:
-    from fhir.bundle import BundleTypedDict
 
 
 class GetStructuredRecordRequest:
@@ -28,13 +29,12 @@ class GetStructuredRecordRequest:
 
     def __init__(self, request: Request) -> None:
         self._http_request = request
-        self._headers = request.headers
+        self._headers = CaseInsensitiveDict(request.headers)
         try:
             self._request_body: Parameters = request.get_json()
         except BadRequest as error:
             raise InvalidRequestJSONError() from error
 
-        self._response_body: BundleTypedDict | OperationOutcome | None = None
         self._status_code: int | None = None
 
         self._validate_headers()
@@ -58,6 +58,10 @@ class GetStructuredRecordRequest:
     def request_body(self) -> str:
         return json.dumps(self._request_body)
 
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self._headers
+
     def _validate_headers(self) -> None:
         trace_id = self._headers.get("Ssp-TraceID", "").strip()
         if not trace_id:
@@ -66,40 +70,3 @@ class GetStructuredRecordRequest:
         ods_from = self._headers.get("ODS-from", "").strip()
         if not ods_from:
             raise MissingOrEmptyHeaderError(header="ODS-from")
-
-    def build_response(self) -> Response:
-        return Response(
-            response=json.dumps(self._response_body),
-            status=self._status_code,
-            mimetype="application/fhir+json",
-        )
-
-    def set_negative_response(self, error: str, status_code: int = 500) -> None:
-        self._status_code = status_code
-        self._response_body = OperationOutcome(
-            resourceType="OperationOutcome",
-            issue=[
-                OperationOutcomeIssue(
-                    severity="error",
-                    code="exception",
-                    diagnostics=error,
-                )
-            ],
-        )
-
-    def set_response_from_flaskresponse(self, flask_response: FlaskResponse) -> None:
-        if flask_response.data:
-            self._status_code = flask_response.status_code
-            try:
-                self._response_body = json.loads(flask_response.data)
-            except json.JSONDecodeError as err:
-                self.set_negative_response(f"Failed to decode response body: {err}")
-            except Exception as err:
-                self.set_negative_response(
-                    f"Unexpected error decoding response body: {err}"
-                )
-        else:
-            self.set_negative_response(
-                error="No response body received",
-                status_code=flask_response.status_code,
-            )

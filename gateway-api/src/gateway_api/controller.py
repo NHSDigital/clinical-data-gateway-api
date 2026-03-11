@@ -4,11 +4,12 @@ Controller layer for orchestrating calls to external services
 
 from typing import TYPE_CHECKING
 
+from requests import Response
+
 if TYPE_CHECKING:
     from fhir.resources import Patient
 
 from gateway_api.clinical_jwt import JWT, Device, Practitioner
-from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
     NoCurrentEndpointError,
@@ -42,7 +43,7 @@ class Controller:
         self.timeout = timeout
         self.gp_provider_client = None
 
-    def run(self, request: GetStructuredRecordRequest) -> FlaskResponse:
+    def run(self, request: GetStructuredRecordRequest) -> Response:
         """
         Controller entry point
 
@@ -73,16 +74,12 @@ class Controller:
             token=token,
         )
 
-        response = self.gp_provider_client.access_structured_record(
+        provider_response = self.gp_provider_client.access_structured_record(
             trace_id=request.trace_id,
             body=request.request_body,
         )
 
-        return FlaskResponse(
-            status_code=response.status_code,
-            data=response.text,
-            headers=dict(response.headers),
-        )
+        return provider_response
 
     def get_auth_token(self) -> str:
         """

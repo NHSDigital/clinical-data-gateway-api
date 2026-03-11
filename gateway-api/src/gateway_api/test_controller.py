@@ -1,6 +1,5 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
-import json
 from typing import Any
 
 import pytest
@@ -42,10 +41,11 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
 def test_controller_run_happy_path_returns_200_status_code(
     mock_happy_path_get_structured_record_request: Request,
 ) -> None:
+    request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
+
     controller = Controller()
-    actual_response = controller.run(
-        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
-    )
+    actual_response = controller.run(request)
+
     assert actual_response.status_code == 200
 
 
@@ -53,12 +53,12 @@ def test_controller_run_happy_path_returns_returns_expected_body(
     mock_happy_path_get_structured_record_request: Request,
     valid_simple_response_payload: dict[str, Any],
 ) -> None:
+    request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
+
     controller = Controller()
-    actual_response = controller.run(
-        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
-    )
-    assert isinstance(actual_response.data, str)
-    assert json.loads(actual_response.data) == valid_simple_response_payload
+    actual_response = controller.run(request)
+
+    assert actual_response.json() == valid_simple_response_payload
 
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
@@ -331,8 +331,10 @@ def test_controller_creates_jwt_token_with_correct_claims(
         body=valid_simple_request_payload,
     )
 
+    get_structured_record_request = GetStructuredRecordRequest(request)
+
     controller = Controller()
-    _ = controller.run(GetStructuredRecordRequest(request))
+    controller.run(get_structured_record_request)
 
     # Verify that GpProviderClient was called and extract the JWT token
     mock_gp_provider.assert_called_once()

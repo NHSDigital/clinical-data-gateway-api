@@ -5,6 +5,7 @@ import os
 from collections.abc import Generator
 from copy import copy
 from typing import TYPE_CHECKING, Any
+from unittest.mock import Mock
 
 import pytest
 from flask import Flask
@@ -12,7 +13,6 @@ from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
 
 from gateway_api.app import app, get_app_host, get_app_port
-from gateway_api.common.common import FlaskResponse
 
 if TYPE_CHECKING:
     from fhir.operation_outcome import OperationOutcome
@@ -225,13 +225,13 @@ class TestGetStructuredRecord:
         valid_headers: dict[str, str],
         valid_simple_response_payload: dict[str, Any],
     ) -> None:
-        postive_response = FlaskResponse(
-            status_code=200,
-            data=json.dumps(valid_simple_response_payload),
-            headers=valid_headers,
-        )
+        positive_response = Mock()
+        positive_response.status_code = 200
+        positive_response.json.return_value = valid_simple_response_payload
+        positive_response.headers = valid_headers
+
         mocker.patch(
-            "gateway_api.controller.Controller.run", return_value=postive_response
+            "gateway_api.controller.Controller.run", return_value=positive_response
         )
 
     @staticmethod
