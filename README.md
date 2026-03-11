@@ -89,8 +89,7 @@ sequenceDiagram
 │   └── modules/                  # Terraform modules
 ├── proxygen/                     # API proxy deployment configuration
 ├── scripts/                      # Build, test, and CI/CD scripts
-├── bruno/                        # Bruno API collection for manual testing
-└── docs/                         # Architecture decision records and guides
+└── bruno/                        # Bruno API collection for manual testing
 ```
 
 For more detail on the test suites, see the [tests README](gateway-api/tests/README.md).
@@ -174,9 +173,7 @@ For detailed information about each test type, directory layout, and how to run 
 
 ### Architecture Diagrams
 
-Architecture diagrams follow the [C4 model](https://c4model.com/). Diagram source files are stored in [docs/diagrams/](docs/diagrams/) for version control and review. Diagrams can be created using [draw.io](https://app.diagrams.net/) or [Mermaid](https://github.com/mermaid-js/mermaid).
-
-![Repository Template](./docs/diagrams/Repository_Template_GitHub_Generic.png)
+Architecture diagrams follow the [C4 model](https://c4model.com/) and can be created using [draw.io](https://app.diagrams.net/) or [Mermaid](https://github.com/mermaid-js/mermaid).
 
 ### Stubs
 
@@ -184,7 +181,7 @@ The `gateway-api/stubs/` directory contains stub implementations of the external
 
 ### Architecture Decision Records
 
-Design decisions are documented as Architecture Decision Records (ADRs) in the [docs/adr/](docs/adr/) directory.
+Significant design decisions are documented as Architecture Decision Records (ADRs). The ADR format follows the [NHS England Repository Template](https://github.com/nhs-england-tools/repository-template) convention.
 
 ## CI/CD
 
@@ -207,7 +204,7 @@ Contributions are welcome. To get started:
 3. Run `make githooks-config` to enable pre-commit hooks for secret scanning and formatting checks
 4. Open a pull request with a clear description of the change
 
-Design decisions and their rationale are captured in [Architecture Decision Records](docs/adr/).
+Design decisions and their rationale are captured as Architecture Decision Records.
 
 ## Licence
 

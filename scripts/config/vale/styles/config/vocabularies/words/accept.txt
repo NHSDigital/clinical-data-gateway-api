@@ -11,6 +11,7 @@ bot
 cgroups
 coreutils
 customisability
+CVEs?
 Cyber
 Dependabot
 [Dd]ev
@@ -19,7 +20,7 @@ Dockerfiles?
 [Dd]ocstring([s]?)
 env
 [Gg]itleaks
-Grype
+[Gg]rype
 hadolint
 [Hh]ardcoded
 hostname
@@ -36,12 +37,11 @@ Podman
 [Pp]roxygen
 [Pp]ytest
 Python
-repo
-repos
+[Rr]epos?
 Schemathesis
 sed
 serverless
-Syft
+[Ss]yft
 Terraform
 toolchain
 Trufflehog
