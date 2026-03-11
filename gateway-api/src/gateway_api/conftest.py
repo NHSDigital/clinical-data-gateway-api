@@ -12,6 +12,8 @@ from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
 
+from gateway_api.clinical_jwt import JWT
+
 
 @dataclass
 class FakeResponse:
@@ -153,3 +155,42 @@ def happy_path_pds_response_body() -> Patient:
 @pytest.fixture
 def auth_token() -> str:
     return "AUTH_TOKEN123"
+
+
+@pytest.fixture
+def valid_jwt() -> JWT:
+    """Create a valid JWT for testing."""
+    return JWT(
+        issuer="https://example.com",
+        subject="user-123",
+        audience="https://provider.example.com",
+        requesting_device={
+            "resourceType": "Device",
+            "identifier": [{"system": "https://example.com/device", "value": "dev123"}],
+            "model": "TestModel",
+            "version": "1.0",
+        },
+        requesting_organization={
+            "resourceType": "Organization",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "value": "T1234",
+                }
+            ],
+            "name": "Test Organization",
+        },
+        requesting_practitioner={
+            "resourceType": "Practitioner",
+            "id": "prac123",
+            "identifier": [
+                {"system": "https://fhir.nhs.uk/Id/sds-user-id", "value": "user123"},
+                {
+                    "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                    "value": "role123",
+                },
+                {"system": "https://example.com/userid", "value": "userid123"},
+            ],
+            "name": [{"family": "TestPractitioner", "given": ["Test"]}],
+        },
+    )
