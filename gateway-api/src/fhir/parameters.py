@@ -10,6 +10,6 @@ class Parameter(TypedDict):
     valueIdentifier: Identifier
 
 
-class Parameters(TypedDict):
+class ParametersTypedDict(TypedDict):
     resourceType: str
     parameter: list[Parameter]

@@ -2,9 +2,9 @@
 
 import json
 from collections.abc import Callable
+from typing import Any
 
 import pytest
-from fhir.parameters import Parameters
 from requests import Response
 from stubs.data.bundles import Bundles
 
@@ -15,7 +15,7 @@ class TestGetStructuredRecord:
     def test_happy_path_returns_200(
         self,
         client: Client,
-        simple_request_payload: Parameters,
+        simple_request_payload: dict[str, Any],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
@@ -25,7 +25,7 @@ class TestGetStructuredRecord:
     def test_happy_path_returns_correct_message(
         self,
         client: Client,
-        simple_request_payload: Parameters,
+        simple_request_payload: dict[str, Any],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
@@ -35,7 +35,7 @@ class TestGetStructuredRecord:
     def test_happy_path_content_type(
         self,
         client: Client,
-        simple_request_payload: Parameters,
+        simple_request_payload: dict[str, Any],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
@@ -273,7 +273,7 @@ class TestGetStructuredRecord:
 
     @pytest.fixture
     def response_when_sds_returns_blank_consumer_asid(
-        self, client: Client, simple_request_payload: Parameters
+        self, client: Client, simple_request_payload: dict[str, Any]
     ) -> Response:
         ods_from_for_consumer_with_blank_consumer_asid_in_sds = "BlankAsidInSDS"
         headers = {"Ods-From": ods_from_for_consumer_with_blank_consumer_asid_in_sds}
@@ -312,7 +312,7 @@ class TestGetStructuredRecord:
 
     @pytest.fixture
     def response_when_consumer_is_none_from_sds(
-        self, client: Client, simple_request_payload: Parameters
+        self, client: Client, simple_request_payload: dict[str, Any]
     ) -> Response:
         ods_from_for_consumer_with_none_consumer_in_sds = "ConsumerWithNoneInSDS"
         headers = {"Ods-From": ods_from_for_consumer_with_none_consumer_in_sds}
@@ -325,7 +325,7 @@ class TestGetStructuredRecord:
     def get_structured_record_requester(
         self,
         client: Client,
-        simple_request_payload: Parameters,
+        simple_request_payload: dict[str, Any],
     ) -> Callable[[str], Response]:
         def requester(nhs_number: str) -> Response:
             simple_request_payload["parameter"][0]["valueIdentifier"]["value"] = (

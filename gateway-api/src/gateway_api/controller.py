@@ -4,10 +4,10 @@ Controller layer for orchestrating calls to external services
 
 from typing import TYPE_CHECKING
 
-from requests import Response
-
 if TYPE_CHECKING:
     from fhir.resources import Patient
+
+from requests import Response
 
 from gateway_api.clinical_jwt import JWT, Device, Practitioner
 from gateway_api.common.error import (
