@@ -5,7 +5,7 @@ from fhir.general_practitioner import GeneralPractitioner
 from fhir.human_name import HumanName
 from fhir.identifier import Identifier
 from fhir.operation_outcome import OperationOutcome, OperationOutcomeIssue
-from fhir.parameters import Parameter, Parameters
+from fhir.parameters import Parameter, ParametersTypedDict
 from fhir.patient import PatientTypedDict
 
 __all__ = [
@@ -16,7 +16,7 @@ __all__ = [
     "OperationOutcome",
     "OperationOutcomeIssue",
     "Parameter",
-    "Parameters",
+    "ParametersTypedDict",
     "PatientTypedDict",
     "GeneralPractitioner",
 ]
