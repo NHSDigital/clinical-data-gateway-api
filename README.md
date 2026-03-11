@@ -17,7 +17,6 @@ For detailed GP Connect specifications, see [GP Connect specifications for devel
 - [Testing](#testing)
 - [Design](#design)
 - [CI/CD](#cicd)
-- [Contributing](#contributing)
 - [Licence](#licence)
 
 ## Architecture Overview
@@ -107,6 +106,8 @@ cd clinical-data-gateway-api
 
 The project is configured to run inside a [Dev Container](https://containers.dev/) defined in `.devcontainer/devcontainer.json`. When you open the project in VS Code with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you will be prompted to reopen in the container. This automatically installs all required libraries and tools.
 
+The dev container sits on the same network, `gateway-local`, as [the `gateway-api` container](infrastructure/README.md#docker-images), if deployed. Docker DNS will resolve <http://gateway-api> to the deployed Gateway API.
+
 > [!NOTE]
 > **Certificates:** If additional certificates are needed, add them to `infrastructure/images/build-container/resources/dev-certificates` and set the `INCLUDE_DEV_CERTS` Docker build argument to `true`.
 >
@@ -147,10 +148,13 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 
 | Variable | Description |
 |---|---|
-| `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`) |
+| `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`, or `http://gateway-api:8080` from within the devcontainer) |
 | `HOST` | hostname portion of `BASE_URL` |
 | `FLASK_HOST` | Host the Flask app binds to |
 | `FLASK_PORT` | Port the Flask app listens on |
+| `STUB_PDS` | `true`, use the stubs/stubs/pds/stub.py to return stubbed responses for PDS FHIR API; otherwise, not. |
+| `STUB_SDS` | `true`, use the stubs/stubs/sds/stub.py to return stubbed responses for SDS FHIR API; otherwise, not. |
+| `STUB_PROVIDER` | `true`, use the stubs/stubs/provider/stub.py to return stubbed responses for the provider system; otherwise, not. |
 
 Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
 
@@ -171,13 +175,9 @@ For detailed information about each test type, directory layout, and how to run 
 
 ## Design
 
-### Architecture Diagrams
-
-Architecture diagrams follow the [C4 model](https://c4model.com/) and can be created using [draw.io](https://app.diagrams.net/) or [Mermaid](https://github.com/mermaid-js/mermaid).
-
 ### Stubs
 
-The `gateway-api/stubs/` directory contains stub implementations of the external services (PDS, SDS, GP Provider). These are used during local development and testing so that tests can run without connecting to live NHS services. Stubs are activated via environment variables.
+The `gateway-api/stubs/` directory contains stub implementations of the external services (PDS, SDS, GP Provider). These are used during local development and testing so that tests can run without connecting to live NHS services. Stubs are activated via [environment variables](#environment-variables).
 
 ### Architecture Decision Records
 
@@ -194,17 +194,6 @@ The project uses GitHub Actions for continuous integration and deployment, organ
 | [Deploy](.github/workflows/cicd-3-deploy.yaml) | Manual dispatch | Deploys a selected tag to an environment |
 
 For full details on each workflow and composite action, see the [CI/CD documentation](.github/github_actions.md).
-
-## Contributing
-
-Contributions are welcome. To get started:
-
-1. Set up your development environment using the [Dev Container instructions](#dev-container-recommended) above
-2. Ensure your commits are **signed** — see the [commit signing guide](https://github.com/NHSDigital/software-engineering-quality-framework/blob/main/practices/guides/commit-signing.md)
-3. Run `make githooks-config` to enable pre-commit hooks for secret scanning and formatting checks
-4. Open a pull request with a clear description of the change
-
-Design decisions and their rationale are captured as Architecture Decision Records.
 
 ## Licence
 

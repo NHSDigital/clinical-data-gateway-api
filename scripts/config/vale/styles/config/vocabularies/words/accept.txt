@@ -18,6 +18,7 @@ Dependabot
 dotfiles
 Dockerfiles?
 [Dd]ocstring([s]?)
+devcontainer
 env
 [Gg]itleaks
 [Gg]rype

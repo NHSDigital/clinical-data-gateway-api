@@ -16,17 +16,17 @@ Additionally, code coverage is collected from all test types, merged, and analyz
 ### Quick Test Commands
 
 ```bash
-# Run all pytest-based tests (unit, contract, schema, integration, acceptance)
-poetry run pytest -v
+# From the root directory, run all tests (unit, contract, schema, integration, acceptance)
+make test
 
 # Run specific test suites
-poetry run pytest tests/acceptance/       # BDD acceptance tests (pytest-bdd)
-poetry run pytest tests/contract/         # Contract tests (Pact)
-poetry run pytest tests/integration/      # Integration tests
-poetry run pytest tests/schema/           # Schema validation tests (Schemathesis)
+make test-acceptance       # BDD acceptance tests (pytest-bdd)
+make test-contract         # Contract tests (Pact)
+make test-integration      # Integration tests
+make test-schema           # Schema validation tests (Schemathesis)
 
 # Unit tests are co-located with source code under src/
-poetry run pytest src/
+make test-unit
 ```
 
 For detailed testing documentation, see the README files in each test directory.
