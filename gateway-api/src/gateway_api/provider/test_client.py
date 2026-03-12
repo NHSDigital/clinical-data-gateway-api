@@ -280,3 +280,41 @@ def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     assert "Authorization" in captured_headers
     assert captured_headers["Authorization"] == f"Bearer {valid_jwt}"
     assert result.status_code == 200
+
+
+def test_access_structured_record_debug_error_when_cdg_debug_set(
+    mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+    valid_simple_request_payload: Parameters,
+    valid_jwt: JWT,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that the `access_structured_record` method raises a detailed debug error
+    when the CDG_DEBUG environment variable is set to 'true'.
+    """
+    monkeypatch.setenv("CDG_DEBUG", "true")
+
+    provider_asid = "200000001154"
+    consumer_asid = "200000001152"
+    provider_endpoint = "https://test.com"
+    trace_id = "invalid for test"
+    request_body = json.dumps(valid_simple_request_payload)
+
+    client = GpProviderClient(
+        provider_endpoint=provider_endpoint,
+        provider_asid=provider_asid,
+        consumer_asid=consumer_asid,
+        token=valid_jwt,
+    )
+
+    with pytest.raises(ProviderRequestFailedError) as exc_info:
+        client.access_structured_record(trace_id, request_body)
+
+    error_message = str(exc_info.value)
+    # Verify detailed debug information is included
+    assert "GPProvider FHIR API request failed:" in error_message
+    assert "400:" in error_message
+    assert "Bad Request" in error_message
+    assert "Headers were:" in error_message
+    assert "Body payload was:" in error_message
+    assert request_body in error_message

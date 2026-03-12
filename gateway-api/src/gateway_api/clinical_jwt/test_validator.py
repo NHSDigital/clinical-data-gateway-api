@@ -17,6 +17,31 @@ class TestValidateRequiredFields:
         except JWTValidationError as err:
             pytest.fail(f"JWT validation failed: {err}")
 
+    def test_all_missing_fields_reported_in_error(self) -> None:
+        """Test that all missing required fields are reported in a single error."""
+        jwt = JWT(
+            issuer="",
+            subject="",
+            audience="",
+            requesting_device={},
+            requesting_organization={},
+            requesting_practitioner={},
+            issued_at=None,  # type: ignore
+            expiration=None,  # type: ignore
+        )
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_required_fields(jwt)
+        error_message = str(exc_info.value)
+        # Verify all required fields are mentioned in the error
+        assert "issuer" in error_message
+        assert "subject" in error_message
+        assert "audience" in error_message
+        assert "requesting_device" in error_message
+        assert "requesting_organization" in error_message
+        assert "requesting_practitioner" in error_message
+        assert "issued_at" in error_message
+        assert "expiration" in error_message
+
 
 class TestValidateTimestamps:
     """Tests for validate_timestamps method."""
@@ -83,29 +108,21 @@ class TestValidateDevice:
         """Test that a valid device passes validation."""
         JWTValidator.validate_device(valid_jwt.requesting_device)  # Should not raise
 
-    def test_missing_resource_type_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing resourceType raises validation error."""
-        device = valid_jwt.requesting_device.copy()
-        device["resourceType"] = "WrongType"
+    def test_invalid_device_reports_all_errors(self) -> None:
+        """Test that all device validation errors are reported."""
+        device = {
+            "resourceType": "WrongType",
+            "identifier": [{"missing": "system_and_value"}],
+            # missing model and version
+        }
         with pytest.raises(JWTValidationError) as exc_info:
             JWTValidator.validate_device(device)
-        assert "resourceType must be 'Device'" in str(exc_info.value)
-
-    def test_missing_identifier_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing identifier raises validation error."""
-        device = valid_jwt.requesting_device.copy()
-        del device["identifier"]
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_device(device)
-        assert "identifier must be a non-empty list" in str(exc_info.value)
-
-    def test_missing_model_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing model raises validation error."""
-        device = valid_jwt.requesting_device.copy()
-        del device["model"]
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_device(device)
-        assert "model is required" in str(exc_info.value)
+        error_message = str(exc_info.value)
+        assert "resourceType must be 'Device'" in error_message
+        assert "identifier[0].system is required" in error_message
+        assert "identifier[0].value is required" in error_message
+        assert "model is required" in error_message
+        assert "version is required" in error_message
 
 
 class TestValidateOrganization:
@@ -115,21 +132,20 @@ class TestValidateOrganization:
         """Test that a valid organization passes validation."""
         JWTValidator.validate_organization(valid_jwt.requesting_organization)
 
-    def test_missing_resource_type_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing resourceType raises validation error."""
-        org = valid_jwt.requesting_organization.copy()
-        org["resourceType"] = "WrongType"
+    def test_invalid_organization_reports_all_errors(self) -> None:
+        """Test that all organization validation errors are reported."""
+        org = {
+            "resourceType": "WrongType",
+            "identifier": [{"missing": "system_and_value"}],
+            # missing name
+        }
         with pytest.raises(JWTValidationError) as exc_info:
             JWTValidator.validate_organization(org)
-        assert "resourceType must be 'Organization'" in str(exc_info.value)
-
-    def test_missing_name_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing name raises validation error."""
-        org = valid_jwt.requesting_organization.copy()
-        del org["name"]
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_organization(org)
-        assert "name is required" in str(exc_info.value)
+        error_message = str(exc_info.value)
+        assert "resourceType must be 'Organization'" in error_message
+        assert "identifier[0].system is required" in error_message
+        assert "identifier[0].value is required" in error_message
+        assert "name is required" in error_message
 
 
 class TestValidatePractitioner:
@@ -139,21 +155,26 @@ class TestValidatePractitioner:
         """Test that a valid practitioner passes validation."""
         JWTValidator.validate_practitioner(valid_jwt.requesting_practitioner)
 
-    def test_missing_resource_type_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing resourceType raises validation error."""
-        pract = valid_jwt.requesting_practitioner.copy()
-        pract["resourceType"] = "WrongType"
+    def test_invalid_practitioner_reports_all_errors(self) -> None:
+        """Test that all practitioner validation errors are reported."""
+        pract = {
+            "resourceType": "WrongType",
+            # missing id
+            "identifier": [
+                {"missing": "system_and_value"},
+                {"system": "sys2", "value": "val2"},
+                {"system": "sys3", "value": "val3"},
+            ],  # 3 items but first missing system/value
+            "name": [{"given": ["Test"]}],  # Missing family
+        }
         with pytest.raises(JWTValidationError) as exc_info:
             JWTValidator.validate_practitioner(pract)
-        assert "resourceType must be 'Practitioner'" in str(exc_info.value)
-
-    def test_missing_id_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing id raises validation error."""
-        pract = valid_jwt.requesting_practitioner.copy()
-        del pract["id"]
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_practitioner(pract)
-        assert "id is required" in str(exc_info.value)
+        error_message = str(exc_info.value)
+        assert "resourceType must be 'Practitioner'" in error_message
+        assert "id is required" in error_message
+        assert "identifier[0].system is required" in error_message
+        assert "identifier[0].value is required" in error_message
+        assert "family is required" in error_message
 
     def test_insufficient_identifiers_raises_error(self, valid_jwt: JWT) -> None:
         """Test that less than 3 identifiers raises validation error."""
@@ -163,14 +184,6 @@ class TestValidatePractitioner:
             JWTValidator.validate_practitioner(pract)
         assert "at least 3 items" in str(exc_info.value)
 
-    def test_missing_family_name_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that missing family name raises validation error."""
-        pract = valid_jwt.requesting_practitioner.copy()
-        pract["name"] = [{"given": ["Test"]}]  # Missing family
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_practitioner(pract)
-        assert "family is required" in str(exc_info.value)
-
 
 class TestValidate:
     """Tests for the main validate method."""
@@ -179,21 +192,33 @@ class TestValidate:
         """Test that a completely valid JWT passes all validation."""
         JWTValidator.validate(valid_jwt)  # Should not raise
 
-    def test_invalid_jwt_reports_all_errors(self, valid_jwt: JWT) -> None:
-        """Test that validation reports all errors, not just the first one."""
+    def test_multiple_validation_errors_collected(self, valid_jwt: JWT) -> None:
+        """
+        Test that all validation errors from all validators are collected and
+        reported together.
+        """
         jwt = JWT(
-            issuer="",  # Invalid - missing required field
+            issuer="",  # Invalid - missing issuer
             subject=valid_jwt.subject,
             audience=valid_jwt.audience,
-            requesting_device={"resourceType": "Wrong"},  # Invalid - wrong resourceType
-            requesting_organization=valid_jwt.requesting_organization,
-            requesting_practitioner=valid_jwt.requesting_practitioner,
-            issued_at=valid_jwt.issued_at,
+            requesting_device={
+                "resourceType": "Wrong",  # Invalid - wrong resourceType
+            },
+            requesting_organization={
+                "resourceType": "Wrong",  # Invalid - wrong resourceType
+            },
+            requesting_practitioner={
+                "resourceType": "Wrong",  # Invalid - wrong resourceType
+            },
+            issued_at="not an int",  # type: ignore  # Invalid - not an integer
             expiration=valid_jwt.expiration,
         )
         with pytest.raises(JWTValidationError) as exc_info:
             JWTValidator.validate(jwt)
         error_message = str(exc_info.value)
-        # Should contain both the missing issuer error and the device error
+        # Should contain errors from all validators
         assert "issuer" in error_message
-        assert "Device" in error_message or "device" in error_message
+        assert "timestamp" in error_message or "unix timestamp" in error_message
+        assert "Device" in error_message
+        assert "Organization" in error_message
+        assert "Practitioner" in error_message
