@@ -116,8 +116,8 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
         token=valid_jwt,
     )
     expected_headers = {
-        "Content-Type": "application/fhir+json;charset=utf-8",
-        "Accept": "application/fhir+json;charset=utf-8",
+        "Content-Type": "application/fhir+json; charset=utf-8",
+        "Accept": "application/fhir+json; charset=utf-8",
         "Ssp-TraceID": str(trace_id),
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
