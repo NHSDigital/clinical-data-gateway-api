@@ -54,6 +54,7 @@ publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
+	$(docker) network create gateway-local || echo "Docker network 'gateway-local' already exists."
 	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
 		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \

@@ -6,6 +6,7 @@ env:
   STUB_SDS: "true"
   STUB_PDS: "true"
   STUB_PROVIDER: "true"
+  ENV: "local"
 
 on:
   workflow_call:

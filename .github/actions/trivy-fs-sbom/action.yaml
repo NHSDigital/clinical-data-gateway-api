@@ -1,0 +1,130 @@
+name: SBOM Scan
+description: Performs SBOM scanning and reporting with optional dependency graph upload
+
+inputs:
+  image-ref:
+    description: 'Docker image reference to scan'
+    required: false
+  repo-path:
+    description: "Path to git repo to scan (local or remote)"
+    required: false
+  fs-path:
+    description: 'Path to filesystem to scan'
+    required: false
+  github-token:
+    description: 'GitHub token for dependency graph upload'
+    required: false
+  publish-to-dependency-graph:
+    description: 'Whether to publish SBOM to GitHub Dependency Graph'
+    required: false
+    default: 'false'
+  artifact-name:
+    description: 'Name for the uploaded SBOM artifact'
+    required: false
+    default: 'sbom'
+
+outputs:
+  sbom-path:
+    description: 'Path to the generated SBOM file'
+    value: 'sbom.spdx.json'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        IMAGE_REF: ${{ inputs.image-ref }}
+        REPO_PATH: ${{ inputs.repo-path }}
+        FS_PATH: ${{ inputs.fs-path }}
+      run: |
+        echo "IMAGE_REF:" $IMAGE_REF
+        echo "REPO_PATH:" $REPO_PATH
+        echo "FS_PATH:" $FS_PATH
+        if [[ -z $IMAGE_REF && -z $REPO_PATH && -z $FS_PATH ]]; then
+          echo "Must define one of IMAGE_REF or REPO_PATH or FS_PATH"
+          exit 1
+        elif [[ -n $IMAGE_REF && -n $REPO_PATH && -n $FS_PATH ]]; then
+          echo "Must define only one of IMAGE_REF or REPO_PATH or FS_PATH, not multiple."
+          exit 1
+        fi
+        ls -l $FS_PATH || true
+
+    - name: Trivy SBOM SPDX Scan - Docker Image
+      if: ${{ inputs.image-ref != '' }}
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        scan-type: image
+        image-ref: ${{ inputs.image-ref }}
+        format: spdx-json
+        output: sbom.spdx.json
+
+    - name: Trivy SBOM SPDX Scan - Repo
+      if: ${{ inputs.repo-path != '' }}
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        scan-type: repo
+        scan-ref: ${{ inputs.repo-path }}
+        format: spdx-json
+        output: sbom.spdx.json
+
+    - name: Trivy SBOM SPDX Scan - Filesystem
+      if: ${{ inputs.fs-path != '' }}
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        scan-type: fs
+        scan-ref: ${{ inputs.fs-path }}
+        format: spdx-json
+        output: sbom.spdx.json
+
+    - name: Trivy SBOM Dependency Graph Upload
+      if: ${{ inputs.publish-to-dependency-graph == 'true' && inputs.github-token != '' }}
+      uses: aquasecurity/trivy-action@0.34.2
+      with:
+        scan-type: image
+        image-ref: ${{ inputs.image-ref }}
+        format: github
+        output: sbom.github.json
+        github-pat: ${{ inputs.github-token }}
+
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: sbom.spdx.json
+
+    - name: Append SBOM inventory to summary
+      if: always()
+      shell: bash
+      run: |
+        cat > sbom_to_summary.jq <<'JQ'
+        def clean: (.|tostring) | gsub("\\|"; "\\|") | gsub("\r?\n"; " ");
+        def purl: ((.externalRefs[]? | select(.referenceType=="purl") | .referenceLocator) // "");
+        def license: (.licenseConcluded // .licenseDeclared // "");
+        def supplier: ((.supplier // "") | sub("^Person: *|^Organization: *";""));
+
+        if (has("spdxVersion") | not) then
+          "### SBOM Inventory (SPDX)\n\nSBOM is not SPDX JSON."
+        else
+          .packages as $pkgs
+          | "### SBOM Inventory (SPDX)\n\n"
+          + "| Metric | Value |\n|---|---|\n"
+          + "| Packages | " + ($pkgs|length|tostring) + " |\n\n"
+          + "<details><summary>Full inventory</summary>\n\n"
+          + "| Package | Version | Supplier | License | PURL |\n|---|---|---|---|---|\n"
+          + (
+              $pkgs
+              | map("| "
+                    + ((.name // .SPDXID) | clean)
+                    + " | " + ((.versionInfo // "") | clean)
+                    + " | " + (supplier | clean)
+                    + " | " + (license | clean)
+                    + " | " + (purl | clean)
+                    + " |")
+              | join("\n")
+            )
+          + "\n\n</details>\n"
+        end
+        JQ
+
+        jq -r -f sbom_to_summary.jq sbom.spdx.json >> "$GITHUB_STEP_SUMMARY"

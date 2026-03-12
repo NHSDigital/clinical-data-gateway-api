@@ -15,7 +15,9 @@ from tests.conftest import Client
 @given("the API is running")
 def check_api_is_running(client: Client) -> None:
     response = client.send_health_check()
-    assert response.status_code == 200
+    assert response.status_code == 200, (
+        f"Health check failed with {response.status_code}: {response.text}"
+    )
 
 
 @when("I send a valid Parameters resource to the endpoint")
