@@ -121,7 +121,7 @@ class Controller:
             prefix="Mr",
         )
 
-        # TODO: Where do we get the consumer org name from? SDS?
+        # TODO: Where do we get the consumer org name from? SDS only returns ODS/ASID
         requesting_organization = Organization(
             ods_code=consumer_ods, name="Consumer organisation name"
         )
