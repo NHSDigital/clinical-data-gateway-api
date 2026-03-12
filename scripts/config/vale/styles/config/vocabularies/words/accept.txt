@@ -28,6 +28,7 @@ Octokit
 onboarding
 Podman
 Proxygen
+[Pp]ydantic
 [Pp]ytest
 Python
 repos
@@ -39,5 +40,6 @@ Terraform
 toolchain
 Trufflehog
 usebruno
+validators?
 VMs
 [Vv]scode
