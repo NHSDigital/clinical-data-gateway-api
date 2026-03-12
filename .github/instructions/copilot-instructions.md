@@ -24,6 +24,10 @@ The container must be running in order to successfully run any of the test suite
 
 The schema for this API can be found in `gateway-api/openapi.yaml`.
 
+## Code reviews
+
+When reviewing code, ensure you compare the changes made to files to all README.md containing directory structures, and update the directory structures accordingly.
+
 ## Docstrings and comments
 
 - Use precise variable and function names to reduce the need for comments
