@@ -151,9 +151,6 @@ class JWTValidator:
     def _validate_practitioner_name(names: list[dict[str, Any]]) -> list[str]:
         """Validate practitioner name list structure and contents."""
         errors = []
-        if len(names) == 0:
-            errors.append("name list cannot be empty")
-            return errors
 
         name = names[0]
         if not name.get("family"):

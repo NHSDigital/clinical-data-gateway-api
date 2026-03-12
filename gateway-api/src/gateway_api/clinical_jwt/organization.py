@@ -21,16 +21,3 @@ class Organization:
             ],
             "name": self.name,
         }
-
-    @property
-    def json(self) -> dict[str, Any]:
-        """
-        Return the Organization as a dictionary suitable for JWT payload.
-        Provided for backwards compatibility.
-        """
-        return self.to_dict()
-
-    def __str__(self) -> str:
-        import json
-
-        return json.dumps(self.to_dict(), indent=2)
