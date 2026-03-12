@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
+from fhir.constants import FHIRSystem
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 from stubs.base_stub import GetStub, StubBase
@@ -39,10 +40,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         https://github.com/NHSDigital/spine-directory-service-api
     """
 
-    ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
-    INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
-    PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
-    ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
     CONNECTION_SYSTEM = (
         "https://terminology.hl7.org/CodeSystem/endpoint-connection-type"
     )
@@ -205,7 +202,7 @@ class SdsFhirApiStub(StubBase, GetStub):
             )
 
         # Parse organization ODS code
-        org_ods = self._extract_param_value(organization, self.ODS_SYSTEM)
+        org_ods = self._extract_param_value(organization, FHIRSystem.ODS_CODE)
 
         # Parse identifier list (can be string or list)
         # if isinstance(identifier, str):
@@ -217,12 +214,14 @@ class SdsFhirApiStub(StubBase, GetStub):
         party_key: str | None = None
 
         for ident in identifier_list:
-            if self.INTERACTION_SYSTEM in ident:
+            if FHIRSystem.NHS_SERVICE_INTERACTION_ID in ident:
                 service_interaction_id = self._extract_param_value(
-                    ident, self.INTERACTION_SYSTEM
+                    ident, FHIRSystem.NHS_SERVICE_INTERACTION_ID
                 )
-            elif self.PARTYKEY_SYSTEM in ident:
-                party_key = self._extract_param_value(ident, self.PARTYKEY_SYSTEM)
+            elif FHIRSystem.NHS_MHS_PARTY_KEY in ident:
+                party_key = self._extract_param_value(
+                    ident, FHIRSystem.NHS_MHS_PARTY_KEY
+                )
 
         # Always validate service interaction ID is present
         if not service_interaction_id:
@@ -298,7 +297,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         # Parse organization ODS code (optional)
         org_ods: str | None = None
         if organization:
-            org_ods = self._extract_param_value(organization, self.ODS_SYSTEM)
+            org_ods = self._extract_param_value(organization, FHIRSystem.ODS_CODE)
 
         # Parse identifier list (can be string or list)
         if isinstance(identifier, str):
@@ -308,12 +307,14 @@ class SdsFhirApiStub(StubBase, GetStub):
         party_key: str | None = None
 
         for ident in identifier or []:
-            if self.INTERACTION_SYSTEM in ident:
+            if FHIRSystem.NHS_SERVICE_INTERACTION_ID in ident:
                 service_interaction_id = self._extract_param_value(
-                    ident, self.INTERACTION_SYSTEM
+                    ident, FHIRSystem.NHS_SERVICE_INTERACTION_ID
                 )
-            elif self.PARTYKEY_SYSTEM in ident:
-                party_key = self._extract_param_value(ident, self.PARTYKEY_SYSTEM)
+            elif FHIRSystem.NHS_MHS_PARTY_KEY in ident:
+                party_key = self._extract_param_value(
+                    ident, FHIRSystem.NHS_MHS_PARTY_KEY
+                )
 
         # Look up endpoints
         endpoints = self._lookup_endpoints(
@@ -497,17 +498,17 @@ class SdsFhirApiStub(StubBase, GetStub):
             "id": device_id,
             "identifier": [
                 {
-                    "system": self.ASID_SYSTEM,
+                    "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": asid,
                 },
                 {
-                    "system": self.PARTYKEY_SYSTEM,
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": party_key,
                 },
             ],
             "owner": {
                 "identifier": {
-                    "system": self.ODS_SYSTEM,
+                    "system": FHIRSystem.ODS_CODE,
                     "value": org_ods,
                 },
                 "display": display,
@@ -546,17 +547,17 @@ class SdsFhirApiStub(StubBase, GetStub):
             "address": address,
             "managingOrganization": {
                 "identifier": {
-                    "system": self.ODS_SYSTEM,
+                    "system": FHIRSystem.ODS_CODE,
                     "value": org_ods,
                 }
             },
             "identifier": [
                 {
-                    "system": self.ASID_SYSTEM,
+                    "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": asid,
                 },
                 {
-                    "system": self.PARTYKEY_SYSTEM,
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": party_key,
                 },
             ],
