@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import Any
 
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class Practitioner:
     id: str
     sds_userid: str
@@ -12,38 +13,29 @@ class Practitioner:
     given_name: str | None = None
     prefix: str | None = None
 
-    def __post_init__(self) -> None:
-        given = "" if self.given_name is None else f',"given":["{self.given_name}"]'
-        prefix = "" if self.prefix is None else f',"prefix":["{self.prefix}"]'
-        self._name_str = f'[{{"family": "{self.family_name}"{given}{prefix}}}]'
+    def _build_name(self) -> list[dict[str, Any]]:
+        """Build the name array with proper structure for JWT."""
+        name_dict: dict[str, Any] = {"family": self.family_name}
+        if self.given_name is not None:
+            name_dict["given"] = [self.given_name]
+        if self.prefix is not None:
+            name_dict["prefix"] = [self.prefix]
+        return [name_dict]
 
-    @property
-    def json(self) -> str:
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Return the Practitioner as a dictionary suitable for JWT payload.
+        """
         user_id_system = "https://fhir.nhs.uk/Id/sds-user-id"
         role_id_system = "https://fhir.nhs.uk/Id/sds-role-profile-id"
 
-        outstr = f"""
-        {{
-        "resourceType": "Practitioner",
-        "id": "{self.id}",
-        "identifier": [
-        {{
-            "system": "{user_id_system}",
-            "value": "{self.sds_userid}"
-        }},
-        {{
-            "system": "{role_id_system}",
-            "value": "{self.role_profile_id}"
-        }},
-        {{
-            "system": "{self.userid_url}",
-            "value": "{self.userid_value}"
-        }}
-        ],
-        "name": {self._name_str}
-        }}
-        """
-        return outstr.strip()
-
-    def __str__(self) -> str:
-        return self.json
+        return {
+            "resourceType": "Practitioner",
+            "id": self.id,
+            "identifier": [
+                {"system": user_id_system, "value": self.sds_userid},
+                {"system": role_id_system, "value": self.role_profile_id},
+                {"system": self.userid_url, "value": self.userid_value},
+            ],
+            "name": self._build_name(),
+        }
