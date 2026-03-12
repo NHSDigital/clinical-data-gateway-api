@@ -2,8 +2,6 @@
 Unit tests for :mod:`gateway_api.clinical_jwt.device`.
 """
 
-from json import loads
-
 from gateway_api.clinical_jwt import Device
 
 
@@ -35,8 +33,7 @@ def test_device_json_property_returns_valid_json_structure() -> None:
         version="5.3.0",
     )
 
-    json_output = input_device.json
-    jdict = loads(json_output)
+    jdict = input_device.to_dict()
 
     output_device = Device(
         system=jdict["identifier"][0]["system"],
@@ -46,17 +43,3 @@ def test_device_json_property_returns_valid_json_structure() -> None:
     )
 
     assert input_device == output_device
-
-
-def test_device_str_returns_json() -> None:
-    """
-    Test that __str__ returns the same value as the json property.
-    """
-    device = Device(
-        system="https://test.com/device",
-        value="TEST-001",
-        model="Test Model",
-        version="1.0.0",
-    )
-
-    assert str(device) == device.json

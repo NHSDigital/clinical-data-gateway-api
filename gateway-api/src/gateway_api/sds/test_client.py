@@ -5,6 +5,7 @@ Unit tests for :mod:`gateway_api.sds_search`.
 from __future__ import annotations
 
 import pytest
+from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
@@ -70,17 +71,17 @@ def test_sds_client_get_org_details_with_endpoint(
             "id": "test-device-id",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                    "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": "999999999999",
                 },
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": "TESTORG-123456",
                 },
             ],
             "owner": {
                 "identifier": {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                     "value": "TESTORG",
                 }
             },
@@ -98,13 +99,13 @@ def test_sds_client_get_org_details_with_endpoint(
             "address": "https://testorg.example.com/fhir",
             "managingOrganization": {
                 "identifier": {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                     "value": "TESTORG",
                 }
             },
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": "TESTORG-123456",
                 }
             ],
@@ -179,13 +180,13 @@ def test_sds_client_custom_service_interaction_id(
             "id": "custom-device",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                    "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": "777777777777",
                 }
             ],
             "owner": {
                 "identifier": {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                     "value": "CUSTOMINT",
                 }
             },
@@ -226,16 +227,13 @@ def test_sds_client_builds_correct_device_query_params(
     params = stub.get_params
 
     # Check organization parameter
-    assert (
-        params["organization"]
-        == "https://fhir.nhs.uk/Id/ods-organization-code|PROVIDER"
-    )
+    assert params["organization"] == f"{FHIRSystem.ODS_CODE}|PROVIDER"
 
     # Check identifier list contains interaction ID
     identifiers = params["identifier"]
     assert isinstance(identifiers, list)
     assert any(
-        "https://fhir.nhs.uk/Id/nhsServiceInteractionId|" in str(ident)
+        f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|" in str(ident)
         for ident in identifiers
     )
 
@@ -261,11 +259,11 @@ def test_sds_client_extract_party_key_from_device(
             "id": "device-with-party-key",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                    "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": "888888888888",
                 },
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": "WITHPARTYKEY-654321",
                 },
             ],
@@ -283,7 +281,7 @@ def test_sds_client_extract_party_key_from_device(
             "address": "https://withpartykey.example.com/fhir",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
                     "value": "WITHPARTYKEY-654321",
                 }
             ],

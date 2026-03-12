@@ -12,6 +12,7 @@ import os
 from enum import StrEnum
 from typing import Any, cast
 
+from fhir.constants import FHIRSystem
 from stubs import SdsFhirApiStub
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
@@ -76,12 +77,6 @@ class SdsClient:
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
 
-    # FHIR identifier systems
-    ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
-    INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
-    PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
-    ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
@@ -138,8 +133,8 @@ class SdsClient:
 
         # TODO: Post-steel-thread handle case where no device is found for ODS code
 
-        asid = self._extract_identifier(device, self.ASID_SYSTEM)
-        party_key = self._extract_identifier(device, self.PARTYKEY_SYSTEM)
+        asid = self._extract_identifier(device, FHIRSystem.NHS_SPINE_ASID)
+        party_key = self._extract_identifier(device, FHIRSystem.NHS_MHS_PARTY_KEY)
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
@@ -190,12 +185,14 @@ class SdsClient:
         url = f"{self.base_url}/{querytype.value}"
 
         params: dict[str, Any] = {
-            "organization": f"{self.ODS_SYSTEM}|{ods_code}",
-            "identifier": [f"{self.INTERACTION_SYSTEM}|{self.service_interaction_id}"],
+            "organization": f"{FHIRSystem.ODS_CODE}|{ods_code}",
+            "identifier": [
+                f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|{self.service_interaction_id}"
+            ],
         }
 
         if party_key is not None:
-            params["identifier"].append(f"{self.PARTYKEY_SYSTEM}|{party_key}")
+            params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
         response = get(
             url,

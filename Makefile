@@ -54,11 +54,24 @@ publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
-	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
+	@PROVIDER_STRING="" ; \
+	if [[ -n "$${STUB_PROVIDER}" ]]; then \
+		PROVIDER_STRING="$${PROVIDER_STRING} -e STUB_PROVIDER=$${STUB_PROVIDER}" ; \
+	fi ; \
+	if [[ -n "$${STUB_PDS}" ]]; then \
+		PROVIDER_STRING="$${PROVIDER_STRING} -e STUB_PDS=$${STUB_PDS}" ; \
+	fi ; \
+	if [[ -n "$${STUB_SDS}" ]]; then \
+		PROVIDER_STRING="$${PROVIDER_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
+	fi ; \
+	if [[ -n "$${CDG_DEBUG}" ]]; then \
+		PROVIDER_STRING="$${PROVIDER_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
+	fi ; \
+	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local $${PROVIDER_STRING} -d ${IMAGE_NAME} ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 $${PROVIDER_STRING} -d ${IMAGE_NAME} ; \
 	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
