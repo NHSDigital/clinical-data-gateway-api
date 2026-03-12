@@ -62,7 +62,7 @@ class GpProviderClient:
         consumer_asid (str): The ASID for the consumer.
         token (JWT): JWT object for authentication with the provider API.
         endpoint_path (str): The endpoint path for the operation
-            (default: "FHIR/STU3/patient/$gpc.getstructuredrecord").
+            (default: "Patient/$gpc.getstructuredrecord").
 
     Methods:
         access_structured_record(trace_id: str, body: str) -> Response:
@@ -89,8 +89,8 @@ class GpProviderClient:
         """
         # TODO: Post-steel-thread, probably check whether JWT is valid/not expired
         return {
-            "Content-Type": "application/fhir+json;charset=utf-8",
-            "Accept": "application/fhir+json;charset=utf-8",
+            "Content-Type": "application/fhir+json; charset=utf-8",
+            "Accept": "application/fhir+json; charset=utf-8",
             "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
