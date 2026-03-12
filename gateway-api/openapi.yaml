@@ -76,7 +76,7 @@ paths:
                         properties:
                           system:
                             type: string
-                            minLength: 1
+                            enum: ["https://fhir.nhs.uk/Id/nhs-number"]
                             example: "https://fhir.nhs.uk/Id/nhs-number"
                           value:
                             type: string

@@ -26,6 +26,7 @@
             "id": "1",
             "type": "Organization",
             "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
                 "value": "BlankEndpointInSDS",
                 "period": {"start": "2020-01-01"}
             }

@@ -1,6 +1,5 @@
 import os
 import traceback
-from typing import TypedDict
 
 from flask import Flask, request
 from flask.wrappers import Response
@@ -10,13 +9,9 @@ from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
 )
+from gateway_api.get_structured_record.response import GetStructuredRecordResponse
 
 app = Flask(__name__)
-
-
-class HealthCheckResponse(TypedDict):
-    status: str
-    version: str
 
 
 def get_app_host() -> str:
@@ -37,24 +32,26 @@ def get_app_port() -> int:
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Response:
+    response = GetStructuredRecordResponse()
+    response.mirror_headers(request)
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
         controller = Controller()
-        flask_response = controller.run(request=get_structured_record_request)
-        get_structured_record_request.set_response_from_flaskresponse(flask_response)
+        provider_response = controller.run(request=get_structured_record_request)
+        response.add_provider_response(provider_response)
     except AbstractCDGError as e:
         e.log()
-        return e.build_response()
+        response.add_error_response(e)
     except Exception:
         error = UnexpectedError(traceback=traceback.format_exc())
         error.log()
-        return error.build_response()
+        response.add_error_response(error)
 
-    return get_structured_record_request.build_response()
+    return response.build()
 
 
 @app.route("/health", methods=["GET"])
-def health_check() -> HealthCheckResponse:
+def health_check() -> dict[str, str]:
     """Health check endpoint."""
     version: str = "unknown"
 
