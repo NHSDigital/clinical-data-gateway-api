@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from fhir.constants import FHIRSystem
+
 
 @dataclass(frozen=True, kw_only=True)
 class Organization:
@@ -15,7 +17,7 @@ class Organization:
             "resourceType": "Organization",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                     "value": self.ods_code,
                 }
             ],

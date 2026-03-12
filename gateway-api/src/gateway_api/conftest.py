@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 import requests
 from fhir import Bundle, OperationOutcome, Patient
+from fhir.constants import FHIRSystem
 from fhir.parameters import Parameters
 from flask import Request
 from requests.structures import CaseInsensitiveDict
@@ -62,7 +63,7 @@ def valid_simple_request_payload() -> Parameters:
             {
                 "name": "patientNHSNumber",
                 "valueIdentifier": {
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "system": FHIRSystem.NHS_NUMBER,
                     "value": "9999999999",
                 },
             },
@@ -103,7 +104,7 @@ def valid_simple_response_payload() -> Bundle:
                             "identifier": {
                                 "value": "A12345",
                                 "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                                "system": FHIRSystem.ODS_CODE,
                             },
                         }
                     ],
@@ -143,7 +144,7 @@ def happy_path_pds_response_body() -> Patient:
                 "identifier": {
                     "value": "A12345",
                     "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                 },
             }
         ],
@@ -174,7 +175,7 @@ def valid_jwt() -> JWT:
             "resourceType": "Organization",
             "identifier": [
                 {
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                     "value": "T1234",
                 }
             ],
@@ -184,9 +185,9 @@ def valid_jwt() -> JWT:
             "resourceType": "Practitioner",
             "id": "prac123",
             "identifier": [
-                {"system": "https://fhir.nhs.uk/Id/sds-user-id", "value": "user123"},
+                {"system": FHIRSystem.SDS_USER_ID, "value": "user123"},
                 {
-                    "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                    "system": FHIRSystem.SDS_ROLE_PROFILE_ID,
                     "value": "role123",
                 },
                 {"system": "https://example.com/userid", "value": "userid123"},

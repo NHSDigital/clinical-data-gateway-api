@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from fhir.constants import FHIRSystem
+
 
 @dataclass(frozen=True, kw_only=True)
 class Practitioner:
@@ -26,8 +28,8 @@ class Practitioner:
         """
         Return the Practitioner as a dictionary suitable for JWT payload.
         """
-        user_id_system = "https://fhir.nhs.uk/Id/sds-user-id"
-        role_id_system = "https://fhir.nhs.uk/Id/sds-role-profile-id"
+        user_id_system = FHIRSystem.SDS_USER_ID
+        role_id_system = FHIRSystem.SDS_ROLE_PROFILE_ID
 
         return {
             "resourceType": "Practitioner",
