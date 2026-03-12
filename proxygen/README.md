@@ -1,33 +1,87 @@
 # Proxygen
 
-Proxygen is the tool created by the API Platform team to support the deployment of NHS APIs.
+Proxygen is the CLI tool created by the NHS API Platform team to support the deployment of NHS APIs. It manages the lifecycle of API proxy instances — creating, updating, and destroying them.
 
-We use this tool in the pipelines (and manually) to create, destroy and interact more generally with the proxy instances.
+We use this tool in CI/CD pipelines (and can use it manually) to manage the proxy instances for the Clinical Data Gateway API.
 
 For more information on Proxygen, [read the docs](https://nhsd-confluence.digital.nhs.uk/spaces/APM/pages/375329782/Proxygen).
 
-Proxygen needs:
+## Proxygen/ Structure
 
-* a settings file stating which API we are attempting to update;
-* a credentials file to authenticate us as the owner/maintainer of the API;
-* a specification file that outlines the behaviour of the proxy.
+```text
+proxygen/
+├── README.md                        # This file
+├── credentials.template.yaml        # Template for Proxygen authentication credentials
+├── settings.template.yaml           # Template for Proxygen CLI settings (API name, endpoint URL)
+└── x-nhsd-apim.template.yaml        # Template for the custom OpenAPI extension used by Proxygen
+```
+
+## How It Works
+
+Proxygen needs three pieces of configuration to deploy a proxy:
+
+1. **Settings file** — tells the CLI which API to target.
+2. **Credentials file** — authenticates us as the owner/maintainer of the API.
+3. **Specification file** — defines the proxy behaviour using an OpenAPI spec with a custom `x-nhsd-apim` extension.
+
+The following diagram shows how these files are assembled and used during deployment:
+
+```mermaid
+flowchart LR
+    A[settings.template.yaml] -->|Populated with API name| D[~/.proxygen/settings.yaml]
+    B[credentials.template.yaml] -->|Populated with secret key path| E[~/.proxygen/credentials.yaml]
+    C[x-nhsd-apim.template.yaml] -->|Concatenated with openapi.yaml| F[Proxy Specification]
+    G[gateway-api/openapi.yaml] --> F
+    D --> H[proxygen CLI]
+    E --> H
+    F --> H
+    H -->|Deploy / Destroy| I[API Proxy Instance]
+```
 
 ## Settings File
 
-This is stored at `proxygen/settings.yaml` and is read by the Proxygen command line tool when it has been requested to make updates to an API.
+**Template:** `proxygen/settings.template.yaml`
+
+This file tells the Proxygen CLI which API to manage and where to send its requests. It contains the API name and the Proxygen endpoint URL.
+
+The placeholder `<proxygen_api_name>` is replaced with the actual API name during CI/CD.
 
 ## Credentials File
 
-A template is stored at `proxygen/credentials.template.yaml` where the `<proxygen_secret_path>` needs to be inserted. This is a path to a file that holds the secret that identifies us as the owner/maintainer of the API.
+**Template:** `proxygen/credentials.template.yaml`
 
-During the GitHub workflows, the secret is pulled from AWS secrets manager, written to a file and the path to that file is inserted in to `credentials.template.yaml`.
+This file authenticates us as the owner/maintainer of the API. It contains the Proxygen machine-user client ID, key ID, and a path to a private key file.
 
-## Specification file
+During CI/CD workflows, the secret private key is pulled from AWS Secrets Manager, written to a temporary file, and the path to that file is inserted into the credentials template using `yq`.
 
-Proxygen deploys an instance of a proxy using a specification file. This is of the OpenAPI format with a custom extension, `x-nhsd-apim` which provide Proxygen with information as to how the proxy should behave. This includes:
+## Specification File
 
-* the target endpoint, to which it will forward traffic;
-* the scopes that a user needs in order to access the proxy's endpoint;
-* a key that the points to the mTLS certificate which the targeted backend expects to be used.
+**Template:** `proxygen/x-nhsd-apim.template.yaml`
 
-A template, `proxygen/x-nhsd-api.tempalte.yaml`, is concatenated with the general OpenAPI specification for the API, `gateway-api/openapi.yaml`, and the key to the mTLS certificate to be used for that proxy is written in. All of which is then written to a file and the path to that file is passed to Proxygen to deploy the proxy in the stated environment.
+Proxygen deploys a proxy instance using an OpenAPI specification file. The specification includes a custom `x-nhsd-apim` extension that tells Proxygen how the proxy should behave. This includes:
+
+* the **target endpoint URL** to which the proxy will forward traffic;
+* the **access controls** and scopes a user needs to access the proxy;
+* the **mTLS secret name** pointing to the certificate the backend expects.
+
+At deploy time, this template is concatenated with the main API specification (`gateway-api/openapi.yaml`), the target URL and mTLS secret are injected, and the resulting file is passed to the Proxygen CLI.
+
+## CI/CD Usage
+
+Proxygen is invoked from the `preview-env.yml` GitHub Actions workflow via two composite actions:
+
+| Action | Location | Purpose |
+|--------|----------|---------|
+| **configure-proxygen** | `.github/actions/proxy/configure-proxygen/` | Installs `proxygen-cli` via pip, copies templates into `~/.proxygen/`, and injects credentials using `yq` |
+| **deploy-proxy** | `.github/actions/proxy/deploy-proxy/` | Builds the full specification file, then runs `proxygen instance deploy` |
+| **tear-down-proxy** | `.github/actions/proxy/tear-down-proxy/` | Runs `proxygen instance delete` to remove the proxy |
+
+Example CLI commands used in CI/CD:
+
+```bash
+# Deploy a proxy instance
+proxygen instance deploy internal-dev <proxy-base-path> /tmp/proxy-specification.yaml --no-confirm
+
+# Tear down a proxy instance
+proxygen instance delete internal-dev <proxy-base-path> --no-confirm
+```
