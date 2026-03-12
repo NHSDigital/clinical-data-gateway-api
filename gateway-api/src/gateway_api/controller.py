@@ -114,14 +114,14 @@ class Controller:
             id="10019",
             sds_userid="111222333444",
             role_profile_id="444555666777",
-            userid_url="https://consumersupplier.com/Id/user-guid",
+            userid_url="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
             userid_value="98ed4f78-814d-4266-8d5b-cde742f3093c",
             family_name="Doe",
             given_name="John",
             prefix="Mr",
         )
 
-        # TODO: Get consumer organization details properly
+        # TODO: Where do we get the consumer org name from? SDS?
         requesting_organization = Organization(
             ods_code=consumer_ods, name="Consumer organisation name"
         )

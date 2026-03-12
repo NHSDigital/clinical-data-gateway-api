@@ -64,6 +64,9 @@ deploy: clean build # Deploy the project artefact to the target environment @Pip
 	if [[ -n "$${STUB_SDS}" ]]; then \
 		PROVIDER_STRING="$${PROVIDER_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
 	fi ; \
+	if [[ -n "$${CDG_DEBUG}" ]]; then \
+		PROVIDER_STRING="$${PROVIDER_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
+	fi ; \
 	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
 		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local $${PROVIDER_STRING} -d ${IMAGE_NAME} ; \
