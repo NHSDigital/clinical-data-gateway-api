@@ -2,8 +2,8 @@ from typing import Annotated
 
 from pydantic import Field
 
+from ...resources.resource import Resource
 from ..elements.issue import Issue
-from .resource import Resource
 
 
 class OperationOutcome(Resource, resource_type="OperationOutcome"):

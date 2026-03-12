@@ -4,16 +4,16 @@ from typing import Annotated
 
 from pydantic import Field
 
-from ..elements.identifier import NHSNumberValueIdentifier
-from .resource import Resource
+from ...r4.elements.identifier import NHSNumberValueIdentifier
+from ...resources.resource import Resource
 
 
 class Parameters(Resource, resource_type="Parameters"):
-    """A FHIR R4 Parameters resource."""
+    """A FHIR STU3 Parameters resource."""
 
     @dataclass(frozen=True)
     class Parameter(ABC):
-        """A FHIR R4 Parameter resource."""
+        """A FHIR STU3 Parameter resource."""
 
         valueIdentifier: Annotated[NHSNumberValueIdentifier, Field(frozen=True)]
 

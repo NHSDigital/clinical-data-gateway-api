@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.patient import Patient
+from fhir.r4.resources.bundle import Bundle
+from fhir.r4.resources.patient import Patient
 from fhir.resources.resource import Resource
 
 

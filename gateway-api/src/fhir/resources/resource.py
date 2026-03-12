@@ -9,7 +9,7 @@ from pydantic import (
     model_validator,
 )
 
-from ..elements.meta import Meta
+from ..r4.elements.meta import Meta
 
 
 class Resource(BaseModel):

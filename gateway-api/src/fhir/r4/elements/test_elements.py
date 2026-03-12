@@ -4,8 +4,8 @@ import uuid
 import pytest
 from pydantic import BaseModel
 
-from fhir.elements.identifier import Identifier, UUIDIdentifier
-from fhir.elements.meta import Meta
+from fhir.r4.elements.identifier import Identifier, UUIDIdentifier
+from fhir.r4.elements.meta import Meta
 
 
 class TestMeta:

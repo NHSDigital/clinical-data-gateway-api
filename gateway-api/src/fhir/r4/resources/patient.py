@@ -2,9 +2,9 @@ from typing import Annotated
 
 from pydantic import Field
 
+from ...resources.resource import Resource
 from ..elements.identifier import Identifier
 from ..elements.reference import Reference
-from .resource import Resource
 
 
 class Patient(Resource, resource_type="Patient"):
