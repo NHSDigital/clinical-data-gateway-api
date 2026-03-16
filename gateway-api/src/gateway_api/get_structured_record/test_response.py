@@ -7,7 +7,7 @@ from requests.structures import CaseInsensitiveDict
 
 from gateway_api.app import app
 from gateway_api.common.error import UnexpectedError
-from gateway_api.get_structured_record.response import GetStructuredRecordResponse
+from gateway_api.get_structured_record import GetStructuredRecordResponse
 
 
 class TestGetStructuredRecordResponse:
