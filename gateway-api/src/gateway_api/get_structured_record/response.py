@@ -8,18 +8,8 @@ from requests.structures import CaseInsensitiveDict
 
 from gateway_api.common.error import AbstractCDGError
 
-# Access record structured interaction ID from
-# https://developer.nhs.uk/apis/gpconnect/accessrecord_structured_development.html#spine-interactions
-ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
-    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
-)
-
 
 class GetStructuredRecordResponse:
-    INTERACTION_ID: ClassVar[str] = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-    RESOURCE: ClassVar[str] = "patient"
-    FHIR_OPERATION: ClassVar[str] = "$gpc.getstructuredrecord"
-
     MIME_TYPE: ClassVar[str] = "application/fhir+json"
 
     def __init__(self) -> None:
