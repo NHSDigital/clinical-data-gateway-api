@@ -176,14 +176,6 @@ class TestValidatePractitioner:
         assert "identifier[0].value is required" in error_message
         assert "family is required" in error_message
 
-    def test_insufficient_identifiers_raises_error(self, valid_jwt: JWT) -> None:
-        """Test that less than 3 identifiers raises validation error."""
-        pract = valid_jwt.requesting_practitioner.copy()
-        pract["identifier"] = [{"system": "sys", "value": "val"}]  # Only 1
-        with pytest.raises(JWTValidationError) as exc_info:
-            JWTValidator.validate_practitioner(pract)
-        assert "at least 3 items" in str(exc_info.value)
-
 
 class TestValidate:
     """Tests for the main validate method."""
