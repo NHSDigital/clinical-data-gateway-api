@@ -25,11 +25,11 @@ def test_search_patient_by_nhs_number_happy_path(
     mocker.patch("gateway_api.pds.client.get", return_value=happy_path_response)
 
     client = PdsClient(auth_token)
-    result = client.search_patient_by_nhs_number("9999999999")
+    patient = client.search_patient_by_nhs_number("9999999999")
 
-    assert isinstance(result, Patient)
-    assert result.nhs_number == "9999999999"
-    assert result.gp_ods_code == "A12345"
+    assert isinstance(patient, Patient)
+    assert patient.nhs_number == "9999999999"
+    assert patient.gp_ods_code == "A12345"
 
 
 def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
@@ -45,11 +45,11 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
     mocker.patch("gateway_api.pds.client.get", return_value=gp_less_response)
 
     client = PdsClient(auth_token)
-    result = client.search_patient_by_nhs_number("9999999999")
+    patient = client.search_patient_by_nhs_number("9999999999")
 
-    assert isinstance(result, Patient)
-    assert result.nhs_number == "9999999999"
-    assert result.gp_ods_code is None
+    assert isinstance(patient, Patient)
+    assert patient.nhs_number == "9999999999"
+    assert patient.gp_ods_code is None
 
 
 def test_search_patient_by_nhs_number_sends_expected_headers(
