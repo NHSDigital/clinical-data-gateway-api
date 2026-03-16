@@ -1,110 +1,15 @@
 import json
-from typing import Any
 
 import pytest
-from pydantic import BaseModel
+from pydantic import ValidationError
 
-from fhir.resources.bundle import Bundle
-from fhir.resources.patient import Patient
+from fhir.r4.elements.issue import Issue, IssueCode, IssueSeverity
+from fhir.r4.resources.bundle import Bundle
+from fhir.r4.resources.device import Device
+from fhir.r4.resources.endpoint import Endpoint
+from fhir.r4.resources.operation_outcome import OperationOutcome
+from fhir.r4.resources.patient import Patient
 from fhir.resources.resource import Resource
-
-
-class TestResource:
-    class _TestContainer(BaseModel):
-        resource: Resource
-
-    def test_resource_deserialisation(self) -> None:
-        expected_system = "https://fhir.nhs.uk/Id/nhs-number"
-        expected_nhs_number = "nhs_number"
-        example_json = json.dumps(
-            {
-                "resource": {
-                    "resourceType": "Patient",
-                    "identifier": [
-                        {
-                            "system": expected_system,
-                            "value": expected_nhs_number,
-                        }
-                    ],
-                }
-            }
-        )
-
-        created_object = self._TestContainer.model_validate_json(example_json)
-        assert isinstance(created_object.resource, Patient)
-
-        created_patient = created_object.resource
-        assert created_patient.identifier is not None
-        assert created_patient.identifier[0].system == expected_system
-        assert created_patient.identifier[0].value == expected_nhs_number
-
-    def test_resource_deserialisation_unknown_resource(self) -> None:
-        expected_resource_type = "UnknownResourceType"
-        example_json = json.dumps(
-            {
-                "resource": {
-                    "resourceType": expected_resource_type,
-                }
-            }
-        )
-
-        with pytest.raises(
-            TypeError,
-            match=f"Unknown resource type: {expected_resource_type}",
-        ):
-            self._TestContainer.model_validate_json(example_json)
-
-    @pytest.mark.parametrize(
-        "value",
-        [
-            pytest.param({"resource": {}}, id="No resourceType key"),
-            pytest.param(
-                {"resource": {"resourceType": None}},
-                id="resourceType is defined as None",
-            ),
-        ],
-    )
-    def test_resource_deserialisation_without_resource_type(
-        self, value: dict[str, Any]
-    ) -> None:
-        example_json = json.dumps(value)
-
-        with pytest.raises(
-            TypeError,
-            match="resourceType is required for Resource validation.",
-        ):
-            self._TestContainer.model_validate_json(example_json)
-
-    @pytest.mark.parametrize(
-        ("json", "expected_error_message"),
-        [
-            pytest.param(
-                json.dumps({"resourceType": "invalid", "type": "document"}),
-                "Value error, Resource type 'invalid' does not match expected "
-                "resource type 'Bundle'.",
-                id="Invalid resource type",
-            ),
-            pytest.param(
-                json.dumps({"resourceType": None, "type": "document"}),
-                "1 validation error for Bundle\nresourceType\n  "
-                "Input should be a valid string",
-                id="Input should be a valid string",
-            ),
-            pytest.param(
-                json.dumps({"type": "document"}),
-                "1 validation error for Bundle\nresourceType\n  Field required",
-                id="Missing resource type",
-            ),
-        ],
-    )
-    def test_deserialise_wrong_resource_type(
-        self, json: str, expected_error_message: str
-    ) -> None:
-        with pytest.raises(
-            ValueError,
-            match=expected_error_message,
-        ):
-            Bundle.model_validate_json(json, strict=True)
 
 
 class TestBundle:
@@ -307,5 +212,491 @@ class TestPatientIdentifier:
         nhs_number = "1234567890"
         identifier = Patient.PatientIdentifier.from_nhs_number(nhs_number)
 
-        assert identifier.system == "https://fhir.nhs.uk/Id/nhs-number"
-        assert identifier.value == nhs_number
+        assert identifier.system == "https://fhir.nhs.uk/Id/nhs-number", (
+            "system should be the NHS number URI"
+        )
+        assert identifier.value == nhs_number, "value should match the NHS number"
+
+    def test_create_with_constructor(self) -> None:
+        identifier = Patient.PatientIdentifier(value="0000000000")
+
+        assert identifier.system == "https://fhir.nhs.uk/Id/nhs-number", (
+            "system should be populated from _expected_system"
+        )
+        assert identifier.value == "0000000000", "value should be '0000000000'"
+
+    def test_expected_system_class_var(self) -> None:
+        assert Patient.PatientIdentifier._expected_system == (
+            "https://fhir.nhs.uk/Id/nhs-number"
+        ), "_expected_system should be the NHS number URI"
+
+
+class TestPatientNhsNumber:
+    def test_nhs_number_property(self) -> None:
+        patient = Patient.create(
+            identifier=[Patient.PatientIdentifier.from_nhs_number("9876543210")]
+        )
+
+        assert patient.nhs_number == "9876543210", (
+            "nhs_number property should return the first identifier value"
+        )
+
+
+class TestPatientGpOdsCode:
+    def test_gp_ods_code_with_practitioner(self) -> None:
+        patient = Patient.create(
+            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")],
+            generalPractitioner=[
+                Patient.GeneralPractitioner(
+                    type="Organization",
+                    identifier=Patient.GeneralPractitioner.OrganizationIdentifier(
+                        system="https://fhir.nhs.uk/Id/ods-organization-code",
+                        value="B81001",
+                    ),
+                )
+            ],
+        )
+
+        assert patient.gp_ods_code == "B81001", (
+            "gp_ods_code should return the ODS code from the first generalPractitioner"
+        )
+
+    def test_gp_ods_code_without_practitioner(self) -> None:
+        patient = Patient.create(
+            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+        )
+
+        assert patient.gp_ods_code is None, (
+            "gp_ods_code should be None when generalPractitioner is absent"
+        )
+
+    def test_gp_ods_code_with_empty_practitioner_list(self) -> None:
+        patient = Patient.create(
+            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")],
+            generalPractitioner=[],
+        )
+
+        assert patient.gp_ods_code is None, (
+            "gp_ods_code should be None when generalPractitioner list is empty"
+        )
+
+
+class TestPatientModelValidate:
+    def test_valid_patient(self) -> None:
+        patient = Patient.model_validate(
+            {
+                "resourceType": "Patient",
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "1234567890",
+                    }
+                ],
+            }
+        )
+
+        assert patient.nhs_number == "1234567890", (
+            "nhs_number should be parsed from JSON"
+        )
+
+    def test_valid_patient_with_general_practitioner(self) -> None:
+        patient = Patient.model_validate(
+            {
+                "resourceType": "Patient",
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "1234567890",
+                    }
+                ],
+                "generalPractitioner": [
+                    {
+                        "type": "Organization",
+                        "identifier": {
+                            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                            "value": "A12345",
+                        },
+                    }
+                ],
+            }
+        )
+
+        assert patient.gp_ods_code == "A12345", "gp_ods_code should be parsed from JSON"
+
+    def test_missing_identifier_fails(self) -> None:
+        with pytest.raises(ValidationError, match="identifier"):
+            Patient.model_validate({"resourceType": "Patient"})
+
+    def test_empty_identifier_list_fails(self) -> None:
+        with pytest.raises(ValidationError, match="too_short"):
+            Patient.model_validate({"resourceType": "Patient", "identifier": []})
+
+    def test_invalid_gp_reference_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Reference type 'Device' does not match expected type 'Organization'."
+            ),
+        ):
+            Patient.model_validate(
+                {
+                    "resourceType": "Patient",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "1234567890",
+                        }
+                    ],
+                    "generalPractitioner": [
+                        {
+                            "type": "Device",
+                            "identifier": {
+                                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                                "value": "A12345",
+                            },
+                        }
+                    ],
+                }
+            )
+
+
+class TestPatientGeneralPractitioner:
+    def test_expected_reference_type(self) -> None:
+        assert Patient.GeneralPractitioner._expected_reference_type == "Organization", (
+            "_expected_reference_type should be 'Organization'"
+        )
+
+    def test_organization_identifier_expected_system(self) -> None:
+        assert (
+            Patient.GeneralPractitioner.OrganizationIdentifier._expected_system
+            == "https://fhir.nhs.uk/Id/ods-organization-code"
+        ), "_expected_system should be the ODS organization code URI"
+
+
+class TestDevice:
+    def test_create_with_asid_identifier(self) -> None:
+        device = Device.create(
+            identifier=[
+                Device.ASIDIdentifier(
+                    system="https://fhir.nhs.uk/Id/nhsSpineASID",
+                    value="123456789012",
+                )
+            ],
+        )
+
+        assert device.resource_type == "Device", "resource_type should be 'Device'"
+        assert device.identifier[0].value == "123456789012", (
+            "identifier value should match"
+        )
+
+    def test_create_with_party_key_identifier(self) -> None:
+        device = Device.create(
+            identifier=[
+                Device.PartyKeyIdentifier(
+                    system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    value="P12345-000001",
+                )
+            ],
+        )
+
+        assert device.identifier[0].system == "https://fhir.nhs.uk/Id/nhsMhsPartyKey", (
+            "system should match the party key URI"
+        )
+
+    def test_create_with_mixed_identifiers(self) -> None:
+        device = Device.create(
+            identifier=[
+                Device.ASIDIdentifier(
+                    system="https://fhir.nhs.uk/Id/nhsSpineASID",
+                    value="123",
+                ),
+                Device.PartyKeyIdentifier(
+                    system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                    value="PK-1",
+                ),
+            ],
+        )
+
+        assert len(device.identifier) == 2, "should have two identifiers"
+
+    def test_asid_identifier_expected_system(self) -> None:
+        assert Device.ASIDIdentifier._expected_system == (
+            "https://fhir.nhs.uk/Id/nhsSpineASID"
+        ), "_expected_system should be the ASID URI"
+
+    def test_party_key_identifier_expected_system(self) -> None:
+        assert Device.PartyKeyIdentifier._expected_system == (
+            "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
+        ), "_expected_system should be the party key URI"
+
+
+class TestDeviceModelValidate:
+    def test_valid_device(self) -> None:
+        device = Device.model_validate(
+            {
+                "resourceType": "Device",
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                        "value": "123456789012",
+                    }
+                ],
+            }
+        )
+
+        assert device.identifier[0].value == "123456789012", (
+            "identifier value should be parsed"
+        )
+
+    def test_wrong_resource_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Resource type 'Patient' does not match expected resource type "
+                "'Device'."
+            ),
+        ):
+            Device.model_validate(
+                {
+                    "resourceType": "Patient",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                            "value": "123",
+                        }
+                    ],
+                }
+            )
+
+    def test_empty_identifier_list_fails(self) -> None:
+        with pytest.raises(ValidationError, match="too_short"):
+            Device.model_validate({"resourceType": "Device", "identifier": []})
+
+    def test_missing_identifier_fails(self) -> None:
+        with pytest.raises(ValidationError, match="identifier"):
+            Device.model_validate({"resourceType": "Device"})
+
+    def test_invalid_identifier_system_fails(self) -> None:
+        with pytest.raises(ValidationError, match="does not match expected system"):
+            Device.model_validate(
+                {
+                    "resourceType": "Device",
+                    "identifier": [{"system": "https://bad.system", "value": "123"}],
+                }
+            )
+
+
+class TestEndpoint:
+    def test_create_with_address(self) -> None:
+        endpoint = Endpoint.create(address="https://example.com/fhir")
+
+        assert endpoint.resource_type == "Endpoint", (
+            "resource_type should be 'Endpoint'"
+        )
+        assert endpoint.address == "https://example.com/fhir", (
+            "address should match the provided URL"
+        )
+
+    def test_create_without_address(self) -> None:
+        endpoint = Endpoint.create()
+
+        assert endpoint.address is None, "address should default to None"
+
+
+class TestEndpointModelValidate:
+    def test_valid_endpoint(self) -> None:
+        endpoint = Endpoint.model_validate(
+            {"resourceType": "Endpoint", "address": "https://example.com/fhir"}
+        )
+
+        assert endpoint.address == "https://example.com/fhir", (
+            "address should be parsed from dict"
+        )
+
+    def test_valid_endpoint_without_address(self) -> None:
+        endpoint = Endpoint.model_validate({"resourceType": "Endpoint"})
+
+        assert endpoint.address is None, "address should default to None"
+
+    def test_wrong_resource_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Resource type 'Bundle' does not match expected resource type "
+                "'Endpoint'."
+            ),
+        ):
+            Endpoint.model_validate({"resourceType": "Bundle"})
+
+
+class TestOperationOutcome:
+    def test_create(self) -> None:
+        class _TestIssue(Issue):
+            pass
+
+        outcome = OperationOutcome.create(
+            issue=[
+                _TestIssue(
+                    severity=IssueSeverity.ERROR,
+                    code=IssueCode.INVALID,
+                    diagnostics="Something failed",
+                )
+            ],
+        )
+
+        assert outcome.resource_type == "OperationOutcome", (
+            "resource_type should be 'OperationOutcome'"
+        )
+        assert len(outcome.issue) == 1, "should have one issue"
+        assert outcome.issue[0].severity == IssueSeverity.ERROR, (
+            "issue severity should be ERROR"
+        )
+        assert outcome.issue[0].code == IssueCode.INVALID, (
+            "issue code should be INVALID"
+        )
+        assert outcome.issue[0].diagnostics == "Something failed", (
+            "diagnostics should match"
+        )
+
+
+class TestOperationOutcomeModelValidate:
+    def test_valid_operation_outcome(self) -> None:
+        outcome = OperationOutcome.model_validate(
+            {
+                "resourceType": "OperationOutcome",
+                "issue": [
+                    {
+                        "severity": "error",
+                        "code": "invalid",
+                        "diagnostics": "Bad request",
+                    }
+                ],
+            }
+        )
+
+        assert outcome.issue[0].severity == IssueSeverity.ERROR, (
+            "severity should be parsed"
+        )
+        assert outcome.issue[0].code == IssueCode.INVALID, "code should be parsed"
+        assert outcome.issue[0].diagnostics == "Bad request", (
+            "diagnostics should be parsed"
+        )
+
+    def test_missing_issue_fails(self) -> None:
+        with pytest.raises(ValidationError, match="issue"):
+            OperationOutcome.model_validate({"resourceType": "OperationOutcome"})
+
+    def test_wrong_resource_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Resource type 'Patient' does not match expected resource type "
+                "'OperationOutcome'."
+            ),
+        ):
+            OperationOutcome.model_validate(
+                {
+                    "resourceType": "Patient",
+                    "issue": [{"severity": "error", "code": "invalid"}],
+                }
+            )
+
+
+class TestBundleModelValidate:
+    def test_valid_bundle(self) -> None:
+        bundle = Bundle.model_validate(
+            {
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "entry": [
+                    {
+                        "fullUrl": "https://example.com/Patient/1",
+                        "resource": {
+                            "resourceType": "Patient",
+                            "identifier": [
+                                {
+                                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                                    "value": "1234567890",
+                                }
+                            ],
+                        },
+                    }
+                ],
+            }
+        )
+
+        assert bundle.bundle_type == "searchset", (
+            "bundle_type should be parsed from JSON"
+        )
+        assert bundle.entries is not None, "entries should not be None"
+        assert len(bundle.entries) == 1, "should have one entry"
+        assert isinstance(bundle.entries[0].resource, Patient), (
+            "entry resource should be deserialized as Patient"
+        )
+
+    def test_valid_bundle_without_entries(self) -> None:
+        bundle = Bundle.model_validate({"resourceType": "Bundle", "type": "collection"})
+
+        assert bundle.bundle_type == "collection", "bundle_type should be 'collection'"
+        assert bundle.entries is None, "entries should default to None"
+
+    def test_missing_type_fails(self) -> None:
+        with pytest.raises(ValidationError, match="type"):
+            Bundle.model_validate({"resourceType": "Bundle"})
+
+    def test_wrong_resource_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Resource type 'Endpoint' does not match expected resource type "
+                "'Bundle'."
+            ),
+        ):
+            Bundle.model_validate({"resourceType": "Endpoint", "type": "document"})
+
+    def test_entry_missing_full_url_fails(self) -> None:
+        with pytest.raises(ValidationError, match="fullUrl"):
+            Bundle.model_validate(
+                {
+                    "resourceType": "Bundle",
+                    "type": "document",
+                    "entry": [
+                        {
+                            "resource": {
+                                "resourceType": "Patient",
+                                "identifier": [
+                                    {
+                                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                                        "value": "123",
+                                    }
+                                ],
+                            }
+                        }
+                    ],
+                }
+            )
+
+    def test_entry_missing_resource_fails(self) -> None:
+        with pytest.raises(ValidationError, match="resource"):
+            Bundle.model_validate(
+                {
+                    "resourceType": "Bundle",
+                    "type": "document",
+                    "entry": [{"fullUrl": "https://example.com"}],
+                }
+            )
+
+
+class TestBundleEmpty:
+    @pytest.mark.parametrize(
+        "bundle_type",
+        ["document", "transaction", "searchset", "collection"],
+    )
+    def test_empty_bundle_types(self, bundle_type: str) -> None:
+        bundle = Bundle.empty(bundle_type)  # type: ignore[arg-type]
+
+        assert bundle.bundle_type == bundle_type, (
+            f"bundle_type should be '{bundle_type}'"
+        )
+        assert bundle.entries is None, "entries should be None for empty bundles"
+        assert bundle.identifier is None, "identifier should be None for empty bundles"
