@@ -8,8 +8,8 @@ from gateway_api.common.error import AbstractCDGError, UnexpectedError
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import (
     GetStructuredRecordRequest,
+    GetStructuredRecordResponse,
 )
-from gateway_api.get_structured_record.response import GetStructuredRecordResponse
 
 app = Flask(__name__)
 
