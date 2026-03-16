@@ -139,19 +139,9 @@ class PdsClient:
         try:
             patient = Patient.model_validate(response.json())
         except ValidationError as err:
-            # TODO: improve this hacky handling.
             first_error = err.errors()[0]
-            error_is_identifier = first_error["loc"] == ("identifier",)
-            no_patient_identifier = (
-                "at least 1 item" in first_error["msg"] and error_is_identifier
-            )
-            nhs_number_is_missing = "Field required" in str(err) and first_error[
-                "loc"
-            ] == ("identifier",)
-            if nhs_number_is_missing or no_patient_identifier:
-                raise PdsRequestFailedError(
-                    error_reason="PDS Patient resource missing NHS number"
-                ) from err
-            raise err
+            raise PdsRequestFailedError(
+                error_reason=str(first_error),
+            ) from err
 
         return patient
