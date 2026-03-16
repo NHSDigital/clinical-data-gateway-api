@@ -178,7 +178,7 @@ class TestParameters:
         )
 
         with pytest.raises((ValidationError, AttributeError)):
-            params.parameter = []  # type: ignore[misc]
+            params.parameter = []
 
 
 class TestParameter:
