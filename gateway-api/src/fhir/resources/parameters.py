@@ -17,4 +17,4 @@ class Parameters(Resource, resource_type="Parameters"):
 
         valueIdentifier: Annotated[NHSNumberValueIdentifier, Field(frozen=True)]
 
-    parameter: Annotated[list[Parameter], Field(frozen=True)]
+    parameter: Annotated[list[Parameter], Field(frozen=True, min_length=1)]
