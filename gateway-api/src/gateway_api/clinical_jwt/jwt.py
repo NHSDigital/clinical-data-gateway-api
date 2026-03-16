@@ -5,15 +5,19 @@ from typing import Any
 
 import jwt as pyjwt
 
+from .device import Device
+from .organization import Organization
+from .practitioner import Practitioner
+
 
 @dataclass(frozen=True, kw_only=True)
 class JWT:
     issuer: str
     subject: str
     audience: str
-    requesting_device: dict[str, Any]
-    requesting_organization: dict[str, Any]
-    requesting_practitioner: dict[str, Any]
+    requesting_device: dict[str, Device]
+    requesting_organization: dict[str, Organization]
+    requesting_practitioner: dict[str, Practitioner]
 
     # Time fields
     issued_at: int = field(default_factory=lambda: int(time()))

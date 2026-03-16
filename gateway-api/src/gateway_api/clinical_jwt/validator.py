@@ -136,11 +136,8 @@ class JWTValidator:
     ) -> list[str]:
         """Validate practitioner identifier list structure and contents."""
         errors = []
-        if len(identifiers) < 3:
-            errors.append("Practitioner identifier must contain at least 3 items")
-            return errors
 
-        for i, identifier in enumerate(identifiers[:3]):
+        for i, identifier in enumerate(identifiers):
             if not identifier.get("system"):
                 errors.append(f"identifier[{i}].system is required")
             if not identifier.get("value"):
