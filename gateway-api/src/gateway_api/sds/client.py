@@ -225,6 +225,6 @@ class SdsClient:
         """
         for identifier in device.identifier:
             if identifier.system == system:
-                return identifier.value or ""
+                return identifier.value
 
         return None
