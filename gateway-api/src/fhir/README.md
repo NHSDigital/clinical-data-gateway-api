@@ -4,7 +4,7 @@
 
 FHIR (Fast Healthcare Interoperability Resources) is the HL7 standard for exchanging healthcare information as structured resources over HTTP APIs.
 
-Read more on the standards: [R4](https://hl7.org/fhir/R4/overview.html) and [STU3](https://hl7.org/fhir/R4/overview.html).
+Read more on the standards: [R4](https://hl7.org/fhir/R4/overview.html) and [STU3](https://hl7.org/fhir/STU3/overview.html).
 
 In this codebase, the FHIR package provides strongly typed Python models for request validation, response parsing, and safe serialization.
 
