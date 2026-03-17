@@ -42,6 +42,18 @@ class TestGetStructuredRecord:
         )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
+    def test_happy_path_response_mirrors_request_headers(
+        self,
+        client: Client,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        additional_headers = {"first": "a header", "second": "another header"}
+        response = client.send_to_get_structured_record_endpoint(
+            json.dumps(simple_request_payload), headers=additional_headers
+        )
+        for header_key, header_value in additional_headers.items():
+            assert response.headers.get(header_key) == header_value
+
     def test_empty_request_body_returns_400_status_code(
         self, response_from_sending_request_with_empty_body: Response
     ) -> None:

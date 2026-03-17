@@ -37,4 +37,5 @@ class GetStructuredRecordResponse:
             response=self._response_body,
             status=self._status_code,
             mimetype=self.MIME_TYPE,
+            headers=self.headers,
         )
