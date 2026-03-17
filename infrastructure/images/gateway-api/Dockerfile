@@ -2,7 +2,8 @@
 ARG PYTHON_VERSION=invalid
 FROM python:${PYTHON_VERSION}-alpine3.23 AS gateway-api
 
-RUN addgroup -S nonroot \
+RUN apk upgrade --no-cache \
+    && addgroup -S nonroot \
     && adduser -S gateway_api_user -G nonroot
 
 COPY resources/ /resources

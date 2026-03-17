@@ -507,20 +507,20 @@ jobs:
       # ---------- Security scanning ----------
       - name: Trivy IaC scan
         if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/iac-scan@3456c1657a37d500027fd782e6b08911725392da
+        uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
         with:
           scan-ref: infrastructure/environments/preview
           artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
 
       - name: Trivy filesystem scan
         if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/image-scan@3456c1657a37d500027fd782e6b08911725392da
+        uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
         with:
           image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
           artifact-name: trivy-scan-${{ steps.meta.outputs.branch_name }}
 
       - name: Generate SBOM
-        uses: nhs-england-tools/trivy-action/sbom-scan@3456c1657a37d500027fd782e6b08911725392da
+        uses: nhs-england-tools/trivy-action/sbom-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
         if: github.event.action != 'closed'
         with:
           image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
