@@ -2,11 +2,16 @@
 ARG PYTHON_VERSION=invalid
 FROM python:${PYTHON_VERSION}-alpine3.23 AS gateway-api
 
-RUN apk upgrade --no-cache \
-    && addgroup -S nonroot \
-    && adduser -S gateway_api_user -G nonroot
-
 COPY resources/ /resources
+
+# Install required certificates for dev machines and upgrade packages.
+RUN cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
+    update-ca-certificates; \
+    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
+    apk upgrade --no-cache; \
+    addgroup -S nonroot; \
+    adduser -S gateway_api_user -G nonroot
+
 
 WORKDIR /resources/build/gateway-api
 
