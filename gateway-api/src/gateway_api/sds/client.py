@@ -12,8 +12,8 @@ import os
 from enum import StrEnum
 from typing import Any
 
-from fhir import Bundle, Device, Endpoint, Resource
-from stubs import SdsFhirApiStub
+from fhir.r4 import Bundle, Device, Endpoint
+from fhir.resources.resource import Resource
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
@@ -25,7 +25,7 @@ STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
 if not STUB_SDS:
     from requests import get
 else:
-    from stubs.sds.stub import SdsFhirApiStub
+    from stubs import SdsFhirApiStub
 
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore
