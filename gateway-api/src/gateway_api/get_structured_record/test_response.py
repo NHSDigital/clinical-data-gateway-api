@@ -14,15 +14,13 @@ class TestGetStructuredRecordResponse:
     def test_mirror_headers_adds_request_headers_to_response(
         self, valid_simple_request_payload: dict[str, Any]
     ) -> None:
-        additional_headers = CaseInsensitiveDict(
-            {"first": "a header", "second": "another header"}
-        )
+        headers_to_be_mirrored = CaseInsensitiveDict({"Ssp-TraceId": "a_trace_id"})
 
         with app.test_request_context(
             "/patient/$gpc.getstructuredrecord",
             method="POST",
             data=json.dumps(valid_simple_request_payload),
-            headers=additional_headers,
+            headers=headers_to_be_mirrored,
         ):
             response = GetStructuredRecordResponse()
             response.mirror_headers(request)
@@ -30,9 +28,10 @@ class TestGetStructuredRecordResponse:
             assert response.headers is not None, (
                 "Expected headers to be set, but they were None"
             )
-            assert response.headers == dict(request.headers), (
-                "Expected response headers to match request headers, but they did not"
-            )
+            assert all(
+                response.headers.get(key) == value
+                for key, value in headers_to_be_mirrored.items()
+            ), "Expected response headers to match request headers, but they did not"
 
     def test_add_provider_response_adds_provider_response_body(
         self, valid_simple_response_payload: dict[str, Any]
@@ -46,7 +45,7 @@ class TestGetStructuredRecordResponse:
 
         actual = response.build().json
         assert actual == valid_simple_response_payload, (
-            "Actual response body did not match actual response body."
+            "Actual response body did not match expected response body."
         )
 
     def test_add_provider_response_adds_200_status(
