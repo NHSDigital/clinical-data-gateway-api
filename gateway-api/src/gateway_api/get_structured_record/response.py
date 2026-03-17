@@ -18,7 +18,12 @@ class GetStructuredRecordResponse:
         self._status_code: int | None = None
 
     def mirror_headers(self, request: Request) -> None:
-        self._headers = CaseInsensitiveDict(request.headers)
+        headers_to_mirror = [
+            "ssp-traceid",
+        ]
+        self._headers = CaseInsensitiveDict(
+            {k: v for k, v in request.headers.items() if k.lower() in headers_to_mirror}
+        )
 
     @property
     def headers(self) -> Mapping[str, str] | None:

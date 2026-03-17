@@ -47,11 +47,11 @@ class TestGetStructuredRecord:
         client: Client,
         simple_request_payload: dict[str, Any],
     ) -> None:
-        additional_headers = {"first": "a header", "second": "another header"}
+        headers_to_be_mirrored = {"Ssp-TraceID": "a_trace_id"}
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload), headers=additional_headers
+            json.dumps(simple_request_payload), headers=headers_to_be_mirrored
         )
-        for header_key, header_value in additional_headers.items():
+        for header_key, header_value in headers_to_be_mirrored.items():
             assert response.headers.get(header_key) == header_value
 
     def test_empty_request_body_returns_400_status_code(
