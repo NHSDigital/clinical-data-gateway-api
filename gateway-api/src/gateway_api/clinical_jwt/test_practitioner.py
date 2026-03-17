@@ -55,8 +55,8 @@ def test_practitioner_json_property_returns_valid_structure() -> None:
         userid_url=jdict["identifier"][2]["system"],
         userid_value=jdict["identifier"][2]["value"],
         family_name=jdict["name"][0]["family"],
-        given_name=jdict["name"][0].get("given", None)[0],
-        prefix=jdict["name"][0].get("prefix", None)[0],
+        given_name=jdict["name"][0].get("given", [None])[0],
+        prefix=jdict["name"][0].get("prefix", [None])[0],
     )
 
     assert input_practitioner == output_practitioner
