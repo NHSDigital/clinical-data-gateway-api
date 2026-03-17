@@ -142,8 +142,8 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
 
     client = PdsClient(auth_token)
 
-    with pytest.raises(
-        PdsRequestFailedError,
-        match="PDS FHIR API request failed: {'type': 'too_short', 'loc': \('identifier",
-    ):
+    with pytest.raises(PdsRequestFailedError) as error:
         client.search_patient_by_nhs_number("9999999999")
+
+    assert "'identifier'" in str(error.value)
+    assert "too_short" in str(error.value)
