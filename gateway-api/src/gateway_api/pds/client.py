@@ -52,7 +52,7 @@ class PdsClient:
     * :meth:`search_patient_by_nhs_number` - calls ``GET /Patient/{nhs_number}``
 
     This method returns a :class:`Patient` instance when a patient can be
-    extracted, otherwise ``None``.
+    extracted, otherwise  raise `PdsRequestFailedError` with a reason for the failure.
 
     **Usage example**::
 
