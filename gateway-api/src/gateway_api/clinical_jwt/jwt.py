@@ -11,19 +11,23 @@ class JWT:
     issuer: str
     subject: str
     audience: str
-    requesting_device: str
-    requesting_organization: str
-    requesting_practitioner: str
+    requesting_device: dict[str, Any]
+    requesting_organization: dict[str, Any]
+    requesting_practitioner: dict[str, Any]
 
     # Time fields
     issued_at: int = field(default_factory=lambda: int(time()))
-    expiration: int = field(default_factory=lambda: int(time()) + 300)
+    expiration: int = 0
 
     # These are here for future proofing but are not expected ever to be changed
-    algorithm: str | None = None
+    algorithm: str = "none"
     type: str = "JWT"
     reason_for_request: str = "directcare"
     requested_scope: str = "patient/*.read"
+
+    def __post_init__(self) -> None:
+        if self.expiration == 0:
+            object.__setattr__(self, "expiration", self.issued_at + 300)
 
     @property
     def issue_time(self) -> str:

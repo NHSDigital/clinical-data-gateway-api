@@ -52,7 +52,7 @@ class MtlsProxyHandler(BaseHTTPRequestHandler):
                 headers=headers,
                 data=body,
                 cert=self.cert,
-                verify=False,
+                verify=False,  # NOQA S501 (No big deal in a test fixture)
                 timeout=30,
             )
 

@@ -54,11 +54,25 @@ publish: # Publish the project artefact @Pipeline
 	# TODO: Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
-	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
+	# Build up list of environment variables to pass to the container
+	@ENVIRONMENT_STRING="" ; \
+	if [[ -n "$${STUB_PROVIDER}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PROVIDER=$${STUB_PROVIDER}" ; \
+	fi ; \
+	if [[ -n "$${STUB_PDS}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PDS=$${STUB_PDS}" ; \
+	fi ; \
+	if [[ -n "$${STUB_SDS}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
+	fi ; \
+	if [[ -n "$${CDG_DEBUG}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
+	fi ; \
+	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
 	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
