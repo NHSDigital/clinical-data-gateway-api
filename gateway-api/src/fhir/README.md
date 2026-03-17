@@ -43,7 +43,7 @@ Typical patterns in this code:
 The example below shows how to load a simple FHIR R4 Patient payload and obtain the GP ODS code.
 
 ```python
-from fhir import Patient
+from fhir.r4 import Patient
 
 payload = {
  "resourceType": "Patient",
