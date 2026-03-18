@@ -3,13 +3,17 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from fhir.r4.elements.issue import Issue, IssueCode, IssueSeverity
-from fhir.r4.resources.bundle import Bundle
-from fhir.r4.resources.device import Device
-from fhir.r4.resources.endpoint import Endpoint
-from fhir.r4.resources.operation_outcome import OperationOutcome
-from fhir.r4.resources.patient import Patient
-from fhir.resources.resource import Resource
+from fhir import Resource
+from fhir.r4 import (
+    Bundle,
+    Device,
+    Endpoint,
+    Issue,
+    IssueCode,
+    IssueSeverity,
+    OperationOutcome,
+    Patient,
+)
 
 
 class TestBundle:

@@ -4,8 +4,9 @@ from typing import Annotated
 
 from pydantic import Field
 
-from ..elements.identifier import NHSNumberValueIdentifier
-from .resource import Resource
+from fhir import Resource
+
+from ...r4.elements.identifier import NHSNumberValueIdentifier
 
 
 class Parameters(Resource, resource_type="Parameters"):

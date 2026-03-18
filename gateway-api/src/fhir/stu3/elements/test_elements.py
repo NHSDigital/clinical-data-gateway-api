@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from fhir.r4.elements.identifier import NHSNumberValueIdentifier
-from fhir.stu3.resources.parameters import Parameters
+from fhir.stu3 import Parameters
 
 
 class TestParameters:

@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from fhir import Patient
+from fhir.r4 import Patient
 from pytest_mock import MockerFixture
 
 from gateway_api.common.error import PdsRequestFailedError

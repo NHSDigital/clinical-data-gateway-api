@@ -2,8 +2,9 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, SerializeAsAny
 
+from fhir import Resource
+
 from ..elements.identifier import UUIDIdentifier
-from .resource import Resource
 
 type BundleType = Literal["document", "transaction", "searchset", "collection"]
 
