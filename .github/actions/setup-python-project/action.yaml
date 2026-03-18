@@ -4,18 +4,33 @@ inputs:
   python-version:
     description: "Python version to install"
     required: true
+
 runs:
   using: "composite"
   steps:
+    - name: "Install system dependencies"
+      shell: bash
+      run: |
+        if ! dpkg -s libxslt1-dev >/dev/null 2>&1 || ! dpkg -s libxml2-dev >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt1-dev
+        fi
+
+    - name: "Install Poetry"
+      shell: bash
+      run: |
+        if ! command -v poetry &> /dev/null; then
+          curl --proto "=https" -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        fi
+
     - name: "Set up Python"
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
-    - name: "Install Poetry"
-      shell: bash
-      run: |
-        curl --proto "=https" -sSL https://install.python-poetry.org | python3 -
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cache: 'poetry'
+        cache-dependency-path: '**/poetry.lock'
+
     - name: "Install dependencies"
       shell: bash
       run: make dependencies

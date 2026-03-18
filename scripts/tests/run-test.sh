@@ -6,6 +6,7 @@ set -euo pipefail
 # Usage: run-test.sh <test-type>
 # Where test-type is one of: unit, integration, contract, schema, acceptance
 
+
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <test-type>"
   echo "Where test-type is one of: unit, integration, contract, schema, acceptance"
@@ -42,13 +43,24 @@ else
   COV_PATH="src/gateway_api"
 fi
 
-# Note: TEST_PATH is intentionally unquoted to allow glob expansion for unit tests
-poetry run pytest ${TEST_PATH} -v \
-  --cov=${COV_PATH} \
-  --cov-report=html:test-artefacts/coverage-html \
-  --cov-report=term \
-  --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
-  --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
+if [[ "${ENV:-local}" = "remote" ]] && [[ "$TEST_TYPE" != "unit" ]]; then
+  # Note: TEST_PATH is intentionally unquoted to allow glob expansion
+  poetry run pytest ${TEST_PATH} --env="remote" -v \
+    --api-name="${PROXYGEN_API_NAME}" \
+    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXYGEN_API_NAME}-pr-${PR_NUMBER}" \
+    --cov="${COV_PATH}" \
+    --cov-report=html:test-artefacts/coverage-html \
+    --cov-report=term \
+    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
+    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
+else
+  poetry run pytest ${TEST_PATH} -v \
+    --cov="${COV_PATH}" \
+    --cov-report=html:test-artefacts/coverage-html \
+    --cov-report=term \
+    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
+    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
+fi
 
 # Save coverage data file for merging
 mv .coverage "test-artefacts/coverage.${TEST_TYPE}"

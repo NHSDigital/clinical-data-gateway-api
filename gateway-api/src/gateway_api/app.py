@@ -1,6 +1,5 @@
 import os
 import traceback
-from typing import TypedDict
 
 from flask import Flask, request
 from flask.wrappers import Response
@@ -12,11 +11,6 @@ from gateway_api.get_structured_record import (
 )
 
 app = Flask(__name__)
-
-
-class HealthCheckResponse(TypedDict):
-    status: str
-    version: str
 
 
 def get_app_host() -> str:
@@ -54,7 +48,7 @@ def get_structured_record() -> Response:
 
 
 @app.route("/health", methods=["GET"])
-def health_check() -> HealthCheckResponse:
+def health_check() -> dict[str, str]:
     """Health check endpoint."""
     version: str = "unknown"
 
