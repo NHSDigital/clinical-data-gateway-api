@@ -12,8 +12,8 @@ import os
 from enum import StrEnum
 from typing import Any
 
+from fhir import Resource
 from fhir.r4 import Bundle, Device, Endpoint
-from fhir.resources.resource import Resource
 
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults

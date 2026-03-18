@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from fhir import Patient
+from fhir.r4 import Patient
 from flask import Request
 from pytest_mock import MockerFixture
 

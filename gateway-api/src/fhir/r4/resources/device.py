@@ -2,8 +2,9 @@ from typing import Annotated
 
 from pydantic import Field
 
+from fhir import Resource
+
 from ..elements.identifier import Identifier
-from .resource import Resource
 
 
 class Device(Resource, resource_type="Device"):

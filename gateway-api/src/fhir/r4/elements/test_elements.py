@@ -1,86 +1,17 @@
-import datetime
 import uuid
 
 import pytest
 from pydantic import BaseModel, ValidationError
 
-<<<<<<< HEAD:gateway-api/src/fhir/elements/test_elements.py
-from fhir.elements.identifier import Identifier, UUIDIdentifier
-from fhir.elements.meta import Meta
-=======
-from fhir.r4.elements.identifier import (
+from fhir.r4 import (
     Identifier,
+    Issue,
+    IssueCode,
+    IssueSeverity,
     NHSNumberValueIdentifier,
+    Reference,
     UUIDIdentifier,
 )
-from fhir.r4.elements.issue import Issue, IssueCode, IssueSeverity
-from fhir.r4.elements.meta import Meta
-from fhir.r4.elements.reference import Reference
->>>>>>> e419cd7 (Add/restructure unit tests.):gateway-api/src/fhir/r4/elements/test_elements.py
-
-
-class TestMeta:
-    def test_create(self) -> None:
-        meta = Meta(
-            version_id="1",
-            last_updated=datetime.datetime.fromisoformat("2023-10-01T12:00:00Z"),
-        )
-        assert meta.version_id == "1", "version_id should be set to '1'"
-        assert meta.last_updated == datetime.datetime.fromisoformat(
-            "2023-10-01T12:00:00Z"
-        ), "last_updated should match the provided datetime"
-
-    def test_create_without_last_updated(self) -> None:
-        meta = Meta(version_id="2")
-
-        assert meta.version_id == "2", "version_id should be set to '2'"
-        assert meta.last_updated is None, "last_updated should default to None"
-
-    def test_create_without_version(self) -> None:
-        meta = Meta(
-            last_updated=datetime.datetime.fromisoformat("2023-10-01T12:00:00Z")
-        )
-
-        assert meta.version_id is None, "version_id should default to None"
-        assert meta.last_updated == datetime.datetime.fromisoformat(
-            "2023-10-01T12:00:00Z"
-        ), "last_updated should match the provided datetime"
-
-    def test_create_with_defaults(self) -> None:
-        meta = Meta()
-
-        assert meta.version_id is None, "version_id should default to None"
-        assert meta.last_updated is None, "last_updated should default to None"
-
-    def test_with_last_updated(self) -> None:
-        last_updated = datetime.datetime.fromisoformat("2023-10-01T12:00:00Z")
-        meta = Meta.with_last_updated(last_updated)
-
-        assert meta.last_updated == last_updated, (
-            "last_updated should match the provided datetime"
-        )
-        assert meta.version_id is None, "version_id should default to None"
-
-    def test_with_last_updated_defaults_to_now(self) -> None:
-        before_create = datetime.datetime.now(tz=datetime.timezone.utc)
-        meta = Meta.with_last_updated(None)
-        after_create = datetime.datetime.now(tz=datetime.timezone.utc)
-
-        assert meta.last_updated is not None, "last_updated should not be None"
-        assert meta.version_id is None, "version_id should default to None"
-
-        assert before_create <= meta.last_updated, (
-            "last_updated should be >= the time before creation"
-        )
-        assert meta.last_updated <= after_create, (
-            "last_updated should be <= the time after creation"
-        )
-
-    def test_is_frozen(self) -> None:
-        meta = Meta(version_id="1")
-
-        with pytest.raises(AttributeError):
-            meta.version_id = "2"  # type: ignore[misc]
 
 
 class TestIdentifierInitSubclass:

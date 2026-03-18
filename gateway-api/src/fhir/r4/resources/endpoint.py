@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from .resource import Resource
+from fhir import Resource
 
 
 class Endpoint(Resource, resource_type="Endpoint"):
