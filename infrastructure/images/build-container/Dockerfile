@@ -39,7 +39,7 @@ RUN apk update && \
     # Required to support the building of other docker images.
     docker-cli \
     docker-cli-buildx \
-    libxml2-dev\
+    libxml2-dev \
     libxslt-dev \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
