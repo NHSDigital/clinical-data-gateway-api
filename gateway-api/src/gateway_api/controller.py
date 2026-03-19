@@ -2,8 +2,14 @@
 Controller layer for orchestrating calls to external services
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fhir.r4 import Patient
+
+from requests import Response
+
 from gateway_api.clinical_jwt import JWT, Device, Practitioner
-from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
     NoCurrentEndpointError,
@@ -11,7 +17,7 @@ from gateway_api.common.error import (
     NoOrganisationFoundError,
 )
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-from gateway_api.pds import PdsClient, PdsSearchResults
+from gateway_api.pds import PdsClient
 from gateway_api.provider import GpProviderClient
 from gateway_api.sds import SdsClient, SdsSearchResults
 
@@ -37,7 +43,7 @@ class Controller:
         self.timeout = timeout
         self.gp_provider_client = None
 
-    def run(self, request: GetStructuredRecordRequest) -> FlaskResponse:
+    def run(self, request: GetStructuredRecordRequest) -> Response:
         """
         Controller entry point
 
@@ -68,16 +74,12 @@ class Controller:
             token=token,
         )
 
-        response = self.gp_provider_client.access_structured_record(
+        provider_response = self.gp_provider_client.access_structured_record(
             trace_id=request.trace_id,
             body=request.request_body,
         )
 
-        return FlaskResponse(
-            status_code=response.status_code,
-            data=response.text,
-            headers=dict(response.headers),
-        )
+        return provider_response
 
     def get_auth_token(self) -> str:
         """
@@ -141,12 +143,12 @@ class Controller:
             ignore_dates=True,
         )
 
-        pds_result: PdsSearchResults = pds.search_patient_by_nhs_number(nhs_number)
+        patient: Patient = pds.search_patient_by_nhs_number(nhs_number)
 
-        if not pds_result.gp_ods_code:
+        if not patient.gp_ods_code:
             raise NoCurrentProviderError(nhs_number=nhs_number)
 
-        return pds_result.gp_ods_code
+        return patient.gp_ods_code
 
     def _get_sds_details(
         self, consumer_ods: str, provider_ods: str

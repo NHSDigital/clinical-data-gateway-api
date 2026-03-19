@@ -36,6 +36,7 @@ Octokit
 onboarding
 Podman
 [Pp]roxygen
+[Pp]ydantic
 [Pp]ytest
 Python
 [Rr]epos?
@@ -47,5 +48,6 @@ Terraform
 toolchain
 Trufflehog
 usebruno
+validators?
 VMs
 [Vv]scode
