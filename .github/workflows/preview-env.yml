@@ -10,7 +10,7 @@ env:
   ECR_REPOSITORY_NAME: "whoami"
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   PREVIEW_STATE_PREFIX: "dev/preview/"
-  BASE_URL: 'https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}'
+  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -32,22 +32,34 @@ jobs:
       cancel-in-progress: true
 
     env:
-      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+      DEV_AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
+      - name: Select AWS role inputs
+        id: role-select
+        env:
+          DEPENDABOT_AWS_ROLE_ARN: ${{ secrets.DEPENDABOT_AWS_ROLE_ARN }}
+          AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+        run: |
+          if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
+            echo "aws_role=$DEPENDABOT_AWS_ROLE_ARN" >> "$GITHUB_OUTPUT"
+          else
+            echo "aws_role=$AWS_ROLE_ARN" >> "$GITHUB_OUTPUT"
+          fi
+
       # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        uses: aws-actions/configure-aws-credentials@b1257c400167d727708335212f95607835cd03fd
         with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-to-assume: ${{ steps.role-select.outputs.aws_role }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950
 
       - name: Compute branch metadata
         id: meta
@@ -55,18 +67,24 @@ jobs:
           # For PRs, head_ref is the source branch name
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
 
-          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
-          SANITIZED_BRANCH=$(
-            printf '%s' "$RAW_BRANCH" \
-              | tr '[:upper:]' '[:lower:]' \
-              | tr '._' '-' \
-              | tr -c 'a-z0-9-' '-' \
-              | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
-          )
+          # Dependabot PRs should use a stable preview identifier based on PR number,
+          # not the branch name (which contains slashes and can be long).
+          if [ "${GITHUB_ACTOR}" = "dependabot[bot]" ] || [[ "$RAW_BRANCH" == dependabot/* ]]; then
+            SANITIZED_BRANCH="dependabot-${{ github.event.pull_request.number }}"
+          else
+            # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
+            SANITIZED_BRANCH=$(
+              printf '%s' "$RAW_BRANCH" \
+                | tr '[:upper:]' '[:lower:]' \
+                | tr '._' '-' \
+                | tr -c 'a-z0-9-' '-' \
+                | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
+            )
 
-          # Last resort fallback if everything got stripped
-          if [ -z "$SANITIZED_BRANCH" ]; then
-            SANITIZED_BRANCH="invalid-branch-name"
+            # Last resort fallback if everything got stripped
+            if [ -z "$SANITIZED_BRANCH" ]; then
+              SANITIZED_BRANCH="invalid-branch-name"
+            fi
           fi
 
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
@@ -113,7 +131,7 @@ jobs:
           docker push "${ECR_URL}:${IMAGE_TAG}"
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: 1.14.0
 
