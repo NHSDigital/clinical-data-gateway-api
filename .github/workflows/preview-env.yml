@@ -59,7 +59,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950
 
       - name: Compute branch metadata
         id: meta
