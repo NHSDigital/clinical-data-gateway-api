@@ -41,3 +41,4 @@ Trufflehog
 usebruno
 VMs
 [Vv]scode
+zscaler

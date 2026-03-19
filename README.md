@@ -43,8 +43,13 @@ The project can then be built within a [Dev Container](https://containers.dev/) 
 > [!NOTE]<br>
 > If any additional certificates need to be trusted when building locally, these can be added to the `infrastructure/images/build-container/resources/dev-certificates` directory. These certificates will then automatically be trusted by the build container when the `INCLUDE_DEV_CERTS` docker build argument is set to `true`.
 >
-> If running in Windows Subsystem for Linux (WSL) on Windows the vscode Dev containers extension should be configured to use WSL {"dev.containers.executeInWSL": true}.
-> It is also necessary for the repository to be cloned into the WSL filesystem and on the first build of the container (and any subsequent complete rebuilds without cache). vscode should then be connected to WSL, before subsequently opening the repository folder. The container can then be built as described above.
+> If running in Windows Subsystem for Linux (WSL) on Windows:
+>
+> - The vscode Dev containers extension should be configured to use WSL {"dev.containers.executeInWSL": true}.
+>
+> - You will need to add the zscaler root CA cert into the dev-certificates folder. This can be exported by running `certlm.msc` and searching for `zscaler`. Right click on the search result, select export and then export as "Base-64 encoded X.509 (.CER)".
+>
+> - It is also necessary for the repository to be cloned into the WSL filesystem and on the first build of the container (and any subsequent complete rebuilds without cache). vscode should then be connected to WSL, before subsequently opening the repository folder. The container can then be built as described above.
 
 ### Prerequisites
 
