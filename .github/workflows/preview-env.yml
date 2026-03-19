@@ -55,18 +55,24 @@ jobs:
           # For PRs, head_ref is the source branch name
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
 
-          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
-          SANITIZED_BRANCH=$(
-            printf '%s' "$RAW_BRANCH" \
-              | tr '[:upper:]' '[:lower:]' \
-              | tr '._' '-' \
-              | tr -c 'a-z0-9-' '-' \
-              | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
-          )
+          # Dependabot PRs should use a stable preview identifier based on PR number,
+          # not the branch name (which contains slashes and can be long).
+          if [ "${GITHUB_ACTOR}" = "dependabot[bot]" ] || [[ "$RAW_BRANCH" == dependabot/* ]]; then
+            SANITIZED_BRANCH="dependabot-${{ github.event.pull_request.number }}"
+          else
+            # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
+            SANITIZED_BRANCH=$(
+              printf '%s' "$RAW_BRANCH" \
+                | tr '[:upper:]' '[:lower:]' \
+                | tr '._' '-' \
+                | tr -c 'a-z0-9-' '-' \
+                | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
+            )
 
-          # Last resort fallback if everything got stripped
-          if [ -z "$SANITIZED_BRANCH" ]; then
-            SANITIZED_BRANCH="invalid-branch-name"
+            # Last resort fallback if everything got stripped
+            if [ -z "$SANITIZED_BRANCH" ]; then
+              SANITIZED_BRANCH="invalid-branch-name"
+            fi
           fi
 
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
