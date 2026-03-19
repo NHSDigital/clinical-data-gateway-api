@@ -39,6 +39,8 @@ RUN apk update && \
     # Required to support the building of other docker images.
     docker-cli \
     docker-cli-buildx \
+    libxml2-dev\
+    libxslt-dev \
     # pyenv suggested requirements taken from https://github.com/pyenv/pyenv/wiki#suggested-build-environment
     build-base \
     libffi-dev \
@@ -49,9 +51,7 @@ RUN apk update && \
     readline-dev \
     sqlite-dev \
     tk-dev \
-    zstd-dev\
-    libxml2-dev\
-    libxslt-dev
+    zstd-dev
 
 # Configure doas to allow members of the wheel group to run commands as root.
 RUN echo "permit :wheel" >> /etc/doas.conf \
