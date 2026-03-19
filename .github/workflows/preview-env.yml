@@ -434,7 +434,6 @@ jobs:
           artifact-name: trivy-image-scan-${{ steps.meta.outputs.branch_name }}
 
       - name: Generate SBOM
-        uses: nhs-england-tools/trivy-action/sbom-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
         if: github.event.action != 'closed'
         uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
         with:
