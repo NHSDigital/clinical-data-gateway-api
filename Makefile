@@ -41,6 +41,13 @@ build-gateway-api: dependencies
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
+	# If dev certificates are present inside the dev container, copy them into
+	# the gateway-api image build context so they can be installed there too.
+	@if [ -d "/resources/dev-certificates" ]; then \
+		rm -rf ../infrastructure/images/gateway-api/resources/dev-certificates; \
+		mkdir -p ../infrastructure/images/gateway-api/resources/dev-certificates; \
+		cp -r /resources/dev-certificates/* ../infrastructure/images/gateway-api/resources/dev-certificates/; \
+	fi
 	# Remove temporary build artefacts once build has completed
 	@rm -rf target && rm -rf dist
 
