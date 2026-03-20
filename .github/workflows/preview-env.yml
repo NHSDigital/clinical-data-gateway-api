@@ -436,24 +436,25 @@ jobs:
               body: lines.join('\n'),
             });
 
-      # ---------- Security scanning ----------
-      - name: Trivy IaC scan
-        if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        with:
-          scan-ref: infrastructure/environments/preview
-          artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
+      # desable trivy in light of attack https://socket.dev/blog/trivy-under-attack-again-github-actions-compromise
+      # # ---------- Security scanning ----------
+      # - name: Trivy IaC scan
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     scan-ref: infrastructure/environments/preview
+      #     artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
 
-      - name: Trivy image scan
-        if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        with:
-          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
-          artifact-name: trivy-image-scan-${{ steps.meta.outputs.branch_name }}
+      # - name: Trivy image scan
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+      #     artifact-name: trivy-image-scan-${{ steps.meta.outputs.branch_name }}
 
-      - name: Generate SBOM
-        if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        with:
-          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
-          artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
+      # - name: Generate SBOM
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+      #     artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
