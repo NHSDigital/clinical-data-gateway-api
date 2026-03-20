@@ -198,8 +198,8 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
     # Build headers for stub call
     stub_headers = {
-        "Content-Type": "application/fhir+json;charset=utf-8",
-        "Accept": "application/fhir+json;charset=utf-8",
+        "Content-Type": "application/fhir+json; charset=utf-8",
+        "Accept": "application/fhir+json; charset=utf-8",
         "Ssp-TraceID": trace_id,
         "Ssp-From": consumer_asid,
         "Ssp-To": provider_asid,
