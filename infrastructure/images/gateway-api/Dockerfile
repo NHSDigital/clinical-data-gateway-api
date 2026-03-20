@@ -7,9 +7,7 @@ ARG INCLUDE_DEV_CERTS=false
 
 COPY resources/ /resources
 
-# If dev certificates have been copied into the build context, install them so
-# apk and other HTTPS clients inside this image trust the same CAs as the
-# dev container. This is a no-op when no dev certificates are provided.
+# Install required certificates for dev machines.
 RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; then \
         cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
         update-ca-certificates; \
