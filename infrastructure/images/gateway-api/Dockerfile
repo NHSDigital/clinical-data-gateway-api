@@ -2,7 +2,14 @@
 ARG PYTHON_VERSION=invalid
 FROM python:${PYTHON_VERSION}-alpine3.23 AS gateway-api
 
+
 COPY resources/ /resources
+
+# Check for at least one .crt file in /resources/dev-certificates before installing certificates
+RUN if ! ls /resources/dev-certificates/*.crt 1> /dev/null 2>&1; then \
+    echo "ERROR: No .crt files found in /resources/dev-certificates."; \
+    exit 1; \
+fi
 
 # Install required certificates for dev machines and upgrade packages.
 RUN cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \

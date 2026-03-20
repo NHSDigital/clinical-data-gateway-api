@@ -109,7 +109,8 @@ class GpProviderClient:
 
         headers = self._build_headers(trace_id)
 
-        url = urljoin(self.provider_endpoint, self.endpoint_path)
+        base_endpoint = self.provider_endpoint.rstrip("/") + "/"
+        url = urljoin(base_endpoint, self.endpoint_path)
 
         response = post(
             url,

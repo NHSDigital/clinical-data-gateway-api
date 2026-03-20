@@ -78,6 +78,11 @@ class JWTValidator:
         Raises:
             JWTValidationError: If device structure is invalid.
         """
+        if not hasattr(device, "get"):
+            raise JWTValidationError(
+                error_details="Invalid requesting_device: must be a dict"
+            )
+
         device_errors = []
         if device.get("resourceType") != "Device":
             device_errors.append("resourceType must be 'Device'")
@@ -109,6 +114,11 @@ class JWTValidator:
         Raises:
             JWTValidationError: If organization structure is invalid.
         """
+        if not hasattr(org, "get"):
+            raise JWTValidationError(
+                error_details="Invalid requesting_organization: must be a dict"
+            )
+
         org_errors = []
         if org.get("resourceType") != "Organization":
             org_errors.append("resourceType must be 'Organization'")
@@ -162,6 +172,11 @@ class JWTValidator:
         Raises:
             JWTValidationError: If practitioner structure is invalid.
         """
+        if not hasattr(pract, "get"):
+            raise JWTValidationError(
+                error_details="Invalid requesting_practitioner: must be a dict"
+            )
+
         pract_errors = []
 
         if pract.get("resourceType") != "Practitioner":
