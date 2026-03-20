@@ -2,21 +2,26 @@
 ARG PYTHON_VERSION=invalid
 FROM python:${PYTHON_VERSION}-alpine3.23 AS gateway-api
 
-RUN apk upgrade --no-cache && \
-    pip install --no-cache-dir --upgrade pip && \
-    addgroup -S nonroot && \
-    adduser -S gateway_api_user -G nonroot
+# Controls whether dev certificates (if present) are installed into this image.
+ARG INCLUDE_DEV_CERTS=false
 
 COPY resources/ /resources
 
 # If dev certificates have been copied into the build context, install them so
 # apk and other HTTPS clients inside this image trust the same CAs as the
 # dev container. This is a no-op when no dev certificates are provided.
-RUN if [ -d /resources/dev-certificates ]; then \
-    cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
-    update-ca-certificates; \
-    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
-fi
+RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; then \
+        cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
+        update-ca-certificates; \
+        cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
+    else \
+        rm -rf /resources/dev-certificates || true; \
+    fi
+
+RUN apk upgrade --no-cache && \
+    pip install --no-cache-dir --upgrade pip && \
+    addgroup -S nonroot && \
+    adduser -S gateway_api_user -G nonroot
 
 WORKDIR /resources/build/gateway-api
 

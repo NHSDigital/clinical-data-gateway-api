@@ -20,6 +20,7 @@ endif
 IMAGE_NAME := ${IMAGE_REPOSITORY}:${IMAGE_TAG}
 COMMIT_VERSION := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u +"%Y%m%d")
+INCLUDE_DEV_CERTS ?= ${DEV_CERTS_INCLUDED}
 # ==============================================================================
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
@@ -54,7 +55,12 @@ build-gateway-api: dependencies
 .PHONY: build
 build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Building Docker x86 image using Docker. Utilising python version: ${PYTHON_VERSION} ..."
-	@$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME} infrastructure/images/gateway-api
+	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
+		echo "building with dev certs ..." ; \
+		$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} --build-arg INCLUDE_DEV_CERTS=${INCLUDE_DEV_CERTS} -t ${IMAGE_NAME} infrastructure/images/gateway-api
+	else \
+		$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME} infrastructure/images/gateway-api
+	fi
 	@echo "Docker image '${IMAGE_NAME}' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
