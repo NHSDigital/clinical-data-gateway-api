@@ -18,29 +18,29 @@ paths:
       summary: Get structured record
       description: Returns a FHIR Bundle containing patient structured record
       security:
-      - nhs-cis2-aal3: []
+        - nhs-cis2-aal3: []
       operationId: getStructuredRecord
       parameters:
-      - in: header
-        name: Content-Type
-        schema:
-          type: string
-          enum: [application/fhir+json]
-        required: true
-      - in: header
-        name: Ods-from
-        required: true
-        schema:
-          type: string
-          example: "A12345"
-          minLength: 1
-      - in: header
-        name: Ssp-TraceID
-        required: true
-        schema:
-          type: string
-          example: "trace-1234"
-          minLength: 1
+        - in: header
+          name: Content-Type
+          schema:
+            type: string
+            enum: [application/fhir+json]
+          required: true
+        - in: header
+          name: Ods-from
+          required: true
+          schema:
+            type: string
+            example: "A12345"
+            minLength: 1
+        - in: header
+          name: Ssp-TraceID
+          required: true
+          schema:
+            type: string
+            example: "trace-1234"
+            minLength: 1
       requestBody:
         required: true
         content:
@@ -86,12 +86,12 @@ paths:
         '200':
           description: Successful response
           parameters:
-          - in: header
-            name: Content-Type
-            schema:
-              type: string
-              enum: [application/fhir+json]
-            required: true
+            - in: header
+              name: Content-Type
+              schema:
+                type: string
+                enum: [application/fhir+json]
+              required: true
           content:
             application/fhir+json:
               schema:
@@ -199,6 +199,10 @@ paths:
                         diagnostics:
                           type: string
                           example: "Invalid NHS number format"
+        '401':
+          description: Unauthorized - authentication token is missing or invalid
+        '403':
+          description: Forbidden - insufficient privileges to access this resource
         '404':
           description: Patient not found
           content:
@@ -247,7 +251,6 @@ paths:
                         diagnostics:
                           type: string
                           example: "Internal server error"
-
         '502':
           description: Received an error response from a downstream server
           content:

@@ -2,7 +2,7 @@
 
 import os
 from datetime import timedelta
-from typing import cast
+from typing import Protocol, cast
 
 import pytest
 import requests
@@ -11,23 +11,13 @@ from fhir.constants import FHIRSystem
 from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
-# find_dotenv searches upward from current directory for .env file
 load_dotenv(find_dotenv(usecwd=True))
 
 
-class Client:
-    """A simple HTTP client for testing purposes."""
+class Client(Protocol):
+    """Protocol defining the interface for HTTP clients."""
 
-    def __init__(self, base_url: str, timeout: timedelta = timedelta(seconds=1)):
-        self.base_url = base_url
-        self._timeout = timeout.total_seconds()
-
-        cert = None
-        cert_path = os.getenv("MTLS_CERT")
-        key_path = os.getenv("MTLS_KEY")
-        if cert_path and key_path:
-            cert = (cert_path, key_path)
-        self.cert = cert
+    base_url: str
 
     def send_to_get_structured_record_endpoint(
         self, payload: str, headers: dict[str, str] | None = None
@@ -35,42 +25,86 @@ class Client:
         """
         Send a request to the get_structured_record endpoint with the given NHS number.
         """
+        ...
+
+    def send_health_check(self) -> requests.Response:
+        """
+        Send a health check request to the API.
+        """
+        ...
+
+
+class LocalClient:
+    """HTTP client that sends requests directly to the API (no proxy auth)."""
+
+    def __init__(
+        self,
+        base_url: str,
+        timeout: timedelta = timedelta(seconds=35),
+    ):
+        self.base_url = base_url
+        self._timeout = timeout.total_seconds()
+
+    def send_to_get_structured_record_endpoint(
+        self, payload: str, headers: dict[str, str] | None = None
+    ) -> requests.Response:
         url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
         default_headers = {
             "Content-Type": "application/fhir+json",
-            "Ods-from": "A12345",
+            "Ods-from": "CONSUMER",
             "Ssp-TraceID": "test-trace-id",
         }
         if headers:
             default_headers.update(headers)
+
         return requests.post(
             url=url,
             data=payload,
             headers=default_headers,
             timeout=self._timeout,
-            cert=self.cert,
         )
 
     def send_health_check(self) -> requests.Response:
-        """
-        Send a health check request to the API.
-        Returns:
-            Response object from the request
-        """
         url = f"{self.base_url}/health"
-        return requests.get(url=url, timeout=self._timeout, cert=self.cert)
+        return requests.get(url=url, timeout=self._timeout)
 
 
-@pytest.fixture(scope="session")
-def mtls_cert() -> tuple[str, str] | None:
-    """
-    Provide mTLS certificate paths.
-    """
-    cert_path = os.getenv("MTLS_CERT")
-    key_path = os.getenv("MTLS_KEY")
-    if cert_path and key_path:
-        return (cert_path, key_path)
-    return None
+class RemoteClient:
+    """HTTP client for remote testing via the APIM proxy."""
+
+    def __init__(
+        self,
+        base_url: str,
+        auth_headers: dict[str, str],
+        timeout: timedelta = timedelta(seconds=35),
+    ):
+        self.base_url = base_url
+        self._auth_headers = auth_headers
+        self._timeout = timeout.total_seconds()
+
+    def send_to_get_structured_record_endpoint(
+        self, payload: str, headers: dict[str, str] | None = None
+    ) -> requests.Response:
+        url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
+
+        default_headers = self._auth_headers | {
+            "Content-Type": "application/fhir+json",
+            "Ods-from": "CONSUMER",
+            "Ssp-TraceID": "test-trace-id",
+        }
+        if headers:
+            default_headers.update(headers)
+
+        return requests.post(
+            url=url,
+            data=payload,
+            headers=default_headers,
+            timeout=self._timeout,
+        )
+
+    def send_health_check(self) -> requests.Response:
+        url = f"{self.base_url}/_status"
+        return requests.get(url=url, headers=self._auth_headers, timeout=self._timeout)
 
 
 @pytest.fixture
@@ -90,18 +124,40 @@ def simple_request_payload() -> Parameters:
 
 
 @pytest.fixture
-def happy_path_headers() -> dict[str, str]:
-    return {
-        "Content-Type": "application/fhir+json",
-        "Ods-from": "A12345",
-        "Ssp-TraceID": "test-trace-id",
-    }
+def get_headers(request: pytest.FixtureRequest) -> dict[str, str]:
+    """Return merged auth headers for remote tests, or empty dict for local."""
+    env = request.config.getoption("--env")
+    if env == "remote":
+        nhsd_headers = cast(
+            "dict[str, str]", request.getfixturevalue("nhsd_apim_auth_headers")
+        )
+        apikey_headers = cast(
+            "dict[str, str]", request.getfixturevalue("status_endpoint_auth_headers")
+        )
+        return nhsd_headers | apikey_headers
+
+    return {}
 
 
-@pytest.fixture(scope="module")
-def client(base_url: str) -> Client:
-    """Create a test client for the application."""
-    return Client(base_url=base_url)
+@pytest.fixture
+def client(
+    request: pytest.FixtureRequest,
+    base_url: str,
+) -> Client:
+    """Create the appropriate HTTP client."""
+    env = request.config.getoption("--env")
+
+    if env == "local":
+        return LocalClient(base_url=base_url)
+    elif env == "remote":
+        proxy_url = request.getfixturevalue("nhsd_apim_proxy_url")
+        auth_headers = request.getfixturevalue("nhsd_apim_auth_headers")
+        apikey_headers = request.getfixturevalue("status_endpoint_auth_headers")
+        auth_headers = auth_headers | apikey_headers
+
+        return RemoteClient(base_url=proxy_url, auth_headers=auth_headers)
+    else:
+        raise ValueError(f"Unknown env: {env}")
 
 
 @pytest.fixture(scope="module")
@@ -124,3 +180,43 @@ def _fetch_env_variable[T](
     if not value:
         raise ValueError(f"{name} environment variable is not set.")
     return cast("T", value)
+
+
+REMOTE_TEST_USERNAME_ENV_VAR = "REMOTE_TEST_USERNAME"
+DEFAULT_REMOTE_TEST_USERNAME = "656005750104"
+
+
+def _get_remote_test_username() -> str:
+    """Return the username to use for remote tests, allowing override via env."""
+    return os.getenv(REMOTE_TEST_USERNAME_ENV_VAR, DEFAULT_REMOTE_TEST_USERNAME)
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--env",
+        action="store",
+        default="local",
+        help="Environment to run tests against",
+    )
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    env = config.getoption("--env")
+
+    if env == "local":
+        skip_remote = pytest.mark.skip(reason="Test only runs in remote environment")
+        for item in items:
+            if item.get_closest_marker("remote_only"):
+                item.add_marker(skip_remote)
+
+    if env == "remote":
+        for item in items:
+            item.add_marker(
+                pytest.mark.nhsd_apim_authorization(
+                    access="healthcare_worker",
+                    level="aal3",
+                    login_form={"username": _get_remote_test_username()},
+                )
+            )

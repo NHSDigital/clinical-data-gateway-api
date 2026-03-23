@@ -197,8 +197,7 @@ class PdsClient:
             # application.
             # See MaxResults parameter in the PDS OpenAPI spec.
             entry = entries[0]
-            patient = cast("Patient", entry.get("resource", {}))
-
+            patient = entry.get("resource", {})
         nhs_number = str(patient.get("id", "")).strip()
         if not nhs_number:
             raise PdsRequestFailedError(
