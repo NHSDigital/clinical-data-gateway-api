@@ -40,7 +40,7 @@ class JWT:
     def encode(self) -> str:
         return pyjwt.encode(
             self.payload(),
-            key=None,
+            key=None,  # type: ignore[arg-type]
             algorithm=self.algorithm,
             headers={"typ": self.type},
         )

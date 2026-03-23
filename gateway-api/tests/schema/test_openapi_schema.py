@@ -19,7 +19,7 @@ schema = from_dict(schema_dict)
 
 
 @schema.parametrize()
-def test_api_schema_compliance(case: Case, base_url: str, mtls_cert: str) -> None:
+def test_api_schema_compliance(case: Case, base_url: str) -> None:
     """Test API endpoints against the OpenAPI schema.
 
     Schemathesis automatically generates test cases with:
@@ -44,7 +44,5 @@ def test_api_schema_compliance(case: Case, base_url: str, mtls_cert: str) -> Non
     case.call_and_validate(
         base_url=base_url,
         excluded_checks=[schemathesis.checks.not_a_server_error],
-        cert=mtls_cert,
-        verify=False,
         timeout=30,
     )

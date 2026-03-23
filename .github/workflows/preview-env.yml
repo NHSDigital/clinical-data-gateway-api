@@ -10,7 +10,10 @@ env:
   ECR_REPOSITORY_NAME: "whoami"
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   PREVIEW_STATE_PREFIX: "dev/preview/"
+  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
   python_version: "3.14"
+  PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
 jobs:
   preview:
@@ -29,22 +32,34 @@ jobs:
       cancel-in-progress: true
 
     env:
-      AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+      DEV_AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
 
+      - name: Select AWS role inputs
+        id: role-select
+        env:
+          DEPENDABOT_AWS_ROLE_ARN: ${{ secrets.DEPENDABOT_AWS_ROLE_ARN }}
+          AWS_ROLE_ARN: ${{ secrets.DEV_AWS_CREDENTIALS }}
+        run: |
+          if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
+            echo "aws_role=$DEPENDABOT_AWS_ROLE_ARN" >> "$GITHUB_OUTPUT"
+          else
+            echo "aws_role=$AWS_ROLE_ARN" >> "$GITHUB_OUTPUT"
+          fi
+
       # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@4c2b9cc816c86555b61460789ac95da17d7e829b
+        uses: aws-actions/configure-aws-credentials@b1257c400167d727708335212f95607835cd03fd
         with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-to-assume: ${{ steps.role-select.outputs.aws_role }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950
 
       - name: Compute branch metadata
         id: meta
@@ -52,18 +67,24 @@ jobs:
           # For PRs, head_ref is the source branch name
           RAW_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
 
-          # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
-          SANITIZED_BRANCH=$(
-            printf '%s' "$RAW_BRANCH" \
-              | tr '[:upper:]' '[:lower:]' \
-              | tr '._' '-' \
-              | tr -c 'a-z0-9-' '-' \
-              | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
-          )
+          # Dependabot PRs should use a stable preview identifier based on PR number,
+          # not the branch name (which contains slashes and can be long).
+          if [ "${GITHUB_ACTOR}" = "dependabot[bot]" ] || [[ "$RAW_BRANCH" == dependabot/* ]]; then
+            SANITIZED_BRANCH="dependabot-${{ github.event.pull_request.number }}"
+          else
+            # Sanitize branch name for tags / hostnames (lowercase, only allowed chars)
+            SANITIZED_BRANCH=$(
+              printf '%s' "$RAW_BRANCH" \
+                | tr '[:upper:]' '[:lower:]' \
+                | tr '._' '-' \
+                | tr -c 'a-z0-9-' '-' \
+                | sed -E 's/-{2,}/-/g; s/^-+//; s/-+$//'
+            )
 
-          # Last resort fallback if everything got stripped
-          if [ -z "$SANITIZED_BRANCH" ]; then
-            SANITIZED_BRANCH="invalid-branch-name"
+            # Last resort fallback if everything got stripped
+            if [ -z "$SANITIZED_BRANCH" ]; then
+              SANITIZED_BRANCH="invalid-branch-name"
+            fi
           fi
 
           echo "raw_branch=$RAW_BRANCH" >> $GITHUB_OUTPUT
@@ -110,7 +131,7 @@ jobs:
           docker push "${ECR_URL}:${IMAGE_TAG}"
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
         with:
           terraform_version: 1.14.0
 
@@ -293,149 +314,60 @@ jobs:
 
       # ---------- QUALITY CHECKS (Test Suites) ----------
 
-      # UNIT TESTS
-      - name: Run unit tests
-        if: github.event.action != 'closed'
-        run: make test-unit
-
-      - name: Upload unit test results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: unit-test-results
-          path: gateway-api/test-artefacts/unit-tests*
-          retention-days: 30
-
-      - name: Check unit-tests.xml exists
-        id: check-unit
-        if: always()
+      - name: Retrieve Apigee Token
+        id: apigee-token
+        shell: bash
         run: |
-          [ -f "gateway-api/test-artefacts/unit-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
 
-      - name: Publish unit test results to summary
-        if: ${{ always() && steps.check-unit.outputs.exists == 'true' }}
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
-        with:
-          paths: gateway-api/test-artefacts/unit-tests.xml
+          APIGEE_TOKEN="$(proxygen pytest-nhsd-apim get-token | jq -r '.pytest_nhsd_apim_token' 2>/dev/null)"
+          if [ -z "$APIGEE_TOKEN" ] || [ "$APIGEE_TOKEN" = "null" ]; then
+            echo "::error::Failed to retrieve Apigee token"
+            exit 1
+          fi
 
-      # CONTRACT TESTS
-      - name: Run contract tests against preview
+          echo "::add-mask::$APIGEE_TOKEN"
+          printf 'apigee-access-token=%s\n' "$APIGEE_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "Token retrieved successfully (length: ${#APIGEE_TOKEN})"
+
+      - name: "Run unit tests"
         if: github.event.action != 'closed'
-        env:
-          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
-          MTLS_CERT: /tmp/client1-cert.pem
-          MTLS_KEY: /tmp/client1-key.pem
-        run: make test-contract
-
-      - name: Upload contract test results
-        if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/run-test-suite
         with:
-          name: contract-test-results
-          path: gateway-api/test-artefacts/contract-tests*
-          retention-days: 30
+          test-type: unit
+          env: local
 
-      - name: Check contract-tests.xml exists
-        id: check-contract
-        if: always()
-        run: |
-          [ -f "gateway-api/test-artefacts/contract-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-
-      - name: Publish contract test results to summary
-        if: ${{ always() && steps.check-contract.outputs.exists == 'true' }}
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
-        with:
-          paths: gateway-api/test-artefacts/contract-tests.xml
-
-      # SCHEMA TESTS
-      - name: Run schema validation against preview
+      - name: "Run contract tests"
         if: github.event.action != 'closed'
-        env:
-          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
-          MTLS_CERT: /tmp/client1-cert.pem
-          MTLS_KEY: /tmp/client1-key.pem
-        run: make test-schema
-
-      - name: Upload schema test results
-        if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/run-test-suite
         with:
-          name: schema-test-results
-          path: gateway-api/test-artefacts/schema-tests*
-          retention-days: 30
+          test-type: contract
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
 
-      - name: Check schema-tests.xml exists
-        id: check-schema
-        if: always()
-        run: |
-          [ -f "gateway-api/test-artefacts/schema-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-
-      - name: Publish schema test results to summary
-        if: ${{ always() && steps.check-schema.outputs.exists == 'true' }}
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
-        with:
-          paths: gateway-api/test-artefacts/schema-tests.xml
-
-      # INTEGRATION TESTS
-      - name: Run integration tests against preview
+      - name: "Run schema validation tests"
         if: github.event.action != 'closed'
-        env:
-          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
-          MTLS_CERT: /tmp/client1-cert.pem
-          MTLS_KEY: /tmp/client1-key.pem
-          STUB_SDS: "true"
-          STUB_PDS: "true"
-          STUB_PROVIDER: "true"
-        run: make test-integration
-
-      - name: Upload integration test results
-        if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/run-test-suite
         with:
-          name: integration-test-results
-          path: gateway-api/test-artefacts/integration-tests*
-          retention-days: 30
+          test-type: schema
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
 
-      - name: Check integration-tests.xml exists
-        id: check-integration
-        if: always()
-        run: |
-          [ -f "gateway-api/test-artefacts/integration-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-
-      - name: Publish integration test results to summary
-        if: ${{ always() && steps.check-integration.outputs.exists == 'true' }}
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
-        with:
-          paths: gateway-api/test-artefacts/integration-tests.xml
-
-      # ACCEPTANCE TESTS
-      - name: Run acceptance tests against preview
+      - name: "Run integration tests"
         if: github.event.action != 'closed'
-        env:
-          BASE_URL: ${{ steps.tf-output.outputs.preview_url }}
-          MTLS_CERT: /tmp/client1-cert.pem
-          MTLS_KEY: /tmp/client1-key.pem
-        run: make test-acceptance
-
-      - name: Upload acceptance test results
-        if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/run-test-suite
         with:
-          name: acceptance-test-results
-          path: gateway-api/test-artefacts/acceptance-tests*
-          retention-days: 30
+          test-type: integration
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
 
-      - name: Check acceptance-tests.xml exists
-        id: check-acceptance
-        if: always()
-        run: |
-          [ -f "gateway-api/test-artefacts/acceptance-tests.xml" ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-
-      - name: Publish acceptance test results to summary
-        if: ${{ always() && steps.check-acceptance.outputs.exists == 'true' }}
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+      - name: "Run acceptance tests"
+        if: github.event.action != 'closed'
+        uses: ./.github/actions/run-test-suite
         with:
-          paths: gateway-api/test-artefacts/acceptance-tests.xml
+          test-type: acceptance
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
 
       # Cleanup after tests
       - name: Remove mTLS temp files
@@ -504,24 +436,25 @@ jobs:
               body: lines.join('\n'),
             });
 
-      # ---------- Security scanning ----------
-      - name: Trivy IaC scan
-        if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        with:
-          scan-ref: infrastructure/environments/preview
-          artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
+      # desable trivy in light of attack https://socket.dev/blog/trivy-under-attack-again-github-actions-compromise
+      # # ---------- Security scanning ----------
+      # - name: Trivy IaC scan
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     scan-ref: infrastructure/environments/preview
+      #     artifact-name: trivy-iac-scan-${{ steps.meta.outputs.branch_name }}
 
-      - name: Trivy filesystem scan
-        if: github.event.action != 'closed'
-        uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        with:
-          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
-          artifact-name: trivy-scan-${{ steps.meta.outputs.branch_name }}
+      # - name: Trivy image scan
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+      #     artifact-name: trivy-image-scan-${{ steps.meta.outputs.branch_name }}
 
-      - name: Generate SBOM
-        uses: nhs-england-tools/trivy-action/sbom-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-        if: github.event.action != 'closed'
-        with:
-          image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
-          artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
+      # - name: Generate SBOM
+      #   if: github.event.action != 'closed'
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #     image-ref: ${{steps.meta.outputs.ecr_url}}:${{steps.meta.outputs.branch_name}}
+      #     artifact-name: trivy-sbom-${{ steps.meta.outputs.branch_name }}
