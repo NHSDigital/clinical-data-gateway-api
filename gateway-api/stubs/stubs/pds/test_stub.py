@@ -1,4 +1,4 @@
-"""Unit tests for the PDS FHIR R4 API stub (stubs.pds.stub)."""
+"""Unit tests for the PDS FHIR R4 API stub (stubs/pds/stub.py)."""
 
 import uuid
 from unittest.mock import patch
