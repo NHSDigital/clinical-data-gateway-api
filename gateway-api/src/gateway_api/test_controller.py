@@ -1,10 +1,9 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
-import json
+from typing import Any
 
 import pytest
-from fhir.bundle import Bundle
-from fhir.parameters import Parameters
+from fhir.r4 import Patient
 from flask import Request
 from pytest_mock import MockerFixture
 
@@ -17,30 +16,49 @@ from gateway_api.common.error import (
 from gateway_api.conftest import FakeResponse, create_mock_request
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import GetStructuredRecordRequest
-from gateway_api.pds import PdsSearchResults
 from gateway_api.sds import SdsSearchResults
+
+
+def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
+    general_practitioner = None
+    if gp_ods_code is not None:
+        general_practitioner = [
+            Patient.GeneralPractitioner(
+                type="Organization",
+                identifier=Patient.GeneralPractitioner.OrganizationIdentifier(
+                    system="https://fhir.nhs.uk/Id/ods-organization-code",
+                    value=gp_ods_code,
+                ),
+            )
+        ]
+
+    return Patient.create(
+        identifier=[Patient.PatientIdentifier.from_nhs_number(nhs_number)],
+        generalPractitioner=general_practitioner,
+    )
 
 
 def test_controller_run_happy_path_returns_200_status_code(
     mock_happy_path_get_structured_record_request: Request,
 ) -> None:
+    request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
+
     controller = Controller()
-    actual_response = controller.run(
-        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
-    )
+    actual_response = controller.run(request)
+
     assert actual_response.status_code == 200
 
 
 def test_controller_run_happy_path_returns_returns_expected_body(
     mock_happy_path_get_structured_record_request: Request,
-    valid_simple_response_payload: Bundle,
+    valid_simple_response_payload: dict[str, Any],
 ) -> None:
+    request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
+
     controller = Controller()
-    actual_response = controller.run(
-        GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
-    )
-    assert isinstance(actual_response.data, str)
-    assert json.loads(actual_response.data) == valid_simple_response_payload
+    actual_response = controller.run(request)
+
+    assert actual_response.json() == valid_simple_response_payload
 
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
@@ -48,15 +66,9 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
-    pds_search_result = PdsSearchResults(
-        given_names="Jane",
-        family_name="Smith",
-        nhs_number=nhs_number,
-        gp_ods_code="A12345",
-    )
     mocker.patch(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=pds_search_result,
+        return_value=_create_patient(nhs_number, "A12345"),
     )
     controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
 
@@ -70,15 +82,9 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
     auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
-    pds_search_result_without_ods_code = PdsSearchResults(
-        given_names="Jane",
-        family_name="Smith",
-        nhs_number=nhs_number,
-        gp_ods_code=None,
-    )
     mocker.patch(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=pds_search_result_without_ods_code,
+        return_value=_create_patient(nhs_number, None),
     )
 
     controller = Controller()
@@ -238,8 +244,8 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
 @pytest.fixture
 def mock_happy_path_get_structured_record_request(
     mocker: MockerFixture,
-    valid_simple_request_payload: Parameters,
-    valid_simple_response_payload: Bundle,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
 ) -> Request:
     nhs_number = "9000000009"
     provider_ods = "ProviderODS"
@@ -253,12 +259,7 @@ def mock_happy_path_get_structured_record_request(
     sds_results = [provider_sds_results, consumer_sds_results]
     mocker.patch(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=PdsSearchResults(
-            given_names="Jane",
-            family_name="Smith",
-            nhs_number=nhs_number,
-            gp_ods_code=provider_ods,
-        ),
+        return_value=_create_patient(nhs_number, provider_ods),
     )
     mocker.patch(
         "gateway_api.sds.SdsClient.get_org_details",
@@ -284,8 +285,8 @@ def mock_happy_path_get_structured_record_request(
 
 def test_controller_creates_jwt_token_with_correct_claims(
     mocker: MockerFixture,
-    valid_simple_request_payload: Parameters,
-    valid_simple_response_payload: Bundle,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
 ) -> None:
     """
     Test that the controller creates a JWT token with the correct claims.
@@ -296,15 +297,9 @@ def test_controller_creates_jwt_token_with_correct_claims(
     provider_endpoint = "https://provider.example/ep"
 
     # Mock PDS to return provider ODS code
-    pds_search_result = PdsSearchResults(
-        given_names="Jane",
-        family_name="Smith",
-        nhs_number=nhs_number,
-        gp_ods_code=provider_ods,
-    )
     mocker.patch(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=pds_search_result,
+        return_value=_create_patient(nhs_number, provider_ods),
     )
 
     # Mock SDS to return provider and consumer details
@@ -336,8 +331,10 @@ def test_controller_creates_jwt_token_with_correct_claims(
         body=valid_simple_request_payload,
     )
 
+    get_structured_record_request = GetStructuredRecordRequest(request)
+
     controller = Controller()
-    _ = controller.run(GetStructuredRecordRequest(request))
+    controller.run(get_structured_record_request)
 
     # Verify that GpProviderClient was called and extract the JWT token
     mock_gp_provider.assert_called_once()
