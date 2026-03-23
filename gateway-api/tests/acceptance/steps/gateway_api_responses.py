@@ -1,4 +1,4 @@
-"""Step definitions for Gateway API happy path feature."""
+"""Step definitions for Gateway API response behaviour feature."""
 
 import json
 from datetime import timedelta
@@ -59,7 +59,25 @@ def check_status_code(response_context: ResponseContext, expected_status: int) -
     )
 
 
-@then("the response should contain the patient bundle from the provider")
+@then("the response should be successful")
+def check_response_successful(response_context: ResponseContext) -> None:
+    assert response_context.response is not None, "Response has not been set."
+    assert response_context.response.status_code == 200, (
+        f"Expected status 200, "
+        f"got {response_context.response.status_code}: {response_context.response.text}"
+    )
+
+
+@then("the response should indicate the endpoint was not found")
+def check_response_not_found(response_context: ResponseContext) -> None:
+    assert response_context.response is not None, "Response has not been set."
+    assert response_context.response.status_code == 404, (
+        f"Expected status 404, "
+        f"got {response_context.response.status_code}: {response_context.response.text}"
+    )
+
+
+@then("the response should include the patient's record from the provider")
 def check_response_matches_provider(response_context: ResponseContext) -> None:
     assert response_context.response, "Response has not been set."
     assert response_context.response.json() == Bundles.ALICE_JONES_9999999999, (

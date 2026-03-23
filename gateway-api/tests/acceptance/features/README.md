@@ -1,12 +1,12 @@
 # Gateway API BDD Acceptance Tests
 
-This directory contains the BDD (Behavior-Driven Development) acceptance and assurance test suite for the gateway API using pytest-bdd.
+This directory contains the BDD (Behaviour-Driven Development) acceptance test suite for the gateway API using pytest-bdd.
 
 These tests verify that the API meets business requirements and acceptance criteria from a user's perspective. They serve as living documentation and ensure the system behaves correctly in real-world scenarios.
 
 ## Test Structure
 
-- `*.feature` - Gherkin feature files describing user-facing behavior
+- `features/*.feature` - Gherkin feature files describing user-facing behaviour
 - `steps/*.py` - Step definitions that implement the Gherkin steps
 - `scenarios/*.py` - Test bindings that link scenarios to pytest test functions
 - `conftest.py` - pytest fixtures (includes ResponseContext)
@@ -31,7 +31,7 @@ poetry run pytest tests/acceptance/ -v
 ### Run Specific Feature
 
 ```bash
-poetry run pytest tests/acceptance/scenarios/test_hello_world.py -v
+poetry run pytest tests/acceptance/scenarios/test_gateway_api_responses.py -v
 ```
 
 ### Debug Mode (Show All Output)
@@ -42,7 +42,7 @@ poetry run pytest tests/acceptance/ -v -s
 
 ## BDD Testing with pytest-bdd
 
-BDD tests describe system behavior from a user's perspective using natural language (Gherkin syntax). These tests interact with the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE) to test end-to-end scenarios.
+BDD tests describe system behaviour from a user's perspective using natural language (Gherkin syntax). These tests interact with the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE) to test end-to-end scenarios.
 
 ### How It Works
 
@@ -55,7 +55,7 @@ BDD tests describe system behavior from a user's perspective using natural langu
 2. **Step Definitions** (`steps/*.py`)
    - Python code that implements each Gherkin step
    - Uses the `Client` fixture to interact with the API
-   - Contains assertions to verify expected behavior
+   - Contains assertions to verify expected behaviour
 
 3. **Scenario Bindings** (`scenarios/test_*.py`)
    - Link Gherkin scenarios to pytest test functions using `@scenario` decorator

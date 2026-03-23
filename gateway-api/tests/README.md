@@ -67,7 +67,7 @@ pytest gateway-api/tests/schema/ -v
 
 ### Acceptance Tests (`acceptance/`)
 
-Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. These tests validate the API from an end-user perspective.
+behaviour-driven development (BDD) tests using pytest-bdd and Gherkin syntax. These tests validate the API from an end-user perspective.
 
 **Structure:**
 
@@ -77,7 +77,7 @@ Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. The
 
 **How it works:**
 
-1. Feature files describe behavior in Given/When/Then format
+1. Feature files describe behaviour in Given/When/Then format
 2. Step definitions provide the Python implementation for each step
 3. Test files create pytest test functions that bind to specific scenarios
 4. Tests run against the deployed API using the `base_url` fixture from `conftest.py`
@@ -97,7 +97,7 @@ The steps are implemented in `steps/hello_world_steps.py` and bound in `test_hel
 
 ### Integration Tests (`integration/`)
 
-Integration tests that validate the APIs behavior through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
+Integration tests that validate the APIs behaviour through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
 
 **How it works:**
 
@@ -116,7 +116,7 @@ Integration tests that validate the APIs behavior through HTTP requests. These t
 **Key difference from acceptance tests:**
 
 - Integration tests use direct pytest assertions without Gherkin syntax
-- More focused on testing specific API behaviors and edge cases
+- More focused on testing specific API behaviours and edge cases
 - Uses the same `Client` fixture as acceptance tests but with standard pytest structure
 
 ### Schema Validation Tests (`schema/`)
