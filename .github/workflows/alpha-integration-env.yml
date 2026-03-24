@@ -1,0 +1,268 @@
+name: Alpha Integration Environment
+
+on:
+  pull_request:
+    branches: [alpha-integration]
+    types: [closed]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: "900119715266"
+  ECR_REPOSITORY_NAME: "whoami"
+  TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
+  TF_STATE_KEY: "dev/preview/alpha-integration.tfstate"
+  BRANCH_NAME: "alpha-integration"
+  ALB_RULE_PRIORITY: "2000"
+  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-alpha-integration"
+  python_version: "3.14"
+  PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
+
+jobs:
+  alpha-integration:
+    name: Deploy alpha integration environment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+
+    permissions:
+      id-token: write
+      contents: read
+
+    concurrency:
+      group: alpha-integration-environment
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          ref: alpha-integration
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@b1257c400167d727708335212f95607835cd03fd
+        with:
+          role-to-assume: ${{ secrets.DEV_AWS_CREDENTIALS }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950
+
+      - name: Compute deployment metadata
+        id: meta
+        run: |
+          ECR_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}"
+          echo "ecr_url=$ECR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Python project
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ env.python_version }}
+
+      - name: Build Docker image
+        env:
+          PYTHON_VERSION: ${{ env.python_version }}
+        run: |
+          make build IMAGE_TAG="${BRANCH_NAME}" ECR_URL="${{ steps.meta.outputs.ecr_url }}"
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push "${{ steps.meta.outputs.ecr_url }}:${BRANCH_NAME}"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85
+        with:
+          terraform_version: 1.14.0
+
+      - name: Terraform init
+        working-directory: infrastructure/environments/preview
+        run: |
+          terraform init \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=${TF_STATE_KEY}" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Terraform apply alpha integration env
+        working-directory: infrastructure/environments/preview
+        env:
+          TF_VAR_branch_name: ${{ env.BRANCH_NAME }}
+          TF_VAR_image_tag: ${{ env.BRANCH_NAME }}
+          TF_VAR_alb_rule_priority: ${{ env.ALB_RULE_PRIORITY }}
+        run: |
+          terraform apply \
+            -var-file="alpha-int.tfvars" \
+            -auto-approve
+
+      - name: Capture terraform outputs
+        id: tf-output
+        working-directory: infrastructure/environments/preview
+        run: |
+          terraform output -json > tf-output.json
+
+          URL=$(jq -r '.url.value' tf-output.json)
+          echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
+
+          TG=$(jq -r '.target_group_arn.value' tf-output.json)
+          echo "target_group=$TG" >> "$GITHUB_OUTPUT"
+
+          ECS_SERVICE=$(jq -r '.ecs_service_name.value' tf-output.json)
+          echo "ecs_service=$ECS_SERVICE" >> "$GITHUB_OUTPUT"
+
+          ECS_CLUSTER=$(jq -r '.ecs_cluster_name.value' tf-output.json)
+          echo "ecs_cluster=$ECS_CLUSTER" >> "$GITHUB_OUTPUT"
+
+      - name: Get proxygen machine user details
+        id: proxygen-machine-user
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: /cds/gateway/dev/proxygen/proxygen-key-secret
+          name-transformation: lowercase
+
+      - name: Deploy alpha integration API proxy
+        uses: ./.github/actions/proxy/deploy-proxy
+        with:
+          mtls-secret-name: ${{ vars.PREVIEW_ENV_MTLS_SECRET_NAME }}
+          target-url: ${{ steps.tf-output.outputs.preview_url }}
+          proxy-base-path: "clinical-data-gateway-api-poc-alpha-integration"
+          proxygen-key-secret: ${{ env._cds_gateway_dev_proxygen_proxygen_key_secret }}
+          proxygen-key-id: ${{ vars.PREVIEW_ENV_PROXYGEN_KEY_ID }}
+          proxygen-api-name: ${{ vars.PROXYGEN_API_NAME }}
+          proxygen-client-id: ${{ vars.PREVIEW_ENV_PROXYGEN_CLIENT_ID }}
+
+      - name: Await deployment completion
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ steps.tf-output.outputs.ecs_cluster }}" \
+            --services "${{ steps.tf-output.outputs.ecs_service }}" \
+            --region "${AWS_REGION}"
+
+      - name: Get mTLS certs for testing
+        id: mtls-certs
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802
+        with:
+          secret-ids: |
+            /cds/gateway/dev/mtls/client1-key-secret
+            /cds/gateway/dev/mtls/client1-key-public
+          name-transformation: lowercase
+
+      - name: Prepare mTLS cert files for tests
+        run: |
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_secret" > /tmp/client1-key.pem
+          printf '%s' "$_cds_gateway_dev_mtls_client1_key_public" > /tmp/client1-cert.pem
+          chmod 600 /tmp/client1-key.pem /tmp/client1-cert.pem
+
+      - name: Smoke test environment URL
+        id: smoke-test
+        env:
+          PREVIEW_URL: ${{ steps.tf-output.outputs.preview_url }}
+        run: |
+          if [ -z "$PREVIEW_URL" ] || [ "$PREVIEW_URL" = "null" ]; then
+            echo "Environment URL missing"
+            echo "http_status=missing" >> "$GITHUB_OUTPUT"
+            echo "http_result=missing-url" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          STATUS=$(curl \
+                      --cert /tmp/client1-cert.pem \
+                      --key /tmp/client1-key.pem \
+                      --silent \
+                      --output /tmp/preview.headers \
+                      --write-out '%{http_code}' \
+                      --head \
+                      --max-time 30 "$PREVIEW_URL"/health || true)
+
+          if [ "$STATUS" = "404" ]; then
+            echo "Environment responded with expected 404"
+            echo "http_status=404" >> "$GITHUB_OUTPUT"
+            echo "http_result=allowed-404" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$STATUS" =~ ^[0-9]{3}$ ]] && [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "Environment responded with status $STATUS"
+            echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+            echo "http_result=success" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Environment responded with unexpected status $STATUS"
+          if [ -f /tmp/preview.headers ]; then
+            echo "Response headers:"
+            cat /tmp/preview.headers
+          fi
+
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "http_result=unexpected-status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Retrieve Apigee Token
+        id: apigee-token
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APIGEE_TOKEN="$(proxygen pytest-nhsd-apim get-token | jq -r '.pytest_nhsd_apim_token' 2>/dev/null)"
+          if [ -z "$APIGEE_TOKEN" ] || [ "$APIGEE_TOKEN" = "null" ]; then
+            echo "::error::Failed to retrieve Apigee token"
+            exit 1
+          fi
+
+          echo "::add-mask::$APIGEE_TOKEN"
+          printf 'apigee-access-token=%s\n' "$APIGEE_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "Token retrieved successfully (length: ${#APIGEE_TOKEN})"
+
+      - name: Run unit tests
+        uses: ./.github/actions/run-test-suite
+        with:
+          test-type: unit
+          env: local
+
+      - name: Run contract tests
+        uses: ./.github/actions/run-test-suite
+        with:
+          test-type: contract
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
+
+      - name: Run schema validation tests
+        uses: ./.github/actions/run-test-suite
+        with:
+          test-type: schema
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
+
+      - name: Run integration tests
+        uses: ./.github/actions/run-test-suite
+        with:
+          test-type: integration
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
+
+      - name: Run acceptance tests
+        uses: ./.github/actions/run-test-suite
+        with:
+          test-type: acceptance
+          apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
+          base-url: ${{ env.BASE_URL }}
+
+      - name: Remove mTLS temp files
+        run: rm -f /tmp/client1-key.pem /tmp/client1-cert.pem
+
+      # - name: Trivy IaC scan
+      #   uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #       scan-ref: infrastructure/environments/preview
+      #       artifact-name: trivy-iac-scan-alpha-integration
+
+      # - name: Trivy image scan
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
+      #       artifact-name: trivy-image-scan-alpha-integration
+
+      # - name: Generate SBOM
+      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
+      #   with:
+      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
+      #       artifact-name: trivy-sbom-alpha-integration
