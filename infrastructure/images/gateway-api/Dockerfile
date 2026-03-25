@@ -21,7 +21,7 @@ RUN apk upgrade --no-cache && \
     addgroup -S nonroot && \
     adduser -S gateway_api_user -G nonroot
 
-RUN pip install opentelemetry-distro
+RUN pip install opentelemetry-distro flask
 RUN opentelemetry-bootstrap -a install
 
 WORKDIR /resources/build/gateway-api
@@ -42,4 +42,4 @@ ENV BUILD_DATE=$BUILD_DATE
 USER gateway_api_user
 
 ENTRYPOINT ["opentelemetry-instrument"]
-CMD ["--traces_exporter", "console", "--metrics_exporter", "console", "--logs_exporter", "console", "--service_name", "clinical-gateway", "python", "gateway_api/app.py"]
+CMD ["--traces_exporter", "console", "--metrics_exporter", "console", "--logs_exporter", "console", "--service_name", "clinical-gateway", "flask", "run", "-h", "0.0.0.0", "-p", "8080"]

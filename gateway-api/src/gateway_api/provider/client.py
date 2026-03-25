@@ -22,6 +22,7 @@ Usage:
         The response from the provider FHIR API.
 """
 
+import logging
 import os
 from urllib.parse import urljoin
 
@@ -74,6 +75,7 @@ class GpProviderClient:
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
         self.token = token
+        self.logger = logging.getLogger("Client")
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
@@ -98,7 +100,7 @@ class GpProviderClient:
         """
         Fetch a structured patient record from the GPProvider FHIR API.
         """
-
+        self.logger.info("Fetching structured record")
         headers = self._build_headers(trace_id)
 
         endpoint_path = "/".join([ARS_FHIR_BASE, FHIR_RESOURCE, ARS_FHIR_OPERATION])

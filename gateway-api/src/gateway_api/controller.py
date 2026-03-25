@@ -2,6 +2,8 @@
 Controller layer for orchestrating calls to external services
 """
 
+import logging
+
 from gateway_api.clinical_jwt import JWT, Device, Practitioner
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
@@ -36,6 +38,7 @@ class Controller:
         self.sds_base_url = sds_base_url
         self.timeout = timeout
         self.gp_provider_client = None
+        self.logger = logging.getLogger("Controller")
 
     def run(self, request: GetStructuredRecordRequest) -> FlaskResponse:
         """
@@ -86,6 +89,7 @@ class Controller:
         This is a placeholder implementation. Replace with actual logic to obtain
         the auth token as needed.
         """
+        self.logger.info("Fetching auth token")
         return "AUTH_TOKEN123"
 
     def get_jwt_for_provider(self, provider_endpoint: str, consumer_ods: str) -> JWT:
@@ -133,6 +137,7 @@ class Controller:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
         """
+        self.logger.info("Fetching PDS Details")
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
             auth_token=auth_token,
@@ -158,6 +163,7 @@ class Controller:
         - provider details (ASID + endpoint)
         - consumer details (ASID)
         """
+        self.logger.info("Fetching SDS Details")
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(
             base_url=self.sds_base_url,
