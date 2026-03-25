@@ -97,7 +97,7 @@ The steps are implemented in `steps/hello_world_steps.py` and bound in `test_hel
 
 ### Integration Tests (`integration/`)
 
-Integration tests that validate the APIs behaviour through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
+Integration tests that validate the APIs’ behaviour through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
 
 **How it works:**
 

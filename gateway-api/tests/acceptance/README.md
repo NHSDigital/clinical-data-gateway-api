@@ -65,3 +65,4 @@ BDD tests describe system behaviour from a user's perspective using natural lang
 4. **pytest Fixtures** (`conftest.py`)
    - `response_context` - Stores HTTP response state between steps
    - Shared fixtures from `tests/conftest.py` (base_url, hostname, client)
+*** Delete File: /workspaces/clinical-data-gateway-api/gateway-api/tests/acceptance/features/README.md
