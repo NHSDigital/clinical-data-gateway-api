@@ -52,7 +52,9 @@ RUN apk update && \
     sqlite-dev \
     tk-dev \
     zstd-dev \
-    gnupg
+    gnupg \
+    libxml2 \
+    libxslt
 
 # Configure doas to allow members of the wheel group to run commands as root.
 RUN echo "permit :wheel" >> /etc/doas.conf \

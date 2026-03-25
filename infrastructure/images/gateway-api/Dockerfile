@@ -21,6 +21,9 @@ RUN apk upgrade --no-cache && \
     addgroup -S nonroot && \
     adduser -S gateway_api_user -G nonroot
 
+RUN pip install opentelemetry-distro
+RUN opentelemetry-bootstrap -a install
+
 WORKDIR /resources/build/gateway-api
 
 ENV PYTHONPATH=/resources/build/gateway-api
@@ -29,6 +32,7 @@ ENV FLASK_PORT="8080"
 ENV STUB_PDS="true"
 ENV STUB_PROVIDER="true"
 ENV STUB_SDS="true"
+ENV FLASK_APP=/resources/build/gateway-api/gateway_api/app.py
 
 ARG COMMIT_VERSION
 ENV COMMIT_VERSION=$COMMIT_VERSION
@@ -36,5 +40,15 @@ ARG BUILD_DATE
 ENV BUILD_DATE=$BUILD_DATE
 
 USER gateway_api_user
-ENTRYPOINT ["python"]
-CMD ["gateway_api/app.py"]
+
+# ENTRYPOINT ["python"]
+# CMD ["gateway_api/app.py"]
+
+ENTRYPOINT ["opentelemetry-instrument"]
+CMD ["--traces_exporter", "console", "--metrics_exporter", "console", "--logs_exporter", "console", "--service_name", "clinical-gateway", "python", "gateway_api/app.py"]
+
+# ENTRYPOINT ["flask"]
+# CMD ["run", "-p", "8080"]
+
+# ENTRYPOINT ["tail"]
+# CMD ["-f", "/dev/null"]
