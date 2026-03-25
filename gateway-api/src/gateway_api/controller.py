@@ -2,7 +2,7 @@
 Controller layer for orchestrating calls to external services
 """
 
-from gateway_api.clinical_jwt import JWT, Device, Practitioner
+from gateway_api.clinical_jwt import JWT, Device, Organization, Practitioner
 from gateway_api.common.common import FlaskResponse
 from gateway_api.common.error import (
     NoAsidFoundError,
@@ -95,11 +95,18 @@ class Controller:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_practitioner-claim
 
         # TODO: Get requesting device details from consumer, somehow?
+        # requesting_device = Device(
+        #     system="https://consumersupplier.com/Id/device-identifier",
+        #     value="CONS-APP-4",
+        #     model="Consumer product name",
+        #     version="5.3.0",
+        # )
+
         requesting_device = Device(
-            system="https://consumersupplier.com/Id/device-identifier",
-            value="CONS-APP-4",
-            model="Consumer product name",
-            version="5.3.0",
+            system="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+            value="gpcdemonstrator-1-orange",
+            model="GP Connect Demonstrator",
+            version="1.5.0",
         )
 
         # TODO: Get practitioner details from consumer, somehow?
@@ -107,25 +114,29 @@ class Controller:
             id="10019",
             sds_userid="111222333444",
             role_profile_id="444555666777",
-            userid_url="https://consumersupplier.com/Id/user-guid",
+            userid_url="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
             userid_value="98ed4f78-814d-4266-8d5b-cde742f3093c",
             family_name="Doe",
             given_name="John",
             prefix="Mr",
         )
 
+        # TODO: Where do we get the consumer org name from? SDS only returns ODS/ASID
+        requesting_organization = Organization(
+            ods_code=consumer_ods, name="Consumer organisation name"
+        )
+
         # TODO: Get consumer URL for issuer. Use CDG API URL for now.
         issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
         audience = provider_endpoint
-        requesting_organization = consumer_ods
 
         token = JWT(
             issuer=issuer,
             subject=requesting_practitioner.id,
             audience=audience,
-            requesting_device=requesting_device.json,
-            requesting_organization=requesting_organization,
-            requesting_practitioner=requesting_practitioner.json,
+            requesting_device=requesting_device.to_dict(),
+            requesting_organization=requesting_organization.to_dict(),
+            requesting_practitioner=requesting_practitioner.to_dict(),
         )
         return token
 

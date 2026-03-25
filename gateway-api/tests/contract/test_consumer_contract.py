@@ -7,6 +7,7 @@ interactions with the provider (the Flask API).
 import json
 
 import requests
+from fhir.constants import FHIRSystem
 from pact import Pact
 
 
@@ -37,7 +38,7 @@ class TestConsumerContract:
                         },
                         "identifier": [
                             {
-                                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                                "system": FHIRSystem.NHS_NUMBER,
                                 "value": "9999999999",
                             }
                         ],
@@ -86,7 +87,7 @@ class TestConsumerContract:
                         {
                             "name": "patientNHSNumber",
                             "valueIdentifier": {
-                                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                                "system": FHIRSystem.NHS_NUMBER,
                                 "value": "9999999999",
                             },
                         },
@@ -110,7 +111,7 @@ class TestConsumerContract:
                             {
                                 "name": "patientNHSNumber",
                                 "valueIdentifier": {
-                                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                                    "system": FHIRSystem.NHS_NUMBER,
                                     "value": "9999999999",
                                 },
                             },
