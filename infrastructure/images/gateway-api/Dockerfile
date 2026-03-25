@@ -41,14 +41,5 @@ ENV BUILD_DATE=$BUILD_DATE
 
 USER gateway_api_user
 
-# ENTRYPOINT ["python"]
-# CMD ["gateway_api/app.py"]
-
 ENTRYPOINT ["opentelemetry-instrument"]
 CMD ["--traces_exporter", "console", "--metrics_exporter", "console", "--logs_exporter", "console", "--service_name", "clinical-gateway", "python", "gateway_api/app.py"]
-
-# ENTRYPOINT ["flask"]
-# CMD ["run", "-p", "8080"]
-
-# ENTRYPOINT ["tail"]
-# CMD ["-f", "/dev/null"]

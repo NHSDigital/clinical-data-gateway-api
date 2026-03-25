@@ -111,7 +111,7 @@ The dev container sits on the same network, `gateway-local`, as [the `gateway-ap
 > [!NOTE]
 > **Certificates:** If additional certificates are needed, add them to `infrastructure/images/build-container/resources/dev-certificates` and set the `INCLUDE_DEV_CERTS` Docker build argument to `true`.
 >
-> **WSL users:** Configure the Dev Containers extension with `{"dev.containers.executeInWSL": true}`, clone the repository into the WSL filesystem, connect VS Code to WSL first, then open the repository folder and build the container. You will need to add the zscaler root CA cert into the dev-certificates folder. This can be exported by running `certlm.msc` and searching for `zscaler`. Right click on the search result, select export and then export as "Base-64 encoded X.509 (.CER)".
+> **WSL users:** Configure the Dev Containers extension with `{"dev.containers.executeInWSL": true}`, clone the repository into the WSL filesystem, connect VS Code to WSL first, then open the repository folder and build the container.
 
 ### Prerequisites
 
