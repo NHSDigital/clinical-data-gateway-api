@@ -18,17 +18,17 @@ def test_jwt_creation_with_required_fields() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
     )
 
     assert token.issuer == "https://example.com"
     assert token.subject == "user-123"
     assert token.audience == "https://provider.example.com"
-    assert token.requesting_device == '{"device": "info"}'
-    assert token.requesting_organization == "ORG-123"
-    assert token.requesting_practitioner == '{"practitioner": "info"}'
+    assert token.requesting_device == {"device": "info"}
+    assert token.requesting_organization == {"org": "info"}
+    assert token.requesting_practitioner == {"practitioner": "info"}
     assert token.algorithm == "none"
     assert token.type == "JWT"
     assert token.reason_for_request == "directcare"
@@ -46,9 +46,9 @@ def test_jwt_default_issued_at_and_expiration(mock_time: Mock) -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
     )
 
     assert token.issued_at == 1000
@@ -63,9 +63,9 @@ def test_jwt_issue_time_property() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
         issued_at=1609459200,  # 2021-01-01 00:00:00 UTC
     )
 
@@ -80,9 +80,9 @@ def test_jwt_exp_time_property() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
         expiration=1609459500,  # 2021-01-01 00:05:00 UTC
     )
 
@@ -97,9 +97,9 @@ def test_jwt_payload_contains_all_required_fields() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
         issued_at=1000,
         expiration=1300,
     )
@@ -130,9 +130,9 @@ def test_jwt_encode_returns_string() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
         issued_at=1000,
         expiration=1300,
     )
@@ -159,9 +159,9 @@ def test_jwt_decode_reconstructs_token() -> None:
         issuer="https://example.com",
         subject="user-123",
         audience="https://provider.example.com",
-        requesting_device='{"device": "info"}',
-        requesting_organization="ORG-123",
-        requesting_practitioner='{"practitioner": "info"}',
+        requesting_device={"device": "info"},
+        requesting_organization={"org": "info"},
+        requesting_practitioner={"practitioner": "info"},
         issued_at=1000,
         expiration=1300,
     )

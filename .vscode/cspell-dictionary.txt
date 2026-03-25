@@ -2,5 +2,4 @@ asid
 fhir
 getstructuredrecord
 gpconnect
-proxygen
 usefixtures
