@@ -13,10 +13,11 @@ env:
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   TF_STATE_KEY: "dev/preview/alpha-integration.tfstate"
   BRANCH_NAME: "alpha-integration"
-  ALB_RULE_PRIORITY: "2000"
-  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-alpha-integration"
+  ALB_RULE_PRIORITY: "900"
+  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-alpha-integration"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
+  PR_NUMBER: "alpha-integration"
 
 jobs:
   alpha-integration:
@@ -250,20 +251,6 @@ jobs:
       - name: Remove mTLS temp files
         run: rm -f /tmp/client1-key.pem /tmp/client1-cert.pem
 
-      # - name: Trivy IaC scan
-      #   uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       scan-ref: infrastructure/environments/preview
-      #       artifact-name: trivy-iac-scan-alpha-integration
-
-      # - name: Trivy image scan
-      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
-      #       artifact-name: trivy-image-scan-alpha-integration
-
-      # - name: Generate SBOM
-      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
-      #       artifact-name: trivy-sbom-alpha-integration
+      # - name: Trivy IaC scan - replacement
+      # - name: Trivy image scan - replacement
+      # - name: Generate SBOM - replacement
