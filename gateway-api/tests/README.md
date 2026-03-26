@@ -63,6 +63,19 @@ pytest gateway-api/tests/integration/ -v
 pytest gateway-api/tests/schema/ -v
 ```
 
+## Deployment Prerequisites by Test Type
+
+Run `make deploy` before running any tests that hit the real API.
+
+- **Requires deployed/running app (`make deploy`):**
+  - Acceptance tests (`tests/acceptance/`)
+  - Integration tests (`tests/integration/`)
+  - Schema validation tests (`tests/schema/`)
+  - Provider contract tests (`tests/contract/test_provider_contract.py`)
+- **Does not require deployed/running app:**
+  - Unit tests
+  - Consumer contract tests (`tests/contract/test_consumer_contract.py`) - these run against a Pact mock server
+
 ## Test Types
 
 ### Acceptance Tests (`acceptance/`)
