@@ -14,6 +14,7 @@ import re
 import uuid
 
 import pytest
+import requests
 from stubs.pds.stub import PdsFhirApiStub
 
 # ---------------------------------------------------------------------------
@@ -21,9 +22,6 @@ from stubs.pds.stub import PdsFhirApiStub
 # ---------------------------------------------------------------------------
 
 _ETAG_PATTERN = re.compile(r'^W/"[0-9]+"$')
-_UUID_PATTERN = re.compile(
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-)
 
 # NHS numbers pre-seeded in the stub
 _KNOWN_NHS_NUMBER = "9000000009"  # Jane Smith
@@ -35,7 +33,7 @@ _UNKNOWN_NHS_NUMBER = "9000000001"
 _INVALID_NHS_NUMBER = "ABC123"
 
 _VALID_REQUEST_ID = str(uuid.uuid4()).upper()
-_VALID_CORRELATION_ID = "11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA"
+_VALID_CORRELATION_ID = str(uuid.uuid4()).upper()
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +44,12 @@ _VALID_CORRELATION_ID = "11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA"
 @pytest.fixture
 def stub() -> PdsFhirApiStub:
     """Return a stub with strict header validation enabled (the default)."""
-    return PdsFhirApiStub(strict_headers=True)
+    instance = PdsFhirApiStub(strict_headers=True)
+    assert _UNKNOWN_NHS_NUMBER not in instance._patients, (
+        f"NHS number {_UNKNOWN_NHS_NUMBER!r} must not be pre-seeded in the stub; "
+        "update _UNKNOWN_NHS_NUMBER to a number that is not in the store."
+    )
+    return instance
 
 
 @pytest.fixture
@@ -392,46 +395,46 @@ class TestOperationOutcomeStructure:
     )
     def error_response(
         self, stub: PdsFhirApiStub, request: pytest.FixtureRequest
-    ) -> object:
+    ) -> requests.Response:
         request_id, nhs_number = request.param
         return stub.get_patient(nhs_number=nhs_number, request_id=request_id)
 
-    def test_resource_type(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_resource_type(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         assert body["resourceType"] == "OperationOutcome"
 
-    def test_issue_array_is_present_and_non_empty(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_issue_array_is_present_and_non_empty(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         assert isinstance(body.get("issue"), list)
         assert len(body["issue"]) >= 1
 
-    def test_issue_has_severity(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_issue_has_severity(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         issue = body["issue"][0]
         assert "severity" in issue
 
-    def test_issue_has_code(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_issue_has_code(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         issue = body["issue"][0]
         assert "code" in issue
 
-    def test_issue_details_coding_system(self, error_response: object) -> None:
+    def test_issue_details_coding_system(self, error_response: requests.Response) -> None:
         """All errors must use the Spine error code system."""
-        body = error_response.json()  # type: ignore[attr-defined]
+        body = error_response.json()
         coding = body["issue"][0]["details"]["coding"][0]
         assert (
             coding["system"]
             == "https://fhir.nhs.uk/R4/CodeSystem/Spine-ErrorOrWarningCode"
         )
 
-    def test_issue_details_coding_has_code(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_issue_details_coding_has_code(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         coding = body["issue"][0]["details"]["coding"][0]
         assert "code" in coding
         assert coding["code"]  # non-empty
 
-    def test_issue_details_coding_has_display(self, error_response: object) -> None:
-        body = error_response.json()  # type: ignore[attr-defined]
+    def test_issue_details_coding_has_display(self, error_response: requests.Response) -> None:
+        body = error_response.json()
         coding = body["issue"][0]["details"]["coding"][0]
         assert "display" in coding
         assert coding["display"]  # non-empty
