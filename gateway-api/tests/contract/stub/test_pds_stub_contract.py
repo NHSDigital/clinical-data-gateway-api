@@ -14,7 +14,6 @@ import re
 import uuid
 
 import pytest
-
 from stubs.pds.stub import PdsFhirApiStub
 
 # ---------------------------------------------------------------------------
@@ -44,13 +43,13 @@ _VALID_CORRELATION_ID = "11C46F5F-CDEF-4865-94B2-0EE0EDCC26DA"
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def stub() -> PdsFhirApiStub:
     """Return a stub with strict header validation enabled (the default)."""
     return PdsFhirApiStub(strict_headers=True)
 
 
-@pytest.fixture()
+@pytest.fixture
 def relaxed_stub() -> PdsFhirApiStub:
     """Return a stub with strict header validation disabled."""
     return PdsFhirApiStub(strict_headers=False)
@@ -77,9 +76,7 @@ class TestGetPatientSuccess:
         )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
-    def test_response_body_resource_type_is_patient(
-        self, stub: PdsFhirApiStub
-    ) -> None:
+    def test_response_body_resource_type_is_patient(self, stub: PdsFhirApiStub) -> None:
         """The response body must be a FHIR Patient resource."""
         response = stub.get_patient(
             nhs_number=_KNOWN_NHS_NUMBER, request_id=_VALID_REQUEST_ID
@@ -119,7 +116,7 @@ class TestGetPatientSuccess:
             nhs_number=_KNOWN_NHS_NUMBER, request_id=_VALID_REQUEST_ID
         )
         etag = response.headers["ETag"]
-        assert _ETAG_PATTERN.match(etag), f"ETag {etag!r} does not match W/\"<n>\""
+        assert _ETAG_PATTERN.match(etag), f'ETag {etag!r} does not match W/"<n>"'
 
     def test_etag_corresponds_to_meta_version_id(self, stub: PdsFhirApiStub) -> None:
         """The ETag value must correspond to ``Patient.meta.versionId``."""
@@ -132,7 +129,9 @@ class TestGetPatientSuccess:
         assert response.headers["ETag"] == expected_etag
 
     def test_x_request_id_echoed_back(self, stub: PdsFhirApiStub) -> None:
-        """The spec states that ``X-Request-ID`` is mirrored back as ``X-Request-Id``."""
+        """
+        The spec states that ``X-Request-ID`` is mirrored back as ``X-Request-Id``.
+        """
         response = stub.get_patient(
             nhs_number=_KNOWN_NHS_NUMBER, request_id=_VALID_REQUEST_ID
         )
@@ -141,7 +140,10 @@ class TestGetPatientSuccess:
     def test_x_correlation_id_echoed_back_when_provided(
         self, stub: PdsFhirApiStub
     ) -> None:
-        """The spec states that ``X-Correlation-ID`` is mirrored back as ``X-Correlation-Id``."""
+        """
+        The spec states that ``X-Correlation-ID`` is mirrored back
+        as ``X-Correlation-Id``.
+        """
         response = stub.get_patient(
             nhs_number=_KNOWN_NHS_NUMBER,
             request_id=_VALID_REQUEST_ID,
@@ -245,7 +247,7 @@ class TestGetPatientInvalidNhsNumber:
     """Contract tests for GET /Patient/{id} → 400 when the NHS number is invalid.
 
     The PDS spec states:
-      400 INVALID_RESOURCE_ID – Invalid NHS number.
+        400 INVALID_RESOURCE_ID – Invalid NHS number.
     """
 
     @pytest.mark.parametrize(
@@ -304,24 +306,18 @@ class TestGetPatientMissingRequestId:
     def test_status_code_is_400_when_request_id_absent(
         self, stub: PdsFhirApiStub
     ) -> None:
-        response = stub.get_patient(
-            nhs_number=_KNOWN_NHS_NUMBER, request_id=None
-        )
+        response = stub.get_patient(nhs_number=_KNOWN_NHS_NUMBER, request_id=None)
         assert response.status_code == 400
 
     def test_response_body_resource_type_is_operation_outcome(
         self, stub: PdsFhirApiStub
     ) -> None:
-        response = stub.get_patient(
-            nhs_number=_KNOWN_NHS_NUMBER, request_id=None
-        )
+        response = stub.get_patient(nhs_number=_KNOWN_NHS_NUMBER, request_id=None)
         body = response.json()
         assert body["resourceType"] == "OperationOutcome"
 
     def test_content_type_is_fhir_json(self, stub: PdsFhirApiStub) -> None:
-        response = stub.get_patient(
-            nhs_number=_KNOWN_NHS_NUMBER, request_id=None
-        )
+        response = stub.get_patient(nhs_number=_KNOWN_NHS_NUMBER, request_id=None)
         assert "application/fhir+json" in response.headers["Content-Type"]
 
     def test_no_request_id_validation_in_relaxed_mode(
