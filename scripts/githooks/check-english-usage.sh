@@ -24,7 +24,7 @@ set -euo pipefail
 
 # ==============================================================================
 
-function main() {
+main() {
 
   cd "$(git rev-parse --show-toplevel)"
 
@@ -57,7 +57,7 @@ function main() {
 # Run Vale natively.
 # Arguments (provided as environment variables):
 #   filter=[git command to filter the files to check]
-function run-vale-natively() {
+run-vale-natively() {
 
   # shellcheck disable=SC2046
   vale \
@@ -68,7 +68,7 @@ function run-vale-natively() {
 # Run Vale in a Docker container.
 # Arguments (provided as environment variables):
 #   filter=[git command to filter the files to check]
-function run-vale-in-docker() {
+run-vale-in-docker() {
 
   # shellcheck disable=SC1091
   source ./scripts/docker/docker.lib.sh
@@ -91,8 +91,9 @@ function run-vale-in-docker() {
 # ==============================================================================
 
 function is-arg-true() {
+  local value="$1"
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1
