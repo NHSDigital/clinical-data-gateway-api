@@ -89,6 +89,7 @@ jobs:
           TF_VAR_image_tag: ${{ env.BRANCH_NAME }}
           TF_VAR_alb_rule_priority: ${{ env.ALB_RULE_PRIORITY }}
         run: |
+          ls -l
           terraform apply \
             -var-file="alpha-int.tfvars" \
             -auto-approve
