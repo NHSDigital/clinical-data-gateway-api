@@ -109,7 +109,7 @@ class Controller:
             version="1.5.0",
         )
 
-        # TODO: Get practitioner details from consumer, somehow?
+        # TODO: Get practitioner details from consumer pending outcome of GPCAPIM-286?
         requesting_practitioner = Practitioner(
             id="10019",
             sds_userid="111222333444",

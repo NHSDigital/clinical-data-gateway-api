@@ -46,7 +46,7 @@ sequenceDiagram
 **Key NHS services used:**
 
 | Service | Purpose |
-|---|---|
+| --- | --- |
 | [PDS FHIR API](https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir) | Looks up the patient's registered GP practice code |
 | [SDS FHIR API](https://digital.nhs.uk/developer/api-catalogue/spine-directory-service-fhir) | Resolves provider/consumer endpoint details and ASID values |
 | GP Provider System | The patient's GP system that returns the clinical record |
@@ -54,7 +54,7 @@ sequenceDiagram
 ## Tech Stack
 
 | Component | Technology |
-|---|---|
+| --- | --- |
 | Language | Python 3.14+ |
 | Web framework | [Flask](https://flask.palletsprojects.com/) |
 | Dependency management | [Poetry](https://python-poetry.org/) |
@@ -126,7 +126,7 @@ This project depends on the [clinical-data-common](https://github.com/NHSDigital
 The project uses `make` targets to build, deploy, and manage the application. Run these from the repository root:
 
 | Command | Description |
-|---|---|
+| --- | --- |
 | `make dependencies` | Install all project dependencies via Poetry |
 | `make build` | Type-check, package, and build the Docker image |
 | `make deploy` | Build and start the Gateway API container at `localhost:5000` |
@@ -138,7 +138,7 @@ The project uses `make` targets to build, deploy, and manage the application. Ru
 Once deployed, the API exposes:
 
 | Method | Path | Description |
-|---|---|---|
+| --- | --- | --- |
 | `POST` | `/patient/$gpc.getstructuredrecord` | Retrieve a patient's structured clinical record |
 | `GET` | `/health` | Health check endpoint |
 
@@ -147,7 +147,7 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 ### Environment Variables
 
 | Variable | Description |
-|---|---|
+| --- | --- |
 | `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`, or `http://gateway-api:8080` from within the devcontainer) |
 | `HOST` | hostname portion of `BASE_URL` |
 | `FLASK_HOST` | Host the Flask app binds to |
@@ -155,6 +155,7 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 | `STUB_PDS` | `true`, use the stubs/stubs/pds/stub.py to return stubbed responses for PDS FHIR API; otherwise, not. |
 | `STUB_SDS` | `true`, use the stubs/stubs/sds/stub.py to return stubbed responses for SDS FHIR API; otherwise, not. |
 | `STUB_PROVIDER` | `true`, use the stubs/stubs/provider/stub.py to return stubbed responses for the provider system; otherwise, not. |
+| `CDG_DEBUG` | `true`, Return additional debug information when the call to the GP provider returns an error. Note if set true causes the unit tests to fail, because expected return values are changed. |
 
 Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
 
@@ -163,7 +164,7 @@ Environment variables also control whether stubs are used in place of the real P
 The project has five test suites, each targeting a different layer of confidence. The API container must be running for all suites except unit tests.
 
 | Command | Suite | Framework | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `make test-unit` | Unit | pytest | Tests individual modules in isolation |
 | `make test-acceptance` | Acceptance | pytest-bdd | BDD tests using Gherkin feature files |
 | `make test-integration` | Integration | pytest | HTTP-level tests against the running API |
@@ -188,7 +189,7 @@ Significant design decisions are documented as Architecture Decision Records (AD
 The project uses GitHub Actions for continuous integration and deployment, organised into reusable stages:
 
 | Workflow | Trigger | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | [Pull Request](.github/workflows/cicd-1-pull-request.yaml) | PR opened/reopened | Runs commit checks, tests, build, and acceptance |
 | [Publish](.github/workflows/cicd-2-publish.yaml) | PR merged to main | Creates a release and tags the artefact |
 | [Deploy](.github/workflows/cicd-3-deploy.yaml) | Manual dispatch | Deploys a selected tag to an environment |
