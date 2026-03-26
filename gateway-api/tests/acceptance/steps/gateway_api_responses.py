@@ -1,9 +1,7 @@
 """Step definitions for Gateway API response behaviour feature."""
 
 import json
-from datetime import timedelta
 
-import requests
 from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
 from stubs.data.bundles import Bundles
@@ -48,11 +46,9 @@ def send_to_nonexistent_endpoint(
     response_context: ResponseContext,
     simple_request_payload: Parameters,
 ) -> None:
-    nonexistent_endpoint = f"{client.base_url}/nonexistent"
-    response_context.response = requests.post(
-        url=nonexistent_endpoint,
-        data=json.dumps(simple_request_payload),
-        timeout=timedelta(seconds=1).total_seconds(),
+    response_context.response = client.send_post_to_path(
+        path="/nonexistent",
+        payload=json.dumps(simple_request_payload),
     )
 
 
