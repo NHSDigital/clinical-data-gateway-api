@@ -13,6 +13,13 @@ from fhir.parameters import Parameters
 load_dotenv(find_dotenv(usecwd=True))
 
 
+DEFAULT_REQUEST_HEADERS = {
+    "Content-Type": "application/fhir+json",
+    "Ods-from": "CONSUMER",
+    "Ssp-TraceID": "test-trace-id",
+}
+
+
 class Client(Protocol):
     """Protocol defining the interface for HTTP clients."""
 
@@ -32,6 +39,15 @@ class Client(Protocol):
         """
         ...
 
+    def send_post_to_path(
+        self,
+        path: str,
+        payload: str,
+        headers: dict[str, str] | None = None,
+    ) -> requests.Response:
+        """Send a POST request to the given API path."""
+        ...
+
 
 class LocalClient:
     """HTTP client that sends requests directly to the API (no proxy auth)."""
@@ -47,12 +63,20 @@ class LocalClient:
     def send_to_get_structured_record_endpoint(
         self, payload: str, headers: dict[str, str] | None = None
     ) -> requests.Response:
-        url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
-        default_headers = {
-            "Content-Type": "application/fhir+json",
-            "Ods-from": "CONSUMER",
-            "Ssp-TraceID": "test-trace-id",
-        }
+        return self.send_post_to_path(
+            path="/patient/$gpc.getstructuredrecord",
+            payload=payload,
+            headers=headers,
+        )
+
+    def send_post_to_path(
+        self,
+        path: str,
+        payload: str,
+        headers: dict[str, str] | None = None,
+    ) -> requests.Response:
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        default_headers = DEFAULT_REQUEST_HEADERS.copy()
         if headers:
             default_headers.update(headers)
 
@@ -84,13 +108,21 @@ class RemoteClient:
     def send_to_get_structured_record_endpoint(
         self, payload: str, headers: dict[str, str] | None = None
     ) -> requests.Response:
-        url = f"{self.base_url}/patient/$gpc.getstructuredrecord"
+        return self.send_post_to_path(
+            path="/patient/$gpc.getstructuredrecord",
+            payload=payload,
+            headers=headers,
+        )
 
-        default_headers = self._auth_headers | {
-            "Content-Type": "application/fhir+json",
-            "Ods-from": "CONSUMER",
-            "Ssp-TraceID": "test-trace-id",
-        }
+    def send_post_to_path(
+        self,
+        path: str,
+        payload: str,
+        headers: dict[str, str] | None = None,
+    ) -> requests.Response:
+        url = f"{self.base_url}/{path.lstrip('/')}"
+
+        default_headers = self._auth_headers | DEFAULT_REQUEST_HEADERS
         if headers:
             default_headers.update(headers)
 

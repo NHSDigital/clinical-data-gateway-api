@@ -1,15 +1,24 @@
-"""Step definitions for Gateway API happy path feature."""
+"""Step definitions for Gateway API response behaviour feature."""
 
 import json
-from datetime import timedelta
 
-import requests
 from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
 from stubs.data.bundles import Bundles
 
 from tests.acceptance.conftest import ResponseContext
 from tests.conftest import Client
+
+
+def _assert_response_status(
+    response_context: ResponseContext,
+    expected_status: int,
+) -> None:
+    assert response_context.response is not None, "Response has not been set."
+    assert response_context.response.status_code == expected_status, (
+        f"Expected status {expected_status}, "
+        f"got {response_context.response.status_code}: {response_context.response.text}"
+    )
 
 
 @given("the API is running")
@@ -37,11 +46,9 @@ def send_to_nonexistent_endpoint(
     response_context: ResponseContext,
     simple_request_payload: Parameters,
 ) -> None:
-    nonexistent_endpoint = f"{client.base_url}/nonexistent"
-    response_context.response = requests.post(
-        url=nonexistent_endpoint,
-        data=json.dumps(simple_request_payload),
-        timeout=timedelta(seconds=1).total_seconds(),
+    response_context.response = client.send_post_to_path(
+        path="/nonexistent",
+        payload=json.dumps(simple_request_payload),
     )
 
 
@@ -52,16 +59,22 @@ def send_to_nonexistent_endpoint(
     )
 )
 def check_status_code(response_context: ResponseContext, expected_status: int) -> None:
-    assert response_context.response is not None, "Response has not been set."
-    assert response_context.response.status_code == expected_status, (
-        f"Expected status {expected_status}, "
-        f"got {response_context.response.status_code}: {response_context.response.text}"
-    )
+    _assert_response_status(response_context, expected_status)
 
 
-@then("the response should contain the patient bundle from the provider")
+@then("the response should be successful")
+def check_response_successful(response_context: ResponseContext) -> None:
+    _assert_response_status(response_context, 200)
+
+
+@then("the response should indicate the endpoint was not found")
+def check_response_not_found(response_context: ResponseContext) -> None:
+    _assert_response_status(response_context, 404)
+
+
+@then("the response should include the patient's record from the provider")
 def check_response_matches_provider(response_context: ResponseContext) -> None:
-    assert response_context.response, "Response has not been set."
+    assert response_context.response is not None, "Response has not been set."
     assert response_context.response.json() == Bundles.ALICE_JONES_9999999999, (
         "Expected response payload does not match actual response payload."
     )

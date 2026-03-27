@@ -11,7 +11,7 @@ from pact import Pact
 
 
 class TestConsumerContract:
-    """Consumer contract tests to define expected API behavior."""
+    """Consumer contract tests to define expected API behaviour."""
 
     def test_get_structured_record(self) -> None:
         """Test the consumer's expectation of the get structured record endpoint."""
