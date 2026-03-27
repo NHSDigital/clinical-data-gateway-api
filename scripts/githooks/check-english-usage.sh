@@ -24,7 +24,7 @@ set -euo pipefail
 
 # ==============================================================================
 
-main() {
+function main() {
 
   cd "$(git rev-parse --show-toplevel)"
 
@@ -52,23 +52,25 @@ main() {
   else
     filter="$filter" run-vale-in-docker
   fi
+  return 0
 }
 
 # Run Vale natively.
 # Arguments (provided as environment variables):
 #   filter=[git command to filter the files to check]
-run-vale-natively() {
+function run-vale-natively() {
 
   # shellcheck disable=SC2046
   vale \
     --config "$PWD/scripts/config/vale/vale.ini" \
     $($filter)
+  return 0
 }
 
 # Run Vale in a Docker container.
 # Arguments (provided as environment variables):
 #   filter=[git command to filter the files to check]
-run-vale-in-docker() {
+function run-vale-in-docker() {
 
   # shellcheck disable=SC1091
   source ./scripts/docker/docker.lib.sh
@@ -86,6 +88,7 @@ run-vale-in-docker() {
     "$image" \
       --config /workdir/scripts/config/vale/vale.ini \
       $($filter) /dev/null
+  return 0
 }
 
 # ==============================================================================
