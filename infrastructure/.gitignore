@@ -20,6 +20,7 @@ crash.*.log
 
 # Allow checked-in preview tfvars containing non-sensitive values and secret references only
 !environments/preview/preview.tfvars
+!environments/preview/alpha-int.tfvars
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
