@@ -49,17 +49,19 @@ function main() {
 
 # ==============================================================================
 
-# unused from the template, but left here for future use if needed
-# function test-docker-suite-setup() {
+function test-docker-suite-setup() {
 
-#   :
-# }
+  :
 
-# unused from the template, but left here for future use if needed
-# function test-docker-suite-teardown() {
+  return 0
+}
 
-#   :
-# }
+function test-docker-suite-teardown() {
+
+  :
+
+  return 0
+}
 
 # ==============================================================================
 

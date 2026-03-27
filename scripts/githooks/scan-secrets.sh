@@ -75,8 +75,7 @@ function get-cmd-to-run() {
 function run-gitleaks-natively() {
 
   # shellcheck disable=SC2086
-  gitleaks $cmd
-  return 0
+  gitleaks $cmd && return 0 || return 1
 }
 
 # Run Gitleaks in a Docker container.
@@ -95,7 +94,7 @@ function run-gitleaks-in-docker() {
     --volume "$PWD:$dir" \
     --workdir $dir \
     "$image" \
-      $cmd || return 0
+      $cmd && return 0 || return 1
 }
 
 # ==============================================================================
