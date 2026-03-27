@@ -27,7 +27,7 @@ tests/
 > [!NOTE]<br>
 > When running tests the following environment variables need to be provided:
 >
-> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000.
+> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000. If running locally in a dev container, using gateway-api as the host will allow the tests to communicate with an instance launched from `make deploy`.
 > - `HOST` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
 
 ### Install Dependencies (if not using Dev container)
