@@ -28,6 +28,8 @@ function main() {
   else
     file="$file" run-shellcheck-in-docker
   fi
+
+  return 0
 }
 
 # Run ShellCheck natively.
@@ -37,6 +39,8 @@ function run-shellcheck-natively() {
 
   # shellcheck disable=SC2001
   shellcheck "$(echo "$file" | sed "s#$PWD#.#")"
+
+  return 0
 }
 
 # Run ShellCheck in a Docker container.
@@ -55,13 +59,17 @@ function run-shellcheck-in-docker() {
     --workdir /workdir \
     "$image" \
       "/workdir/$(echo "$file" | sed "s#$PWD#.#")"
+
+  return 0
 }
 
 # ==============================================================================
 
 function is-arg-true() {
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  local value="$1"
+
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1
