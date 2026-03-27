@@ -134,7 +134,10 @@ env-remote:
 
 # Run tests against local
 test-local: env-local
+	@echo "Obtaining APIGEE access token..."
 	@set -a && source .env && set +a && \
+		APIGEE_ACCESS_TOKEN="$$(./scripts/get_apigee_token.sh)" && \
+		export APIGEE_ACCESS_TOKEN && \
 		$(MAKE) test
 
 # Run tests against remote, exporting APIGEE_ACCESS_TOKEN only
