@@ -2,4 +2,4 @@
 
 * @NHSDigital/clinical-data-api-code-owners
 
-.github/* @NHSDigital/clinical-data-api-admins
+/.github/ @NHSDigital/clinical-data-api-admins
