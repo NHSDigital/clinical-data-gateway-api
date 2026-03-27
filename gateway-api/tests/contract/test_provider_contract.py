@@ -7,13 +7,11 @@ satisfies the contracts defined by consumers.
 from typing import Any
 from urllib.parse import urlparse
 
-import pytest
 from pact import Verifier
 
 from tests.conftest import Client
 
 
-@pytest.mark.remote_only
 def test_provider_honors_consumer_contract(get_headers: Any, client: Client) -> None:
 
     host = urlparse(client.base_url).hostname

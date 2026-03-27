@@ -66,7 +66,6 @@ strict = true
 [tool.pytest.ini_options]
 bdd_features_base_dir = "tests/acceptance/features"
 markers = [
-    "remote_only: test only runs in remote environment (skipped when --env=local)",
     "status_auth_headers",
     "status_merged_auth_headers",
 ]
