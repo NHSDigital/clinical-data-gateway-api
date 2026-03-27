@@ -14,7 +14,7 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; 
         cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
     else \
         rm -rf /resources/dev-certificates || true; \
-    fi
+    fi && \
 
     apk upgrade --no-cache && \
     pip install --no-cache-dir --upgrade pip && \
