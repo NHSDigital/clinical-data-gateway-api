@@ -49,15 +49,17 @@ function main() {
 
 # ==============================================================================
 
-function test-docker-suite-setup() {
+# unused from the template, but left here for future use if needed
+# function test-docker-suite-setup() {
 
-  :
-}
+#   :
+# }
 
-function test-docker-suite-teardown() {
+# unused from the template, but left here for future use if needed
+# function test-docker-suite-teardown() {
 
-  :
-}
+#   :
+# }
 
 # ==============================================================================
 
@@ -106,6 +108,7 @@ function test-docker-test() {
   output=$(docker-check-test)
   # Assert
   echo "$output" | grep -q "PASS"
+  return 0
 }
 
 function test-docker-run() {
@@ -116,6 +119,7 @@ function test-docker-run() {
   output=$(docker-run)
   # Assert
   echo "$output" | grep -Eq "Python [0-9]+\.[0-9]+\.[0-9]+"
+  return 0
 }
 
 function test-docker-clean() {
@@ -140,13 +144,15 @@ function test-docker-get-image-version-and-pull() {
     --filter=reference="$name" \
     --format "{{.Tag}}" \
   | grep -vq "<none>"
+  return 0
 }
 
 # ==============================================================================
 
 function is-arg-true() {
+  local value="$1"
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1
