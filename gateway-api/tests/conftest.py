@@ -7,6 +7,7 @@ from typing import Protocol, cast
 import pytest
 import requests
 from dotenv import find_dotenv, load_dotenv
+from fhir.constants import FHIRSystem
 from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
@@ -146,7 +147,7 @@ def simple_request_payload() -> Parameters:
             {
                 "name": "patientNHSNumber",
                 "valueIdentifier": {
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "system": FHIRSystem.NHS_NUMBER,
                     "value": "9999999999",
                 },
             },
