@@ -51,7 +51,10 @@ class Client(Protocol):
 
 
 class LocalClient:
-    """HTTP client that sends requests directly to the API (no proxy auth)."""
+    """HTTP client that sends requests directly to the API.
+
+    Includes optional Apigee Authorization headers when an access token is provided.
+    """
 
     def __init__(
         self,
