@@ -29,11 +29,22 @@ function main() {
 
   if command -v gitleaks > /dev/null 2>&1 && ! is-arg-true "${FORCE_USE_DOCKER:-false}"; then
     dir="$PWD"
-    cmd="$(get-cmd-to-run)" run-gitleaks-natively
+    cmd="$(get-cmd-to-run)"
+    status=$?
+    if [[ $status -ne 0 ]]; then
+      exit "$status"
+    fi
+    run-gitleaks-natively
   else
     dir="/workdir"
-    cmd="$(get-cmd-to-run)" run-gitleaks-in-docker
+    cmd="$(get-cmd-to-run)"
+    status=$?
+    if [[ $status -ne 0 ]]; then
+      exit "$status"
+    fi
+    run-gitleaks-in-docker
   fi
+  return 0
 }
 
 # Get Gitleaks command to execute and configuration.
@@ -54,7 +65,7 @@ function get-cmd-to-run() {
       ;;
     *)
       echo "Unknown check value: '$check'. Expected one of whole-history, last-commit, staged-changes." >&2
-      exit 126
+      return 126
       ;;
   esac
   # Include base line file if it exists
@@ -65,6 +76,7 @@ function get-cmd-to-run() {
   cmd="$cmd --config $dir/scripts/config/gitleaks.toml"
 
   echo "$cmd"
+  return 0
 }
 
 # Run Gitleaks natively.
@@ -73,7 +85,7 @@ function get-cmd-to-run() {
 function run-gitleaks-natively() {
 
   # shellcheck disable=SC2086
-  gitleaks $cmd
+  gitleaks $cmd && return 0 || return 1
 }
 
 # Run Gitleaks in a Docker container.
@@ -92,14 +104,15 @@ function run-gitleaks-in-docker() {
     --volume "$PWD:$dir" \
     --workdir $dir \
     "$image" \
-      $cmd
+      $cmd && return 0 || return 1
 }
 
 # ==============================================================================
 
 function is-arg-true() {
+  local value="$1"
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1

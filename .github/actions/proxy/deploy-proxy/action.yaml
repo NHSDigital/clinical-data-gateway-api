@@ -36,13 +36,18 @@ runs:
         proxygen-client-id: ${{ inputs.proxygen-client-id }}
 
     - name: Inject secrets into openapi.yaml for deploying proxy
+      env:
+        TARGET_URL: ${{ inputs.target-url }}
+        MTLS_SECRET_NAME: ${{ inputs.mtls-secret-name }}
       shell: bash
       run: |
         cat gateway-api/openapi.yaml proxygen/x-nhsd-apim.template.yaml > /tmp/proxy-specification.yaml
 
-        yq eval '.x-nhsd-apim.target.url = "${{ inputs.target-url }}" | .x-nhsd-apim.target.security.secret = "${{ inputs.mtls-secret-name }}"' -i /tmp/proxy-specification.yaml
+        yq eval '.x-nhsd-apim.target.url = env(TARGET_URL) | .x-nhsd-apim.target.security.secret = env(MTLS_SECRET_NAME)' -i /tmp/proxy-specification.yaml
 
     - name: Deploy API proxy
+      env:
+        PROXY_BASE_PATH: ${{ inputs.proxy-base-path }}
       shell: bash
       run: |
-        proxygen instance deploy internal-dev ${{ inputs.proxy-base-path }} /tmp/proxy-specification.yaml --no-confirm
+        proxygen instance deploy internal-dev "$PROXY_BASE_PATH" /tmp/proxy-specification.yaml --no-confirm
