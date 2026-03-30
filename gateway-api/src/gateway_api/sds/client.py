@@ -15,6 +15,7 @@ from typing import Any, cast
 from fhir.constants import FHIRSystem
 from stubs import SdsFhirApiStub
 
+from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
 
@@ -131,8 +132,6 @@ class SdsClient:
 
         device = self._extract_first_entry(device_bundle)
 
-        # TODO: Post-steel-thread handle case where no device is found for ODS code
-
         asid = self._extract_identifier(device, FHIRSystem.NHS_SPINE_ASID)
         party_key = self._extract_identifier(device, FHIRSystem.NHS_MHS_PARTY_KEY)
 
@@ -201,7 +200,10 @@ class SdsClient:
             timeout=timeout or self.timeout,
         )
 
-        # TODO: Post-steel-thread we probably want a raise_for_status() here
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise SdsRequestFailedError(error_reason=str(e)) from e
 
         body = response.json()
         return cast("ResultStructureDict", body)
