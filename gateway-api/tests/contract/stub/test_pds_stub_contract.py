@@ -168,6 +168,18 @@ class TestGetPatientSuccess:
         )
         assert "X-Correlation-Id" not in response.headers
 
+    def test_response_body_has_no_issue_array(self, stub: PdsFhirApiStub) -> None:
+        """A successful Patient response must not contain an ``issue`` array.
+
+        The ``issue`` array is part of ``OperationOutcome`` (error responses);
+        it must be absent from a well-formed ``Patient`` resource.
+        """
+        response = stub.get_patient(
+            nhs_number=_KNOWN_NHS_NUMBER, request_id=_VALID_REQUEST_ID
+        )
+        body = response.json()
+        assert "issue" not in body
+
 
 # ---------------------------------------------------------------------------
 # 404 – patient not found
