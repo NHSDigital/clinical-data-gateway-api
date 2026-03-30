@@ -4,6 +4,7 @@ Shared lightweight types and helpers used across the gateway API.
 
 import re
 from dataclasses import dataclass
+from http import HTTPStatus
 
 # This project uses JSON request/response bodies as strings in the controller layer.
 # The alias is used to make intent clearer in function signatures.
@@ -61,3 +62,8 @@ def validate_nhs_number(value: str | int) -> bool:
         return False  # invalid NHS number
 
     return check == provided_check_digit
+
+
+def get_http_text(status_code: int) -> str:
+    status = HTTPStatus(status_code)
+    return status.phrase
