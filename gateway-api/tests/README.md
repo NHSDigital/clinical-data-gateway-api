@@ -151,7 +151,9 @@ Property-based API schema validation tests using Schemathesis. These tests autom
 
 Contract testing ensures that the consumer's expectations match the provider's implementation without requiring both systems to be tested together.
 
-**How it works:**
+There are two types of tests in this folder. The stub tests (contained in the stub folder) are pytest-based and run as any other pytest-based test. The consumer and provider tests are Pact-based (see below).
+
+**How it works (Pact-based tests):**
 
 1. **Consumer Tests** (`test_consumer_contract.py`):
    - Define what the consumer EXPECTS from the API
