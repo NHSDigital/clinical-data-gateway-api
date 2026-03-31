@@ -14,10 +14,10 @@ env:
   TF_STATE_KEY: "dev/preview/alpha-integration.tfstate"
   BRANCH_NAME: "alpha-integration"
   ALB_RULE_PRIORITY: "900"
-  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-alpha-integration"
+  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-alpha"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
-  PR_NUMBER: "alpha-integration"
+  PR_NUMBER: "alpha"
 
 jobs:
   alpha-integration:
