@@ -17,7 +17,7 @@ env:
   BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-alpha"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
-  PR_NUMBER: "alpha"
+  PR_NUMBER: "1"
 
 jobs:
   alpha-integration:
