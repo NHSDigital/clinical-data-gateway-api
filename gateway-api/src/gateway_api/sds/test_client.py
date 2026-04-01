@@ -8,6 +8,7 @@ import pytest
 from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
 
+from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds import (
     SdsClient,
@@ -294,3 +295,34 @@ def test_sds_client_extract_party_key_from_device(
     assert result is not None
     assert result.asid == "888888888888"
     assert result.endpoint == "https://withpartykey.example.com/fhir"
+
+
+def test_sds_client_raises_sds_request_failed_error_on_http_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    Test that SdsClient raises SdsRequestFailedError when SDS returns
+    a non-2xx response.
+
+    :param monkeypatch: Pytest monkeypatch fixture.
+    """
+    stub = SdsFhirApiStub()
+
+    def get_without_apikey(
+        url: str,
+        headers: dict,
+        params: dict,
+        timeout: int = 10,
+    ) -> object:
+        # Strip the apikey header so the stub returns a 400
+        headers_without_key = {k: v for k, v in headers.items() if k != "apikey"}
+        return stub.get(
+            url=url, headers=headers_without_key, params=params, timeout=timeout
+        )
+
+    monkeypatch.setattr("gateway_api.sds.client.get", get_without_apikey)
+
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+
+    with pytest.raises(SdsRequestFailedError, match="SDS FHIR API request failed"):
+        client.get_org_details(ods_code="PROVIDER")

@@ -239,9 +239,8 @@ class PdsClient:
 
         for record in general_practitioners:
             period = record["identifier"]["period"]
-            start = date.fromisoformat(period["start"])
-            # TODO: period is not required to have end
-            end = date.fromisoformat(period["end"])
+            start = date.fromisoformat(period.get("start", "1900-01-01"))
+            end = date.fromisoformat(period.get("end", "9999-12-31"))
             if start <= today <= end:
                 return record
 

@@ -100,6 +100,42 @@ class TestValidateTimestamps:
             JWTValidator.validate_timestamps(jwt)
         assert "exactly 5 minutes (300 seconds)" in str(exc_info.value)
 
+    def test_issued_at_in_future_raises_error(self, valid_jwt: JWT) -> None:
+        """Test that issued_at set in the future raises a validation error."""
+        from time import time
+
+        future_iat = int(time()) + 3600  # 1 hour in the future
+        jwt = JWT(
+            issuer=valid_jwt.issuer,
+            subject=valid_jwt.subject,
+            audience=valid_jwt.audience,
+            requesting_device=valid_jwt.requesting_device,
+            requesting_organization=valid_jwt.requesting_organization,
+            requesting_practitioner=valid_jwt.requesting_practitioner,
+            issued_at=future_iat,
+            expiration=future_iat + 300,
+        )
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_timestamps(jwt)
+        assert "issued_at cannot be in the future" in str(exc_info.value)
+
+    def test_expired_jwt_raises_error(self, valid_jwt: JWT) -> None:
+        """Test that a JWT whose expiration is in the past raises a validation error."""
+        past_iat = 1000000  # well in the past (year 1970)
+        jwt = JWT(
+            issuer=valid_jwt.issuer,
+            subject=valid_jwt.subject,
+            audience=valid_jwt.audience,
+            requesting_device=valid_jwt.requesting_device,
+            requesting_organization=valid_jwt.requesting_organization,
+            requesting_practitioner=valid_jwt.requesting_practitioner,
+            issued_at=past_iat,
+            expiration=past_iat + 300,
+        )
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_timestamps(jwt)
+        assert "JWT has expired" in str(exc_info.value)
+
 
 class TestValidateDevice:
     """Tests for validate_device method."""

@@ -153,6 +153,8 @@ class SdsClient:
             address = endpoint.get("address")
             if address:
                 endpoint_url = str(address).strip()
+        else:
+            endpoint_url = None
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
 
@@ -211,18 +213,17 @@ class SdsClient:
     @staticmethod
     def _extract_first_entry(
         bundle: ResultStructureDict,
-    ) -> ResultStructureDict:  # TODO: Post-steel-thread this may return a None as well
+    ) -> ResultStructureDict:
         """
         Extract the first resource from a Bundle.
         """
         entries = cast("ResultList", bundle.get("entry", []))
 
-        # TODO: Post-steel-thread handle case where bundle contains no entries
+        if not entries:
+            return {}
 
         # TODO: more carefully consider business logic for handling multiple
         #       entries in beta
-        if not entries:
-            return {}
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
 

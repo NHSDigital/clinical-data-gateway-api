@@ -1,5 +1,6 @@
 """JWT validation for GPConnect FHIR API requests."""
 
+from time import time
 from typing import Any
 
 from gateway_api.clinical_jwt import JWT
@@ -69,6 +70,13 @@ class JWTValidator:
                     f"Expected {expected_expiration}, got {jwt_obj.expiration}"
                 )
             )
+
+        if jwt_obj.issued_at > time():
+            raise JWTValidationError(
+                error_details="JWT issued_at cannot be in the future"
+            )
+        if jwt_obj.expiration < time():
+            raise JWTValidationError(error_details="JWT has expired")
 
     @staticmethod
     def validate_device(device: dict[str, Any]) -> None:
