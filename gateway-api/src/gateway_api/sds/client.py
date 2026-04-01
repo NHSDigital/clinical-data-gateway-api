@@ -13,6 +13,7 @@ from enum import StrEnum
 from typing import Any, cast
 
 from fhir.constants import FHIRSystem
+from requests import HTTPError
 from stubs import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
@@ -204,7 +205,7 @@ class SdsClient:
 
         try:
             response.raise_for_status()
-        except Exception as e:
+        except HTTPError as e:
             raise SdsRequestFailedError(error_reason=str(e)) from e
 
         body = response.json()
