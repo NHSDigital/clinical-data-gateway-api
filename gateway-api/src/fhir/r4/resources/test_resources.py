@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from fhir import Resource
 from fhir.r4 import (
+    ASIDIdentifier,
     Bundle,
     Device,
     Endpoint,
@@ -13,6 +14,7 @@ from fhir.r4 import (
     IssueCode,
     IssueSeverity,
     OperationOutcome,
+    PartyKeyIdentifier,
     Patient,
 )
 
@@ -382,7 +384,7 @@ class TestDevice:
     def test_create_with_asid_identifier(self) -> None:
         device = Device.create(
             identifier=[
-                Device.ASIDIdentifier(
+                ASIDIdentifier(
                     system="https://fhir.nhs.uk/Id/nhsSpineASID",
                     value="123456789012",
                 )
@@ -397,7 +399,7 @@ class TestDevice:
     def test_create_with_party_key_identifier(self) -> None:
         device = Device.create(
             identifier=[
-                Device.PartyKeyIdentifier(
+                PartyKeyIdentifier(
                     system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
                     value="P12345-000001",
                 )
@@ -411,11 +413,11 @@ class TestDevice:
     def test_create_with_mixed_identifiers(self) -> None:
         device = Device.create(
             identifier=[
-                Device.ASIDIdentifier(
+                ASIDIdentifier(
                     system="https://fhir.nhs.uk/Id/nhsSpineASID",
                     value="123",
                 ),
-                Device.PartyKeyIdentifier(
+                PartyKeyIdentifier(
                     system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
                     value="PK-1",
                 ),
@@ -425,12 +427,12 @@ class TestDevice:
         assert len(device.identifier) == 2, "should have two identifiers"
 
     def test_asid_identifier_expected_system(self) -> None:
-        assert Device.ASIDIdentifier._expected_system == (
+        assert ASIDIdentifier._expected_system == (
             "https://fhir.nhs.uk/Id/nhsSpineASID"
         ), "_expected_system should be the ASID URI"
 
     def test_party_key_identifier_expected_system(self) -> None:
-        assert Device.PartyKeyIdentifier._expected_system == (
+        assert PartyKeyIdentifier._expected_system == (
             "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
         ), "_expected_system should be the party key URI"
 

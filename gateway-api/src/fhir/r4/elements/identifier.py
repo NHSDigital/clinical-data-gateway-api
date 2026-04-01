@@ -48,3 +48,13 @@ class NHSNumberValueIdentifier(
     Identifier, expected_system="https://fhir.nhs.uk/Id/nhs-number"
 ):
     """A valueIdentifier NHS numbers - used in Parameter"""
+
+
+class ASIDIdentifier(Identifier, expected_system="https://fhir.nhs.uk/Id/nhsSpineASID"):
+    """A FHIR R4 ASID Identifier."""
+
+
+class PartyKeyIdentifier(
+    Identifier, expected_system="https://fhir.nhs.uk/Id/nhsMhsPartyKey"
+):
+    """A FHIR R4 Party Key Identifier."""
