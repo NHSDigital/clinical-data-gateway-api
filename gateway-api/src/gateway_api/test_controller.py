@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from fhir.r4 import Patient, PatientIdentifier
+from fhir.r4 import GeneralPractitioner, Patient, PatientIdentifier
 from flask import Request
 from pytest_mock import MockerFixture
 
@@ -23,9 +23,9 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
     general_practitioner = None
     if gp_ods_code is not None:
         general_practitioner = [
-            Patient.GeneralPractitioner(
+            GeneralPractitioner(
                 type="Organization",
-                identifier=Patient.GeneralPractitioner.OrganizationIdentifier(
+                identifier=GeneralPractitioner.OrganizationIdentifier(
                     system="https://fhir.nhs.uk/Id/ods-organization-code",
                     value=gp_ods_code,
                 ),

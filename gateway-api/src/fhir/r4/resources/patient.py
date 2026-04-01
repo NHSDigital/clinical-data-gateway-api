@@ -4,8 +4,8 @@ from pydantic import Field
 
 from fhir import Resource
 
-from ..elements.identifier import Identifier, PatientIdentifier
-from ..elements.reference import Reference
+from ..elements.identifier import PatientIdentifier
+from ..elements.reference import GeneralPractitioner
 
 
 class Patient(Resource, resource_type="Patient"):
@@ -16,17 +16,6 @@ class Patient(Resource, resource_type="Patient"):
     @property
     def nhs_number(self) -> str:
         return self.identifier[0].value
-
-    class GeneralPractitioner(Reference, reference_type="Organization"):
-        class OrganizationIdentifier(
-            Identifier, expected_system="https://fhir.nhs.uk/Id/ods-organization-code"
-        ):
-            """
-            A FHIR R4 Organization Identifier utilising the ODS Organization Code
-            system.
-            """
-
-        identifier: Annotated[OrganizationIdentifier, Field(frozen=True)]
 
     generalPractitioner: Annotated[
         list[GeneralPractitioner] | None, Field(frozen=True)

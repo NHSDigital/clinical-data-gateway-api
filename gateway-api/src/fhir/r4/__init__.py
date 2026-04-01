@@ -10,7 +10,7 @@ from .elements.identifier import (
     UUIDIdentifier,
 )
 from .elements.issue import Issue, IssueCode, IssueSeverity
-from .elements.reference import Reference
+from .elements.reference import GeneralPractitioner, Reference
 from .resources.bundle import Bundle
 from .resources.device import Device
 from .resources.endpoint import Endpoint
@@ -23,6 +23,7 @@ __all__ = [
     "Device",
     "Endpoint",
     "Entry",
+    "GeneralPractitioner",
     "Identifier",
     "Issue",
     "IssueCode",

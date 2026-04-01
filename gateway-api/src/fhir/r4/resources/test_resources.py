@@ -10,6 +10,7 @@ from fhir.r4 import (
     Device,
     Endpoint,
     Entry,
+    GeneralPractitioner,
     Issue,
     IssueCode,
     IssueSeverity,
@@ -136,9 +137,9 @@ class TestPatient:
         patient = Patient.create(
             identifier=[PatientIdentifier.from_nhs_number(nhs_number)],
             generalPractitioner=[
-                Patient.GeneralPractitioner(
+                GeneralPractitioner(
                     type="Organization",
-                    identifier=Patient.GeneralPractitioner.OrganizationIdentifier(
+                    identifier=GeneralPractitioner.OrganizationIdentifier(
                         system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value=ods_code,
                     ),
@@ -190,10 +191,10 @@ class TestPatient:
             Patient.create(
                 identifier=[PatientIdentifier.from_nhs_number("1234567890")],
                 generalPractitioner=[
-                    Patient.GeneralPractitioner(
+                    GeneralPractitioner(
                         type="Organization",
                         identifier=(
-                            Patient.GeneralPractitioner.OrganizationIdentifier(
+                            GeneralPractitioner.OrganizationIdentifier(
                                 system="https://example.org/invalid",
                                 value="A12345",
                             )
@@ -255,9 +256,9 @@ class TestPatientGpOdsCode:
         patient = Patient.create(
             identifier=[PatientIdentifier.from_nhs_number("1234567890")],
             generalPractitioner=[
-                Patient.GeneralPractitioner(
+                GeneralPractitioner(
                     type="Organization",
-                    identifier=Patient.GeneralPractitioner.OrganizationIdentifier(
+                    identifier=GeneralPractitioner.OrganizationIdentifier(
                         system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value="B81001",
                     ),
@@ -368,15 +369,15 @@ class TestPatientModelValidate:
             )
 
 
-class TestPatientGeneralPractitioner:
+class TestGeneralPractitioner:
     def test_expected_reference_type(self) -> None:
-        assert Patient.GeneralPractitioner._expected_reference_type == "Organization", (
+        assert GeneralPractitioner._expected_reference_type == "Organization", (
             "_expected_reference_type should be 'Organization'"
         )
 
     def test_organization_identifier_expected_system(self) -> None:
         assert (
-            Patient.GeneralPractitioner.OrganizationIdentifier._expected_system
+            GeneralPractitioner.OrganizationIdentifier._expected_system
             == "https://fhir.nhs.uk/Id/ods-organization-code"
         ), "_expected_system should be the ODS organization code URI"
 
