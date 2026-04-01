@@ -29,21 +29,12 @@ function main() {
 
   if command -v gitleaks > /dev/null 2>&1 && ! is-arg-true "${FORCE_USE_DOCKER:-false}"; then
     dir="$PWD"
-    cmd="$(get-cmd-to-run)"
-    status=$?
-    if [[ $status -ne 0 ]]; then
-      exit "$status"
-    fi
-    run-gitleaks-natively
+    cmd="$(get-cmd-to-run)" run-gitleaks-natively
   else
     dir="/workdir"
-    cmd="$(get-cmd-to-run)"
-    status=$?
-    if [[ $status -ne 0 ]]; then
-      exit "$status"
-    fi
-    run-gitleaks-in-docker
+    cmd="$(get-cmd-to-run)" run-gitleaks-in-docker
   fi
+
   return 0
 }
 
@@ -85,7 +76,8 @@ function get-cmd-to-run() {
 function run-gitleaks-natively() {
 
   # shellcheck disable=SC2086
-  gitleaks $cmd && return 0 || return 1
+  gitleaks $cmd
+  return 0 #
 }
 
 # Run Gitleaks in a Docker container.
@@ -104,7 +96,7 @@ function run-gitleaks-in-docker() {
     --volume "$PWD:$dir" \
     --workdir $dir \
     "$image" \
-      $cmd && return 0 || return 1
+      $cmd
 }
 
 # ==============================================================================
