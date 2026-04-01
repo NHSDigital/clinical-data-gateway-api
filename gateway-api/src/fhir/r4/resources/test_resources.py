@@ -16,6 +16,7 @@ from fhir.r4 import (
     OperationOutcome,
     PartyKeyIdentifier,
     Patient,
+    PatientIdentifier,
 )
 
 
@@ -25,7 +26,7 @@ class TestBundle:
         expected_entry = Entry(
             fullUrl="full",
             resource=Patient.create(
-                identifier=[Patient.PatientIdentifier.from_nhs_number("nhs_number")]
+                identifier=[PatientIdentifier.from_nhs_number("nhs_number")]
             ),
         )
 
@@ -47,7 +48,7 @@ class TestBundle:
         assert bundle.entries is None
 
     expected_resource = Patient.create(
-        identifier=[Patient.PatientIdentifier.from_nhs_number("nhs_number")]
+        identifier=[PatientIdentifier.from_nhs_number("nhs_number")]
     )
 
     @pytest.mark.parametrize(
@@ -122,7 +123,7 @@ class TestPatient:
         """Test creating a Patient resource."""
         nhs_number = "1234567890"
 
-        expected_identifier = Patient.PatientIdentifier.from_nhs_number(nhs_number)
+        expected_identifier = PatientIdentifier.from_nhs_number(nhs_number)
         patient = Patient.create(identifier=[expected_identifier])
 
         assert patient.identifier[0] == expected_identifier
@@ -133,7 +134,7 @@ class TestPatient:
         ods_code = "A12345"
 
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number(nhs_number)],
+            identifier=[PatientIdentifier.from_nhs_number(nhs_number)],
             generalPractitioner=[
                 Patient.GeneralPractitioner(
                     type="Organization",
@@ -187,7 +188,7 @@ class TestPatient:
             ),
         ):
             Patient.create(
-                identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")],
+                identifier=[PatientIdentifier.from_nhs_number("1234567890")],
                 generalPractitioner=[
                     Patient.GeneralPractitioner(
                         type="Organization",
@@ -204,7 +205,7 @@ class TestPatient:
     def test_model_dump_json_excludes_none_general_practitioner(self) -> None:
         """Test JSON output omits optional fields when they are None."""
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")]
         )
 
         payload = json.loads(patient.model_dump_json())
@@ -217,7 +218,7 @@ class TestPatientIdentifier:
     def test_create_from_nhs_number(self) -> None:
         """Test creating a PatientIdentifier from an NHS number."""
         nhs_number = "1234567890"
-        identifier = Patient.PatientIdentifier.from_nhs_number(nhs_number)
+        identifier = PatientIdentifier.from_nhs_number(nhs_number)
 
         assert identifier.system == "https://fhir.nhs.uk/Id/nhs-number", (
             "system should be the NHS number URI"
@@ -225,7 +226,7 @@ class TestPatientIdentifier:
         assert identifier.value == nhs_number, "value should match the NHS number"
 
     def test_create_with_constructor(self) -> None:
-        identifier = Patient.PatientIdentifier(value="0000000000")
+        identifier = PatientIdentifier(value="0000000000")
 
         assert identifier.system == "https://fhir.nhs.uk/Id/nhs-number", (
             "system should be populated from _expected_system"
@@ -233,7 +234,7 @@ class TestPatientIdentifier:
         assert identifier.value == "0000000000", "value should be '0000000000'"
 
     def test_expected_system_class_var(self) -> None:
-        assert Patient.PatientIdentifier._expected_system == (
+        assert PatientIdentifier._expected_system == (
             "https://fhir.nhs.uk/Id/nhs-number"
         ), "_expected_system should be the NHS number URI"
 
@@ -241,7 +242,7 @@ class TestPatientIdentifier:
 class TestPatientNhsNumber:
     def test_nhs_number_property(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("9876543210")]
+            identifier=[PatientIdentifier.from_nhs_number("9876543210")]
         )
 
         assert patient.nhs_number == "9876543210", (
@@ -252,7 +253,7 @@ class TestPatientNhsNumber:
 class TestPatientGpOdsCode:
     def test_gp_ods_code_with_practitioner(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")],
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")],
             generalPractitioner=[
                 Patient.GeneralPractitioner(
                     type="Organization",
@@ -270,7 +271,7 @@ class TestPatientGpOdsCode:
 
     def test_gp_ods_code_without_practitioner(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")]
         )
 
         assert patient.gp_ods_code is None, (
@@ -279,7 +280,7 @@ class TestPatientGpOdsCode:
 
     def test_gp_ods_code_with_empty_practitioner_list(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")],
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")],
             generalPractitioner=[],
         )
 

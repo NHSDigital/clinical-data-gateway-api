@@ -4,25 +4,12 @@ from pydantic import Field
 
 from fhir import Resource
 
-from ..elements.identifier import Identifier
+from ..elements.identifier import Identifier, PatientIdentifier
 from ..elements.reference import Reference
 
 
 class Patient(Resource, resource_type="Patient"):
     """A FHIR R4 Patient resource."""
-
-    class PatientIdentifier(
-        Identifier, expected_system="https://fhir.nhs.uk/Id/nhs-number"
-    ):
-        """A FHIR R4 Patient Identifier utilising the NHS Number system."""
-
-        def __init__(self, value: str):
-            super().__init__(value=value, system=self._expected_system)
-
-        @classmethod
-        def from_nhs_number(cls, nhs_number: str) -> "Patient.PatientIdentifier":
-            """Create a PatientIdentifier from an NHS number."""
-            return cls(value=nhs_number)
 
     identifier: Annotated[list[PatientIdentifier], Field(frozen=True, min_length=1)]
 

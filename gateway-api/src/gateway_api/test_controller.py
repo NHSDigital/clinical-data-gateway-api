@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from fhir.r4 import Patient
+from fhir.r4 import Patient, PatientIdentifier
 from flask import Request
 from pytest_mock import MockerFixture
 
@@ -33,7 +33,7 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
         ]
 
     return Patient.create(
-        identifier=[Patient.PatientIdentifier.from_nhs_number(nhs_number)],
+        identifier=[PatientIdentifier.from_nhs_number(nhs_number)],
         generalPractitioner=general_practitioner,
     )
 

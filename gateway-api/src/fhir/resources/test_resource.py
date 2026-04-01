@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from fhir.r4 import Bundle, Patient
+from fhir.r4 import Bundle, Patient, PatientIdentifier
 from fhir.resources.resource import Meta, Resource
 
 
@@ -182,7 +182,7 @@ class TestResourceInitSubclass:
 class TestResourceCreate:
     def test_create_sets_resource_type(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")]
         )
 
         assert patient.resource_type == "Patient", "resource_type should be 'Patient'"
@@ -196,7 +196,7 @@ class TestResourceCreate:
 class TestResourceModelDump:
     def test_model_dump_excludes_none(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")]
         )
         dumped = patient.model_dump()
 
@@ -207,7 +207,7 @@ class TestResourceModelDump:
 
     def test_model_dump_json_excludes_none(self) -> None:
         patient = Patient.create(
-            identifier=[Patient.PatientIdentifier.from_nhs_number("1234567890")]
+            identifier=[PatientIdentifier.from_nhs_number("1234567890")]
         )
         payload = json.loads(patient.model_dump_json())
 

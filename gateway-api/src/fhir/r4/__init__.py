@@ -6,6 +6,7 @@ from .elements.identifier import (
     Identifier,
     NHSNumberValueIdentifier,
     PartyKeyIdentifier,
+    PatientIdentifier,
     UUIDIdentifier,
 )
 from .elements.issue import Issue, IssueCode, IssueSeverity
@@ -30,6 +31,7 @@ __all__ = [
     "OperationOutcome",
     "PartyKeyIdentifier",
     "Patient",
+    "PatientIdentifier",
     "Reference",
     "UUIDIdentifier",
 ]
