@@ -27,7 +27,7 @@ tests/
 > [!NOTE]<br>
 > When running tests the following environment variables need to be provided:
 >
-> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000.
+> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000. If running locally in a dev container, using gateway-api as the host will allow the tests to communicate with an instance launched from `make deploy`.
 > - `HOST` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
 
 ### Install Dependencies (if not using Dev container)
@@ -63,11 +63,24 @@ pytest gateway-api/tests/integration/ -v
 pytest gateway-api/tests/schema/ -v
 ```
 
+## Deployment Prerequisites by Test Type
+
+Run `make deploy` before running any tests that hit the real API.
+
+- **Requires deployed/running app (`make deploy`):**
+  - Acceptance tests (`tests/acceptance/`)
+  - Integration tests (`tests/integration/`)
+  - Schema validation tests (`tests/schema/`)
+  - Provider contract tests (`tests/contract/test_provider_contract.py`)
+- **Does not require deployed/running app:**
+  - Unit tests
+  - Consumer contract tests (`tests/contract/test_consumer_contract.py`) - these run against a Pact mock server
+
 ## Test Types
 
 ### Acceptance Tests (`acceptance/`)
 
-Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. These tests validate the API from an end-user perspective.
+behaviour-driven development (BDD) tests using pytest-bdd and Gherkin syntax. These tests validate the API from an end-user perspective.
 
 **Structure:**
 
@@ -77,7 +90,7 @@ Behavior-driven development (BDD) tests using pytest-bdd and Gherkin syntax. The
 
 **How it works:**
 
-1. Feature files describe behavior in Given/When/Then format
+1. Feature files describe behaviour in Given/When/Then format
 2. Step definitions provide the Python implementation for each step
 3. Test files create pytest test functions that bind to specific scenarios
 4. Tests run against the deployed API using the `base_url` fixture from `conftest.py`
@@ -97,7 +110,7 @@ The steps are implemented in `steps/hello_world_steps.py` and bound in `test_hel
 
 ### Integration Tests (`integration/`)
 
-Integration tests that validate the APIs behavior through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
+Integration tests that validate the APIs’ behaviour through HTTP requests. These tests use a `Client` fixture that sends requests to the deployed Lambda function via the AWS Lambda Runtime Interface Emulator (RIE).
 
 **How it works:**
 
@@ -116,7 +129,7 @@ Integration tests that validate the APIs behavior through HTTP requests. These t
 **Key difference from acceptance tests:**
 
 - Integration tests use direct pytest assertions without Gherkin syntax
-- More focused on testing specific API behaviors and edge cases
+- More focused on testing specific API behaviours and edge cases
 - Uses the same `Client` fixture as acceptance tests but with standard pytest structure
 
 ### Schema Validation Tests (`schema/`)
@@ -138,7 +151,9 @@ Property-based API schema validation tests using Schemathesis. These tests autom
 
 Contract testing ensures that the consumer's expectations match the provider's implementation without requiring both systems to be tested together.
 
-**How it works:**
+There are two types of tests in this folder. The stub tests (contained in the stub folder) are pytest-based and run as any other pytest-based test. The consumer and provider tests are Pact-based (see below).
+
+**How it works (Pact-based tests):**
 
 1. **Consumer Tests** (`test_consumer_contract.py`):
    - Define what the consumer EXPECTS from the API

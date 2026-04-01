@@ -24,6 +24,9 @@ Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 import json
 from typing import Any
 
+from gateway_api.clinical_jwt import JWT, JWTValidator
+from gateway_api.common.error import JWTValidationError
+from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from requests import Response
 
 from stubs.base_stub import StubBase
@@ -41,10 +44,144 @@ class GpProviderStub(StubBase):
     # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
     """
 
+    def _validate_headers(self, headers: dict[str, Any]) -> Response | None:
+        """
+        Validate required headers for GPConnect FHIR API request.
+
+        Returns:
+            Response: Error response if validation fails, None if valid.
+        """
+        required_headers = {
+            "Ssp-TraceID",
+            "Ssp-From",
+            "Ssp-To",
+            "Ssp-InteractionID",
+            "Content-Type",
+            "Authorization",
+        }
+
+        # Check for missing headers
+        missing_headers = []
+        for header in required_headers:
+            if header not in headers or not headers[header]:
+                missing_headers.append(header)
+
+        if missing_headers:
+            error_msg = ", ".join(f"{h} is required" for h in missing_headers)
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": error_msg,
+                        }
+                    ],
+                },
+            )
+
+        # Validate Content-Type
+        content_type = headers.get("Content-Type", "")
+        if "application/fhir+json" not in content_type:
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": "Content-Type must be application/fhir+json",
+                        }
+                    ],
+                },
+            )
+
+        # Validate Ssp-InteractionID
+        interaction_id = headers.get("Ssp-InteractionID", "")
+        if interaction_id != ACCESS_RECORD_STRUCTURED_INTERACTION_ID:
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": (
+                                f"Invalid Ssp-InteractionID: expected "
+                                f"{ACCESS_RECORD_STRUCTURED_INTERACTION_ID}"
+                            ),
+                        }
+                    ],
+                },
+            )
+
+        # Validate Authorization header format and JWT
+        auth_header = headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": (
+                                "Authorization header must start with 'Bearer '",
+                            ),
+                        }
+                    ],
+                },
+            )
+
+        # Extract and validate JWT
+        token = auth_header[7:]  # Remove "Bearer " prefix
+        try:
+            jwt_obj = JWT.decode(token)
+        except Exception as e:
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": f"Invalid JWT: {e!s}",
+                        }
+                    ],
+                },
+            )
+
+        # Validate JWT structure and contents
+        try:
+            JWTValidator.validate(jwt_obj)
+        except JWTValidationError as e:
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": str(e),
+                        }
+                    ],
+                },
+            )
+
+        return None
+
     def access_record_structured(
         self,
         trace_id: str,
-        body: str,  # NOQA ARG002 # NOSONAR S1172: unused parameter maintains method signature in stub
+        body: str,
+        headers: dict[str, Any],
     ) -> Response:
         """
         Simulate accessRecordStructured operation of GPConnect FHIR API.
@@ -52,6 +189,35 @@ class GpProviderStub(StubBase):
         returns:
             Response: The stub patient bundle wrapped in a Response object.
         """
+        # Validate that all required parameters are provided
+        missing_params: list[str] = []
+        if trace_id is None:
+            missing_params.append("trace_id")
+        if body is None:
+            missing_params.append("body")
+        if headers is None:
+            missing_params.append("headers")
+
+        if missing_params:
+            error_msg = ", ".join(f"{param} is required" for param in missing_params)
+            return self._create_response(
+                status_code=400,
+                json_data={
+                    "resourceType": "OperationOutcome",
+                    "issue": [
+                        {
+                            "severity": "error",
+                            "code": "invalid",
+                            "diagnostics": error_msg,
+                        }
+                    ],
+                },
+            )
+
+        # Validate headers
+        validation_error = self._validate_headers(headers)
+        if validation_error is not None:
+            return validation_error
 
         if trace_id == "invalid for test":
             return self._create_response(
@@ -70,7 +236,7 @@ class GpProviderStub(StubBase):
 
         try:
             nhs_number = json.loads(body)["parameter"][0]["valueIdentifier"]["value"]
-        except json.JSONDecodeError, KeyError, IndexError:
+        except (json.JSONDecodeError, KeyError, IndexError):
             return self._create_response(
                 status_code=400,
                 json_data={
@@ -121,8 +287,9 @@ class GpProviderStub(StubBase):
         :param timeout: Request timeout in seconds.
         :return: A :class:`requests.Response` instance.
         """
-        trace_id = kwargs.get("headers", {}).get("Ssp-TraceID", "no-trace-id")
-        return self.access_record_structured(trace_id, data)
+        headers = kwargs.get("headers", {})
+        trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+        return self.access_record_structured(trace_id, data, headers)
 
     def get(
         self,
