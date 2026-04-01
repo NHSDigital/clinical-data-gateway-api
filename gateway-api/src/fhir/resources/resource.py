@@ -76,7 +76,7 @@ class Resource(BaseModel):
         based on its defined resource_type.
         """
         # If we're not currently acting on a top level Resource, and we've not been
-        # provided a generic dictonary object, delegate to the normal handler.
+        # provided a generic dictionary object, delegate to the normal handler.
         if cls != Resource or not isinstance(value, dict):
             return handler(value)
 
