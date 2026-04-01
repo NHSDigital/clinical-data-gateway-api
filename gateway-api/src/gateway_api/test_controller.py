@@ -346,4 +346,4 @@ def test_controller_creates_jwt_token_with_correct_claims(
     assert jwt_token.audience == provider_endpoint
 
     # Verify the requesting organization matches the consumer ODS
-    assert jwt_token.requesting_organization == consumer_ods
+    assert jwt_token.requesting_organization["identifier"][0]["value"] == consumer_ods

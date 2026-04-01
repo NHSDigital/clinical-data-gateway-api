@@ -101,6 +101,12 @@ class ProviderRequestFailedError(AbstractCDGError):
     error_code = IssueCode.EXCEPTION
 
 
+class JWTValidationError(AbstractCDGError):
+    _message = "{error_details}"
+    status_code = BAD_REQUEST
+    error_code = IssueCode.INVALID
+
+
 class UnexpectedError(AbstractCDGError):
     _message = "Internal Server Error: {traceback}"
     status_code = INTERNAL_SERVER_ERROR

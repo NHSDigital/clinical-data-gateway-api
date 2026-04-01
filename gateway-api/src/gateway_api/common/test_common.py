@@ -2,6 +2,8 @@
 Unit tests for :mod:`gateway_api.common.common`.
 """
 
+from http import HTTPStatus
+
 import pytest
 
 from gateway_api.common import common
@@ -53,3 +55,11 @@ def test_validate_nhs_number_check_edge_cases_10_and_11(
     # All zeros => weighted sum 0 => remainder 0 => check 11 => mapped to 0 => valid
     # with check digit 0
     assert common.validate_nhs_number(nhs_number) is expected
+
+
+def test_get_http_text() -> None:
+    """
+    Validate that get_http_text returns the correct phrase for common HTTP status codes.
+    """
+    for status in [200, 400, 500]:
+        assert common.get_http_text(status) == HTTPStatus(status).phrase

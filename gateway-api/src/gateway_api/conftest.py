@@ -6,9 +6,12 @@ from typing import Any
 
 import pytest
 import requests
+from fhir.constants import FHIRSystem
 from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
+
+from gateway_api.clinical_jwt import JWT
 
 
 @dataclass
@@ -60,7 +63,7 @@ def valid_simple_request_payload() -> dict[str, Any]:
             {
                 "name": "patientNHSNumber",
                 "valueIdentifier": {
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "system": FHIRSystem.NHS_NUMBER,
                     "value": "9999999999",
                 },
             },
@@ -104,7 +107,7 @@ def valid_simple_response_payload() -> dict[str, Any]:
                             "identifier": {
                                 "value": "A12345",
                                 "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                                "system": FHIRSystem.ODS_CODE,
                             },
                         }
                     ],
@@ -146,7 +149,7 @@ def happy_path_pds_response_body() -> dict[str, Any]:
                 "identifier": {
                     "value": "A12345",
                     "period": {"start": "2020-01-01", "end": "9999-12-31"},
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "system": FHIRSystem.ODS_CODE,
                 },
             }
         ],
@@ -158,3 +161,42 @@ def happy_path_pds_response_body() -> dict[str, Any]:
 @pytest.fixture
 def auth_token() -> str:
     return "AUTH_TOKEN123"
+
+
+@pytest.fixture
+def valid_jwt() -> JWT:
+    """Create a valid JWT for testing."""
+    return JWT(
+        issuer="https://example.com",
+        subject="user-123",
+        audience="https://provider.example.com",
+        requesting_device={
+            "resourceType": "Device",
+            "identifier": [{"system": "https://example.com/device", "value": "dev123"}],
+            "model": "TestModel",
+            "version": "1.0",
+        },
+        requesting_organization={
+            "resourceType": "Organization",
+            "identifier": [
+                {
+                    "system": FHIRSystem.ODS_CODE,
+                    "value": "T1234",
+                }
+            ],
+            "name": "Test Organization",
+        },
+        requesting_practitioner={
+            "resourceType": "Practitioner",
+            "id": "prac123",
+            "identifier": [
+                {"system": FHIRSystem.SDS_USER_ID, "value": "user123"},
+                {
+                    "system": FHIRSystem.SDS_ROLE_PROFILE_ID,
+                    "value": "role123",
+                },
+                {"system": "https://example.com/userid", "value": "userid123"},
+            ],
+            "name": [{"family": "TestPractitioner", "given": ["Test"]}],
+        },
+    )

@@ -32,6 +32,7 @@ RUN apk update && \
     doas \
     shadow \
     curl \
+    jq \
     # Required to validate english usage in prose/comments.
     vale \
     # Required to support markdownlint-cli installation.
@@ -122,7 +123,8 @@ ENV PIPX_HOME="/pipx/lib"
 RUN bash -c "source ~/.bashrc && \
     pip install --root-user-action ignore pipx && \
     pipx install poetry && \
-    pipx install ruff"
+    pipx install ruff && \
+    pipx install proxygen-cli"
 ENV PATH="$PIPX_BIN_DIR:$PATH"
 
 # Create a virtual environment for development

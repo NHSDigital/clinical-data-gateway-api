@@ -3,4 +3,5 @@ fhir
 getstructuredrecord
 gpconnect
 searchset
+proxygen
 usefixtures
