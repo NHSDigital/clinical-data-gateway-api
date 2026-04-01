@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fhir import Resource
-from fhir.r4 import PatientIdentifier
+from fhir.stu3 import PatientIdentifier
 
 
 class Parameters(Resource, resource_type="Parameters"):

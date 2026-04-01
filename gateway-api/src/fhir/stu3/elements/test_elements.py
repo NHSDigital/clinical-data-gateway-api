@@ -1,8 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from fhir.r4.elements.identifier import PatientIdentifier
-from fhir.stu3 import Parameters
+from fhir.stu3 import Issue, IssueCode, IssueSeverity, Parameters, PatientIdentifier
 
 
 class TestParameters:
@@ -206,3 +205,22 @@ class TestParameter:
             parameter.valueIdentifier = PatientIdentifier(  # type: ignore[misc]
                 value="0000000000",
             )
+
+
+class TestIssue:
+    def test_diagnostics_defaults_to_none(self) -> None:
+        class _ConcreteIssue(Issue):
+            pass
+
+        issue = _ConcreteIssue(severity=IssueSeverity.WARNING, code=IssueCode.EXCEPTION)
+
+        assert issue.diagnostics is None, "diagnostics should default to None"
+
+    def test_is_frozen(self) -> None:
+        class _ConcreteIssue(Issue):
+            pass
+
+        issue = _ConcreteIssue(severity=IssueSeverity.FATAL, code=IssueCode.EXCEPTION)
+
+        with pytest.raises(AttributeError):
+            issue.severity = IssueSeverity.WARNING  # type: ignore[misc]

@@ -2,7 +2,9 @@ from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field, model_validator
 
-from .identifier import Identifier, OrganizationIdentifier
+from fhir.elements.identifier import Identifier
+
+from .identifier import OrganizationIdentifier
 
 
 class Reference(BaseModel):
