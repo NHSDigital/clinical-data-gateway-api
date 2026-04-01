@@ -342,6 +342,7 @@ jobs:
         uses: ./.github/actions/run-test-suite
         with:
           test-type: contract
+          env: remote
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
           base-url: ${{ env.BASE_URL }}
 
@@ -350,6 +351,7 @@ jobs:
         uses: ./.github/actions/run-test-suite
         with:
           test-type: schema
+          env: remote
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
           base-url: ${{ env.BASE_URL }}
 
@@ -358,6 +360,7 @@ jobs:
         uses: ./.github/actions/run-test-suite
         with:
           test-type: integration
+          env: remote
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
           base-url: ${{ env.BASE_URL }}
 
@@ -366,6 +369,7 @@ jobs:
         uses: ./.github/actions/run-test-suite
         with:
           test-type: acceptance
+          env: remote
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
           base-url: ${{ env.BASE_URL }}
 
