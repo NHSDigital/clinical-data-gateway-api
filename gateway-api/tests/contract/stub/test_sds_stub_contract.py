@@ -913,7 +913,7 @@ class TestGetConvenienceMethod:
         assert response.status_code == 200
         body = response.json()
         assert body["resourceType"] == "Bundle"
-        # Verify Endpoint resources were returned
+        # Verify Endpoint resources returned
         for entry in body["entry"]:
             assert entry["resource"]["resourceType"] == "Endpoint"
 
