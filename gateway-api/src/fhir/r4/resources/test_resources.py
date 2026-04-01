@@ -15,6 +15,7 @@ from fhir.r4 import (
     IssueCode,
     IssueSeverity,
     OperationOutcome,
+    OrganizationIdentifier,
     PartyKeyIdentifier,
     Patient,
     PatientIdentifier,
@@ -139,7 +140,7 @@ class TestPatient:
             generalPractitioner=[
                 GeneralPractitioner(
                     type="Organization",
-                    identifier=GeneralPractitioner.OrganizationIdentifier(
+                    identifier=OrganizationIdentifier(
                         system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value=ods_code,
                     ),
@@ -194,7 +195,7 @@ class TestPatient:
                     GeneralPractitioner(
                         type="Organization",
                         identifier=(
-                            GeneralPractitioner.OrganizationIdentifier(
+                            OrganizationIdentifier(
                                 system="https://example.org/invalid",
                                 value="A12345",
                             )
@@ -258,7 +259,7 @@ class TestPatientGpOdsCode:
             generalPractitioner=[
                 GeneralPractitioner(
                     type="Organization",
-                    identifier=GeneralPractitioner.OrganizationIdentifier(
+                    identifier=OrganizationIdentifier(
                         system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value="B81001",
                     ),
@@ -377,7 +378,7 @@ class TestGeneralPractitioner:
 
     def test_organization_identifier_expected_system(self) -> None:
         assert (
-            GeneralPractitioner.OrganizationIdentifier._expected_system
+            OrganizationIdentifier._expected_system
             == "https://fhir.nhs.uk/Id/ods-organization-code"
         ), "_expected_system should be the ODS organization code URI"
 

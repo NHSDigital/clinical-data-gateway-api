@@ -72,3 +72,12 @@ class PartyKeyIdentifier(
     Identifier, expected_system="https://fhir.nhs.uk/Id/nhsMhsPartyKey"
 ):
     """A FHIR R4 Party Key Identifier."""
+
+
+class OrganizationIdentifier(
+    Identifier, expected_system="https://fhir.nhs.uk/Id/ods-organization-code"
+):
+    """
+    A FHIR R4 Organization Identifier utilising the ODS Organization Code
+    system.
+    """

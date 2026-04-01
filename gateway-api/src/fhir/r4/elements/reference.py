@@ -2,7 +2,7 @@ from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field, model_validator
 
-from .identifier import Identifier
+from .identifier import Identifier, OrganizationIdentifier
 
 
 class Reference(BaseModel):
@@ -31,12 +31,4 @@ class Reference(BaseModel):
 
 
 class GeneralPractitioner(Reference, reference_type="Organization"):
-    class OrganizationIdentifier(
-        Identifier, expected_system="https://fhir.nhs.uk/Id/ods-organization-code"
-    ):
-        """
-        A FHIR R4 Organization Identifier utilising the ODS Organization Code
-        system.
-        """
-
     identifier: Annotated[OrganizationIdentifier, Field(frozen=True)]
