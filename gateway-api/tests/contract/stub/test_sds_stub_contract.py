@@ -14,7 +14,6 @@ contract requirements.
 from __future__ import annotations
 
 import pytest
-import requests
 from fhir.constants import FHIRSystem
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from stubs.sds.stub import SdsFhirApiStub
@@ -54,7 +53,7 @@ def stub() -> SdsFhirApiStub:
 
 
 # ---------------------------------------------------------------------------
-# GET /Device – 200 successful retrieval
+# GET /Device – 200 success
 # ---------------------------------------------------------------------------
 
 
@@ -88,9 +87,7 @@ class TestGetDeviceBundleSuccess:
         body = response.json()
         assert body["resourceType"] == "Bundle"
 
-    def test_response_body_bundle_type_is_searchset(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_response_body_bundle_type_is_searchset(self, stub: SdsFhirApiStub) -> None:
         """The SDS spec requires Bundle.type to be ``searchset``."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
@@ -196,9 +193,7 @@ class TestGetDeviceBundleSuccess:
         )
         assert "X-Correlation-Id" not in response.headers
 
-    def test_empty_bundle_returned_for_unknown_org(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_empty_bundle_returned_for_unknown_org(self, stub: SdsFhirApiStub) -> None:
         """An unknown organisation must return a 200 with an empty Bundle."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
@@ -289,9 +284,7 @@ class TestGetDeviceResourceStructure:
             ]
             assert len(asid_entries) >= 1
 
-    def test_device_identifier_contains_party_key(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_device_identifier_contains_party_key(self, stub: SdsFhirApiStub) -> None:
         """Device identifier must include a party key entry."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
@@ -428,9 +421,7 @@ class TestGetDeviceBundleValidationErrors:
         body = response.json()
         assert "code" in body["issue"][0]
 
-    def test_error_response_issue_has_diagnostics(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_error_response_issue_has_diagnostics(self, stub: SdsFhirApiStub) -> None:
         """Each issue must have a non-empty ``diagnostics`` string."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
@@ -441,9 +432,7 @@ class TestGetDeviceBundleValidationErrors:
         assert "diagnostics" in body["issue"][0]
         assert body["issue"][0]["diagnostics"]  # non-empty
 
-    def test_missing_apikey_echoes_correlation_id(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
@@ -489,9 +478,7 @@ class TestGetEndpointBundleSuccess:
         body = response.json()
         assert body["resourceType"] == "Bundle"
 
-    def test_response_body_bundle_type_is_searchset(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_response_body_bundle_type_is_searchset(self, stub: SdsFhirApiStub) -> None:
         """The SDS spec requires Bundle.type to be ``searchset``."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
@@ -575,9 +562,7 @@ class TestGetEndpointBundleSuccess:
         for entry in body["entry"]:
             assert entry["search"]["mode"] == "match"
 
-    def test_organization_is_optional_for_endpoint(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_organization_is_optional_for_endpoint(self, stub: SdsFhirApiStub) -> None:
         """Unlike /Device, the ``organization`` parameter is optional for /Endpoint."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
@@ -746,7 +731,8 @@ class TestGetEndpointResourceStructure:
     def test_endpoint_managing_organization_uses_ods_system(
         self, stub: SdsFhirApiStub
     ) -> None:
-        """Endpoint.managingOrganization.identifier.system must be the ODS code system."""
+        """Endpoint.managingOrganization.identifier.system must be the ODS code
+        system."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
@@ -784,9 +770,7 @@ class TestGetEndpointResourceStructure:
             ]
             assert len(asid_entries) >= 1
 
-    def test_endpoint_identifier_contains_party_key(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_endpoint_identifier_contains_party_key(self, stub: SdsFhirApiStub) -> None:
         """Endpoint identifier must include a party key entry."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
@@ -875,9 +859,7 @@ class TestGetEndpointBundleValidationErrors:
         body = response.json()
         assert "code" in body["issue"][0]
 
-    def test_error_response_issue_has_diagnostics(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_error_response_issue_has_diagnostics(self, stub: SdsFhirApiStub) -> None:
         """Each issue must have a non-empty ``diagnostics`` string."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
@@ -888,9 +870,7 @@ class TestGetEndpointBundleValidationErrors:
         assert "diagnostics" in body["issue"][0]
         assert body["issue"][0]["diagnostics"]  # non-empty
 
-    def test_missing_apikey_echoes_correlation_id(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
@@ -1010,13 +990,11 @@ class TestUpsertOperations:
     ) -> None:
         """A device added via upsert_device must be returned in subsequent queries."""
         stub.clear_devices()
-        new_device: dict = {
+        new_device: dict[str, object] = {
             "resourceType": "Device",
             "id": "new-device-123",
             "identifier": [],
-            "owner": {
-                "identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEWORG"}
-            },
+            "owner": {"identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEWORG"}},
         }
         stub.upsert_device(
             organization_ods="NEWORG",
@@ -1052,10 +1030,11 @@ class TestUpsertOperations:
     def test_upsert_endpoint_is_returned_by_get_endpoint_bundle(
         self, stub: SdsFhirApiStub
     ) -> None:
-        """An endpoint added via upsert_endpoint must be returned in subsequent queries."""
+        """An endpoint added via upsert_endpoint must be returned in subsequent
+        queries."""
         stub.clear_endpoints()
         new_party_key = "NEWORG-0000999"
-        new_endpoint: dict = {
+        new_endpoint: dict[str, object] = {
             "resourceType": "Endpoint",
             "id": "new-endpoint-456",
             "status": "active",
@@ -1091,9 +1070,7 @@ class TestUpsertOperations:
         assert body["total"] == 1
         assert body["entry"][0]["resource"]["id"] == "new-endpoint-456"
 
-    def test_clear_endpoints_removes_all_endpoints(
-        self, stub: SdsFhirApiStub
-    ) -> None:
+    def test_clear_endpoints_removes_all_endpoints(self, stub: SdsFhirApiStub) -> None:
         """After clear_endpoints, all Endpoint queries must return an empty Bundle."""
         stub.clear_endpoints()
 
