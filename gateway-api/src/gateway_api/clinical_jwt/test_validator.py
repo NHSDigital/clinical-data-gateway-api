@@ -144,6 +144,12 @@ class TestValidateDevice:
         """Test that a valid device passes validation."""
         JWTValidator.validate_device(valid_jwt.requesting_device)  # Should not raise
 
+    def test_non_dict_device_raises_error(self) -> None:
+        """Test that a non-dict device raises a validation error."""
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_device("not a dict")  # type: ignore
+        assert "must be a dict" in str(exc_info.value)
+
     def test_invalid_device_reports_all_errors(self) -> None:
         """Test that all device validation errors are reported."""
         device = {
@@ -168,6 +174,12 @@ class TestValidateOrganization:
         """Test that a valid organization passes validation."""
         JWTValidator.validate_organization(valid_jwt.requesting_organization)
 
+    def test_non_dict_organization_raises_error(self) -> None:
+        """Test that a non-dict organization raises a validation error."""
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_organization(42)  # type: ignore
+        assert "must be a dict" in str(exc_info.value)
+
     def test_invalid_organization_reports_all_errors(self) -> None:
         """Test that all organization validation errors are reported."""
         org = {
@@ -190,6 +202,12 @@ class TestValidatePractitioner:
     def test_valid_practitioner_passes(self, valid_jwt: JWT) -> None:
         """Test that a valid practitioner passes validation."""
         JWTValidator.validate_practitioner(valid_jwt.requesting_practitioner)
+
+    def test_non_dict_practitioner_raises_error(self) -> None:
+        """Test that a non-dict practitioner raises a validation error."""
+        with pytest.raises(JWTValidationError) as exc_info:
+            JWTValidator.validate_practitioner(["not", "a", "dict"])  # type: ignore
+        assert "must be a dict" in str(exc_info.value)
 
     def test_invalid_practitioner_reports_all_errors(self) -> None:
         """Test that all practitioner validation errors are reported."""

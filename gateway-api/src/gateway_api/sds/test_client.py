@@ -326,3 +326,94 @@ def test_sds_client_raises_sds_request_failed_error_on_http_error(
 
     with pytest.raises(SdsRequestFailedError, match="SDS FHIR API request failed"):
         client.get_org_details(ods_code="PROVIDER")
+
+
+def test_sds_client_endpoint_entry_without_address_returns_none(
+    stub: SdsFhirApiStub,
+) -> None:
+    """
+    Test that get_org_details returns endpoint=None when the Endpoint resource
+    has no address field.
+
+    :param stub: SDS stub fixture.
+    """
+    stub.upsert_device(
+        organization_ods="NOADDR",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        party_key="NOADDR-000001",
+        device={
+            "resourceType": "Device",
+            "id": "noaddr-device",
+            "identifier": [
+                {"system": FHIRSystem.NHS_SPINE_ASID, "value": "111111111111"},
+                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOADDR-000001"},
+            ],
+        },
+    )
+    stub.upsert_endpoint(
+        organization_ods="NOADDR",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        party_key="NOADDR-000001",
+        endpoint={
+            "resourceType": "Endpoint",
+            "id": "noaddr-endpoint",
+            "status": "active",
+            # no "address" field
+            "identifier": [
+                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOADDR-000001"}
+            ],
+        },
+    )
+
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    result = client.get_org_details(ods_code="NOADDR")
+
+    assert result.asid == "111111111111"
+    assert result.endpoint is None
+
+
+@pytest.mark.usefixtures("stub")
+def test_sds_client_empty_device_bundle_returns_none_asid() -> None:
+    """
+    Test that get_org_details returns asid=None when the Device bundle has no
+    entries for the given ODS code, exercising the empty-entries branch in
+    _extract_first_entry.
+
+    :param stub: SDS stub fixture.
+    """
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    # "UNKNOWNORG" has no seeded devices, so the bundle entry list will be empty
+    result = client.get_org_details(ods_code="UNKNOWNORG", get_endpoint=False)
+
+    assert result.asid is None
+
+
+def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
+    stub: SdsFhirApiStub,
+) -> None:
+    """
+    Test that get_org_details returns endpoint=None when the Endpoint bundle has
+    no entries, exercising the else branch after _extract_first_entry returns {}.
+
+    :param stub: SDS stub fixture.
+    """
+    stub.upsert_device(
+        organization_ods="NOENDPOINT",
+        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+        party_key="NOENDPOINT-000001",
+        device={
+            "resourceType": "Device",
+            "id": "noendpoint-device",
+            "identifier": [
+                {"system": FHIRSystem.NHS_SPINE_ASID, "value": "222222222222"},
+                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOENDPOINT-000001"},
+            ],
+        },
+    )
+    # Deliberately do not seed any endpoint for NOENDPOINT
+
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    result = client.get_org_details(ods_code="NOENDPOINT")
+
+    assert result.asid == "222222222222"
+    assert result.endpoint is None
