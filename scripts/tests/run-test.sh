@@ -55,7 +55,6 @@ if [[ "${ENV:-local}" = "remote" ]] && [[ "$TEST_TYPE" != "unit" ]]; then
     --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
 else
   poetry run pytest ${TEST_PATH} -v \
-    --api-name="clinical-data-gateway-api" \
     --cov="${COV_PATH}" \
     --cov-report=html:test-artefacts/coverage-html \
     --cov-report=term \
