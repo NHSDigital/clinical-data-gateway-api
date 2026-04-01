@@ -1,5 +1,6 @@
 """FHIR data types and resources."""
 
+from .elements.entry import Entry
 from .elements.identifier import Identifier, NHSNumberValueIdentifier, UUIDIdentifier
 from .elements.issue import Issue, IssueCode, IssueSeverity
 from .elements.reference import Reference
@@ -11,6 +12,7 @@ from .resources.patient import Patient
 
 __all__ = [
     "Bundle",
+    "Entry",
     "Device",
     "Endpoint",
     "Identifier",

@@ -8,6 +8,7 @@ from fhir.r4 import (
     Bundle,
     Device,
     Endpoint,
+    Entry,
     Issue,
     IssueCode,
     IssueSeverity,
@@ -19,7 +20,7 @@ from fhir.r4 import (
 class TestBundle:
     def test_create(self) -> None:
         """Test creating a Bundle resource."""
-        expected_entry = Bundle.Entry(
+        expected_entry = Entry(
             fullUrl="full",
             resource=Patient.create(
                 identifier=[Patient.PatientIdentifier.from_nhs_number("nhs_number")]
@@ -52,11 +53,11 @@ class TestBundle:
         [
             pytest.param(
                 [
-                    Bundle.Entry(
+                    Entry(
                         fullUrl="fullUrl",
                         resource=expected_resource,
                     ),
-                    Bundle.Entry(
+                    Entry(
                         fullUrl="fullUrl",
                         resource=expected_resource,
                     ),
@@ -66,7 +67,7 @@ class TestBundle:
             ),
             pytest.param(
                 [
-                    Bundle.Entry(
+                    Entry(
                         fullUrl="fullUrl",
                         resource=expected_resource,
                     ),
@@ -77,7 +78,7 @@ class TestBundle:
         ],
     )
     def test_find_resources(
-        self, entries: list[Bundle.Entry], expected_results: list[Resource]
+        self, entries: list[Entry], expected_results: list[Resource]
     ) -> None:
         bundle = Bundle.create(type="document", entry=entries)
 
@@ -96,7 +97,7 @@ class TestBundle:
                 Bundle.create(
                     type="document",
                     entry=[
-                        Bundle.Entry(
+                        Entry(
                             fullUrl="fullUrl",
                             resource=Bundle.empty("document"),
                         ),

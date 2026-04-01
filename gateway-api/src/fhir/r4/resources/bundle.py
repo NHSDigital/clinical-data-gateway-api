@@ -1,9 +1,10 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, SerializeAsAny
+from pydantic import Field
 
 from fhir import Resource
 
+from ..elements.entry import Entry
 from ..elements.identifier import UUIDIdentifier
 
 type BundleType = Literal["document", "transaction", "searchset", "collection"]
@@ -14,11 +15,7 @@ class Bundle(Resource, resource_type="Bundle"):
 
     bundle_type: BundleType = Field(alias="type", frozen=True)
     identifier: Annotated[UUIDIdentifier | None, Field(frozen=True)] = None
-    entries: list["Bundle.Entry"] | None = Field(None, frozen=True, alias="entry")
-
-    class Entry(BaseModel):
-        full_url: str = Field(..., alias="fullUrl", frozen=True)
-        resource: Annotated[SerializeAsAny[Resource], Field(frozen=True)]
+    entries: list[Entry] | None = Field(None, frozen=True, alias="entry")
 
     def find_resources[T: Resource](self, t: type[T]) -> list[T]:
         """
