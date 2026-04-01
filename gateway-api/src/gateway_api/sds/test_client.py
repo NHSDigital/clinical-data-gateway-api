@@ -310,8 +310,8 @@ def test_sds_client_raises_sds_request_failed_error_on_http_error(
 
     def get_without_apikey(
         url: str,
-        headers: dict,
-        params: dict,
+        headers: dict[str, str],
+        params: dict[str, str],
         timeout: int = 10,
     ) -> object:
         # Strip the apikey header so the stub returns a 400
