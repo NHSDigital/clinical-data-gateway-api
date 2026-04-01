@@ -55,6 +55,16 @@ paths:
                   type: string
                   enum: ["Parameters"]
                   example: "Parameters"
+                meta:
+                  type: object
+                  properties:
+                    lastUpdated:
+                      type: string
+                      format: date-time
+                      example: "2026-01-12T10:00:00Z"
+                    versionId:
+                      type: string
+                      example: "1"
                 parameter:
                   type: array
                   minItems: 1
