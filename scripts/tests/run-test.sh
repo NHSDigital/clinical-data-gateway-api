@@ -47,7 +47,7 @@ if [[ "${ENV:-local}" = "remote" ]] && [[ "$TEST_TYPE" != "unit" ]]; then
   # Note: TEST_PATH is intentionally unquoted to allow glob expansion
   poetry run pytest ${TEST_PATH} --env="remote" -v \
     --api-name="${PROXYGEN_API_NAME}" \
-    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXYGEN_API_NAME}-pr-${PR_NUMBER}" \
+    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \
     --cov="${COV_PATH}" \
     --cov-report=html:test-artefacts/coverage-html \
     --cov-report=term \

@@ -222,6 +222,8 @@ jobs:
 
       - name: Run contract tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: contract
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -229,6 +231,8 @@ jobs:
 
       - name: Run schema validation tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: schema
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -236,6 +240,8 @@ jobs:
 
       - name: Run integration tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: integration
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -243,6 +249,8 @@ jobs:
 
       - name: Run acceptance tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: acceptance
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
