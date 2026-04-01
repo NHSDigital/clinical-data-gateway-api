@@ -44,12 +44,6 @@ class UUIDIdentifier(Identifier, expected_system="https://tools.ietf.org/html/rf
         )
 
 
-class NHSNumberValueIdentifier(
-    Identifier, expected_system="https://fhir.nhs.uk/Id/nhs-number"
-):
-    """A valueIdentifier NHS numbers - used in Parameter"""
-
-
 class PatientIdentifier(
     Identifier, expected_system="https://fhir.nhs.uk/Id/nhs-number"
 ):

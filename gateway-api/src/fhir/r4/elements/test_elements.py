@@ -8,7 +8,6 @@ from fhir.r4 import (
     Issue,
     IssueCode,
     IssueSeverity,
-    NHSNumberValueIdentifier,
     Reference,
     UUIDIdentifier,
 )
@@ -129,46 +128,6 @@ class TestUUIDIdentifier:
         assert (
             UUIDIdentifier._expected_system == "https://tools.ietf.org/html/rfc4122"
         ), "_expected_system should be set to RFC 4122 URI"
-
-
-class TestNHSNumberValueIdentifier:
-    def test_expected_system(self) -> None:
-        assert NHSNumberValueIdentifier._expected_system == (
-            "https://fhir.nhs.uk/Id/nhs-number"
-        ), "_expected_system should be the NHS number system URI"
-
-    def test_model_validate_valid(self) -> None:
-        class _Container(BaseModel):
-            identifier: NHSNumberValueIdentifier
-
-        result = _Container.model_validate(
-            {
-                "identifier": {
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
-                    "value": "9000000009",
-                }
-            }
-        )
-
-        assert result.identifier.value == "9000000009", (
-            "value should be the provided NHS number"
-        )
-        assert result.identifier.system == "https://fhir.nhs.uk/Id/nhs-number", (
-            "system should match NHS number URI"
-        )
-
-    def test_model_validate_wrong_system(self) -> None:
-        class _Container(BaseModel):
-            identifier: NHSNumberValueIdentifier
-
-        with pytest.raises(
-            ValidationError,
-            match="Identifier system 'wrong' does not match expected "
-            "system 'https://fhir.nhs.uk/Id/nhs-number'.",
-        ):
-            _Container.model_validate(
-                {"identifier": {"system": "wrong", "value": "9000000009"}}
-            )
 
 
 class TestIssue:

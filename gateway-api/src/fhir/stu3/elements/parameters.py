@@ -5,8 +5,7 @@ from typing import Annotated
 from pydantic import Field
 
 from fhir import Resource
-
-from ...r4.elements.identifier import NHSNumberValueIdentifier
+from fhir.r4 import PatientIdentifier
 
 
 class Parameters(Resource, resource_type="Parameters"):
@@ -16,6 +15,6 @@ class Parameters(Resource, resource_type="Parameters"):
     class Parameter(ABC):
         """A FHIR STU3 Parameter resource."""
 
-        valueIdentifier: Annotated[NHSNumberValueIdentifier, Field(frozen=True)]
+        valueIdentifier: Annotated[PatientIdentifier, Field(frozen=True)]
 
     parameter: Annotated[list[Parameter], Field(frozen=True, min_length=1)]

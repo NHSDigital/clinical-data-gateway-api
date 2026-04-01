@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from fhir.r4.elements.identifier import NHSNumberValueIdentifier
+from fhir.r4.elements.identifier import PatientIdentifier
 from fhir.stu3 import Parameters
 
 
@@ -9,8 +9,7 @@ class TestParameters:
     def test_create(self) -> None:
         """Test creating a Parameters resource."""
         parameter = Parameters.Parameter(
-            valueIdentifier=NHSNumberValueIdentifier(
-                system="https://fhir.nhs.uk/Id/nhs-number",
+            valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
         )
@@ -28,14 +27,12 @@ class TestParameters:
     def test_create_with_multiple_parameters(self) -> None:
         """Test creating a Parameters resource with multiple parameters."""
         param_a = Parameters.Parameter(
-            valueIdentifier=NHSNumberValueIdentifier(
-                system="https://fhir.nhs.uk/Id/nhs-number",
+            valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
         )
         param_b = Parameters.Parameter(
-            valueIdentifier=NHSNumberValueIdentifier(
-                system="https://fhir.nhs.uk/Id/nhs-number",
+            valueIdentifier=PatientIdentifier(
                 value="9000000017",
             ),
         )
@@ -147,8 +144,7 @@ class TestParameters:
         params = Parameters.create(
             parameter=[
                 Parameters.Parameter(
-                    valueIdentifier=NHSNumberValueIdentifier(
-                        system="https://fhir.nhs.uk/Id/nhs-number",
+                    valueIdentifier=PatientIdentifier(
                         value="9000000009",
                     ),
                 )
@@ -169,8 +165,7 @@ class TestParameters:
         params = Parameters.create(
             parameter=[
                 Parameters.Parameter(
-                    valueIdentifier=NHSNumberValueIdentifier(
-                        system="https://fhir.nhs.uk/Id/nhs-number",
+                    valueIdentifier=PatientIdentifier(
                         value="9000000009",
                     ),
                 )
@@ -184,8 +179,7 @@ class TestParameters:
 class TestParameter:
     def test_create(self) -> None:
         """Test creating a Parameter element."""
-        identifier = NHSNumberValueIdentifier(
-            system="https://fhir.nhs.uk/Id/nhs-number",
+        identifier = PatientIdentifier(
             value="9000000009",
         )
         parameter = Parameters.Parameter(valueIdentifier=identifier)
@@ -203,14 +197,12 @@ class TestParameter:
     def test_is_frozen(self) -> None:
         """Test that Parameter fields are frozen (immutable)."""
         parameter = Parameters.Parameter(
-            valueIdentifier=NHSNumberValueIdentifier(
-                system="https://fhir.nhs.uk/Id/nhs-number",
+            valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
         )
 
         with pytest.raises(AttributeError):
-            parameter.valueIdentifier = NHSNumberValueIdentifier(  # type: ignore[misc]
-                system="https://fhir.nhs.uk/Id/nhs-number",
+            parameter.valueIdentifier = PatientIdentifier(  # type: ignore[misc]
                 value="0000000000",
             )
