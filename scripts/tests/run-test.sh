@@ -44,16 +44,22 @@ else
 fi
 
 if [[ "${ENV:-local}" = "remote" ]] && [[ "$TEST_TYPE" != "unit" ]]; then
+  echo "[run-test] Branch: remote non-unit path"
+  echo "[run-test] ENV=${ENV:-local}, TEST_TYPE=${TEST_TYPE}"
+  echo "[run-test] Running via APIM proxy options"
   # Note: TEST_PATH is intentionally unquoted to allow glob expansion
   poetry run pytest ${TEST_PATH} --env="remote" -v \
     --api-name="${PROXYGEN_API_NAME}" \
-    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXYGEN_API_NAME}-pr-${PR_NUMBER}" \
+    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \
     --cov="${COV_PATH}" \
     --cov-report=html:test-artefacts/coverage-html \
     --cov-report=term \
     --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
     --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
 else
+  echo "[run-test] Branch: local/default path"
+  echo "[run-test] ENV=${ENV:-local}, TEST_TYPE=${TEST_TYPE}"
+  echo "[run-test] Running direct tests without APIM proxy options"
   poetry run pytest ${TEST_PATH} -v \
     --cov="${COV_PATH}" \
     --cov-report=html:test-artefacts/coverage-html \
