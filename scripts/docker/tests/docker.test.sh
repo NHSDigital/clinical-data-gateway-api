@@ -53,14 +53,14 @@ function test-docker-suite-setup() {
 
   :
 
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 function test-docker-suite-teardown() {
 
   :
 
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # ==============================================================================
@@ -110,7 +110,7 @@ function test-docker-test() {
   output=$(docker-check-test)
   # Assert
   echo "$output" | grep -q "PASS"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 function test-docker-run() {
@@ -121,7 +121,7 @@ function test-docker-run() {
   output=$(docker-run)
   # Assert
   echo "$output" | grep -Eq "Python [0-9]+\.[0-9]+\.[0-9]+"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 function test-docker-clean() {
@@ -146,7 +146,7 @@ function test-docker-get-image-version-and-pull() {
     --filter=reference="$name" \
     --format "{{.Tag}}" \
   | grep -vq "<none>"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # ==============================================================================

@@ -93,7 +93,7 @@ function docker-check-test() {
     "${DOCKER_IMAGE}:$(_get-effective-version)" 2>/dev/null \
     ${cmd:-} \
   | grep -q "${check}" && echo PASS || echo FAIL
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Run Docker image.
@@ -111,7 +111,7 @@ function docker-run() {
     ${args:-} \
     "${tag}" \
     ${DOCKER_CMD:-}
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Push Docker image.
@@ -125,7 +125,7 @@ function docker-push() {
   for version in $(dir="$dir" _get-all-effective-versions) latest; do
     docker push "${DOCKER_IMAGE}:${version}"
   done
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Remove Docker resources.
@@ -142,7 +142,7 @@ function docker-clean() {
     .version \
     Dockerfile.effective \
     Dockerfile.effective.dockerignore
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Create effective version from the VERSION file.
@@ -167,7 +167,7 @@ function version-create-effective-file() {
       sed "s/\(\${hash}\|\$hash\)/$(git rev-parse --short HEAD)/g" \
     > "$dir/.version"
   fi
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # ==============================================================================
@@ -224,7 +224,7 @@ function docker-get-image-version-and-pull() {
   fi
 
   echo "${name}:${version}"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # ==============================================================================
@@ -247,7 +247,7 @@ function _create-effective-dockerfile() {
   cp "${dir}/Dockerfile" "${dir}/Dockerfile.effective"
   _replace-image-latest-by-specific-version
   _append-metadata
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Replace image:latest by a specific version.
@@ -288,7 +288,7 @@ function _replace-image-latest-by-specific-version() {
 
   # Do not ignore the issue if 'latest' is used in the effective image
   sed -Ei "/# hadolint ignore=DL3007$/d" "${dir}/Dockerfile.effective"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Append metadata to the end of Dockerfile.
@@ -303,7 +303,7 @@ function _append-metadata() {
     "$(git rev-parse --show-toplevel)/scripts/docker/Dockerfile.metadata" \
   > "$dir/Dockerfile.effective.tmp"
   mv "$dir/Dockerfile.effective.tmp" "$dir/Dockerfile.effective"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Print top Docker image version.
@@ -314,7 +314,7 @@ function _get-effective-version() {
   local dir=${dir:-$PWD}
 
   head -n 1 "${dir}/.version" 2> /dev/null ||:
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Print the effective tag for the image with the version. If you don't have a VERSION file
@@ -329,7 +329,7 @@ function _get-effective-tag() {
     tag="${tag}:${version}"
   fi
   echo "$tag"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Print all Docker image versions.
@@ -340,7 +340,7 @@ function _get-all-effective-versions() {
   local dir=${dir:-$PWD}
 
   cat "${dir}/.version" 2> /dev/null ||:
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Print Git branch name. Check the GitHub variables first and then the local Git
@@ -357,5 +357,5 @@ function _get-git-branch-name() {
   fi
 
   echo "$branch_name"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }

@@ -27,7 +27,7 @@ function main() {
   else
     file="$file" run-hadolint-in-docker
   fi
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Run hadolint natively.
@@ -37,7 +37,7 @@ function run-hadolint-natively() {
 
   # shellcheck disable=SC2001
   hadolint "$(echo "$file" | sed "s#$PWD#.#")"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # Run hadolint in a Docker container.
@@ -58,7 +58,7 @@ function run-hadolint-in-docker() {
       hadolint \
         --config /workdir/scripts/config/hadolint.yaml \
         "/workdir/$(echo "$file" | sed "s#$PWD#.#")"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script, so it is preferable that returns are propagated than masked with return 0.
 }
 
 # ==============================================================================

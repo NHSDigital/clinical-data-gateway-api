@@ -23,7 +23,8 @@ set -euo pipefail
 
 # ==============================================================================
 
-function main() {
+function main() { # NOSONAR given that `set -e` ensures that any non-zero exit code will exit the script
+# it is preferable that returns are propagated than masked with return 0.
 
   cd "$(git rev-parse --show-toplevel)"
 
@@ -34,8 +35,6 @@ function main() {
     dir="/workdir"
     cmd="$(get-cmd-to-run)" run-gitleaks-in-docker
   fi
-
-  return 0
 }
 
 # Get Gitleaks command to execute and configuration.
@@ -56,7 +55,7 @@ function get-cmd-to-run() {
       ;;
     *)
       echo "Unknown check value: '$check'. Expected one of whole-history, last-commit, staged-changes." >&2
-      return 126
+      return 1
       ;;
   esac
   # Include base line file if it exists
@@ -67,24 +66,23 @@ function get-cmd-to-run() {
   cmd="$cmd --config $dir/scripts/config/gitleaks.toml"
 
   echo "$cmd"
-  return 0
+  return 0 # file uses `set -e` so any on-zero return will exit the script
 }
 
 # Run Gitleaks natively.
 # Arguments (provided as environment variables):
 #   cmd=[command to run]
-function run-gitleaks-natively() {
+function run-gitleaks-natively() { # NOSONAR `set -e` and prefer propagating returns over masking with return 0.
 
   # shellcheck disable=SC2086
   gitleaks $cmd
-  return 0 #
 }
 
 # Run Gitleaks in a Docker container.
 # Arguments (provided as environment variables):
 #   cmd=[command to run]
 #   dir=[directory to mount as a volume]
-function run-gitleaks-in-docker() {
+function run-gitleaks-in-docker() { # NOSONAR `set -e` and prefer propagating returns over masking with return 0.
 
   # shellcheck disable=SC1091
   source ./scripts/docker/docker.lib.sh
