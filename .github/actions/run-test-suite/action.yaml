@@ -29,6 +29,7 @@ runs:
         APIGEE_ACCESS_TOKEN: ${{ inputs.apigee-access-token }}
         BASE_URL: ${{ inputs.base-url }}
         ENV: ${{ inputs.env }}
+        TEST_TYPE: ${{ inputs.test-type }}
       run: |
         if [[ -n "${APIGEE_ACCESS_TOKEN}" ]]; then
           echo "::add-mask::${APIGEE_ACCESS_TOKEN}"
@@ -37,7 +38,7 @@ runs:
         # Clean test artefacts so each suite uploads only its own results
         rm -rf gateway-api/test-artefacts/* || true
         mkdir -p gateway-api/test-artefacts
-        make test-${{ inputs.test-type }}
+        make test-"${TEST_TYPE}"
 
     - name: "Upload ${{ inputs.test-type }} test results"
       if: always()
@@ -50,9 +51,11 @@ runs:
     - name: "Check ${{ inputs.test-type }}-tests.xml exists"
       id: check
       if: always()
+      env:
+        TEST_TYPE: ${{ inputs.test-type }}
       shell: bash
       run: |
-        if [[ -f "gateway-api/test-artefacts/${{ inputs.test-type }}-tests.xml" ]]; then
+        if [[ -f "gateway-api/test-artefacts/${TEST_TYPE}-tests.xml" ]]; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
         else
           echo "exists=false" >> "$GITHUB_OUTPUT"

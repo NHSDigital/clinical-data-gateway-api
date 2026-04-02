@@ -19,6 +19,7 @@ set -euo pipefail
 function terraform-init() {
 
   _terraform init # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Plan Terraform changes.
@@ -28,6 +29,7 @@ function terraform-init() {
 function terraform-plan() {
 
   _terraform plan # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Apply Terraform changes.
@@ -37,6 +39,7 @@ function terraform-plan() {
 function terraform-apply() {
 
   _terraform apply # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Destroy Terraform resources.
@@ -45,7 +48,8 @@ function terraform-apply() {
 #   opts=[options to pass to the Terraform destroy command, default is none/empty]
 function terraform-destroy() {
 
-    _terraform apply -destroy # 'dir' and 'opts' are passed to the function as environment variables, if set
+  _terraform apply -destroy # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Format Terraform code.
@@ -55,6 +59,7 @@ function terraform-destroy() {
 function terraform-fmt() {
 
   _terraform fmt -recursive # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Validate Terraform code.
@@ -64,6 +69,7 @@ function terraform-fmt() {
 function terraform-validate() {
 
   _terraform validate # 'dir' and 'opts' are passed to the function as environment variables, if set
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # shellcheck disable=SC2001,SC2155
@@ -74,6 +80,7 @@ function _terraform() {
   local project_dir="$(git rev-parse --show-toplevel)"
 
   cmd="$cmd" "$project_dir/scripts/terraform/terraform.sh"
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Remove Terraform files.
@@ -90,4 +97,5 @@ function terraform-clean() {
       terraform.tfstate \
       terraform.tfstate.backup
   )
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
