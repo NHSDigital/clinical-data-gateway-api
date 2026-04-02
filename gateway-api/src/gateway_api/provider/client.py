@@ -27,9 +27,9 @@ from urllib.parse import urljoin
 
 from requests import HTTPError, Response
 
-from gateway_api.clinical_jwt import JWT
+from gateway_api.clinical_jwt import JWT, JWTValidator
 from gateway_api.common.common import get_http_text
-from gateway_api.common.error import ProviderRequestFailedError
+from gateway_api.common.error import JWTValidationError, ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
@@ -87,7 +87,12 @@ class GpProviderClient:
         """
         Build the headers required for the GPProvider FHIR API request.
         """
-        # TODO: Post-steel-thread, probably check whether JWT is valid/not expired
+        # Re-check the JWT is still valid, in case has expired since
+        # client instantiation
+        try:
+            JWTValidator.validate_timestamps(self.token)
+        except JWTValidationError as e:
+            raise ProviderRequestFailedError(error_reason="JWT has expired") from e
         return {
             "Content-Type": "application/fhir+json; charset=utf-8",
             "Accept": "application/fhir+json; charset=utf-8",
@@ -122,7 +127,8 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            # TODO: Consider what error information we want to return here.
+            # TODO: GPCAPIM-353 Consider what error information we want to return here.
+            #   Post-steel-thread we probably want to log rather than dumping like this
             if os.environ.get("CDG_DEBUG", "false").lower() == "true":
                 errstr = "GPProvider FHIR API request failed:\n"
                 errstr += f"{response.status_code}: "
@@ -138,3 +144,17 @@ class GpProviderClient:
             raise ProviderRequestFailedError(error_reason=errstr) from err
 
         return response
+
+    @property
+    def token(self) -> JWT:
+        return self._token
+
+    @token.setter
+    def token(self, jwt_obj: JWT) -> None:
+        """
+        Set the JWT token, validating its structure and contents.
+        """
+        # If JWT validation fails allow the error to propagate up,
+        # the caller needs to know it passed an invalid JWT and why.
+        JWTValidator.validate(jwt_obj)
+        self._token = jwt_obj

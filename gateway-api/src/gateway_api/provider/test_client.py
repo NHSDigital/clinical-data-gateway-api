@@ -318,3 +318,61 @@ def test_access_structured_record_debug_error_when_cdg_debug_set(
     assert "Headers were:" in error_message
     assert "Body payload was:" in error_message
     assert request_body in error_message
+
+
+@pytest.mark.usefixtures("valid_simple_request_payload")
+def test_gpprovider_client_raises_on_invalid_jwt_at_instantiation() -> None:
+    """
+    Test that GpProviderClient raises JWTValidationError when constructed with
+    an invalid JWT, because the token setter calls JWTValidator.validate().
+    """
+    from gateway_api.common.error import JWTValidationError
+
+    invalid_jwt = JWT(
+        issuer="",  # missing issuer
+        subject="",  # missing subject
+        audience="https://provider.example.com",
+        requesting_device={},  # empty - will fail device validation
+        requesting_organization={},  # empty - will fail org validation
+        requesting_practitioner={},  # empty - will fail practitioner validation
+    )
+
+    with pytest.raises(JWTValidationError):
+        GpProviderClient(
+            provider_endpoint="https://test.com",
+            provider_asid="200000001154",
+            consumer_asid="200000001152",
+            token=invalid_jwt,
+        )
+
+
+@pytest.mark.usefixtures("mock_request_post", "monkeypatch")
+def test_gpprovider_client_raises_provider_error_when_jwt_expired_at_request_time(
+    valid_simple_request_payload: Parameters,
+    valid_jwt: JWT,
+) -> None:
+    """
+    Test that GpProviderClient raises ProviderRequestFailedError when the JWT has
+    expired by the time access_structured_record is called, even if it was valid
+    at instantiation.
+
+    This simulates the JWT expiring between client construction and the request.
+    """
+    from unittest.mock import patch
+
+    client = GpProviderClient(
+        provider_endpoint="https://test.com",
+        provider_asid="200000001154",
+        consumer_asid="200000001152",
+        token=valid_jwt,
+    )
+
+    # Advance time past the JWT expiration so validate_timestamps sees it as expired
+    expired_time = valid_jwt.expiration + 1
+    with (
+        patch("gateway_api.clinical_jwt.validator.time", return_value=expired_time),
+        pytest.raises(ProviderRequestFailedError, match="JWT has expired"),
+    ):
+        client.access_structured_record(
+            "test-trace-id", json.dumps(valid_simple_request_payload)
+        )
