@@ -127,7 +127,7 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            # TODO: Consider what error information we want to return here.
+            # TODO: Consider what error information we want to return here. - GPCAPIM-353
             #   Post-steel-thread we probably want to log rather than dumping like this
             if os.environ.get("CDG_DEBUG", "false").lower() == "true":
                 errstr = "GPProvider FHIR API request failed:\n"
