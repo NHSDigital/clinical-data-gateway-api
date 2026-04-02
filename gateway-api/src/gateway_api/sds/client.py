@@ -12,8 +12,11 @@ import os
 from enum import StrEnum
 from typing import Any, cast
 
+from fhir.constants import FHIRSystem
+from requests import HTTPError
 from stubs import SdsFhirApiStub
 
+from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
 
@@ -76,12 +79,6 @@ class SdsClient:
     SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
     INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
 
-    # FHIR identifier systems
-    ODS_SYSTEM = "https://fhir.nhs.uk/Id/ods-organization-code"
-    INTERACTION_SYSTEM = "https://fhir.nhs.uk/Id/nhsServiceInteractionId"
-    PARTYKEY_SYSTEM = "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
-    ASID_SYSTEM = "https://fhir.nhs.uk/Id/nhsSpineASID"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
@@ -136,10 +133,8 @@ class SdsClient:
 
         device = self._extract_first_entry(device_bundle)
 
-        # TODO: Post-steel-thread handle case where no device is found for ODS code
-
-        asid = self._extract_identifier(device, self.ASID_SYSTEM)
-        party_key = self._extract_identifier(device, self.PARTYKEY_SYSTEM)
+        asid = self._extract_identifier(device, FHIRSystem.NHS_SPINE_ASID)
+        party_key = self._extract_identifier(device, FHIRSystem.NHS_MHS_PARTY_KEY)
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
@@ -159,6 +154,8 @@ class SdsClient:
             address = endpoint.get("address")
             if address:
                 endpoint_url = str(address).strip()
+        else:
+            endpoint_url = None
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
 
@@ -190,12 +187,14 @@ class SdsClient:
         url = f"{self.base_url}/{querytype.value}"
 
         params: dict[str, Any] = {
-            "organization": f"{self.ODS_SYSTEM}|{ods_code}",
-            "identifier": [f"{self.INTERACTION_SYSTEM}|{self.service_interaction_id}"],
+            "organization": f"{FHIRSystem.ODS_CODE}|{ods_code}",
+            "identifier": [
+                f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|{self.service_interaction_id}"
+            ],
         }
 
         if party_key is not None:
-            params["identifier"].append(f"{self.PARTYKEY_SYSTEM}|{party_key}")
+            params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
         response = get(
             url,
@@ -204,7 +203,10 @@ class SdsClient:
             timeout=timeout or self.timeout,
         )
 
-        # TODO: Post-steel-thread we probably want a raise_for_status() here
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise SdsRequestFailedError(error_reason=str(e)) from e
 
         body = response.json()
         return cast("ResultStructureDict", body)
@@ -212,18 +214,17 @@ class SdsClient:
     @staticmethod
     def _extract_first_entry(
         bundle: ResultStructureDict,
-    ) -> ResultStructureDict:  # TODO: Post-steel-thread this may return a None as well
+    ) -> ResultStructureDict:
         """
         Extract the first resource from a Bundle.
         """
         entries = cast("ResultList", bundle.get("entry", []))
 
-        # TODO: Post-steel-thread handle case where bundle contains no entries
+        if not entries:
+            return {}
 
         # TODO: more carefully consider business logic for handling multiple
         #       entries in beta
-        if not entries:
-            return {}
         first_entry = entries[0]
         return cast("ResultStructureDict", first_entry.get("resource", {}))
 

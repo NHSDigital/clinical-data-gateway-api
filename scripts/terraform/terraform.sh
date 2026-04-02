@@ -27,6 +27,7 @@ function main() {
   else
     cmd=$cmd run-terraform-in-docker
   fi
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Terraform natively.
@@ -36,6 +37,7 @@ function run-terraform-natively() {
 
   # shellcheck disable=SC2086
   terraform $cmd
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Terraform in a Docker container.
@@ -54,13 +56,16 @@ function run-terraform-in-docker() {
     --workdir /workdir \
     "$image" \
       $cmd
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================
 
 function is-arg-true() {
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  local value="$1"
+
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1

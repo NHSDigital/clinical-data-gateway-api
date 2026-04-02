@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fhir import Patient
+from fhir.constants import FHIRSystem
 from pytest_mock import MockerFixture
 
 from gateway_api.common.error import PdsRequestFailedError
@@ -144,7 +145,7 @@ def test_search_patient_by_nhs_number_finds_current_gp_ods_code_when_pds_returns
         "identifier": {
             "value": "OLDGP",
             "period": {"start": "2010-01-01", "end": "2012-01-01"},
-            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "system": FHIRSystem.ODS_CODE,
         },
     }
     current_gp: GeneralPractitioner = {
@@ -153,7 +154,7 @@ def test_search_patient_by_nhs_number_finds_current_gp_ods_code_when_pds_returns
         "identifier": {
             "value": "CURRGP",
             "period": {"start": "2020-01-01", "end": "9999-01-01"},
-            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "system": FHIRSystem.ODS_CODE,
         },
     }
     pds_response_body_with_two_gps = happy_path_pds_response_body.copy()
@@ -187,7 +188,7 @@ def test_find_current_gp_with_today_override() -> None:
             "identifier": {
                 "value": "a",
                 "period": {"start": "2020-01-01", "end": "2020-12-31"},
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "system": FHIRSystem.ODS_CODE,
             },
         },
         {
@@ -196,7 +197,7 @@ def test_find_current_gp_with_today_override() -> None:
             "identifier": {
                 "value": "b",
                 "period": {"start": "2021-01-01", "end": "2021-12-31"},
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "system": FHIRSystem.ODS_CODE,
             },
         },
     ]
@@ -349,7 +350,7 @@ def test_find_current_gp_ignore_dates_returns_last_or_none() -> None:
             "identifier": {
                 "value": "GP-OLD",
                 "period": {"start": "1900-01-01", "end": "1900-12-31"},
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "system": FHIRSystem.ODS_CODE,
             },
         },
         {
@@ -358,7 +359,7 @@ def test_find_current_gp_ignore_dates_returns_last_or_none() -> None:
             "identifier": {
                 "value": "GP-NEWER",
                 "period": {"start": "1901-01-01", "end": "1901-12-31"},
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "system": FHIRSystem.ODS_CODE,
             },
         },
     ]

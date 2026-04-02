@@ -25,6 +25,7 @@ function main() {
 
   create-report
   enrich-report
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 function create-report() {
@@ -34,6 +35,7 @@ function create-report() {
   else
     run-syft-in-docker
   fi
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 function run-syft-natively() {
@@ -41,6 +43,7 @@ function run-syft-natively() {
   syft packages dir:"$PWD" \
     --config "$PWD/scripts/config/syft.yaml" \
     --output spdx-json="$PWD/sbom-repository-report.tmp.json"
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 function run-syft-in-docker() {
@@ -56,6 +59,7 @@ function run-syft-in-docker() {
       packages dir:/workdir \
       --config /workdir/scripts/config/syft.yaml \
       --output spdx-json=/workdir/sbom-repository-report.tmp.json
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 function enrich-report() {
@@ -75,13 +79,15 @@ function enrich-report() {
     sbom-repository-report.tmp.json \
       > sbom-repository-report.json
   rm -f sbom-repository-report.tmp.json
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================
 
 function is-arg-true() {
+  local value="$1"
 
-  if [[ "$1" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
+  if [[ "$value" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$ ]]; then
     return 0
   else
     return 1

@@ -27,8 +27,9 @@ from urllib.parse import urljoin
 
 from requests import HTTPError, Response
 
-from gateway_api.clinical_jwt import JWT
-from gateway_api.common.error import ProviderRequestFailedError
+from gateway_api.clinical_jwt import JWT, JWTValidator
+from gateway_api.common.common import get_http_text
+from gateway_api.common.error import JWTValidationError, ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # TODO: Once stub servers/containers made for PDS, SDS and provider
@@ -43,9 +44,8 @@ else:
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
 
-ARS_FHIR_BASE = "FHIR/STU3"
-FHIR_RESOURCE = "patient"
-ARS_FHIR_OPERATION = "$gpc.getstructuredrecord"
+# Default endpoint path for access record structured interaction (standard GP Connect)
+ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"
 TIMEOUT: int | None = None  # None used for quicker dev, adjust as needed
 
 
@@ -57,10 +57,12 @@ class GpProviderClient:
     including fetching structured patient records.
 
     Attributes:
-        provider_endpoint (str): The FHIR API endpoint for the provider.
+        provider_endpoint (str): The base URL for the provider (from SDS).
         provider_asid (str): The ASID for the provider.
         consumer_asid (str): The ASID for the consumer.
         token (JWT): JWT object for authentication with the provider API.
+        endpoint_path (str): The endpoint path for the operation
+            (default: "Patient/$gpc.getstructuredrecord").
 
     Methods:
         access_structured_record(trace_id: str, body: str) -> Response:
@@ -68,21 +70,32 @@ class GpProviderClient:
     """
 
     def __init__(
-        self, provider_endpoint: str, provider_asid: str, consumer_asid: str, token: JWT
+        self,
+        provider_endpoint: str,
+        provider_asid: str,
+        consumer_asid: str,
+        token: JWT,
+        endpoint_path: str = ARS_ENDPOINT_PATH,
     ) -> None:
         self.provider_endpoint = provider_endpoint
         self.provider_asid = provider_asid
         self.consumer_asid = consumer_asid
         self.token = token
+        self.endpoint_path = endpoint_path
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
         """
-        # TODO: Post-steel-thread, probably check whether JWT is valid/not expired
+        # Re-check the JWT is still valid, in case has expired since
+        # client instantiation
+        try:
+            JWTValidator.validate_timestamps(self.token)
+        except JWTValidationError as e:
+            raise ProviderRequestFailedError(error_reason="JWT has expired") from e
         return {
-            "Content-Type": "application/fhir+json",
-            "Accept": "application/fhir+json",
+            "Content-Type": "application/fhir+json; charset=utf-8",
+            "Accept": "application/fhir+json; charset=utf-8",
             "Ssp-InteractionID": ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             "Ssp-To": self.provider_asid,
             "Ssp-From": self.consumer_asid,
@@ -101,8 +114,8 @@ class GpProviderClient:
 
         headers = self._build_headers(trace_id)
 
-        endpoint_path = "/".join([ARS_FHIR_BASE, FHIR_RESOURCE, ARS_FHIR_OPERATION])
-        url = urljoin(self.provider_endpoint, endpoint_path)
+        base_endpoint = self.provider_endpoint.rstrip("/") + "/"
+        url = urljoin(base_endpoint, self.endpoint_path)
 
         response = post(
             url,
@@ -114,6 +127,34 @@ class GpProviderClient:
         try:
             response.raise_for_status()
         except HTTPError as err:
-            raise ProviderRequestFailedError(error_reason=err.response.reason) from err
+            # TODO: GPCAPIM-353 Consider what error information we want to return here.
+            #   Post-steel-thread we probably want to log rather than dumping like this
+            if os.environ.get("CDG_DEBUG", "false").lower() == "true":
+                errstr = "GPProvider FHIR API request failed:\n"
+                errstr += f"{response.status_code}: "
+                errstr += f"{get_http_text(response.status_code)}:{response.reason}\n"
+                errstr += response.text
+                errstr += "\nHeaders were:\n"
+                for header, value in headers.items():
+                    errstr += f"{header}: {value}\n"
+                errstr += "\nBody payload was:\n"
+                errstr += body
+            else:
+                errstr = str(err.response.reason)
+            raise ProviderRequestFailedError(error_reason=errstr) from err
 
         return response
+
+    @property
+    def token(self) -> JWT:
+        return self._token
+
+    @token.setter
+    def token(self, jwt_obj: JWT) -> None:
+        """
+        Set the JWT token, validating its structure and contents.
+        """
+        # If JWT validation fails allow the error to propagate up,
+        # the caller needs to know it passed an invalid JWT and why.
+        JWTValidator.validate(jwt_obj)
+        self._token = jwt_obj

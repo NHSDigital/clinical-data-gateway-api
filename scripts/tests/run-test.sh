@@ -61,6 +61,7 @@ else
   echo "[run-test] ENV=${ENV:-local}, TEST_TYPE=${TEST_TYPE}"
   echo "[run-test] Running direct tests without APIM proxy options"
   poetry run pytest ${TEST_PATH} -v \
+    --api-name="clinical-data-gateway-api" \
     --cov="${COV_PATH}" \
     --cov-report=html:test-artefacts/coverage-html \
     --cov-report=term \

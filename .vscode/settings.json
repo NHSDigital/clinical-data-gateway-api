@@ -5,6 +5,16 @@
   },
   // Disable pylance type checking within vscode.
   "python.analysis.typeCheckingMode": "off",
+  "python.analysis.exclude": [
+    "**/target",
+    "**/__pycache__",
+    "**/dist",
+    "**/build",
+    "**/.venv",
+    "**/.mypy_cache",
+    "**/.pytest_cache",
+    "**/.ruff_cache"
+  ],
   // Disable all telemetry.
   "telemetry.telemetryLevel": "off",
   "telemetry.feedback.enabled": false,
