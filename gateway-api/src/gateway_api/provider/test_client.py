@@ -222,7 +222,6 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 @pytest.mark.usefixtures("mock_request_post")
 def test_access_structured_record_raises_external_service_error(
-    mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
     valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
