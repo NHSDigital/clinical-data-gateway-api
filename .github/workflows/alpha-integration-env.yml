@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          ref: alpha-integration
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@b1257c400167d727708335212f95607835cd03fd
@@ -88,7 +90,6 @@ jobs:
           TF_VAR_image_tag: ${{ env.BRANCH_NAME }}
           TF_VAR_alb_rule_priority: ${{ env.ALB_RULE_PRIORITY }}
         run: |
-          ls -l
           terraform apply \
             -var-file="alpha-int.tfvars" \
             -auto-approve
