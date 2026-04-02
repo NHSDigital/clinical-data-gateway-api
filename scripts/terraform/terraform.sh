@@ -27,8 +27,7 @@ function main() {
   else
     cmd=$cmd run-terraform-in-docker
   fi
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Terraform natively.
@@ -38,8 +37,7 @@ function run-terraform-natively() {
 
   # shellcheck disable=SC2086
   terraform $cmd
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Terraform in a Docker container.
@@ -58,8 +56,7 @@ function run-terraform-in-docker() {
     --workdir /workdir \
     "$image" \
       $cmd
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================
