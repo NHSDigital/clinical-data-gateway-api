@@ -28,8 +28,7 @@ function main() {
   else
     file="$file" run-shellcheck-in-docker
   fi
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run ShellCheck natively.
@@ -39,8 +38,7 @@ function run-shellcheck-natively() {
 
   # shellcheck disable=SC2001
   shellcheck "$(echo "$file" | sed "s#$PWD#.#")"
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run ShellCheck in a Docker container.
@@ -59,8 +57,7 @@ function run-shellcheck-in-docker() {
     --workdir /workdir \
     "$image" \
       "/workdir/$(echo "$file" | sed "s#$PWD#.#")"
-
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================
