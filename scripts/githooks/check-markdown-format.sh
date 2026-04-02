@@ -62,7 +62,7 @@ function main() {
       files="$files" run-markdownlint-in-docker
     fi
   fi
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run markdownlint natively.
@@ -74,7 +74,7 @@ function run-markdownlint-natively() {
   markdownlint \
     $files \
     --config "$PWD/scripts/config/.markdownlint.yaml"
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run markdownlint in a Docker container.
@@ -93,7 +93,7 @@ function run-markdownlint-in-docker() {
     "$image" \
       $files \
       --config /workdir/scripts/config/.markdownlint.yaml
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================

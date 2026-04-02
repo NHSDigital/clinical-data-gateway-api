@@ -71,7 +71,7 @@ function main() {
   else
     filter="$filter" dry_run_opt="${dry_run_opt:-}" run-editorconfig-in-docker
   fi
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run editorconfig natively.
@@ -83,7 +83,7 @@ function run-editorconfig-natively() {
   # shellcheck disable=SC2046,SC2086
   editorconfig \
     --exclude '.git/' $dry_run_opt $($filter)
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run editorconfig in a Docker container.
@@ -103,7 +103,8 @@ function run-editorconfig-in-docker() {
   docker run --rm --platform linux/amd64 \
     --volume "$PWD":/check \
     "$image" \
-      sh -c "ec --exclude '.git/' $dry_run_opt \$($filter) /dev/null" && return 0 || return 1
+      sh -c "ec --exclude '.git/' $dry_run_opt \$($filter) /dev/null"
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================

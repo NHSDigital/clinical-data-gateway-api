@@ -52,7 +52,7 @@ function main() {
   else
     filter="$filter" run-vale-in-docker
   fi
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Vale natively.
@@ -64,7 +64,7 @@ function run-vale-natively() {
   vale \
     --config "$PWD/scripts/config/vale/vale.ini" \
     $($filter)
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # Run Vale in a Docker container.
@@ -88,7 +88,7 @@ function run-vale-in-docker() {
     "$image" \
       --config /workdir/scripts/config/vale/vale.ini \
       $($filter) /dev/null
-  return 0
+  return 0 # `set -e` will ensure that any non-zero exit code will exit the script
 }
 
 # ==============================================================================
