@@ -10,7 +10,6 @@ import json
 from typing import Any
 
 import pytest
-from fhir import Parameters
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 from stubs.provider.stub import GpProviderStub
@@ -63,7 +62,7 @@ def mock_request_post(
 
 def test_valid_gpprovider_access_structured_record_makes_request_correct_url_post_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -97,7 +96,7 @@ def test_valid_gpprovider_access_structured_record_makes_request_correct_url_pos
 
 def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -139,7 +138,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_headers_post_200
 
 def test_valid_gpprovider_access_structured_record_with_correct_body_200(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -174,7 +173,7 @@ def test_valid_gpprovider_access_structured_record_with_correct_body_200(
 @pytest.mark.usefixtures("mock_request_post")
 def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
     stub: GpProviderStub,
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -223,7 +222,8 @@ def test_valid_gpprovider_access_structured_record_returns_stub_response_200(
 
 @pytest.mark.usefixtures("mock_request_post")
 def test_access_structured_record_raises_external_service_error(
-    valid_simple_request_payload: Parameters,
+    mock_request_post: dict[str, Any],  # NOQA ARG001 (Mock not called directly)
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -252,7 +252,7 @@ def test_access_structured_record_raises_external_service_error(
 
 def test_gpprovider_client_includes_authorization_header_with_bearer_token(
     mock_request_post: dict[str, Any],
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
 ) -> None:
     """
@@ -284,7 +284,7 @@ def test_gpprovider_client_includes_authorization_header_with_bearer_token(
 
 @pytest.mark.usefixtures("mock_request_post")
 def test_access_structured_record_debug_error_when_cdg_debug_set(
-    valid_simple_request_payload: Parameters,
+    valid_simple_request_payload: dict[str, Any],
     valid_jwt: JWT,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

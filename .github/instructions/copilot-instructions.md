@@ -14,11 +14,11 @@ After deploying the container locally, `make test` will run all tests and captur
 
 Individual test suites can be run with:
 
-- Unit tests: `make unit`
-- Acceptance tests: `make acceptance`
-- Integration tests: `make integration`
-- Schema tests: `make schema`
-- Contract tests: `make contract`
+- Unit tests: `make test-unit`
+- Acceptance tests: `make test-acceptance`
+- Integration tests: `make test-integration`
+- Schema tests: `make test-schema`
+- Contract tests: `make test-contract`
 
 The container must be running in order to successfully run any of the test suites other than the unit tests.
 
