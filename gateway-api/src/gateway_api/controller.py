@@ -2,11 +2,6 @@
 Controller layer for orchestrating calls to external services
 """
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fhir.r4 import Patient
-
 from fhir.r4 import Device, Organization, Practitioner
 from requests import Response
 
@@ -179,7 +174,7 @@ class Controller:
             ignore_dates=True,
         )
 
-        patient: Patient = pds.search_patient_by_nhs_number(nhs_number)
+        patient = pds.search_patient_by_nhs_number(nhs_number)
 
         if not patient.gp_ods_code:
             raise NoCurrentProviderError(nhs_number=nhs_number)
