@@ -39,7 +39,7 @@ jobs:
           ref: alpha-integration
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@84e497037868db1737eb2907599d3f61e8899373
+        uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063
         with:
           role-to-assume: ${{ secrets.DEV_AWS_CREDENTIALS }}
           aws-region: ${{ env.AWS_REGION }}
