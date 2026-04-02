@@ -12,7 +12,9 @@ from .elements.reference import GeneralPractitioner, Reference
 from .resources.bundle import Bundle
 from .resources.device import Device
 from .resources.endpoint import Endpoint
+from .resources.organization import Organization
 from .resources.patient import Patient
+from .resources.practitioner import Practitioner
 
 __all__ = [
     "ASIDIdentifier",
@@ -22,9 +24,11 @@ __all__ = [
     "Entry",
     "GeneralPractitioner",
     "OrganizationIdentifier",
+    "Organization",
     "PartyKeyIdentifier",
     "Patient",
     "PatientIdentifier",
+    "Practitioner",
     "Reference",
     "UUIDIdentifier",
 ]

@@ -15,7 +15,7 @@ from pydantic import (
 @dataclass(frozen=True)
 class Meta:
     """
-    A FHIR R4 Meta element. See https://hl7.org/fhir/R4/datatypes.html#Meta.
+    A FHIR Meta element. See https://hl7.org/fhir/STU3/datatypes.html#Meta.
     Attributes:
         version_id: The version id of the resource.
         last_updated: The last updated timestamp of the resource.
@@ -39,7 +39,7 @@ class Meta:
 
 
 class Resource(BaseModel):
-    """A FHIR R4 Resource base class."""
+    """A FHIR Resource base class."""
 
     # class variable to hold class mappings per resource_type
     __resource_types: ClassVar[dict[str, type["Resource"]]] = {}

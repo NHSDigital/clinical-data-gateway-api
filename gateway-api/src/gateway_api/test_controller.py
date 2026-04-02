@@ -31,7 +31,6 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
             GeneralPractitioner(
                 type="Organization",
                 identifier=OrganizationIdentifier(
-                    system="https://fhir.nhs.uk/Id/ods-organization-code",
                     value=gp_ods_code,
                 ),
             )

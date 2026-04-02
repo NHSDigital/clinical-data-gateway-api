@@ -8,7 +8,7 @@ from pydantic import model_validator
 @dataclass(frozen=True)
 class Identifier(ABC):
     """
-    A FHIR R4 Identifier element. See https://hl7.org/fhir/R4/datatypes.html#Identifier.
+    A FHIR Identifier element. See https://hl7.org/fhir/R4/datatypes.html#Identifier.
     Attributes:
         system: The namespace for the identifier value.
         value: The value that is unique within the system.

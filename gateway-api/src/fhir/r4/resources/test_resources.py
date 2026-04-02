@@ -15,7 +15,15 @@ from fhir.r4 import (
     PartyKeyIdentifier,
     Patient,
     PatientIdentifier,
+    Practitioner,
 )
+from fhir.r4.elements.identifier import (
+    AgnosticUserRoleIdentifier,
+    SDSRoleProfileIDIdentifier,
+    SDSUserIDIdentifier,
+)
+from fhir.r4.resources.organization import Organization
+from fhir.r4.resources.practitioner import HumanName
 
 
 class TestBundle:
@@ -137,7 +145,6 @@ class TestPatient:
                 GeneralPractitioner(
                     type="Organization",
                     identifier=OrganizationIdentifier(
-                        system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value=ods_code,
                     ),
                 )
@@ -172,32 +179,6 @@ class TestPatient:
                         }
                     ],
                 }
-            )
-
-    def test_create_with_invalid_general_practitioner_identifier_system_raises_error(
-        self,
-    ) -> None:
-        """Test invalid practitioner organization identifier systems are rejected."""
-        with pytest.raises(
-            ValueError,
-            match=(
-                "Identifier system 'https://example.org/invalid' does not match "
-                "expected system 'https://fhir.nhs.uk/Id/ods-organization-code'."
-            ),
-        ):
-            Patient.create(
-                identifier=[PatientIdentifier.from_nhs_number("1234567890")],
-                generalPractitioner=[
-                    GeneralPractitioner(
-                        type="Organization",
-                        identifier=(
-                            OrganizationIdentifier(
-                                system="https://example.org/invalid",
-                                value="A12345",
-                            )
-                        ),
-                    )
-                ],
             )
 
     def test_model_dump_json_excludes_none_general_practitioner(self) -> None:
@@ -256,7 +237,6 @@ class TestPatientGpOdsCode:
                 GeneralPractitioner(
                     type="Organization",
                     identifier=OrganizationIdentifier(
-                        system="https://fhir.nhs.uk/Id/ods-organization-code",
                         value="B81001",
                     ),
                 )
@@ -482,6 +462,12 @@ class TestDeviceModelValidate:
         with pytest.raises(ValidationError, match="identifier"):
             Device.model_validate({"resourceType": "Device"})
 
+    @pytest.mark.xfail(
+        reason=(
+            "The system for the JWT device is not yet defined. Validation should be "
+            "added once this is known."
+        )
+    )
     def test_invalid_identifier_system_fails(self) -> None:
         with pytest.raises(ValidationError, match="does not match expected system"):
             Device.model_validate(
@@ -509,6 +495,167 @@ class TestEndpoint:
         assert endpoint.address is None, "address should default to None"
 
 
+class TestPractitioner:
+    def test_create(self) -> None:
+        practitioner = Practitioner.create(
+            id="practitioner-1",
+            name=[HumanName(family="Smith", given=["Alex"], prefix=["Dr"])],
+            identifier=[
+                SDSUserIDIdentifier(
+                    system="https://fhir.nhs.uk/Id/sds-user-id",
+                    value="1234567890",
+                ),
+                SDSRoleProfileIDIdentifier(
+                    system="https://fhir.nhs.uk/Id/sds-role-profile-id",
+                    value="R8010:G8000:1001",
+                ),
+                AgnosticUserRoleIdentifier(system="https://custom.system", value="UR1"),
+            ],
+        )
+
+        assert practitioner.resource_type == "Practitioner", (
+            "resource_type should be 'Practitioner'"
+        )
+        assert practitioner.id == "practitioner-1", "id should be set"
+        assert practitioner.name[0].family == "Smith", "family name should be set"
+        assert practitioner.name[0].given == ["Alex"], "given names should be set"
+        assert practitioner.identifier[0].system == (
+            "https://fhir.nhs.uk/Id/sds-user-id"
+        ), "first identifier should be SDS user ID"
+        assert practitioner.identifier[1].system == (
+            "https://fhir.nhs.uk/Id/sds-role-profile-id"
+        ), "second identifier should be SDS role profile ID"
+        assert practitioner.identifier[2].system == "https://custom.system", (
+            "agnostic identifier should keep provided system"
+        )
+
+
+class TestPractitionerModelValidate:
+    def test_valid_practitioner(self) -> None:
+        practitioner = Practitioner.model_validate(
+            {
+                "resourceType": "Practitioner",
+                "id": "practitioner-2",
+                "name": [{"family": "Jones", "given": ["Sam"], "prefix": ["Mx"]}],
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                        "value": "1234567890",
+                    },
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                        "value": "R8010:G8000:1001",
+                    },
+                    {"system": "https://another.system", "value": "UR-22"},
+                ],
+            }
+        )
+
+        assert practitioner.name[0].family == "Jones", "family should be parsed"
+        assert isinstance(practitioner.identifier[0], SDSUserIDIdentifier), (
+            "first identifier should be parsed as SDSUserIDIdentifier"
+        )
+        assert isinstance(practitioner.identifier[1], SDSRoleProfileIDIdentifier), (
+            "second identifier should be parsed as SDSRoleProfileIDIdentifier"
+        )
+        assert isinstance(practitioner.identifier[2], AgnosticUserRoleIdentifier), (
+            "third identifier should be parsed as AgnosticUserRoleIdentifier"
+        )
+
+    def test_wrong_resource_type_fails(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "Resource type 'Patient' does not match expected resource type "
+                "'Practitioner'."
+            ),
+        ):
+            Practitioner.model_validate(
+                {
+                    "resourceType": "Patient",
+                    "id": "practitioner-3",
+                    "name": [{"family": "Jones"}],
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                            "value": "123",
+                        }
+                    ],
+                }
+            )
+
+    def test_missing_name_fails(self) -> None:
+        with pytest.raises(ValidationError, match="name"):
+            Practitioner.model_validate(
+                {
+                    "resourceType": "Practitioner",
+                    "id": "practitioner-4",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                            "value": "123",
+                        }
+                    ],
+                }
+            )
+
+    def test_empty_name_list_fails(self) -> None:
+        with pytest.raises(ValidationError, match="too_short"):
+            Practitioner.model_validate(
+                {
+                    "resourceType": "Practitioner",
+                    "id": "practitioner-5",
+                    "name": [],
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                            "value": "123",
+                        }
+                    ],
+                }
+            )
+
+    def test_missing_identifier_fails(self) -> None:
+        with pytest.raises(ValidationError, match="identifier"):
+            Practitioner.model_validate(
+                {
+                    "resourceType": "Practitioner",
+                    "id": "practitioner-6",
+                    "name": [{"family": "Jones"}],
+                }
+            )
+
+    def test_empty_identifier_list_fails(self) -> None:
+        with pytest.raises(ValidationError, match="too_short"):
+            Practitioner.model_validate(
+                {
+                    "resourceType": "Practitioner",
+                    "id": "practitioner-7",
+                    "name": [{"family": "Jones"}],
+                    "identifier": [],
+                }
+            )
+
+    def test_unknown_identifier_system_is_parsed_as_agnostic_identifier(self) -> None:
+        practitioner = Practitioner.model_validate(
+            {
+                "resourceType": "Practitioner",
+                "id": "practitioner-8",
+                "name": [{"family": "Jones"}],
+                "identifier": [
+                    {
+                        "system": "https://example.org/invalid",
+                        "value": "123",
+                    }
+                ],
+            }
+        )
+
+        assert isinstance(practitioner.identifier[0], AgnosticUserRoleIdentifier), (
+            "unknown systems should be parsed as AgnosticUserRoleIdentifier"
+        )
+
+
 class TestEndpointModelValidate:
     def test_valid_endpoint(self) -> None:
         endpoint = Endpoint.model_validate(
@@ -533,6 +680,61 @@ class TestEndpointModelValidate:
             ),
         ):
             Endpoint.model_validate({"resourceType": "Bundle"})
+
+
+class TestOrganization:
+    def test_create(self) -> None:
+        organization = Organization.create(
+            name="Leeds Teaching Hospitals NHS Trust",
+            identifier=[
+                OrganizationIdentifier(
+                    value="RR8",
+                )
+            ],
+        )
+
+        assert organization.resource_type == "Organization", (
+            "resource_type should be 'Organization'"
+        )
+        assert organization.name == "Leeds Teaching Hospitals NHS Trust", (
+            "name should match the provided organization name"
+        )
+        assert len(organization.identifier) == 1, "should have one identifier"
+        assert organization.identifier[0].system == (
+            "https://fhir.nhs.uk/Id/ods-organization-code"
+        ), "identifier system should be the ODS organization code URI"
+        assert organization.identifier[0].value == "RR8", (
+            "identifier value should match the provided ODS code"
+        )
+
+    def test_model_validate_with_no_name_raises_error(self) -> None:
+        with pytest.raises(ValidationError):
+            Organization.model_validate(
+                {
+                    "resourceType": "Organization",
+                    "identifier": [
+                        {
+                            "system": "https://example.org/invalid",
+                            "value": "RR8",
+                        }
+                    ],
+                }
+            )
+
+    def test_model_validate_with_invalid_identifier_system_raises_error(self) -> None:
+        with pytest.raises(ValidationError, match="does not match expected system"):
+            Organization.model_validate(
+                {
+                    "resourceType": "Organization",
+                    "name": "Leeds Teaching Hospitals NHS Trust",
+                    "identifier": [
+                        {
+                            "system": "https://example.org/invalid",
+                            "value": "RR8",
+                        }
+                    ],
+                }
+            )
 
 
 class TestBundleModelValidate:

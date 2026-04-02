@@ -1,5 +1,7 @@
 import uuid
 
+from pydantic import model_validator
+
 from fhir.elements.identifier import Identifier
 
 
@@ -37,6 +39,34 @@ class PartyKeyIdentifier(
     """A FHIR R4 Party Key Identifier."""
 
 
+class AgnosticDeviceIdentifier(Identifier, expected_system="__unknown__"):
+    """TODO: define system once JWT Device details are understood."""
+
+    @model_validator(mode="after")
+    def validate_system(self) -> "AgnosticDeviceIdentifier":
+        return self
+
+
+class SDSUserIDIdentifier(
+    Identifier, expected_system="https://fhir.nhs.uk/Id/sds-user-id"
+):
+    """A FHIR R4 User ID Identifier utilising the sds-user-id system."""
+
+
+class SDSRoleProfileIDIdentifier(
+    Identifier, expected_system="https://fhir.nhs.uk/Id/sds-role-profile-id"
+):
+    """A FHIR R4 Role Profile ID Identifier utilising the sds-role-profile-id system."""
+
+
+class AgnosticUserRoleIdentifier(Identifier, expected_system="__unknown__"):
+    """TODO: define system once JWT Device details are understood."""
+
+    @model_validator(mode="after")
+    def validate_system(self) -> "AgnosticUserRoleIdentifier":
+        return self
+
+
 class OrganizationIdentifier(
     Identifier, expected_system="https://fhir.nhs.uk/Id/ods-organization-code"
 ):
@@ -44,3 +74,11 @@ class OrganizationIdentifier(
     A FHIR R4 Organization Identifier utilising the ODS Organization Code
     system.
     """
+
+    def __init__(self, value: str):
+        super().__init__(value=value, system=self._expected_system)
+
+    @classmethod
+    def from_ods_code(cls, ods_code: str) -> "OrganizationIdentifier":
+        """Create an OrganizationIdentifier from an ODS code."""
+        return cls(value=ods_code)

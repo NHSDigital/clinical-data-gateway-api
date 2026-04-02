@@ -18,7 +18,7 @@ class IssueCode(StrEnum):
 @dataclass(frozen=True)
 class Issue(ABC):
     """
-    A FHIR R4 OperationOutcome Issue element. See https://hl7.org/fhir/R4/datatypes.html#OperationOutcome.
+    A FHIR STU3 OperationOutcome Issue element. See https://hl7.org/fhir/STU3/datatypes.html#OperationOutcome.
     """
 
     severity: IssueSeverity
