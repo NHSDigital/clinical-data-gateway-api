@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+from fhir.constants import FHIRSystem
+
 if TYPE_CHECKING:
     from tests.conftest import Client
 
@@ -23,7 +25,7 @@ class TestSdsIntegration:
                 {
                     "name": "patientNHSNumber",
                     "valueIdentifier": {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "system": FHIRSystem.NHS_NUMBER,
                         "value": "9999999999",  # Alice Jones with A12345 provider
                     },
                 },
@@ -50,7 +52,7 @@ class TestSdsIntegration:
                 {
                     "name": "patientNHSNumber",
                     "valueIdentifier": {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "system": FHIRSystem.NHS_NUMBER,
                         "value": "9999999999",  # Alice Jones with A12345 provider
                     },
                 },
@@ -82,7 +84,7 @@ class TestSdsIntegration:
                 {
                     "name": "patientNHSNumber",
                     "valueIdentifier": {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "system": FHIRSystem.NHS_NUMBER,
                         "value": "9999999999",  # Alice Jones with A12345 provider
                     },
                 },

@@ -27,7 +27,7 @@ tests/
 > [!NOTE]<br>
 > When running tests the following environment variables need to be provided:
 >
-> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000.
+> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000. If running locally in a dev container, using gateway-api as the host will allow the tests to communicate with an instance launched from `make deploy`.
 > - `HOST` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
 
 ### Install Dependencies (if not using Dev container)
@@ -151,7 +151,9 @@ Property-based API schema validation tests using Schemathesis. These tests autom
 
 Contract testing ensures that the consumer's expectations match the provider's implementation without requiring both systems to be tested together.
 
-**How it works:**
+There are two types of tests in this folder. The stub tests (contained in the stub folder) are pytest-based and run as any other pytest-based test. The consumer and provider tests are Pact-based (see below).
+
+**How it works (Pact-based tests):**
 
 1. **Consumer Tests** (`test_consumer_contract.py`):
    - Define what the consumer EXPECTS from the API
