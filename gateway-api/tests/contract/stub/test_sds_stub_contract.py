@@ -24,14 +24,12 @@ from stubs.sds.stub import SdsFhirApiStub
 
 # FHIR-formatted query parameter values used across all tests
 _ORG_PROVIDER = f"{FHIRSystem.ODS_CODE}|PROVIDER"
-_ORG_CONSUMER = f"{FHIRSystem.ODS_CODE}|CONSUMER"
 _ORG_UNKNOWN = f"{FHIRSystem.ODS_CODE}|UNKNOWN_ORG_XYZ"
 
 _INTERACTION_ID_PARAM = (
     f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|{ACCESS_RECORD_STRUCTURED_INTERACTION_ID}"
 )
 _PARTY_KEY_PROVIDER = f"{FHIRSystem.NHS_MHS_PARTY_KEY}|PROVIDER-0000806"
-_PARTY_KEY_CONSUMER = f"{FHIRSystem.NHS_MHS_PARTY_KEY}|CONSUMER-0000807"
 
 _VALID_CORRELATION_ID = "test-correlation-id-12345"
 
@@ -117,6 +115,7 @@ class TestGetDeviceBundleSuccess:
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
         body = response.json()
+        assert len(body["entry"]) >= 1  # sanity check for non-empty entries
         for entry in body["entry"]:
             assert "fullUrl" in entry
             assert entry["fullUrl"]  # non-empty
@@ -356,7 +355,7 @@ class TestGetDeviceBundleValidationErrors:
     def test_error_response_resource_type_is_operation_outcome(
         self, stub: SdsFhirApiStub
     ) -> None:
-        """Every 400 error body must be an ``OperationOutcome``."""
+        """Every error body must be an ``OperationOutcome``."""
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
             headers={},  # missing apikey
@@ -485,6 +484,7 @@ class TestGetEndpointBundleSuccess:
             params={"identifier": _INTERACTION_ID_PARAM},
         )
         body = response.json()
+        assert len(body["entry"]) >= 1
         for entry in body["entry"]:
             assert "fullUrl" in entry
             assert entry["fullUrl"]  # non-empty
@@ -762,7 +762,7 @@ class TestGetEndpointBundleValidationErrors:
     def test_error_response_resource_type_is_operation_outcome(
         self, stub: SdsFhirApiStub
     ) -> None:
-        """Every 400 error body must be an ``OperationOutcome``."""
+        """Every error body must be an ``OperationOutcome``."""
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
             headers={},  # missing apikey
@@ -845,6 +845,7 @@ class TestGetConvenienceMethod:
         body = response.json()
         assert body["resourceType"] == "Bundle"
         # Verify Device resources were returned
+        assert len(body["entry"]) >= 1
         for entry in body["entry"]:
             assert entry["resource"]["resourceType"] == "Device"
 
