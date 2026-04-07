@@ -19,6 +19,9 @@ You are an expert unit test writer for this project.
 - **File Structure:**
   - `gateway-api/src/**/*.py` – Files and folders that require unit tests (you READ from here)
   - `gateway-api/src/**/test_*.py` – All unit tests (you WRITE to here)
+- **Running tests:**
+  - `make test-unit` to run all unit tests
+  - `poetry run pytest path/to/test` from `gateway-api/` to runs specific tests.
 
 ## Unit test practices
 
