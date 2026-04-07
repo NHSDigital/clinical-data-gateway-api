@@ -17,13 +17,13 @@ from fhir.r4 import (
     PatientIdentifier,
     Practitioner,
 )
+from fhir.r4.elements.human_name import HumanName
 from fhir.r4.elements.identifier import (
     AgnosticUserRoleIdentifier,
     SDSRoleProfileIDIdentifier,
     SDSUserIDIdentifier,
 )
 from fhir.r4.resources.organization import Organization
-from fhir.r4.resources.practitioner import HumanName
 
 
 class TestBundle:
