@@ -64,7 +64,7 @@ build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Docker image '${IMAGE_NAME}' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
-	# TODO: Implement the artefact publishing step
+	# TODO [GPCAPIM-283]:  Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
