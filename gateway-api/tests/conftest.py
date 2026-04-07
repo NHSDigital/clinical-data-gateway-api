@@ -2,13 +2,12 @@
 
 import os
 from datetime import timedelta
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 import pytest
 import requests
 from dotenv import find_dotenv, load_dotenv
 from fhir.constants import FHIRSystem
-from fhir.parameters import Parameters
 
 # Load environment variables from .env file in the workspace root
 load_dotenv(find_dotenv(usecwd=True))
@@ -145,7 +144,7 @@ class RemoteClient:
 
 
 @pytest.fixture
-def simple_request_payload() -> Parameters:
+def simple_request_payload() -> dict[str, Any]:
     return {
         "resourceType": "Parameters",
         "parameter": [
