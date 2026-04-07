@@ -1,7 +1,7 @@
 import os
 import traceback
 
-from flask import Flask, request
+from flask import Flask, Request, request
 from flask.wrappers import Response
 
 from gateway_api.common.error import AbstractCDGError, UnexpectedError
@@ -11,6 +11,7 @@ from gateway_api.get_structured_record import (
 )
 
 app = Flask(__name__)
+app.logger.setLevel("INFO")
 
 
 def get_app_host() -> str:
@@ -29,19 +30,41 @@ def get_app_port() -> int:
     return int(port)
 
 
+def log_request_received(request: Request) -> None:
+    log_details = {
+        "description": "Received request",
+        "method": request.method,
+        "path": request.path,
+        "headers": dict(request.headers),
+        "body": request.get_data(as_text=True),
+    }
+    app.logger.info(log_details)
+
+
+def log_error(error: AbstractCDGError) -> None:
+    log_details = {
+        "description": "An error occurred",
+        "error_type": type(error).__name__,
+        "error_message": str(error),
+        "traceback": traceback.format_exc(),
+    }
+    app.logger.error(log_details)
+
+
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
 def get_structured_record() -> Response:
+    log_request_received(request)
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
         controller = Controller()
         flask_response = controller.run(request=get_structured_record_request)
         get_structured_record_request.set_response_from_flaskresponse(flask_response)
     except AbstractCDGError as e:
-        e.log()
+        log_error(e)
         return e.build_response()
     except Exception:
         error = UnexpectedError(traceback=traceback.format_exc())
-        error.log()
+        log_error(error)
         return error.build_response()
 
     return get_structured_record_request.build_response()

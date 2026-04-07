@@ -1,5 +1,4 @@
 import json
-import traceback
 from dataclasses import dataclass
 from enum import StrEnum
 from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
@@ -52,9 +51,6 @@ class AbstractCDGError(Exception):
             content_type="application/fhir+json",
         )
         return response
-
-    def log(self) -> None:
-        print(traceback.format_exc(), flush=True)
 
     @property
     def message(self) -> str:
