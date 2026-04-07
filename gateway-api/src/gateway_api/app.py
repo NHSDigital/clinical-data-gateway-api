@@ -36,7 +36,6 @@ def log_request_received(request: Request) -> None:
         "method": request.method,
         "path": request.path,
         "headers": dict(request.headers),
-        "body": request.get_data(as_text=True),
     }
     app.logger.info(log_details)
 
