@@ -1,21 +1,14 @@
-from dataclasses import dataclass
 from typing import Annotated
 
 from pydantic import Field
 
 from fhir import Resource
+from fhir.r4.elements.human_name import HumanName
 from fhir.r4.elements.identifier import (
     AgnosticUserRoleIdentifier,
     SDSRoleProfileIDIdentifier,
     SDSUserIDIdentifier,
 )
-
-
-@dataclass(frozen=True)
-class HumanName:
-    family: str
-    given: list[str] | None = None
-    prefix: list[str] | None = None
 
 
 class Practitioner(Resource, resource_type="Practitioner"):

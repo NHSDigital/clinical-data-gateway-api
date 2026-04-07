@@ -40,7 +40,7 @@ class PartyKeyIdentifier(
 
 
 class AgnosticDeviceIdentifier(Identifier, expected_system="__unknown__"):
-    """TODO: define system once JWT Device details are understood."""
+    """TODO [GPCAPIM-358]: define system once JWT Device details are understood."""
 
     @model_validator(mode="after")
     def validate_system(self) -> "AgnosticDeviceIdentifier":
@@ -60,7 +60,7 @@ class SDSRoleProfileIDIdentifier(
 
 
 class AgnosticUserRoleIdentifier(Identifier, expected_system="__unknown__"):
-    """TODO: define system once JWT Device details are understood."""
+    """TODO [GPCAPIM-311]: define system once JWT Device details are understood."""
 
     @model_validator(mode="after")
     def validate_system(self) -> "AgnosticUserRoleIdentifier":
