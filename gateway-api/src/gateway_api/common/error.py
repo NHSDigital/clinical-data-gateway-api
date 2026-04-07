@@ -95,6 +95,12 @@ class PdsRequestFailedError(AbstractCDGError):
     error_code = IssueCode.EXCEPTION
 
 
+class SdsRequestFailedError(AbstractCDGError):
+    _message = "SDS FHIR API request failed: {error_reason}"
+    status_code = BAD_GATEWAY
+    error_code = IssueCode.EXCEPTION
+
+
 class ProviderRequestFailedError(AbstractCDGError):
     _message = "Provider request failed: {error_reason}"
     status_code = BAD_GATEWAY

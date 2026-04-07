@@ -15,7 +15,9 @@ from typing import Any
 from fhir import Resource
 from fhir.constants import FHIRSystem
 from fhir.r4 import Bundle, Device, Endpoint
+from requests import HTTPError
 
+from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
 
@@ -199,7 +201,10 @@ class SdsClient:
             timeout=timeout or self.timeout,
         )
 
-        # TODO: Post-steel-thread we probably want a raise_for_status() here
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise SdsRequestFailedError(error_reason=str(e)) from e
 
         bundle = Bundle.model_validate(response.json())
         return bundle
@@ -208,8 +213,6 @@ class SdsClient:
     def _extract_first_resource[T: Resource](
         bundle: Bundle, resource: type[T]
     ) -> T | None:
-        # TODO: Post-steel-thread handle case where bundle contains no entries
-
         # TODO: more carefully consider business logic for handling multiple
         #       entries in beta
         resources = bundle.find_resources(resource)

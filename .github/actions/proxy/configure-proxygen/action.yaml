@@ -49,6 +49,4 @@ runs:
         yq eval '.private_key_path = "/tmp/proxygen_private_key.pem"' -i "$HOME/.proxygen/credentials.yaml"
         yq eval '.key_id = env(PROXYGEN_KEY_ID)' -i "$HOME/.proxygen/credentials.yaml"
         yq eval '.client_id = env(PROXYGEN_CLIENT_ID)' -i "$HOME/.proxygen/credentials.yaml"
-        echo "Proxygen credentials configured, testing connection by listing instances..."
-        proxygen instance list
         echo "Proxygen account configured successfully"

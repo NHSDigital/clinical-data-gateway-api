@@ -14,9 +14,9 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; 
         cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
     else \
         rm -rf /resources/dev-certificates || true; \
-    fi
+    fi && \
 
-RUN apk upgrade --no-cache && \
+    apk upgrade --no-cache && \
     pip install --no-cache-dir --upgrade pip && \
     addgroup -S nonroot && \
     adduser -S gateway_api_user -G nonroot
