@@ -166,7 +166,7 @@ class SdsClient:
         Ultimately it will probably obtain the key from AWS secrets
         """
 
-        # TODO: Obtain key from AWS secrets
+        # TODO [GPCAPIM-366]: Obtain key from AWS secrets
         # DO NOT PUT A REAL KEY HERE, IT WILL BE VISIBLE ON GITHUB
         return "test_api_key_DO_NOT_REPLACE_HERE"
 
@@ -213,8 +213,8 @@ class SdsClient:
     def _extract_first_resource[T: Resource](
         bundle: Bundle, resource: type[T]
     ) -> T | None:
-        # TODO: more carefully consider business logic for handling multiple
-        #       entries in beta
+        # TODO [GPCAPIM-365]: more carefully consider business logic for handling
+        #   multiple entries in beta
         resources = bundle.find_resources(resource)
         if not resources:
             return None
