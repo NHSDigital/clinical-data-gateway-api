@@ -4,9 +4,6 @@ env:
   python_version: "3.14"
 
 on:
-  push:
-    branches:
-      - "**"
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -18,24 +15,29 @@ jobs:
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v6
+
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ env.python_version }}
+
       - name: "Start app"
         uses: ./.github/actions/start-app
         with:
           python-version: ${{ env.python_version }}
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install Bruno CLI
         run: npm install --ignore-scripts -g @usebruno/cli
-      - name: "Run bruno"
+
+      - name: "Run Bruno"
         working-directory: bruno/gateway-api/collections/Steel_Thread
         run: bru run --env local --reporter-html results.html --reporter-junit results.xml
+
       - name: "Upload HTML results"
         if: always()
         uses: actions/upload-artifact@v7
@@ -43,6 +45,7 @@ jobs:
           name: bruno-results
           path: bruno/gateway-api/collections/Steel_Thread/results.html
           retention-days: 30
+
       - name: "Publish results"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
