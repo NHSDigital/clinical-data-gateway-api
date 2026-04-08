@@ -20,7 +20,7 @@ from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
 
-# TODO: Once stub servers/containers made for PDS, SDS and provider
+# TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the STUB_SDS environment variable and just
 #       use the stub client
 STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
