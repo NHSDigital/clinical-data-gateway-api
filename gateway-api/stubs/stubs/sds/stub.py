@@ -162,9 +162,6 @@ class SdsFhirApiStub(StubBase, GetStub):
             * ``200`` with Bundle JSON (may be empty)
             * ``400`` with error details for missing/invalid parameters
         """
-        headers = headers or {}
-        params = params or {}
-
         headers_out: dict[str, str] = {}
 
         # Echo correlation ID if provided
