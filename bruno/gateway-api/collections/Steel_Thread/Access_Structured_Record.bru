@@ -7,7 +7,11 @@ meta {
 post {
   url: {{base_url}}/patient/$gpc.getstructuredrecord
   body: json
-  auth: inherit
+  auth: none
+}
+
+headers {
+  ods-from: A12345
 }
 
 body:json {

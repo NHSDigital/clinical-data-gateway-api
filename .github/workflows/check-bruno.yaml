@@ -1,0 +1,47 @@
+name: "Check bruno"
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build-and-run:
+    name: "Deploy app and run bruno"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v6
+      - name: "Setup Python project"
+        uses: ./.github/actions/setup-python-project
+        with:
+          python-version: ${{ inputs.python_version }}
+      - name: "Start app"
+        uses: ./.github/actions/start-app
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Bruno CLI
+        run: npm install -g @usebruno/cli
+      - name: "Run bruno"
+        working-directory: bruno/gateway-api/collections/Steel_Thread
+        run: bru run --env local
+      - name: "Upload results"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bruno-results
+          path: gateway-api/bruno/
+          retention-days: 30
+      - name: "Publish bruno results"
+        if: always()
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        with:
+          paths: gateway-api/bruno/results.html
