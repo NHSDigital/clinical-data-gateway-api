@@ -2,8 +2,10 @@
 Controller layer for orchestrating calls to external services
 """
 
-from gateway_api.clinical_jwt import JWT, Device, Organization, Practitioner
-from gateway_api.common.common import FlaskResponse
+from fhir.r4 import Device, Organization, Practitioner
+from requests import Response
+
+from gateway_api.clinical_jwt import JWT
 from gateway_api.common.error import (
     NoAsidFoundError,
     NoCurrentEndpointError,
@@ -11,7 +13,7 @@ from gateway_api.common.error import (
     NoOrganisationFoundError,
 )
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
-from gateway_api.pds import PdsClient, PdsSearchResults
+from gateway_api.pds import PdsClient
 from gateway_api.provider import GpProviderClient
 from gateway_api.sds import SdsClient, SdsSearchResults
 
@@ -37,7 +39,7 @@ class Controller:
         self.timeout = timeout
         self.gp_provider_client = None
 
-    def run(self, request: GetStructuredRecordRequest) -> FlaskResponse:
+    def run(self, request: GetStructuredRecordRequest) -> Response:
         """
         Controller entry point
 
@@ -68,16 +70,12 @@ class Controller:
             token=token,
         )
 
-        response = self.gp_provider_client.access_structured_record(
+        provider_response = self.gp_provider_client.access_structured_record(
             trace_id=request.trace_id,
             body=request.request_body,
         )
 
-        return FlaskResponse(
-            status_code=response.status_code,
-            data=response.text,
-            headers=dict(response.headers),
-        )
+        return provider_response
 
     def get_auth_token(self) -> str:
         """
@@ -102,28 +100,52 @@ class Controller:
         #     version="5.3.0",
         # )
 
-        requesting_device = Device(
-            system="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
-            value="gpcdemonstrator-1-orange",
-            model="GP Connect Demonstrator",
-            version="1.5.0",
+        requesting_device = Device.model_validate(
+            {
+                "resourceType": "Device",
+                "identifier": [
+                    {
+                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+                        "value": "gpcdemonstrator-1-orange",
+                    }
+                ],
+                "model": "GP Connect Demonstrator",
+                "version": "1.5.0",
+            }
         )
 
         # TODO [GPCAPIM-309]: Get practitioner details
-        requesting_practitioner = Practitioner(
-            id="10019",
-            sds_userid="111222333444",
-            role_profile_id="444555666777",
-            userid_url="https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
-            userid_value="98ed4f78-814d-4266-8d5b-cde742f3093c",
-            family_name="Doe",
-            given_name="John",
-            prefix="Mr",
+        requesting_practitioner = Practitioner.model_validate(
+            {
+                "resourceType": "Practitioner",
+                "id": "10019",
+                "name": [
+                    {
+                        "family": "Doe",
+                        "given": ["John"],
+                        "prefix": ["Mr"],
+                    }
+                ],
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                        "value": "111222333444",
+                    },
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                        "value": "444555666777",
+                    },
+                    {
+                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
+                        "value": "98ed4f78-814d-4266-8d5b-cde742f3093c",
+                    },
+                ],
+            }
         )
 
         # TODO [GPCAPIM-363]: Get the consumer org name
-        requesting_organization = Organization(
-            ods_code=consumer_ods, name="Consumer organisation name"
+        requesting_organization = Organization.from_ods_code(
+            name="Consumer organisation name", ods_code=consumer_ods
         )
 
         # TODO [GPCAPIM-364]: Get consumer URL for issuer. Use CDG API URL for now.
@@ -134,9 +156,9 @@ class Controller:
             issuer=issuer,
             subject=requesting_practitioner.id,
             audience=audience,
-            requesting_device=requesting_device.to_dict(),
-            requesting_organization=requesting_organization.to_dict(),
-            requesting_practitioner=requesting_practitioner.to_dict(),
+            requesting_device=requesting_device.model_dump(),
+            requesting_organization=requesting_organization.model_dump(),
+            requesting_practitioner=requesting_practitioner.model_dump(),
         )
         return token
 
@@ -152,12 +174,12 @@ class Controller:
             ignore_dates=True,
         )
 
-        pds_result: PdsSearchResults = pds.search_patient_by_nhs_number(nhs_number)
+        patient = pds.search_patient_by_nhs_number(nhs_number)
 
-        if not pds_result.gp_ods_code:
+        if not patient.gp_ods_code:
             raise NoCurrentProviderError(nhs_number=nhs_number)
 
-        return pds_result.gp_ods_code
+        return patient.gp_ods_code
 
     def _get_sds_details(
         self, consumer_ods: str, provider_ods: str
