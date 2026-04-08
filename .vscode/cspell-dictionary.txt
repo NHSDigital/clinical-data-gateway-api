@@ -1,8 +1,12 @@
+addgroup
+adduser
 asid
 fhir
 getstructuredrecord
 GPCAPIM
 gpconnect
-searchset
+nonroot
 proxygen
+PYTHONPATH
+searchset
 usefixtures
