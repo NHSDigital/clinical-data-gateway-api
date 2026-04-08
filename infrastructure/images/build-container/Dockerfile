@@ -35,14 +35,13 @@ RUN apk update && \
     readline-dev \
     sqlite-dev \
     tk-dev \
-    zstd-dev
-
-# Configure doas to allow members of the wheel group to run commands as root.
-RUN echo "permit :wheel" >> /etc/doas.conf \
-    && echo "permit nopass :wheel as root cmd apk" >> /etc/doas.conf \
-    && echo "permit nopass :wheel as root cmd docker" >> /etc/doas.conf \
+    zstd-dev && \
+    # Configure doas to allow members of the wheel group to run commands as root.
+    echo "permit :wheel" >> /etc/doas.conf && \
+    echo "permit nopass :wheel as root cmd apk" >> /etc/doas.conf && \
+    echo "permit nopass :wheel as root cmd docker" >> /etc/doas.conf && \
     # Change default shell to bash for root user.
-    && chsh -s /bin/bash root
+    chsh -s /bin/bash root
 
 # Ensure pyenv is on the PATH
 ENV PYENV_ROOT="/.pyenv"
