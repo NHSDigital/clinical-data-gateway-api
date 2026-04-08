@@ -1,4 +1,4 @@
-name: "Check bruno"
+name: "Test Bruno Collection"
 
 env:
   python_version: "3.14"
@@ -35,7 +35,7 @@ jobs:
         run: npm install -g @usebruno/cli
       - name: "Run bruno"
         working-directory: bruno/gateway-api/collections/Steel_Thread
-        run: bru run --env local --reporter-html results.html
+        run: bru run --env local --reporter-html results.html --reporter-junit results.xml
       - name: "Upload results"
         if: always()
         uses: actions/upload-artifact@v7
@@ -47,4 +47,4 @@ jobs:
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          paths: bruno/gateway-api/collections/Steel_Thread/results.html
+          paths: bruno/gateway-api/collections/Steel_Thread/results.xml
