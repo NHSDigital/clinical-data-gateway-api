@@ -62,7 +62,8 @@ Proxygen deploys a proxy instance using an OpenAPI specification file. The speci
 
 * the **target endpoint URL** to which the proxy will forward traffic;
 * the **access controls** and scopes a user needs to access the proxy;
-* the **mTLS secret name** pointing to the certificate the backend expects.
+* the **mTLS secret name** pointing to the certificate the backend expects;
+* the **target-identity** to add user identity headers to the request.
 
 At deploy time, this template is concatenated with the main API specification (`gateway-api/openapi.yaml`), the target URL and mTLS secret are injected, and the resulting file is passed to the Proxygen CLI.
 
