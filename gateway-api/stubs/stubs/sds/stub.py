@@ -148,27 +148,20 @@ class SdsFhirApiStub(StubBase, GetStub):
 
     def get_device_bundle(
         self,
-        url: str,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
         headers: dict[str, str],
         params: dict[str, Any],
-        timeout: int | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
     ) -> Response:
         """
         Implements ``GET /Device``.
 
-        :param url: Request URL (expected to end with /Device).
         :param headers: Request headers. Must include ``apikey``.
             May include ``X-Correlation-Id``.
         :param params: Query parameters dictionary. Must include ``organization`` and
             ``identifier`` (list).
-        :param timeout: Timeout (ignored by the stub).
         :return: A :class:`requests.Response` representing either:
             * ``200`` with Bundle JSON (may be empty)
             * ``400`` with error details for missing/invalid parameters
         """
-        headers = headers or {}
-        params = params or {}
-
         headers_out: dict[str, str] = {}
 
         # Echo correlation ID if provided
@@ -247,20 +240,16 @@ class SdsFhirApiStub(StubBase, GetStub):
 
     def get_endpoint_bundle(
         self,
-        url: str,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
-        timeout: int | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
     ) -> Response:
         """
         Implements ``GET /Endpoint``.
 
-        :param url: Request URL (expected to end with /Endpoint).
-        :param headers: Request headers. Must include ``apikey`.
+        :param headers: Request headers. Must include ``apikey``.
             May include ``X-Correlation-Id``.
         :param params: Query parameters dictionary. Must include ``identifier`` (list).
             ``organization`` is optional.
-        :param timeout: Timeout (ignored by the stub).
         :return: A :class:`requests.Response` representing either:
             * ``200`` with Bundle JSON (may be empty)
             * ``400`` with error details for missing/invalid parameters
@@ -353,13 +342,10 @@ class SdsFhirApiStub(StubBase, GetStub):
         self._last_params = params
         self._last_timeout = timeout
 
+        # Only handling two endpoints. If it's not /Endpoint it's /Device.
         if "/Endpoint" in url:
-            return self.get_endpoint_bundle(
-                url=url, headers=headers, params=params, timeout=timeout
-            )
-        return self.get_device_bundle(
-            url=url, headers=headers, params=params, timeout=timeout
-        )
+            return self.get_endpoint_bundle(headers=headers, params=params)
+        return self.get_device_bundle(headers=headers, params=params)
 
     # ---------------------------
     # Internal helpers
