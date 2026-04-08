@@ -32,18 +32,18 @@ jobs:
         with:
           node-version: '20'
       - name: Install Bruno CLI
-        run: npm install -g @usebruno/cli
+        run: npm install --ignore-scripts -g @usebruno/cli
       - name: "Run bruno"
         working-directory: bruno/gateway-api/collections/Steel_Thread
         run: bru run --env local --reporter-html results.html --reporter-junit results.xml
-      - name: "Upload results"
+      - name: "Upload HTML results"
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: bruno-results
           path: bruno/gateway-api/collections/Steel_Thread/results.html
           retention-days: 30
-      - name: "Publish bruno results"
+      - name: "Publish results"
         if: always()
         uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
