@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: bruno-results
-          path: gateway-api/bruno/
+          path: bruno
           retention-days: 30
       - name: "Publish bruno results"
         if: always()
