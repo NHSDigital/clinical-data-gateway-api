@@ -5,26 +5,9 @@ ENV PYTHON_VERSION="3.14"
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0"
 ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.4.1"
 
-ARG INCLUDE_DEV_CERTS
-ARG DEV_CERT_FILENAME
-
-# Add development certificates to node if provided.
-ENV NODE_EXTRA_CA_CERTS=${INCLUDE_DEV_CERTS:+/etc/ssl/certs/ca-certificates.crt}
-ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
-
 ENV IN_BUILD_CONTAINER=true
 
 COPY resources/ /resources
-
-# Install required certificates for dev machines.
-RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
-    cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
-    update-ca-certificates; \
-
-    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
-else \
-    rm -r /resources/dev-certificates; \
-fi
 
 RUN apk update && \
     apk add --no-cache --update bash \
@@ -65,7 +48,7 @@ RUN echo "permit :wheel" >> /etc/doas.conf \
 ENV PYENV_ROOT="/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 
-# Install Python (via pyenv) and intialize it.
+# Install Python (via pyenv) and initialize it.
 RUN curl --proto "=https" -fsSL https://pyenv.run | bash && \
     /.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
     /.pyenv/bin/pyenv global ${PYTHON_VERSION} && \
@@ -80,7 +63,7 @@ ENV ASDF_DATA_DIR="/.asdf"
 RUN mkdir /asdf
 WORKDIR /asdf
 
-# If we're running on an arm64 architecture download the arm64 executeable.
+# If we're running on an arm64 architecture download the arm64 executable.
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \
         echo "Installing ARM asdf executable..." && \
         wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \

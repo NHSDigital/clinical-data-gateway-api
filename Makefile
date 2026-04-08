@@ -86,11 +86,6 @@ stop:
 	@$(docker) stop gateway-api || echo "No Gateway API container currently running."
 
 config:: # Configure development environment (main) @Configuration
-	# Configure poetry to trust dev certificate if specified
-	@if [[ -n "$${DEV_CERTS_INCLUDED}" ]]; then \
-		echo "Configuring poetry to trust the dev certificate..."  ; \
-		poetry config certificates.PyPI.cert /etc/ssl/cert.pem ; \
-	fi
 	make _install-dependencies
 
 # ==============================================================================
