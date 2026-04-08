@@ -1,5 +1,8 @@
 name: "Check bruno"
 
+env:
+  python_version: "3.14"
+
 on:
   push:
     branches:
@@ -18,11 +21,11 @@ jobs:
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
-          python-version: ${{ inputs.python_version }}
+          python-version: ${{ env.python_version }}
       - name: "Start app"
         uses: ./.github/actions/start-app
         with:
-          python-version: ${{ inputs.python_version }}
+          python-version: ${{ env.python_version }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
