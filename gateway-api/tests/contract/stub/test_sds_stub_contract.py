@@ -13,6 +13,8 @@ contract requirements.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from fhir.constants import FHIRSystem
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
@@ -58,94 +60,29 @@ def stub() -> SdsFhirApiStub:
 class TestGetDeviceBundleSuccess:
     """Contract tests for the happy-path GET /Device → 200 response."""
 
-    def test_status_code_is_200(self, stub: SdsFhirApiStub) -> None:
+    def test_response_matches_expected(self, stub: SdsFhirApiStub) -> None:
         response = stub.get_device_bundle(
             url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 200
-
-    def test_content_type_is_fhir_json(self, stub: SdsFhirApiStub) -> None:
-        """The spec mandates ``application/fhir+json`` on every response."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
-    def test_response_body_resource_type_is_bundle(self, stub: SdsFhirApiStub) -> None:
-        """The response body must be a FHIR Bundle resource."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
         body = response.json()
         assert body["resourceType"] == "Bundle"
-
-    def test_response_body_bundle_type_is_searchset(self, stub: SdsFhirApiStub) -> None:
-        """The SDS spec requires Bundle.type to be ``searchset``."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
         assert body["type"] == "searchset"
 
-    def test_response_bundle_total_matches_entry_count(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Bundle.total must match the number of entries returned."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert body["total"] == len(body["entry"])
+        assert body["total"] == 1
+        assert len(body["entry"]) == 1
 
-    def test_response_bundle_entry_has_full_url(self, stub: SdsFhirApiStub) -> None:
-        """Each entry in the Bundle must have a ``fullUrl`` field."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
+        entry = body["entry"][0]
+        assert entry["resource"]["id"] == "F0F0E921-92CA-4A88-A550-2DBB36F703AF"
+        assert (
+            entry["fullUrl"]
+            == "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4/Device/F0F0E921-92CA-4A88-A550-2DBB36F703AF"
         )
-        body = response.json()
-        assert len(body["entry"]) >= 1  # sanity check for non-empty entries
-        for entry in body["entry"]:
-            assert "fullUrl" in entry
-            assert entry["fullUrl"]  # non-empty
-
-    def test_response_bundle_entry_full_url_contains_device_id(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """The ``fullUrl`` must contain the Device resource ID."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            device_id = entry["resource"]["id"]
-            assert device_id in entry["fullUrl"]
-
-    def test_response_bundle_entry_has_search_mode_match(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Each entry must have ``search.mode`` set to ``match``."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert entry["search"]["mode"] == "match"
+        assert entry["search"]["mode"] == "match"
 
     def test_x_correlation_id_echoed_back_when_provided(
         self, stub: SdsFhirApiStub
@@ -218,89 +155,20 @@ class TestGetDeviceResourceStructure:
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
         body = response.json()
-        for entry in body["entry"]:
-            assert entry["resource"]["resourceType"] == "Device"
+        assert len(body["entry"]) == 1
 
-    def test_device_has_id(self, stub: SdsFhirApiStub) -> None:
-        """Each Device resource must have an ``id`` field."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "id" in entry["resource"]
-            assert entry["resource"]["id"]  # non-empty
+        entry = body["entry"][0]
+        resource = entry["resource"]
 
-    def test_device_has_identifier_list(self, stub: SdsFhirApiStub) -> None:
-        """Each Device resource must have an ``identifier`` list."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert isinstance(entry["resource"]["identifier"], list)
-            assert len(entry["resource"]["identifier"]) >= 1
+        assert resource["resourceType"] == "Device"
+        assert resource["id"] == "F0F0E921-92CA-4A88-A550-2DBB36F703AF"
+        assert resource["owner"]["identifier"]["system"] == FHIRSystem.ODS_CODE
 
-    def test_device_identifier_contains_asid(self, stub: SdsFhirApiStub) -> None:
-        """Device identifier must include an ASID entry."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            identifiers = entry["resource"]["identifier"]
-            asid_entries = [
-                i for i in identifiers if i.get("system") == FHIRSystem.NHS_SPINE_ASID
-            ]
-            assert len(asid_entries) >= 1
-
-    def test_device_identifier_contains_party_key(self, stub: SdsFhirApiStub) -> None:
-        """Device identifier must include a party key entry."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            identifiers = entry["resource"]["identifier"]
-            party_key_entries = [
-                i
-                for i in identifiers
-                if i.get("system") == FHIRSystem.NHS_MHS_PARTY_KEY
-            ]
-            assert len(party_key_entries) >= 1
-
-    def test_device_has_owner(self, stub: SdsFhirApiStub) -> None:
-        """Each Device resource must have an ``owner`` field."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "owner" in entry["resource"]
-
-    def test_device_owner_identifier_uses_ods_system(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Device.owner.identifier.system must be the ODS code system."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={"apikey": "test-key"},
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            owner = entry["resource"]["owner"]
-            assert owner["identifier"]["system"] == FHIRSystem.ODS_CODE
+        assert len(resource["identifier"]) == 2
+        identifiers = resource["identifier"]
+        assert identifiers[0]["system"] == FHIRSystem.NHS_SPINE_ASID
+        assert identifiers[0]["value"] == "asid_PROV"
+        assert identifiers[1]["system"] == FHIRSystem.NHS_MHS_PARTY_KEY
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +187,7 @@ class TestGetDeviceBundleValidationErrors:
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 400
+        self.verify_error_response_body(response, "Missing required header: apikey")
 
     def test_missing_organization_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``organization`` is a required query parameter for /Device."""
@@ -328,6 +197,9 @@ class TestGetDeviceBundleValidationErrors:
             params={"identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 400
+        self.verify_error_response_body(
+            response, "Missing required query parameter: organization"
+        )
 
     def test_missing_identifier_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``identifier`` is a required query parameter for /Device."""
@@ -337,6 +209,9 @@ class TestGetDeviceBundleValidationErrors:
             params={"organization": _ORG_PROVIDER},
         )
         assert response.status_code == 400
+        self.verify_error_response_body(
+            response, "Missing required query parameter: identifier"
+        )
 
     def test_identifier_without_interaction_id_returns_400(
         self, stub: SdsFhirApiStub
@@ -351,62 +226,10 @@ class TestGetDeviceBundleValidationErrors:
             },
         )
         assert response.status_code == 400
-
-    def test_error_response_resource_type_is_operation_outcome(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Every error body must be an ``OperationOutcome``."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={},  # missing apikey
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
+        self.verify_error_response_body(
+            response,
+            "identifier must include nhsServiceInteractionId",
         )
-        body = response.json()
-        assert body["resourceType"] == "OperationOutcome"
-
-    def test_error_response_has_non_empty_issue_list(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """The OperationOutcome must have a non-empty ``issue`` list."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={},  # missing apikey
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert isinstance(body.get("issue"), list)
-        assert len(body["issue"]) >= 1
-
-    def test_error_response_issue_has_severity(self, stub: SdsFhirApiStub) -> None:
-        """Each issue in the OperationOutcome must have a ``severity`` field."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={},  # missing apikey
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "severity" in body["issue"][0]
-
-    def test_error_response_issue_has_code(self, stub: SdsFhirApiStub) -> None:
-        """Each issue in the OperationOutcome must have a ``code`` field."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={},  # missing apikey
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "code" in body["issue"][0]
-
-    def test_error_response_issue_has_diagnostics(self, stub: SdsFhirApiStub) -> None:
-        """Each issue must have a non-empty ``diagnostics`` string."""
-        response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
-            headers={},  # missing apikey
-            params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "diagnostics" in body["issue"][0]
-        assert body["issue"][0]["diagnostics"]  # non-empty
 
     def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
@@ -418,6 +241,25 @@ class TestGetDeviceBundleValidationErrors:
         assert response.status_code == 400
         assert response.headers.get("X-Correlation-Id") == _VALID_CORRELATION_ID
 
+        self.verify_error_response_body(response, "Missing required header: apikey")
+
+    def verify_error_response_body(
+        self, response: Any, expected_diagnostics: str
+    ) -> None:
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+
+        assert isinstance(body.get("issue"), list)
+        assert len(body["issue"]) == 1
+
+        issue = body["issue"][0]
+        assert issue["severity"] == "error"
+
+        assert issue["code"] == "invalid"
+
+        assert "diagnostics" in body["issue"][0]
+        assert body["issue"][0]["diagnostics"] == expected_diagnostics
+
 
 # ---------------------------------------------------------------------------
 # GET /Endpoint – 200 successful retrieval
@@ -427,93 +269,38 @@ class TestGetDeviceBundleValidationErrors:
 class TestGetEndpointBundleSuccess:
     """Contract tests for the happy-path GET /Endpoint → 200 response."""
 
-    def test_status_code_is_200(self, stub: SdsFhirApiStub) -> None:
+    def test_endpoint_bundle_matches_expected_response(
+        self, stub: SdsFhirApiStub
+    ) -> None:
         response = stub.get_endpoint_bundle(
             url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 200
-
-    def test_content_type_is_fhir_json(self, stub: SdsFhirApiStub) -> None:
-        """The spec mandates ``application/fhir+json`` on every response."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
-    def test_response_body_resource_type_is_bundle(self, stub: SdsFhirApiStub) -> None:
-        """The response body must be a FHIR Bundle resource."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
         body = response.json()
         assert body["resourceType"] == "Bundle"
-
-    def test_response_body_bundle_type_is_searchset(self, stub: SdsFhirApiStub) -> None:
-        """The SDS spec requires Bundle.type to be ``searchset``."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
         assert body["type"] == "searchset"
-
-    def test_response_bundle_total_matches_entry_count(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Bundle.total must match the number of entries returned."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
         assert body["total"] == len(body["entry"])
 
-    def test_response_bundle_entry_has_full_url(self, stub: SdsFhirApiStub) -> None:
-        """Each entry in the Bundle must have a ``fullUrl`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert len(body["entry"]) >= 1
-        for entry in body["entry"]:
-            assert "fullUrl" in entry
-            assert entry["fullUrl"]  # non-empty
+        assert len(body["entry"]) == 4
+        endpoint_ids = [
+            "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
+            "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
+            "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
+            "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
+        ]
+        for i in range(0, 4):
+            entry = body["entry"][i]
 
-    def test_response_bundle_entry_full_url_contains_endpoint_id(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """The ``fullUrl`` must contain the Endpoint resource ID."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            endpoint_id = entry["resource"]["id"]
-            assert endpoint_id in entry["fullUrl"]
-
-    def test_response_bundle_entry_has_search_mode_match(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Each entry must have ``search.mode`` set to ``match``."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        for entry in body["entry"]:
+            endpoint_id = endpoint_ids[i]
+            assert (
+                entry["fullUrl"]
+                == f"https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4/Endpoint/{endpoint_id}"
+            )
+            assert entry["resource"]["id"] == endpoint_id
             assert entry["search"]["mode"] == "match"
 
     def test_query_with_party_key_returns_matching_endpoint(
@@ -586,151 +373,38 @@ class TestGetEndpointResourceStructure:
             params={"identifier": _PARTY_KEY_PROVIDER},
         )
         body = response.json()
-        for entry in body["entry"]:
-            assert entry["resource"]["resourceType"] == "Endpoint"
+        assert len(body["entry"]) == 1
 
-    def test_endpoint_has_id(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint resource must have an ``id`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "id" in entry["resource"]
-            assert entry["resource"]["id"]  # non-empty
+        entry = body["entry"][0]
+        resource = entry["resource"]
+        assert resource["resourceType"] == "Endpoint"
 
-    def test_endpoint_has_status_active(self, stub: SdsFhirApiStub) -> None:
-        """The SDS spec requires ``Endpoint.status`` to be ``active``."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert entry["resource"]["status"] == "active"
+        assert resource["id"] == "E0E0E921-92CA-4A88-A550-2DBB36F703AF"
+        assert resource["status"] == "active"
 
-    def test_endpoint_has_connection_type(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint must have a ``connectionType`` object."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
+        ct = resource["connectionType"]
+        assert (
+            ct["system"]
+            == "https://terminology.hl7.org/CodeSystem/endpoint-connection-type"
         )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "connectionType" in entry["resource"]
+        assert ct["code"] == "hl7-fhir-rest"
 
-    def test_endpoint_connection_type_has_system_and_code(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """``connectionType`` must have ``system`` and ``code`` fields."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
+        assert len(resource["payloadType"]) == 1
+        assert resource["address"] == "https://provider.example.com/fhir"
+        assert (
+            resource["managingOrganization"]["identifier"]["system"]
+            == FHIRSystem.ODS_CODE
         )
-        body = response.json()
-        for entry in body["entry"]:
-            ct = entry["resource"]["connectionType"]
-            assert "system" in ct
-            assert "code" in ct
 
-    def test_endpoint_has_payload_type(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint must have a ``payloadType`` list."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert isinstance(entry["resource"]["payloadType"], list)
-            assert len(entry["resource"]["payloadType"]) >= 1
+        managing_org = resource["managingOrganization"]
+        assert managing_org["identifier"]["system"] == FHIRSystem.ODS_CODE
 
-    def test_endpoint_has_address(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint must have a non-empty ``address`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "address" in entry["resource"]
-            assert entry["resource"]["address"]  # non-empty
+        assert isinstance(resource["identifier"], list)
+        assert len(resource["identifier"]) == 2
 
-    def test_endpoint_has_managing_organization(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint must have a ``managingOrganization`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert "managingOrganization" in entry["resource"]
-
-    def test_endpoint_managing_organization_uses_ods_system(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Endpoint.managingOrganization.identifier.system must be the ODS code
-        system."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            managing_org = entry["resource"]["managingOrganization"]
-            assert managing_org["identifier"]["system"] == FHIRSystem.ODS_CODE
-
-    def test_endpoint_has_identifier_list(self, stub: SdsFhirApiStub) -> None:
-        """Each Endpoint resource must have an ``identifier`` list."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            assert isinstance(entry["resource"]["identifier"], list)
-            assert len(entry["resource"]["identifier"]) >= 1
-
-    def test_endpoint_identifier_contains_asid(self, stub: SdsFhirApiStub) -> None:
-        """Endpoint identifier must include an ASID entry."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            identifiers = entry["resource"]["identifier"]
-            asid_entries = [
-                i for i in identifiers if i.get("system") == FHIRSystem.NHS_SPINE_ASID
-            ]
-            assert len(asid_entries) >= 1
-
-    def test_endpoint_identifier_contains_party_key(self, stub: SdsFhirApiStub) -> None:
-        """Endpoint identifier must include a party key entry."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
-        )
-        body = response.json()
-        for entry in body["entry"]:
-            identifiers = entry["resource"]["identifier"]
-            party_key_entries = [
-                i
-                for i in identifiers
-                if i.get("system") == FHIRSystem.NHS_MHS_PARTY_KEY
-            ]
-            assert len(party_key_entries) >= 1
+        identifiers = resource["identifier"]
+        assert identifiers[0]["system"] == FHIRSystem.NHS_SPINE_ASID
+        assert identifiers[1]["system"] == FHIRSystem.NHS_MHS_PARTY_KEY
 
 
 # ---------------------------------------------------------------------------
@@ -749,6 +423,7 @@ class TestGetEndpointBundleValidationErrors:
             params={"identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 400
+        self.verify_error_response_body(response, "Missing required header: apikey")
 
     def test_missing_identifier_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``identifier`` is a required query parameter for /Endpoint."""
@@ -758,62 +433,9 @@ class TestGetEndpointBundleValidationErrors:
             params={},
         )
         assert response.status_code == 400
-
-    def test_error_response_resource_type_is_operation_outcome(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Every error body must be an ``OperationOutcome``."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={},  # missing apikey
-            params={"identifier": _INTERACTION_ID_PARAM},
+        self.verify_error_response_body(
+            response, "Missing required query parameter: identifier"
         )
-        body = response.json()
-        assert body["resourceType"] == "OperationOutcome"
-
-    def test_error_response_has_non_empty_issue_list(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """The OperationOutcome must have a non-empty ``issue`` list."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={},  # missing apikey
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert isinstance(body.get("issue"), list)
-        assert len(body["issue"]) >= 1
-
-    def test_error_response_issue_has_severity(self, stub: SdsFhirApiStub) -> None:
-        """Each issue in the OperationOutcome must have a ``severity`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={},  # missing apikey
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "severity" in body["issue"][0]
-
-    def test_error_response_issue_has_code(self, stub: SdsFhirApiStub) -> None:
-        """Each issue in the OperationOutcome must have a ``code`` field."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={},  # missing apikey
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "code" in body["issue"][0]
-
-    def test_error_response_issue_has_diagnostics(self, stub: SdsFhirApiStub) -> None:
-        """Each issue must have a non-empty ``diagnostics`` string."""
-        response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
-            headers={},  # missing apikey
-            params={"identifier": _INTERACTION_ID_PARAM},
-        )
-        body = response.json()
-        assert "diagnostics" in body["issue"][0]
-        assert body["issue"][0]["diagnostics"]  # non-empty
 
     def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
@@ -824,6 +446,22 @@ class TestGetEndpointBundleValidationErrors:
         )
         assert response.status_code == 400
         assert response.headers.get("X-Correlation-Id") == _VALID_CORRELATION_ID
+        self.verify_error_response_body(response, "Missing required header: apikey")
+
+    def verify_error_response_body(
+        self, response: Any, expected_diagnostics: str
+    ) -> None:
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+
+        assert isinstance(body.get("issue"), list)
+        assert len(body["issue"]) == 1
+
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+
+        assert "diagnostics" in body["issue"][0]
+        assert body["issue"][0]["diagnostics"] == expected_diagnostics
 
 
 # ---------------------------------------------------------------------------
