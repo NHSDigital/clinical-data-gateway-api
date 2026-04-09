@@ -27,7 +27,6 @@ scripts/
 ├── docker/                                # Docker build, lint, and test helpers
 │   ├── docker.mk                          # Make targets: docker-build, docker-lint, docker-push, docker-run
 │   ├── docker.lib.sh                      # Bash function library for Docker operations
-│   ├── dgoss.sh                           # dgoss container structure test wrapper
 │   ├── dockerfile-linter.sh               # Hadolint wrapper (native or Docker)
 │   ├── Dockerfile.metadata                # OCI metadata label block appended to Dockerfiles
 │   └── tests/                             # Docker image test fixtures
@@ -79,7 +78,7 @@ flowchart TD
 Defined across the Make includes and available from the project root:
 
 | Target | Source | Description |
-|---|---|---|
+| --- | --- | --- |
 | `make test-unit` | `test.mk` | Run unit tests |
 | `make test-contract` | `test.mk` | Run contract tests |
 | `make test-schema` | `test.mk` | Run schema tests |
@@ -157,7 +156,7 @@ Hard-coded secrets are detected using [Gitleaks](https://github.com/gitleaks/git
 Key files:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `githooks/scan-secrets.sh` | Runs the gitleaks scan |
 | `config/gitleaks.toml` | Custom secret scanning rules |
 | `.gitleaksignore` (repo root) | Fingerprints to exclude (false positives) |
@@ -177,7 +176,7 @@ If secrets are accidentally committed, use [BFG Repo-Cleaner](https://github.com
 Key files:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `reports/create-sbom-report.sh` | Generates an SBOM (syft) |
 | `config/syft.yaml` | SBOM generator configuration |
 | `reports/scan-vulnerabilities.sh` | Scans for CVEs (grype) |
@@ -204,7 +203,7 @@ Locally, install the [SonarQube for IDE](https://marketplace.visualstudio.com/it
 Key files:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `config/sonar-scanner.properties` | SonarCloud project configuration |
 
 ## Testing GitHub Actions Locally

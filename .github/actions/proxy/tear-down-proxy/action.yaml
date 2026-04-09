@@ -30,6 +30,8 @@ runs:
         proxygen-client-id: ${{ inputs.proxygen-client-id }}
 
     - name: Tear down preview API proxy
+      env:
+        PROXY_BASE_PATH: ${{ inputs.proxy-base-path }}
       shell: bash
       run: |
-        proxygen instance delete internal-dev ${{ inputs.proxy-base-path }} --no-confirm
+        proxygen instance delete internal-dev "$PROXY_BASE_PATH" --no-confirm

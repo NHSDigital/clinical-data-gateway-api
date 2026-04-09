@@ -1,6 +1,8 @@
 asid
 fhir
 getstructuredrecord
+GPCAPIM
 gpconnect
+searchset
 proxygen
 usefixtures

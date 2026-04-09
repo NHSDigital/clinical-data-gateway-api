@@ -50,4 +50,7 @@ ignore =["COM812"]
 # Ignore assert rule in test files to keep test code susinct and easy to read.
 [lint.per-file-ignores]
 "**/{tests,steps}/*" = ["S101"]
-"**/test_*.py" = ["S101"]
+"**/test_*.py" = [
+  "S101", # Allow `assert` in tests
+  "SLF001", # private members can be accessed in tests
+]

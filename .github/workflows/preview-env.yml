@@ -52,7 +52,7 @@ jobs:
 
       # Configure AWS credentials (OIDC recommended)
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@84e497037868db1737eb2907599d3f61e8899373
+        uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063
         with:
           role-to-assume: ${{ steps.role-select.outputs.aws_role }}
           aws-region: ${{ env.AWS_REGION }}
@@ -340,6 +340,8 @@ jobs:
       - name: "Run contract tests"
         if: github.event.action != 'closed'
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
         with:
           test-type: contract
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -348,6 +350,8 @@ jobs:
       - name: "Run schema validation tests"
         if: github.event.action != 'closed'
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
         with:
           test-type: schema
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -356,6 +360,8 @@ jobs:
       - name: "Run integration tests"
         if: github.event.action != 'closed'
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
         with:
           test-type: integration
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -364,6 +370,8 @@ jobs:
       - name: "Run acceptance tests"
         if: github.event.action != 'closed'
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
         with:
           test-type: acceptance
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}

@@ -23,19 +23,23 @@ runs:
       shell: bash
       env:
         PYTHON_VERSION: ${{ inputs.python-version }}
+        DEPLOY_COMMAND: ${{ inputs.deploy-command }}
       run: |
         set -euo pipefail
-        echo "Starting app: '${{ inputs.deploy-command }}'"
-        nohup ${{ inputs.deploy-command }} > /tmp/app.log 2>&1 &
+        echo "Starting app:  ${DEPLOY_COMMAND}"
+        nohup ${DEPLOY_COMMAND} > /tmp/app.log 2>&1 &
         echo $! > /tmp/app.pid
         echo "PID: $(cat /tmp/app.pid)"
     - name: "Wait for app to be ready"
       shell: bash
+      env:
+        HEALTH_PATH: ${{ inputs.health-path }}
+        MAX_SECONDS: ${{ inputs.max-seconds }}
       run: |
         set -euo pipefail
         BASE_URL="${BASE_URL:-http://localhost:5000}"
-        HEALTH_URL="${BASE_URL}${{ inputs.health-path }}"
-        MAX="${{ inputs.max-seconds }}"
+        HEALTH_URL="${BASE_URL}${HEALTH_PATH}"
+        MAX="${MAX_SECONDS}"
         echo "Waiting for app at ${HEALTH_URL} (max ${MAX}s)..."
         for i in $(seq 1 "${MAX}"); do
           if curl -sSf -X GET "${HEALTH_URL}" >/dev/null; then
