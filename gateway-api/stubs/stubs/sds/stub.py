@@ -166,7 +166,6 @@ class SdsFhirApiStub(StubBase, GetStub):
             * ``200`` with Bundle JSON (may be empty)
             * ``400`` with error details for missing/invalid parameters
         """
-        print(f"get_device_bundle stub from url {url}")
         headers = headers or {}
         params = params or {}
 
