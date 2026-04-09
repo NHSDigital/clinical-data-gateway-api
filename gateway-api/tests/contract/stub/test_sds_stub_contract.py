@@ -62,7 +62,6 @@ class TestGetDeviceBundleSuccess:
 
     def test_response_matches_expected(self, stub: SdsFhirApiStub) -> None:
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -89,7 +88,6 @@ class TestGetDeviceBundleSuccess:
     ) -> None:
         """The spec states ``X-Correlation-Id`` is mirrored back in the response."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key", "X-Correlation-Id": _VALID_CORRELATION_ID},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -100,7 +98,6 @@ class TestGetDeviceBundleSuccess:
     ) -> None:
         """``X-Correlation-Id`` must not appear in the response when not supplied."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -109,7 +106,6 @@ class TestGetDeviceBundleSuccess:
     def test_empty_bundle_returned_for_unknown_org(self, stub: SdsFhirApiStub) -> None:
         """An unknown organisation must return a 200 with an empty Bundle."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={
                 "organization": _ORG_UNKNOWN,
@@ -127,7 +123,6 @@ class TestGetDeviceBundleSuccess:
     ) -> None:
         """Including a party key identifier should still return a match."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={
                 "organization": _ORG_PROVIDER,
@@ -150,7 +145,6 @@ class TestGetDeviceResourceStructure:
     def test_device_resource_type_is_device(self, stub: SdsFhirApiStub) -> None:
         """Each resource inside the Bundle must have ``resourceType: "Device"``."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -182,7 +176,6 @@ class TestGetDeviceBundleValidationErrors:
     def test_missing_apikey_returns_400(self, stub: SdsFhirApiStub) -> None:
         """The spec requires the ``apikey`` header; its absence must yield 400."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -192,7 +185,6 @@ class TestGetDeviceBundleValidationErrors:
     def test_missing_organization_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``organization`` is a required query parameter for /Device."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -204,7 +196,6 @@ class TestGetDeviceBundleValidationErrors:
     def test_missing_identifier_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``identifier`` is a required query parameter for /Device."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER},
         )
@@ -218,7 +209,6 @@ class TestGetDeviceBundleValidationErrors:
     ) -> None:
         """``identifier`` must include nhsServiceInteractionId for /Device."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={
                 "organization": _ORG_PROVIDER,
@@ -234,7 +224,6 @@ class TestGetDeviceBundleValidationErrors:
     def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"X-Correlation-Id": _VALID_CORRELATION_ID},  # no apikey
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -273,7 +262,6 @@ class TestGetEndpointBundleSuccess:
         self, stub: SdsFhirApiStub
     ) -> None:
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -308,7 +296,6 @@ class TestGetEndpointBundleSuccess:
     ) -> None:
         """Including a party key identifier should return matching Endpoint entries."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={
                 "identifier": [_INTERACTION_ID_PARAM, _PARTY_KEY_PROVIDER],
@@ -323,7 +310,6 @@ class TestGetEndpointBundleSuccess:
     ) -> None:
         """The spec states ``X-Correlation-Id`` is mirrored back in the response."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key", "X-Correlation-Id": _VALID_CORRELATION_ID},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -334,7 +320,6 @@ class TestGetEndpointBundleSuccess:
     ) -> None:
         """``X-Correlation-Id`` must not appear in the response when not supplied."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -346,7 +331,6 @@ class TestGetEndpointBundleSuccess:
         """A party key not present in the stub must yield an empty Bundle."""
         unknown_party_key = f"{FHIRSystem.NHS_MHS_PARTY_KEY}|UNKNOWN-9999999"
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": unknown_party_key},
         )
@@ -368,7 +352,6 @@ class TestGetEndpointResourceStructure:
     def test_endpoint_resource_type_is_endpoint(self, stub: SdsFhirApiStub) -> None:
         """Each resource inside the Bundle must have ``resourceType: "Endpoint"``."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _PARTY_KEY_PROVIDER},
         )
@@ -418,7 +401,6 @@ class TestGetEndpointBundleValidationErrors:
     def test_missing_apikey_returns_400(self, stub: SdsFhirApiStub) -> None:
         """The spec requires the ``apikey`` header; its absence must yield 400."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={},
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -428,7 +410,6 @@ class TestGetEndpointBundleValidationErrors:
     def test_missing_identifier_returns_400(self, stub: SdsFhirApiStub) -> None:
         """``identifier`` is a required query parameter for /Endpoint."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={},
         )
@@ -440,7 +421,6 @@ class TestGetEndpointBundleValidationErrors:
     def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
         """``X-Correlation-Id`` must be echoed even in error responses."""
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"X-Correlation-Id": _VALID_CORRELATION_ID},  # no apikey
             params={"identifier": _INTERACTION_ID_PARAM},
         )
@@ -568,7 +548,6 @@ class TestUpsertOperations:
         )
 
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={
                 "organization": f"{FHIRSystem.ODS_CODE}|NEWORG",
@@ -584,7 +563,6 @@ class TestUpsertOperations:
         stub.clear_devices()
 
         response = stub.get_device_bundle(
-            url=_BASE_DEVICE_URL,
             headers={"apikey": "test-key"},
             params={"organization": _ORG_PROVIDER, "identifier": _INTERACTION_ID_PARAM},
         )
@@ -624,7 +602,6 @@ class TestUpsertOperations:
         )
 
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={
                 "identifier": f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{new_party_key}",
@@ -639,7 +616,6 @@ class TestUpsertOperations:
         stub.clear_endpoints()
 
         response = stub.get_endpoint_bundle(
-            url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
             params={"identifier": _PARTY_KEY_PROVIDER},
         )
