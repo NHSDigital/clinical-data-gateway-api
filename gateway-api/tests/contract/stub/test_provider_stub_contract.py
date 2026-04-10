@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
+from stubs.data.patients.patients import Patients
 from stubs.provider.stub import GpProviderStub
 
 # ---------------------------------------------------------------------------
@@ -73,7 +74,24 @@ class TestGetStructuredRecordSuccess:
             trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
+
         assert response.status_code == 200
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "Bundle"
+        assert body["type"] == "collection"
+        assert body["meta"] == {
+            "profile": [
+                "https://fhir.nhs.uk/STU3/StructureDefinition/GPConnect-StructuredRecord-Bundle-1"
+            ]
+        }
+
+        entry = body["entry"]
+        assert len(entry) == 1
+
+        resource = entry[0]["resource"]
+        assert resource == Patients.ALICE_JONES_9999999999
 
 
 # ---------------------------------------------------------------------------
