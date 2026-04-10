@@ -131,7 +131,7 @@ class TestGetDeviceBundleSuccess:
         )
         assert response.status_code == 200
         body = response.json()
-        assert body["total"] >= 1
+        assert body["total"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +280,7 @@ class TestGetEndpointBundleSuccess:
             "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
             "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
         ]
-        for i in range(0, 4):
+        for i in range(len(endpoint_ids)):
             entry = body["entry"][i]
 
             endpoint_id = endpoint_ids[i]
@@ -303,7 +303,7 @@ class TestGetEndpointBundleSuccess:
         )
         assert response.status_code == 200
         body = response.json()
-        assert body["total"] >= 1
+        assert body["total"] == 1
 
     def test_x_correlation_id_echoed_back_when_provided(
         self, stub: SdsFhirApiStub
@@ -463,9 +463,8 @@ class TestGetConvenienceMethod:
         body = response.json()
         assert body["resourceType"] == "Bundle"
         # Verify Device resources were returned
-        assert len(body["entry"]) >= 1
-        for entry in body["entry"]:
-            assert entry["resource"]["resourceType"] == "Device"
+        assert len(body["entry"]) == 1
+        assert body["entry"][0]["resource"]["resourceType"] == "Device"
 
     def test_endpoint_url_returns_endpoint_bundle(self, stub: SdsFhirApiStub) -> None:
         """A URL containing ``/Endpoint`` must be routed to get_endpoint_bundle."""
