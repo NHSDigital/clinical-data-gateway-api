@@ -72,6 +72,12 @@
   // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
   "remote.autoForwardPorts": false,
 
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".commit_template"
+    }
+  ],
+
   // Code spell checker configuration
   "cSpell.language": "en-GB",
   "cSpell.customDictionaries": {
@@ -86,4 +92,7 @@
       "description": "Accepted words for the code spell checker.",
     }
   },
+  "python.analysis.extraPaths": [
+    "./gateway-api/stubs"
+  ],
 }
