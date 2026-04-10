@@ -99,6 +99,76 @@ class TestGetStructuredRecordSuccess:
 # JWT VALIDATIONS? mocked
 # missing params
 # ---------------------------------------------------------------------------
+class TestGetStructuredRecordValidationErrors:
+    """
+    Tests for validation errors from the ``POST /Patient/$gpc.getstructuredrecord``
+    endpoint.
+    """
+
+    def test_get_structured_record_missing_headers(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        response = provider_stub.post(
+            _url=_URL,
+            headers={},  # Missing all required headers
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert body["issue"][0]["diagnostics"].count("is required") == 6
+        diagnostics = body["issue"][0]["diagnostics"]
+        for header in [
+            "Ssp-TraceID",
+            "Ssp-From",
+            "Ssp-To",
+            "Ssp-InteractionID",
+            "Content-Type",
+            "Authorization",
+        ]:
+            assert header in diagnostics
+
+    def test_get_structured_record_jwt_does_not_start_with_bearer(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        invalid_headers = _VALID_HEADERS.copy()
+        invalid_headers["Authorization"] = "not-bearer token"
+        response = provider_stub.post(
+            _url=_URL,
+            headers=invalid_headers,
+            trace_id=_VALID_TRACE_ID,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert (
+            "Authorization header must start with 'Bearer '"
+            in body["issue"][0]["diagnostics"]
+        )
+
 
 # ---------------------------------------------------------------------------
 # GET /Patient/$gpc.getstructuredrecord – 400 errors
