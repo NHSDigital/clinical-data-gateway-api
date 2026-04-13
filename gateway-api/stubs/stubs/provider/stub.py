@@ -131,7 +131,7 @@ class GpProviderStub(StubBase):
                             "severity": "error",
                             "code": "invalid",
                             "diagnostics": (
-                                "Authorization header must start with 'Bearer '",
+                                "Authorization header must start with 'Bearer '"
                             ),
                         }
                     ],

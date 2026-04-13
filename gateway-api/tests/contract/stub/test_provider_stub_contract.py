@@ -229,6 +229,7 @@ class TestGetStructuredRecordHeaderValidationErrors:
         assert len(body["issue"]) == 1
         assert body["issue"][0]["severity"] == "error"
         assert body["issue"][0]["code"] == "invalid"
+        assert isinstance(body["issue"][0]["diagnostics"], str)
         assert (
             "Authorization header must start with 'Bearer '"
             in body["issue"][0]["diagnostics"]
