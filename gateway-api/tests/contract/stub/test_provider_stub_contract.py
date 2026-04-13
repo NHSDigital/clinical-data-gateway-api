@@ -14,6 +14,7 @@ import json
 from typing import Any
 
 import pytest
+from gateway_api.common.error import JWTValidationError
 from pytest_mock import MockerFixture
 from stubs.data.patients.patients import Patients
 from stubs.provider.stub import GpProviderStub
@@ -33,6 +34,9 @@ _VALID_HEADERS = {
     "Content-Type": "application/fhir+json",
     "Authorization": "Bearer some-valid-jwt-token",
 }
+_ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
+    "urn:nhs:names:services:gpconnect:fhir:operation:gpc.getstructuredrecord-1"
+)
 
 
 # patch JWTValidator.validate to always pass for testing
@@ -99,7 +103,7 @@ class TestGetStructuredRecordSuccess:
 # JWT VALIDATIONS? mocked
 # missing params
 # ---------------------------------------------------------------------------
-class TestGetStructuredRecordValidationErrors:
+class TestGetStructuredRecordHeaderValidationErrors:
     """
     Tests for validation errors from the ``POST /Patient/$gpc.getstructuredrecord``
     endpoint.
@@ -139,6 +143,67 @@ class TestGetStructuredRecordValidationErrors:
         ]:
             assert header in diagnostics
 
+    def test_get_structured_record_invalid_content_type(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        invalid_headers = _VALID_HEADERS.copy()
+        invalid_headers["Content-Type"] = "text/plain"
+        response = provider_stub.post(
+            _url=_URL,
+            headers=invalid_headers,
+            trace_id=_VALID_TRACE_ID,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert (
+            "Content-Type must be application/fhir+json"
+            in body["issue"][0]["diagnostics"]
+        )
+
+    def test_get_structured_record_invalid_interaction_id(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        invalid_headers = _VALID_HEADERS.copy()
+        invalid_headers["Ssp-InteractionID"] = "invalid-interaction-id"
+        response = provider_stub.post(
+            _url=_URL,
+            headers=invalid_headers,
+            trace_id=_VALID_TRACE_ID,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert (
+            f"Ssp-InteractionID: expected "
+            f"{_ACCESS_RECORD_STRUCTURED_INTERACTION_ID}"
+            in body["issue"][0]["diagnostics"]
+        )
+
     def test_get_structured_record_jwt_does_not_start_with_bearer(
         self,
         provider_stub: GpProviderStub,
@@ -168,6 +233,60 @@ class TestGetStructuredRecordValidationErrors:
             "Authorization header must start with 'Bearer '"
             in body["issue"][0]["diagnostics"]
         )
+
+    def test_jwt_cannot_be_decoded(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch(
+            "stubs.provider.stub.JWT.decode", side_effect=Exception("Decode error")
+        )
+        response = provider_stub.post(
+            _url=_URL,
+            headers=_VALID_HEADERS,
+            trace_id=_VALID_TRACE_ID,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert "Invalid JWT: Decode error" in body["issue"][0]["diagnostics"]
+
+    def test_jwt_fails_validation(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch(
+            "stubs.provider.stub.JWTValidator.validate",
+            side_effect=JWTValidationError(error_details="Validation error"),
+        )
+        response = provider_stub.post(
+            _url=_URL,
+            headers=_VALID_HEADERS,
+            trace_id=_VALID_TRACE_ID,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert "Validation error" in body["issue"][0]["diagnostics"]
 
 
 # ---------------------------------------------------------------------------
