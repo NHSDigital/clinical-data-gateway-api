@@ -75,7 +75,6 @@ class TestGetStructuredRecordSuccess:
         response = provider_stub.post(
             _url=_URL,
             headers=_VALID_HEADERS,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -103,7 +102,7 @@ class TestGetStructuredRecordSuccess:
 # JWT VALIDATIONS? mocked
 # missing params
 # ---------------------------------------------------------------------------
-class TestGetStructuredRecordHeaderValidationErrors:
+class TestGetStructuredRecordValidationErrors:
     """
     Tests for validation errors from the ``POST /Patient/$gpc.getstructuredrecord``
     endpoint.
@@ -289,7 +288,25 @@ class TestGetStructuredRecordHeaderValidationErrors:
         assert body["issue"][0]["code"] == "invalid"
         assert "Validation error" in body["issue"][0]["diagnostics"]
 
+    def test_get_structured_record_missing_body(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        response = provider_stub.post(
+            _url=_URL,
+            headers=_VALID_HEADERS,
+            data=None,  # type: ignore [arg-type]
+        )
 
-# ---------------------------------------------------------------------------
-# GET /Patient/$gpc.getstructuredrecord – 400 errors
-# ---------------------------------------------------------------------------
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert "body is required" in body["issue"][0]["diagnostics"]
