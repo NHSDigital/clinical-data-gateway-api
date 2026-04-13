@@ -37,7 +37,7 @@ build-gateway-api: dependencies
 	@poetry run mypy --no-namespace-packages .
 	@echo "Packaging dependencies..."
 	@poetry build --format=wheel
-	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api" --platform musllinux_1_2_x86_64 --only-binary=:all:
+	@pip install "dist/gateway_api-0.1.0-py3-none-any.whl" --target "./target/gateway-api" --platform musllinux_1_2_x86_64 --platform musllinux_1_1_x86_64 --only-binary=:all:
 	# Copy main file separately as it is not included within the package.
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
@@ -64,7 +64,7 @@ build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Docker image '${IMAGE_NAME}' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
-	# TODO: Implement the artefact publishing step
+	# TODO [GPCAPIM-283]:  Implement the artefact publishing step
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local

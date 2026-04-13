@@ -13,7 +13,7 @@ env:
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   TF_STATE_KEY: "dev/preview/alpha-integration.tfstate"
   BRANCH_NAME: "alpha-integration"
-  ALB_RULE_PRIORITY: "2000"
+  ALB_RULE_PRIORITY: "900"
   BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-alpha-integration"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
@@ -39,14 +39,14 @@ jobs:
           ref: alpha-integration
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@84e497037868db1737eb2907599d3f61e8899373
+        uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063
         with:
           role-to-assume: ${{ secrets.DEV_AWS_CREDENTIALS }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@c962da2960ed15f492addc26fffa274485265950
+        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78
 
       - name: Compute deployment metadata
         id: meta
@@ -220,6 +220,8 @@ jobs:
 
       - name: Run contract tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: contract
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -227,6 +229,8 @@ jobs:
 
       - name: Run schema validation tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: schema
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -234,6 +238,8 @@ jobs:
 
       - name: Run integration tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: integration
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -241,6 +247,8 @@ jobs:
 
       - name: Run acceptance tests
         uses: ./.github/actions/run-test-suite
+        env:
+          PROXY_BASE_PATH: "clinical-data-gateway-api-poc-alpha-integration"
         with:
           test-type: acceptance
           apigee-access-token: ${{ steps.apigee-token.outputs.apigee-access-token }}
@@ -249,20 +257,6 @@ jobs:
       - name: Remove mTLS temp files
         run: rm -f /tmp/client1-key.pem /tmp/client1-cert.pem
 
-      # - name: Trivy IaC scan
-      #   uses: nhs-england-tools/trivy-action/iac-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       scan-ref: infrastructure/environments/preview
-      #       artifact-name: trivy-iac-scan-alpha-integration
-
-      # - name: Trivy image scan
-      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
-      #       artifact-name: trivy-image-scan-alpha-integration
-
-      # - name: Generate SBOM
-      #   uses: nhs-england-tools/trivy-action/image-scan@289984b2f03034233a347d6dbadecd5ca9ea9634
-      #   with:
-      #       image-ref: ${{ steps.meta.outputs.ecr_url }}:${{ env.BRANCH_NAME }}
-      #       artifact-name: trivy-sbom-alpha-integration
+      # - name: Trivy IaC scan - replacement
+      # - name: Trivy image scan - replacement
+      # - name: Generate SBOM - replacement

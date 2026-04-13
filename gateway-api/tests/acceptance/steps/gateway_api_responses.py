@@ -1,8 +1,8 @@
 """Step definitions for Gateway API response behaviour feature."""
 
 import json
+from typing import Any
 
-from fhir.parameters import Parameters
 from pytest_bdd import given, parsers, then, when
 from stubs.data.bundles import Bundles
 
@@ -33,7 +33,7 @@ def check_api_is_running(client: Client) -> None:
 def send_get_request(
     client: Client,
     response_context: ResponseContext,
-    simple_request_payload: Parameters,
+    simple_request_payload: dict[str, Any],
 ) -> None:
     response_context.response = client.send_to_get_structured_record_endpoint(
         json.dumps(simple_request_payload)
@@ -44,7 +44,7 @@ def send_get_request(
 def send_to_nonexistent_endpoint(
     client: Client,
     response_context: ResponseContext,
-    simple_request_payload: Parameters,
+    simple_request_payload: dict[str, Any],
 ) -> None:
     response_context.response = client.send_post_to_path(
         path="/nonexistent",
