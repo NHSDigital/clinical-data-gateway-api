@@ -89,7 +89,8 @@
     "gateway-api/test-artefacts/**",
     "gateway-api/poetry.lock",
     "gateway-api/stubs/stubs/data/**/*.json",
-    "gateway-api/tests/data/**/*.json"
+    "gateway-api/tests/data/**/*.json",
+    "scripts/config/vale/styles/config/vocabularies/words/accept.txt"
   ],
   "cSpell.customDictionaries": {
     "vale-accepted-words": {
