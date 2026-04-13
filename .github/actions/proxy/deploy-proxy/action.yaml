@@ -35,7 +35,6 @@ runs:
         proxygen-api-name: ${{ inputs.proxygen-api-name }}
         proxygen-client-id: ${{ inputs.proxygen-client-id }}
 
-    # Make it easier to find the Apigee product associated with the PR.
     - name: Add PR number to API's title
       if: ${{ github.event_name == 'pull_request' }}
       env:
