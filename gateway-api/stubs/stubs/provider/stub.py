@@ -191,8 +191,6 @@ class GpProviderStub(StubBase):
         """
         # Validate that all required parameters are provided
         missing_params: list[str] = []
-        if trace_id is None:
-            missing_params.append("trace_id")
         if body is None:
             missing_params.append("body")
         if headers is None:
