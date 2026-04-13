@@ -36,9 +36,10 @@ request:
     tokenConfig:
       id: Mock Auth Token
       placement:
-        header: Authorization
+        header: Bearer
       source: access_token
     settings:
       autoFetchToken: true
+      autoRefreshToken: false
 bundled: false
 extensions: {}
