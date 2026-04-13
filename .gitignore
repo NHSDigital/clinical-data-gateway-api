@@ -25,3 +25,6 @@ gateway-api/test-artefacts/
 **/.env.*
 **/.DS_Store
 **/.terraform.lock.hcl
+
+# Local contract test pact output
+tests/contract/pacts/GatewayAPIConsumer-GatewayAPIProvider.json
