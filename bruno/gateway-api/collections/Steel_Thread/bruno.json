@@ -1,9 +1,0 @@
-{
-  "version": "1",
-  "name": "Steel_Thread",
-  "type": "collection",
-  "ignore": [
-    "node_modules",
-    ".git"
-  ]
-}

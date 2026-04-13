@@ -1,0 +1,44 @@
+opencollection: 1.0.0
+
+info:
+  name: Steel Thread
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+request:
+  headers:
+    - name: Ssp-TraceID
+      value: test-trace-id
+    - name: ODS-from
+      value: test-ods-code
+  auth:
+    type: oauth2
+    flow: authorization_code
+    authorizationUrl: https://internal-dev.api.service.nhs.uk/oauth2-mock/authorize
+    accessTokenUrl: https://internal-dev.api.service.nhs.uk/oauth2-mock/token
+    callbackUrl: https://www.example.com/callback
+    credentials:
+      clientId: "{{process.env.CLIENT_ID}}"
+      clientSecret: "{{process.env.CLIENT_SECRET}}"
+      placement: body
+    state: "{{$guid}}"
+    pkce:
+      disabled: true
+    tokenConfig:
+      id: Mock Auth Token
+      placement:
+        header: Authorization
+      source: access_token
+    settings:
+      autoFetchToken: true
+bundled: false
+extensions: {}
