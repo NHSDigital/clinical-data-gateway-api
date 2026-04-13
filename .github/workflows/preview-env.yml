@@ -179,7 +179,7 @@ jobs:
 
       - name: Get proxygen machine user details
         id: proxygen-machine-user
-        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53
         with:
           secret-ids: /cds/gateway/dev/proxygen/proxygen-key-secret
           name-transformation: lowercase
@@ -251,7 +251,7 @@ jobs:
       - name: Get mTLS certs for testing
         if: github.event.action != 'closed'
         id: mtls-certs
-        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53
         with:
           secret-ids: |
             /cds/gateway/dev/mtls/client1-key-secret
