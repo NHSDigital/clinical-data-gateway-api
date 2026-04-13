@@ -8,8 +8,8 @@ http:
   url: "{{base_url}}/patient/$gpc.getstructuredrecord"
   auth: inherit
   headers:
-  - name: ods-from
-    value: A12345
+    - name: ODS-from
+      value: A12345
   body:
     type: json
     data: |-
