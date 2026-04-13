@@ -1,7 +1,7 @@
 x-nhsd-apim:
   monitoring: true
   access:
-  - title: User Restricted
+  - title: User Restricted (asdf)
     grants:
       nhs-cis2-aal3: []
   target:
