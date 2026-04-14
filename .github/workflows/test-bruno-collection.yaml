@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: ${{ env.python_version }}
 
+      - name: "Start app"
+        uses: ./.github/actions/start-app
+        with:
+          python-version: ${{ env.python_version }}
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
