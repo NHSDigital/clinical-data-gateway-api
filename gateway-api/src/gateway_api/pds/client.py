@@ -20,7 +20,6 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 
 import os
 import uuid
-from collections.abc import Callable
 
 import requests
 from fhir.r4 import Patient
@@ -29,18 +28,17 @@ from pydantic import ValidationError
 from gateway_api.common.error import PdsRequestFailedError
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_PDS environment variable and just
+#       we should remove the PDS_URL environment variable and just
 #       use the stub client
-STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
+STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
 
-get: Callable[..., requests.Response]
 if not STUB_PDS:
-    get = requests.get
+    from requests import get
 else:
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
-    get = pds.get
+    get = pds.get  # type: ignore
 
 
 class PdsClient:
@@ -123,7 +121,7 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
-        # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
+        # This normally calls requests.get, but if PDS_URL is set it uses the stub.
         response = get(
             url,
             headers=headers,

@@ -3,9 +3,9 @@ name: "Test stage"
 env:
   BASE_URL: "http://localhost:5000"
   HOST: "localhost"
-  STUB_SDS: "true"
-  STUB_PDS: "true"
-  STUB_PROVIDER: "true"
+  SDS_URL: "true"
+  PDS_URL: "true"
+  PROVIDER_URL: "true"
 
 on:
   workflow_call:
