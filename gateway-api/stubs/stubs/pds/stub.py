@@ -110,9 +110,6 @@ class PdsFhirApiStub(StubBase):
         nhs_number: str,
         request_id: str | None = None,
         correlation_id: str | None = None,
-        authorization: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
-        role_id: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
-        end_user_org_ods: str | None = None,  # noqa: ARG002 # NOSONAR S1172 (ignored in stub)
     ) -> Response:
         """
         Implements ``GET /Patient/{id}``.
@@ -121,9 +118,6 @@ class PdsFhirApiStub(StubBase):
         :param request_id: The ``X-Request-ID`` header value. Required
             (and must be UUID) when ``strict_headers=True``.
         :param correlation_id: Optional ``X-Correlation-ID`` header value.
-        :param authorization: Authorization header (ignored by the stub).
-        :param role_id: Role header (ignored by the stub).
-        :param end_user_org_ods: End-user ODS header (ignored by the stub).
         :return: A :class:`requests.Response` representing either:
             * ``200`` with Patient JSON
             * ``404`` with OperationOutcome JSON
@@ -189,25 +183,13 @@ class PdsFhirApiStub(StubBase):
     ) -> Response:
         nhs_number = url.split("/")[-1]
 
-        # Extract headers for validation
-        request_id = None
-        correlation_id = None
-        authorization = None
-        role_id = None
-        end_user_org_ods = None
-
-        if headers:
-            request_id = headers.get("X-Request-ID")
-            correlation_id = headers.get("X-Correlation-ID")
-            authorization = headers.get("Authorization")
+        request_id = headers.get("X-Request-ID") if headers else None
+        correlation_id = headers.get("X-Correlation-ID") if headers else None
 
         return self.get_patient(
             nhs_number=nhs_number,
             request_id=request_id,
             correlation_id=correlation_id,
-            authorization=authorization,
-            role_id=role_id,
-            end_user_org_ods=end_user_org_ods,
         )
 
     def post(

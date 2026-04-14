@@ -28,7 +28,7 @@ from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError
 
-# TODO: Once stub servers/containers made for PDS, SDS and provider
+# TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the STUB_PDS environment variable and just
 #       use the stub client
 STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"

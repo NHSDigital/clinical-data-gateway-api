@@ -92,7 +92,7 @@ class Controller:
         # For requesting practitioner details, see:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_practitioner-claim
 
-        # TODO: Get requesting device details from consumer, somehow?
+        # TODO [GPCAPIM-362]: Get requesting device details
         # requesting_device = Device(
         #     system="https://consumersupplier.com/Id/device-identifier",
         #     value="CONS-APP-4",
@@ -114,7 +114,7 @@ class Controller:
             }
         )
 
-        # TODO: Get practitioner details from consumer pending outcome of GPCAPIM-286?
+        # TODO [GPCAPIM-309]: Get practitioner details
         requesting_practitioner = Practitioner.model_validate(
             {
                 "resourceType": "Practitioner",
@@ -143,12 +143,12 @@ class Controller:
             }
         )
 
-        # TODO: Where do we get the consumer org name from? SDS only returns ODS/ASID
+        # TODO [GPCAPIM-363]: Get the consumer org name
         requesting_organization = Organization.from_ods_code(
             name="Consumer organisation name", ods_code=consumer_ods
         )
 
-        # TODO: Get consumer URL for issuer. Use CDG API URL for now.
+        # TODO [GPCAPIM-364]: Get consumer URL for issuer. Use CDG API URL for now.
         issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
         audience = provider_endpoint
 

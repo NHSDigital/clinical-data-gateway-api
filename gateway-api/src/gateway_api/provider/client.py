@@ -32,7 +32,7 @@ from gateway_api.common.common import get_http_text
 from gateway_api.common.error import JWTValidationError, ProviderRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
-# TODO: Once stub servers/containers made for PDS, SDS and provider
+# TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the STUB_PROVIDER environment variable and just
 #       use the stub client
 STUB_PROVIDER = os.environ.get("STUB_PROVIDER", "false").lower() == "true"
