@@ -34,12 +34,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: alpha-integration
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: ${{ secrets.DEV_AWS_CREDENTIALS }}
           aws-region: ${{ env.AWS_REGION }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Get proxygen machine user details
         id: proxygen-machine-user
-        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53
         with:
           secret-ids: /cds/gateway/dev/proxygen/proxygen-key-secret
           name-transformation: lowercase
@@ -138,7 +138,7 @@ jobs:
 
       - name: Get mTLS certs for testing
         id: mtls-certs
-        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53
         with:
           secret-ids: |
             /cds/gateway/dev/mtls/client1-key-secret
