@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Create infractructure"
         run: |
           echo "Creating infractructure..."
@@ -56,7 +56,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Run security test"
         run: |
           make test-security
@@ -70,7 +70,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Run UI test"
         run: |
           make test-ui
@@ -84,7 +84,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Run UI performance test"
         run: |
           make test-ui-performance
@@ -99,7 +99,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Run load tests"
         run: |
           make test-load
@@ -109,18 +109,12 @@ jobs:
   environment-tear-down:
     name: "Environment tear down"
     runs-on: ubuntu-latest
-    needs:
-      [
-        test-load,
-        test-security,
-        test-ui-performance,
-        test-ui,
-      ]
+    needs: [test-load, test-security, test-ui-performance, test-ui]
     if: always()
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Tear down environment"
         run: |
           echo "Tearing down environment..."

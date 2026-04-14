@@ -27,7 +27,7 @@ jobs:
       coverage-name: ${{ steps.create_name.outputs.artefact-name }}
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - id: create_name
         name: "Generate unique coverage artefact name"
         uses: ./.github/actions/create-artefact-name
@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -49,7 +49,7 @@ jobs:
         run: make test-unit
       - name: "Upload unit test results"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: unit-test-results
           path: gateway-api/test-artefacts/
@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -79,7 +79,7 @@ jobs:
         run: make test-contract
       - name: "Upload contract test results"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: contract-test-results
           path: gateway-api/test-artefacts/
@@ -96,7 +96,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -109,7 +109,7 @@ jobs:
         run: make test-schema
       - name: "Upload schema test results"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: schema-test-results
           path: gateway-api/test-artefacts/
@@ -126,7 +126,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -139,7 +139,7 @@ jobs:
         run: make test-integration
       - name: "Upload integration test results"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: integration-test-results
           path: gateway-api/test-artefacts/
@@ -156,7 +156,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
@@ -170,7 +170,7 @@ jobs:
         run: make test-acceptance
       - name: "Upload acceptance test results"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: acceptance-test-results
           path: gateway-api/test-artefacts/
@@ -183,18 +183,26 @@ jobs:
 
   merge-test-coverage:
     name: "Merge test coverage"
-    needs: [create-coverage-name, test-unit, test-contract, test-schema, test-integration, test-acceptance]
+    needs:
+      [
+        create-coverage-name,
+        test-unit,
+        test-contract,
+        test-schema,
+        test-integration,
+        test-acceptance,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: "Setup Python project"
         uses: ./.github/actions/setup-python-project
         with:
           python-version: ${{ inputs.python_version }}
       - name: "Download all test coverage artefacts"
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: gateway-api/test-artefacts/
           merge-multiple: false
@@ -206,7 +214,7 @@ jobs:
           mv coverage-merged.xml ${{ needs.create-coverage-name.outputs.coverage-name }}.xml
       - name: "Upload combined coverage report"
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: gateway-api/test-artefacts
@@ -220,11 +228,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Full history is needed for better analysis
       - name: "Download merged coverage report"
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: coverage-reports/
