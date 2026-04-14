@@ -90,8 +90,7 @@ class PostStub(Protocol):
     def post(
         self,
         url: str,
-        data: bytes | dict[str, Any] | None = None,
-        json: dict[str, Any] | None = None,
+        data: str | None = None,
         **kwargs: Any,
     ) -> Response:
         """
@@ -114,7 +113,7 @@ class PostStub(Protocol):
 
     @property
     @abstractmethod
-    def post_data(self) -> str:
+    def post_data(self) -> str | None:
         """
         Last post request body stub.post was called with. Empty if not called yet.
         """

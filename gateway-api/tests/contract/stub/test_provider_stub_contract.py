@@ -23,9 +23,8 @@ from stubs.provider.stub import GpProviderStub
 # Helpers / constants
 # ---------------------------------------------------------------------------
 _URL = "http://example.com/Patient/$gpc.getstructuredrecord"
-_VALID_TRACE_ID = "test-trace-id-12345"
 _VALID_HEADERS = {
-    "Ssp-TraceID": _VALID_TRACE_ID,
+    "Ssp-TraceID": "test-trace-id-12345",
     "Ssp-From": "999999999999",
     "Ssp-To": "999999999999",
     "Ssp-InteractionID": (
@@ -73,7 +72,7 @@ class TestGetStructuredRecordSuccess:
         mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
         mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=_VALID_HEADERS,
             data=json.dumps(simple_request_payload),
         )
@@ -117,7 +116,7 @@ class TestGetStructuredRecordValidationErrors:
         mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
         mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers={},  # Missing all required headers
             data=json.dumps(simple_request_payload),
         )
@@ -153,9 +152,8 @@ class TestGetStructuredRecordValidationErrors:
         invalid_headers = _VALID_HEADERS.copy()
         invalid_headers["Content-Type"] = "text/plain"
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=invalid_headers,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -183,9 +181,8 @@ class TestGetStructuredRecordValidationErrors:
         invalid_headers = _VALID_HEADERS.copy()
         invalid_headers["Ssp-InteractionID"] = "invalid-interaction-id"
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=invalid_headers,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -214,9 +211,8 @@ class TestGetStructuredRecordValidationErrors:
         invalid_headers = _VALID_HEADERS.copy()
         invalid_headers["Authorization"] = "not-bearer token"
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=invalid_headers,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -244,9 +240,8 @@ class TestGetStructuredRecordValidationErrors:
             "stubs.provider.stub.JWT.decode", side_effect=Exception("Decode error")
         )
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=_VALID_HEADERS,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -272,9 +267,8 @@ class TestGetStructuredRecordValidationErrors:
             side_effect=JWTValidationError(error_details="Validation error"),
         )
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=_VALID_HEADERS,
-            trace_id=_VALID_TRACE_ID,
             data=json.dumps(simple_request_payload),
         )
 
@@ -296,9 +290,9 @@ class TestGetStructuredRecordValidationErrors:
         mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
         mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
         response = provider_stub.post(
-            _url=_URL,
+            url=_URL,
             headers=_VALID_HEADERS,
-            data=None,  # type: ignore [arg-type]
+            data=None,
         )
 
         assert response.status_code == 400
