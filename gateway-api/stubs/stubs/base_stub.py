@@ -115,7 +115,9 @@ class PostStub(Protocol):
     @abstractmethod
     def post_data(self) -> str | None:
         """
-        Last post request body stub.post was called with. Empty if not called yet.
+        Last post request body stub.post was called with. ``None`` if not called
+        yet; ``None`` may also be a legitimate captured value if the caller
+        passed no body.
         """
 
     @property

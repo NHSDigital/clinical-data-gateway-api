@@ -16,7 +16,7 @@ from typing import Any
 import pytest
 from gateway_api.common.error import JWTValidationError
 from pytest_mock import MockerFixture
-from stubs.data.patients.patients import Patients
+from stubs.data.patients import Patients
 from stubs.provider.stub import GpProviderStub
 
 # ---------------------------------------------------------------------------
@@ -98,8 +98,6 @@ class TestGetStructuredRecordSuccess:
 
 # ---------------------------------------------------------------------------
 # POST /Patient/$gpc.getstructuredrecord – 400 validation errors
-# JWT VALIDATIONS? mocked
-# missing params
 # ---------------------------------------------------------------------------
 class TestGetStructuredRecordValidationErrors:
     """
@@ -304,3 +302,36 @@ class TestGetStructuredRecordValidationErrors:
         assert body["issue"][0]["severity"] == "error"
         assert body["issue"][0]["code"] == "invalid"
         assert "body is required" in body["issue"][0]["diagnostics"]
+
+
+# ---------------------------------------------------------------------------
+# POST /Patient/$gpc.getstructuredrecord – stub reports recorded properties
+# ---------------------------------------------------------------------------
+
+
+class TestGetStructuredRecordRecordedProperties:
+    """
+    Tests that the provider stub correctly records properties of incoming requests
+    to the ``POST /Patient/$gpc.getstructuredrecord`` endpoint.
+    """
+
+    def test_get_structured_record_records_properties(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        response = provider_stub.post(
+            url=_URL,
+            headers=_VALID_HEADERS,
+            data=json.dumps(simple_request_payload),
+            timeout=5,
+        )
+
+        assert response.status_code == 200
+        assert provider_stub.post_url == _URL
+        assert provider_stub.post_headers == _VALID_HEADERS
+        assert provider_stub.post_data == json.dumps(simple_request_payload)
+        assert provider_stub.post_timeout == 5
