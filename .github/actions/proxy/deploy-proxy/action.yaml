@@ -40,8 +40,7 @@ runs:
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}
       shell: bash
-      run: |
-        yq eval '.info.title = "[PR "+env(PR_NUMBER)+"] " + .info.title' -i gateway-api/openapi.yaml
+      run: yq eval '.info.title = "[PR "+env(PR_NUMBER)+"] " + .info.title' -i gateway-api/openapi.yaml
 
     - name: Inject secrets into openapi.yaml for deploying proxy
       env:
