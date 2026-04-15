@@ -37,7 +37,7 @@ jobs:
 
       - name: "Run Bruno"
         working-directory: bruno/gateway-api/collections/Steel_Thread
-        run: bru run --env local --reporter-html results.html --reporter-junit results.xml
+        run: npx bru run --env local --reporter-html results.html --reporter-junit results.xml
 
       - name: "Upload HTML results"
         if: always()
