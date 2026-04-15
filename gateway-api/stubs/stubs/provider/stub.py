@@ -24,10 +24,12 @@ Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 import json
 from typing import Any
 
-from gateway_api.clinical_jwt import JWT, JWTValidator
-from gateway_api.common.error import JWTValidationError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from requests import Response
+from src.gateway_api.clinical_jwt import JWT, JWTValidator
+from src.gateway_api.common.error import JWTValidationError
+from src.gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+)
 
 from stubs.base_stub import PostStub, StubBase
 from stubs.data.bundles import Bundles
@@ -47,7 +49,7 @@ class GpProviderStub(StubBase, PostStub):
     def __init__(self) -> None:
         self._post_url: str = ""
         self._post_headers: dict[str, str] = {}
-        self._post_data: str | None = None
+        self._post_data: str = ""
         self._post_timeout: int | None = None
 
     @property
@@ -59,7 +61,7 @@ class GpProviderStub(StubBase, PostStub):
         return self._post_headers
 
     @property
-    def post_data(self) -> str | None:
+    def post_data(self) -> str:
         return self._post_data
 
     @property
@@ -202,7 +204,7 @@ class GpProviderStub(StubBase, PostStub):
     def access_record_structured(
         self,
         trace_id: str,
-        body: str | None,
+        body: str,
         headers: dict[str, Any],
     ) -> Response:
         """
@@ -213,9 +215,9 @@ class GpProviderStub(StubBase, PostStub):
         """
         # Validate that all required parameters are provided
         missing_params: list[str] = []
-        if body is None:
+        if not body:
             missing_params.append("body")
-        if headers is None:
+        if not headers:
             missing_params.append("headers")
 
         if missing_params:
@@ -233,12 +235,6 @@ class GpProviderStub(StubBase, PostStub):
                     ],
                 },
             )
-
-        # Narrow typing for mypy - we know these are not None after the above check
-        if body is None:
-            raise ValueError("body should not be None after validation")
-        if headers is None:
-            raise ValueError("headers should not be None after validation")
 
         # Validate headers
         validation_error = self._validate_headers(headers)
@@ -300,7 +296,7 @@ class GpProviderStub(StubBase, PostStub):
     def post(
         self,
         url: str,
-        data: str | None = None,
+        data: str,
         **kwargs: Any,
     ) -> Response:
         """

@@ -85,6 +85,7 @@ pyenv
 pyjwt
 pyproject
 pytest
+PYTHONPATH
 pyupgrade
 pyyaml
 qualitygate

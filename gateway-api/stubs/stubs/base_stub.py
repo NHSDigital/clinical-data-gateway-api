@@ -90,7 +90,7 @@ class PostStub(Protocol):
     def post(
         self,
         url: str,
-        data: str | None = None,
+        data: str,
         **kwargs: Any,
     ) -> Response:
         """
@@ -113,11 +113,9 @@ class PostStub(Protocol):
 
     @property
     @abstractmethod
-    def post_data(self) -> str | None:
+    def post_data(self) -> str:
         """
-        Last post request body stub.post was called with. ``None`` if not called
-        yet; ``None`` may also be a legitimate captured value if the caller
-        passed no body.
+        Last post request body stub.post was called with. Empty if not called yet.
         """
 
     @property

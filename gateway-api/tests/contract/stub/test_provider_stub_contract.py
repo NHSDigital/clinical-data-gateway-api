@@ -14,14 +14,11 @@ import json
 from typing import Any
 
 import pytest
-from gateway_api.common.error import JWTValidationError
 from pytest_mock import MockerFixture
+from src.gateway_api.common.error import JWTValidationError
 from stubs.data.patients import Patients
 from stubs.provider.stub import GpProviderStub
 
-# ---------------------------------------------------------------------------
-# Helpers / constants
-# ---------------------------------------------------------------------------
 _URL = "http://example.com/Patient/$gpc.getstructuredrecord"
 _VALID_HEADERS = {
     "Ssp-TraceID": "test-trace-id-12345",
@@ -38,31 +35,13 @@ _ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
 )
 
 
-# patch JWTValidator.validate to always pass for testing
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
 @pytest.fixture
 def provider_stub() -> GpProviderStub:
     """Fixture that returns a new instance of the provider stub."""
     return GpProviderStub()
 
 
-# ---------------------------------------------------------------------------
-# POST /Patient/$gpc.getstructuredrecord – 200 success
-# ---------------------------------------------------------------------------
-
-
 class TestGetStructuredRecordSuccess:
-    """
-    Tests for successful responses from the ``POST /Patient/$gpc.getstructuredrecord``
-    endpoint.
-    """
-
     def test_get_structured_record_success(
         self,
         provider_stub: GpProviderStub,
@@ -96,16 +75,31 @@ class TestGetStructuredRecordSuccess:
         assert resource == Patients.ALICE_JONES_9999999999
 
 
-# ---------------------------------------------------------------------------
-# POST /Patient/$gpc.getstructuredrecord – 400 validation errors
-# ---------------------------------------------------------------------------
-class TestGetStructuredRecordValidationErrors:
-    """
-    Tests for validation errors from the ``POST /Patient/$gpc.getstructuredrecord``
-    endpoint.
-    """
+class TestGetStructuredRecordParameterValidationErrors:
+    def test_get_structured_record_empty_body(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        response = provider_stub.post(
+            url=_URL,
+            headers=_VALID_HEADERS,
+            data="",
+        )
 
-    def test_get_structured_record_missing_headers(
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
+        assert body["issue"][0]["diagnostics"] == "body is required"
+
+    def test_get_structured_record_empty_headers(
         self,
         provider_stub: GpProviderStub,
         mocker: MockerFixture,
@@ -127,7 +121,36 @@ class TestGetStructuredRecordValidationErrors:
         assert len(body["issue"]) == 1
         assert body["issue"][0]["severity"] == "error"
         assert body["issue"][0]["code"] == "invalid"
-        assert body["issue"][0]["diagnostics"].count("is required") == 6
+        assert body["issue"][0]["diagnostics"] == "headers is required"
+
+
+class TestGetStructuredRecordHeaderValidationErrors:
+    def test_get_structured_record_missing_required_headers(
+        self,
+        provider_stub: GpProviderStub,
+        mocker: MockerFixture,
+        simple_request_payload: dict[str, Any],
+    ) -> None:
+        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
+        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
+        incomplete_headers = {
+            "non-required": "",
+            # Missing Ssp-From, Ssp-To, Ssp-InteractionID, Content-Type, Authorization
+        }
+        response = provider_stub.post(
+            url=_URL,
+            headers=incomplete_headers,
+            data=json.dumps(simple_request_payload),
+        )
+
+        assert response.status_code == 400
+        assert response.headers["Content-Type"] == "application/fhir+json"
+
+        body = response.json()
+        assert body["resourceType"] == "OperationOutcome"
+        assert len(body["issue"]) == 1
+        assert body["issue"][0]["severity"] == "error"
+        assert body["issue"][0]["code"] == "invalid"
         diagnostics = body["issue"][0]["diagnostics"]
         for header in [
             "Ssp-TraceID",
@@ -280,36 +303,13 @@ class TestGetStructuredRecordValidationErrors:
         assert body["issue"][0]["code"] == "invalid"
         assert "Validation error" in body["issue"][0]["diagnostics"]
 
-    def test_get_structured_record_missing_body(
-        self,
-        provider_stub: GpProviderStub,
-        mocker: MockerFixture,
-    ) -> None:
-        mocker.patch("stubs.provider.stub.JWT.decode", return_value="some-decoded-jwt")
-        mocker.patch("stubs.provider.stub.JWTValidator.validate", return_value=None)
-        response = provider_stub.post(
-            url=_URL,
-            headers=_VALID_HEADERS,
-            data=None,
-        )
-
-        assert response.status_code == 400
-        assert response.headers["Content-Type"] == "application/fhir+json"
-
-        body = response.json()
-        assert body["resourceType"] == "OperationOutcome"
-        assert len(body["issue"]) == 1
-        assert body["issue"][0]["severity"] == "error"
-        assert body["issue"][0]["code"] == "invalid"
-        assert "body is required" in body["issue"][0]["diagnostics"]
-
 
 # ---------------------------------------------------------------------------
 # POST /Patient/$gpc.getstructuredrecord – stub reports recorded properties
 # ---------------------------------------------------------------------------
 
 
-class TestGetStructuredRecordRecordedProperties:
+class TestGetStructuredRecordProperties:
     """
     Tests that the provider stub correctly records properties of incoming requests
     to the ``POST /Patient/$gpc.getstructuredrecord`` endpoint.
