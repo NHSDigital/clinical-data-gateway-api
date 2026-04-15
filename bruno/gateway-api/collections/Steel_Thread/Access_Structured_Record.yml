@@ -1,0 +1,39 @@
+info:
+  name: "Access Record Structured"
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base_url}}/patient/$gpc.getstructuredrecord"
+  auth: inherit
+  headers:
+    - name: ODS-from
+      value: A12345
+  body:
+    type: json
+    data: |-
+      {
+        "resourceType": "Parameters",
+        "parameter": [
+              {
+                  "name": "patientNHSNumber",
+                  "valueIdentifier": {
+                      "system": "https://fhir.nhs.uk/Id/nhs-number",
+                      "value": "9999999999"
+                  }
+              }
+          ]
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("should return 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
