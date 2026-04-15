@@ -24,12 +24,12 @@ Request Body JSON (FHIR STU3 Parameters resource with patient NHS number.
 import json
 from typing import Any
 
-from requests import Response
-from src.gateway_api.clinical_jwt import JWT, JWTValidator
-from src.gateway_api.common.error import JWTValidationError
-from src.gateway_api.get_structured_record import (
+from gateway_api.clinical_jwt import JWT, JWTValidator
+from gateway_api.common.error import JWTValidationError
+from gateway_api.get_structured_record import (
     ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
 )
+from requests import Response
 
 from stubs.base_stub import PostStub, StubBase
 from stubs.data.bundles import Bundles

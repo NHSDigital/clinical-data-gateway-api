@@ -14,8 +14,8 @@ import json
 from typing import Any
 
 import pytest
+from gateway_api.common.error import JWTValidationError
 from pytest_mock import MockerFixture
-from src.gateway_api.common.error import JWTValidationError
 from stubs.data.patients import Patients
 from stubs.provider.stub import GpProviderStub
 
