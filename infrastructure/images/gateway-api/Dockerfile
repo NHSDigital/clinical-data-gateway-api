@@ -15,7 +15,6 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; 
     else \
         rm -rf /resources/dev-certificates || true; \
     fi && \
-
     apk upgrade --no-cache && \
     pip install --no-cache-dir --upgrade pip && \
     addgroup -S nonroot && \

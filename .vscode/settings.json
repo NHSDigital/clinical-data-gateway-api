@@ -13,7 +13,9 @@
     "**/.venv",
     "**/.mypy_cache",
     "**/.pytest_cache",
-    "**/.ruff_cache"
+    "**/.ruff_cache",
+    "**/node_modules",
+    "**/.*"
   ],
   // Disable all telemetry.
   "telemetry.telemetryLevel": "off",
@@ -72,8 +74,24 @@
   // Disabling automatic port forwarding as the devcontainer should already have access to any required ports.
   "remote.autoForwardPorts": false,
 
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".commit_template"
+    }
+  ],
+
   // Code spell checker configuration
   "cSpell.language": "en-GB",
+  // Exclude generated artefacts, lock files, and data fixtures that contain
+  // machine-generated identifiers, NHS codes, and FHIR field names which are
+  // not conventional English prose.
+  "cSpell.ignorePaths": [
+    "gateway-api/test-artefacts/**",
+    "gateway-api/poetry.lock",
+    "gateway-api/stubs/stubs/data/**/*.json",
+    "gateway-api/tests/data/**/*.json",
+    "scripts/config/vale/styles/config/vocabularies/words/accept.txt"
+  ],
   "cSpell.customDictionaries": {
     "vale-accepted-words": {
       "path": "${workspaceFolder}/scripts/config/vale/styles/config/vocabularies/words/accept.txt",
@@ -86,4 +104,7 @@
       "description": "Accepted words for the code spell checker.",
     }
   },
+  "python.analysis.extraPaths": [
+    "./gateway-api/stubs"
+  ],
 }

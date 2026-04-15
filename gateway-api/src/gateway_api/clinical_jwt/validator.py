@@ -173,46 +173,48 @@ class JWTValidator:
         return errors
 
     @staticmethod
-    def validate_practitioner(pract: dict[str, Any]) -> None:
+    def validate_practitioner(practitioner: dict[str, Any]) -> None:
         """
         Validate JWT requesting_practitioner structure.
 
         Raises:
             JWTValidationError: If practitioner structure is invalid.
         """
-        if not hasattr(pract, "get"):
+        if not hasattr(practitioner, "get"):
             raise JWTValidationError(
                 error_details="Invalid requesting_practitioner: must be a dict"
             )
 
-        pract_errors = []
+        practitioner_errors = []
 
-        if pract.get("resourceType") != "Practitioner":
-            pract_errors.append("resourceType must be 'Practitioner'")
+        if practitioner.get("resourceType") != "Practitioner":
+            practitioner_errors.append("resourceType must be 'Practitioner'")
 
-        if not pract.get("id"):
-            pract_errors.append("id is required")
+        if not practitioner.get("id"):
+            practitioner_errors.append("id is required")
 
         # Validate identifiers
-        identifiers = pract.get("identifier")
+        identifiers = practitioner.get("identifier")
         if not identifiers or not isinstance(identifiers, list):
-            pract_errors.append("Practitioner identifier must be a non-empty list")
+            practitioner_errors.append(
+                "Practitioner identifier must be a non-empty list"
+            )
         else:
-            pract_errors.extend(
+            practitioner_errors.extend(
                 JWTValidator._validate_practitioner_identifiers(identifiers)
             )
 
         # Validate name
-        names = pract.get("name")
+        names = practitioner.get("name")
         if not names or not isinstance(names, list):
-            pract_errors.append("name must be a non-empty list")
+            practitioner_errors.append("name must be a non-empty list")
         else:
-            pract_errors.extend(JWTValidator._validate_practitioner_name(names))
+            practitioner_errors.extend(JWTValidator._validate_practitioner_name(names))
 
-        if pract_errors:
+        if practitioner_errors:
             raise JWTValidationError(
                 error_details=(
-                    f"Invalid requesting_practitioner: {', '.join(pract_errors)}"
+                    f"Invalid requesting_practitioner: {', '.join(practitioner_errors)}"
                 )
             )
 

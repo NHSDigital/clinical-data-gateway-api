@@ -41,5 +41,17 @@ request:
     settings:
       autoFetchToken: true
       autoRefreshToken: false
+
+docs:
+  content: |-
+    # [Authentication with the NHSE mock authorisation service](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/testing-apis-with-our-mock-authorisation-service)
+
+      | User        | UID   | National RBAC job roles      | Authenticator assurance level |
+      |-------------|-------|------------------------------|------------------------------|
+      | 656005750108| R0260 | General Medical Practitioner | AAL3                         |
+      | 656005750107| R8000 | Clinical Practitioner        | AAL3                         |
+      | 656005750111| R0260 | General Medical Practitioner | AAL2                         |
+      | 656005750109| R8000 | Clinical Practitioner        | AAL2                         |
+  type: text/markdown
 bundled: false
 extensions: {}
