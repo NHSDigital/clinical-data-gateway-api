@@ -35,6 +35,13 @@ runs:
         proxygen-api-name: ${{ inputs.proxygen-api-name }}
         proxygen-client-id: ${{ inputs.proxygen-client-id }}
 
+    - name: Add PR number to API's title
+      if: ${{ github.event_name == 'pull_request' }}
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      shell: bash
+      run: yq eval '.info.title = "[PR "+env(PR_NUMBER)+"] " + .info.title' -i gateway-api/openapi.yaml
+
     - name: Inject secrets into openapi.yaml for deploying proxy
       env:
         TARGET_URL: ${{ inputs.target-url }}

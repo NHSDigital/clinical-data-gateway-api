@@ -1,0 +1,4 @@
+variables:
+  - name: base_url
+    value: http://localhost:5000
+    enabled: true

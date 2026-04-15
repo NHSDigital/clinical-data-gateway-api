@@ -6,6 +6,8 @@ info:
 collections:
   - name: "Steel_Thread"
     path: "collections/Steel_Thread"
+  - name: "APIM"
+    path: "collections/APIM"
 
 specs:
 
