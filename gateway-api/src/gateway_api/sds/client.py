@@ -22,9 +22,9 @@ from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTI
 from gateway_api.sds.search_results import SdsSearchResults
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_SDS environment variable and just
+#       we should remove the SDS_URL environment variable and just
 #       use the stub client
-STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
 if not STUB_SDS:
     from requests import get
 else:
@@ -54,7 +54,7 @@ class SdsClient:
 
     **Stubbing**:
 
-    For testing, set the environment variable ``$STUB_SDS`` to use the
+    For testing, set the environment variable ``$SDS_URL` to use the
     :class:`SdsFhirApiStub` instead of making real HTTP requests.
 
     **Usage example**::

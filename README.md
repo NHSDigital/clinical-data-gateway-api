@@ -152,9 +152,9 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 | `HOST` | hostname portion of `BASE_URL` |
 | `FLASK_HOST` | Host the Flask app binds to |
 | `FLASK_PORT` | Port the Flask app listens on |
-| `STUB_PDS` | `true`, use the stubs/stubs/pds/stub.py to return stubbed responses for PDS FHIR API; otherwise, not. |
-| `STUB_SDS` | `true`, use the stubs/stubs/sds/stub.py to return stubbed responses for SDS FHIR API; otherwise, not. |
-| `STUB_PROVIDER` | `true`, use the stubs/stubs/provider/stub.py to return stubbed responses for the provider system; otherwise, not. |
+| `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
+| `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
+| `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
 | `CDG_DEBUG` | `true`, Return additional debug information when the call to the GP provider returns an error. Note if set true causes the unit tests to fail, because expected return values are changed. |
 
 Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.

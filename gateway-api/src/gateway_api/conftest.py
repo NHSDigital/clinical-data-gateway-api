@@ -6,12 +6,15 @@ from typing import Any
 
 import pytest
 import requests
+from dotenv import find_dotenv, load_dotenv
 from fhir.constants import FHIRSystem
 from flask import Request
 from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
 
 from gateway_api.clinical_jwt import JWT
+
+load_dotenv(find_dotenv(usecwd=True))
 
 
 @dataclass

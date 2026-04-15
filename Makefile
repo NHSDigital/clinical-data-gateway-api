@@ -70,14 +70,14 @@ deploy: clean build # Deploy the project artefact to the target environment @Pip
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
 	# Build up list of environment variables to pass to the container
 	@ENVIRONMENT_STRING="" ; \
-	if [[ -n "$${STUB_PROVIDER}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PROVIDER=$${STUB_PROVIDER}" ; \
+	if [[ -n "$${PROVIDER_URL}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e PROVIDER_URL=$${PROVIDER_URL}" ; \
 	fi ; \
-	if [[ -n "$${STUB_PDS}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PDS=$${STUB_PDS}" ; \
+	if [[ -n "$${PDS_URL}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e PDS_URL=$${PDS_URL}" ; \
 	fi ; \
-	if [[ -n "$${STUB_SDS}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
+	if [[ -n "$${SDS_URL}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e SDS_URL=$${SDS_URL}" ; \
 	fi ; \
 	if [[ -n "$${CDG_DEBUG}" ]]; then \
 		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
