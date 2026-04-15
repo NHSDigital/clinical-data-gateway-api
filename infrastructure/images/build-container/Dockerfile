@@ -47,7 +47,7 @@ RUN apk update && \
 ENV PYENV_ROOT="/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 
-# Install Python (via pyenv) and initialize it.
+# Install Python (via pyenv) and initialise it.
 RUN curl --proto "=https" -fsSL https://pyenv.run | bash && \
     /.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
     /.pyenv/bin/pyenv global ${PYTHON_VERSION} && \

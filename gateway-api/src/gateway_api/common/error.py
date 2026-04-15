@@ -1,4 +1,3 @@
-import traceback
 from dataclasses import dataclass
 from http.client import BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND
 
@@ -36,9 +35,6 @@ class AbstractCDGError(Exception):
             ]
         )
         return operation_outcome
-
-    def log(self) -> None:
-        print(traceback.format_exc(), flush=True)
 
     @property
     def message(self) -> str:

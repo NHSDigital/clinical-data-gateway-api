@@ -1,0 +1,17 @@
+info:
+  name: User Info
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: https://internal-dev.api.service.nhs.uk/oauth2-mock/userinfo
+  auth:
+    type: bearer
+    token: ""
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

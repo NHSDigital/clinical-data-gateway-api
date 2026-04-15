@@ -465,7 +465,7 @@ class TestDeviceModelValidate:
     @pytest.mark.xfail(
         reason=(
             "The system for the JWT device is not yet defined. Validation should be "
-            "added once this is known."
+            "added once this is known. [GPCAPIM-358]"
         )
     )
     def test_invalid_identifier_system_fails(self) -> None:
