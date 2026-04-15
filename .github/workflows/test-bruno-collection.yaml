@@ -32,7 +32,8 @@ jobs:
           node-version: '20'
 
       - name: Install Bruno CLI
-        run: npm install --ignore-scripts -g @usebruno/cli@3.2.2
+        working-directory: bruno
+        run: npm ci --ignore-scripts
 
       - name: "Run Bruno"
         working-directory: bruno/gateway-api/collections/Steel_Thread

@@ -15,6 +15,7 @@
 **/.ruff_cache
 **/.mypy_cache
 **/.idea
+**/node_modules
 
 # Testing artefacts
 **/.hypothesis
