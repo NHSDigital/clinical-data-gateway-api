@@ -66,28 +66,18 @@ build: build-gateway-api # Build the project artefact @Pipeline
 publish: # Publish the project artefact @Pipeline
 	# TODO [GPCAPIM-283]:  Implement the artefact publishing step
 
-deploy: clean build # Deploy the project artefact to the target environment @Pipeline
+deploy: clean build # Build project artefact and deploy locally @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
 	# Build up list of environment variables to pass to the container
-	@ENVIRONMENT_STRING="" ; \
-	if [[ -n "$${PROVIDER_URL}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e PROVIDER_URL=$${PROVIDER_URL}" ; \
-	fi ; \
-	if [[ -n "$${PDS_URL}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e PDS_URL=$${PDS_URL}" ; \
-	fi ; \
-	if [[ -n "$${SDS_URL}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e SDS_URL=$${SDS_URL}" ; \
-	fi ; \
-	if [[ -n "$${CDG_DEBUG}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
-	fi ; \
 	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local --env-file .env -d ${IMAGE_NAME} ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --env-file .env -d ${IMAGE_NAME} ; \
 	fi
+
+deploy-%: # Build project artefact and deploy locally as specified environment - mandatory: name=[name of the environment, e.g. 'dev'] @Pipeline
+	make env-$* deploy
 
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."

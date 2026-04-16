@@ -1,12 +1,12 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
 import json
+import os
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
 import requests
-from dotenv import find_dotenv, load_dotenv
 from fhir.constants import FHIRSystem
 from flask import Request
 from requests.structures import CaseInsensitiveDict
@@ -14,7 +14,10 @@ from werkzeug.test import EnvironBuilder
 
 from gateway_api.clinical_jwt import JWT
 
-load_dotenv(find_dotenv(usecwd=True))
+# TODO: Do this better.
+os.environ["PDS_URL"] = "stub"
+os.environ["PROVIDER_URL"] = "not-stub"
+os.environ["SDS_URL"] = "stub"
 
 
 @dataclass

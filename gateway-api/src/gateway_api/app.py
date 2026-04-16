@@ -19,7 +19,6 @@ def get_app_host() -> str:
     host = os.getenv("FLASK_HOST")
     if host is None:
         raise RuntimeError("FLASK_HOST environment variable is not set.")
-    print(f"Starting Flask app on host: {host}")
     return host
 
 
@@ -27,7 +26,6 @@ def get_app_port() -> int:
     port = os.getenv("FLASK_PORT")
     if port is None:
         raise RuntimeError("FLASK_PORT environment variable is not set.")
-    print(f"Starting Flask app on port: {port}")
     return int(port)
 
 
@@ -49,6 +47,23 @@ def log_error(error: AbstractCDGError) -> None:
         "traceback": traceback.format_exc(),
     }
     app.logger.error(log_details)
+
+
+def log_env_vars() -> None:
+    log_details = {
+        "description": "Initializing Flask app",
+        "env_vars": os.environ.items(),
+    }
+    app.logger.info(log_details)
+
+
+def log_starting_app(host: str, port: int) -> None:
+    log_details = {
+        "description": "Starting Flask app",
+        "host": host,
+        "port": port,
+    }
+    app.logger.info(log_details)
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
@@ -86,6 +101,7 @@ def health_check() -> dict[str, str]:
 
 
 if __name__ == "__main__":
+    log_env_vars()
     host, port = get_app_host(), get_app_port()
-    print(f"Version: {os.getenv('COMMIT_VERSION')}")
+    log_starting_app(host, port)
     app.run(host=host, port=port)

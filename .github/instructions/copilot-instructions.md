@@ -8,7 +8,7 @@ This repository is for handling HTTP requests from "Consumer systems" and forwar
 
 We use other NHSE services to assist in the validation and processing of the requests including PDS FHIR API for obtaining GP practice codes for the patient, SDS FHIR API for obtaining the "Provider system" details of that GP practice and Healthcare Worker FHIR API for obtaining details of the requesting practitioner using the "Consumer System" that will then be added to the forwarded request.
 
-`make deploy` will build and start a container running Gateway API at `localhost:5000`.
+`make deploy-dev` will build and start a container running Gateway API at `localhost:5000`.
 
 After deploying the container locally, `make test` will run all tests and capture their coverage. Note: env variables control the use of stubs for the PDS FHIR API, SDS FHIR API, Healthcare Worker FHIR API and Provider system services.
 
