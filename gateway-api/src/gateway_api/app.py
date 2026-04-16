@@ -90,7 +90,9 @@ def get_structured_record() -> Response:
     response.mirror_headers(request)
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
-        controller = Controller()
+        controller = Controller(
+            pds_base_url=app.config["PDS_URL"], sds_base_url=app.config["SDS_URL"]
+        )
         provider_response = controller.run(request=get_structured_record_request)
         response.add_provider_response(provider_response)
     except AbstractCDGError as e:

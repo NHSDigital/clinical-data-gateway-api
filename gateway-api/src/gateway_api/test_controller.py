@@ -42,12 +42,19 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
     )
 
 
+def create_test_controller(
+    pds_base_url: str = "https://example.test/pds",
+    sds_base_url: str = "https://example.test/sds",
+) -> Controller:
+    return Controller(pds_base_url=pds_base_url, sds_base_url=sds_base_url)
+
+
 def test_controller_run_happy_path_returns_200_status_code(
     mock_happy_path_get_structured_record_request: Request,
 ) -> None:
     request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
 
-    controller = Controller()
+    controller = create_test_controller()
     actual_response = controller.run(request)
 
     assert actual_response.status_code == 200
@@ -59,7 +66,7 @@ def test_controller_run_happy_path_returns_returns_expected_body(
 ) -> None:
     request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
 
-    controller = Controller()
+    controller = create_test_controller()
     actual_response = controller.run(request)
 
     assert actual_response.json() == valid_simple_response_payload
@@ -74,7 +81,7 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
         return_value=_create_patient(nhs_number, "A12345"),
     )
-    controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
+    controller = create_test_controller()
 
     actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
 
@@ -91,7 +98,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         return_value=_create_patient(nhs_number, None),
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoCurrentProviderError,
@@ -117,7 +124,7 @@ def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
         side_effect=sds_results,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     expected = ("ConsumerASID", "ProviderASID", "https://example.provider.org/endpoint")
     actual = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
@@ -135,7 +142,7 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
         return_value=no_results_for_provider,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoOrganisationFoundError,
@@ -157,7 +164,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
         return_value=blank_asid_sds_result,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoAsidFoundError,
@@ -180,7 +187,7 @@ def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpo
         return_value=blank_endpoint_sds_result,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoCurrentEndpointError,
@@ -207,7 +214,7 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
         side_effect=[happy_path_provider_sds_result, none_result_for_consumer],
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoOrganisationFoundError,
@@ -233,7 +240,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
         side_effect=[happy_path_provider_sds_result, consumer_asid_blank_sds_result],
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoAsidFoundError,
@@ -337,7 +344,7 @@ def test_controller_creates_jwt_token_with_correct_claims(
 
     get_structured_record_request = GetStructuredRecordRequest(request)
 
-    controller = Controller()
+    controller = create_test_controller()
     controller.run(get_structured_record_request)
 
     # Verify that GpProviderClient was called and extract the JWT token

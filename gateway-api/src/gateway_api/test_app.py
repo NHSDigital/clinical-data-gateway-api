@@ -24,7 +24,16 @@ from gateway_api.conftest import NewEnvVars
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask]]:
-    app.config["TESTING"] = True
+    with NewEnvVars(
+        {
+            "FLASK_HOST": "localhost",
+            "FLASK_PORT": "5000",
+            "PDS_URL": "http://test-pds-url",
+            "SDS_URL": "http://test-sds-url",
+        }
+    ):
+        configure_app(app)
+        app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
