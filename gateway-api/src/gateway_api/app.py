@@ -1,5 +1,7 @@
 import os
 import traceback
+from collections.abc import Callable
+from typing import Any
 
 from flask import Flask, Request, request
 from flask.wrappers import Response
@@ -17,9 +19,22 @@ app.logger.setLevel("INFO")
 
 def start_app(app: Flask) -> None:
     log_env_vars(app)
-    host, port = get_app_host(), get_app_port()
-    log_starting_app(app, host, port)
-    app.run(host=host, port=port)
+    app_host = get_env_var("FLASK_HOST", str)
+    app_port = get_env_var("FLASK_PORT", int)
+    pds_base_url = get_env_var("PDS_URL", str)
+    sds_base_url = get_env_var("SDS_URL", str)
+    log_starting_app(app, app_host, app_port, pds_base_url, sds_base_url)
+    app.run(host=app_host, port=app_port)
+
+
+def get_env_var(name: str, loader: Callable[[str], Any]) -> Any:
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(f"{name} environment variable is not set.")
+    try:
+        return loader(value)
+    except Exception as e:
+        raise RuntimeError(f"Error loading {name} environment variable: {e}") from e
 
 
 def get_app_host() -> str:
@@ -64,11 +79,15 @@ def log_env_vars(app: Flask) -> None:
     app.logger.info(log_details)
 
 
-def log_starting_app(app: Flask, host: str, port: int) -> None:
+def log_starting_app(
+    app: Flask, host: str, port: int, pds_base_url: str, sds_base_url: str
+) -> None:
     log_details = {
         "description": "Starting Flask app",
         "host": host,
         "port": port,
+        "pds_base_url": pds_base_url,
+        "sds_base_url": sds_base_url,
     }
     app.logger.info(log_details)
 

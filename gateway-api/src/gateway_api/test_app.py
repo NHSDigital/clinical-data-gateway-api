@@ -14,8 +14,7 @@ from pytest_mock import MockerFixture
 
 from gateway_api.app import (
     app,
-    get_app_host,
-    get_app_port,
+    get_env_var,
     log_env_vars,
     log_starting_app,
     start_app,
@@ -31,29 +30,14 @@ def client() -> Generator[FlaskClient[Flask]]:
 
 
 class TestAppInitialization:
-    def test_get_app_host_returns_set_host_name(self) -> None:
-        os.environ["FLASK_HOST"] = "host_is_set"
+    def test_get_env_var_when_env_var_is_set(self) -> None:
+        with NewEnvVars({"FLASK_HOST": "host_is_set"}):
+            actual = get_env_var("FLASK_HOST", str)
+            assert actual == "host_is_set"
 
-        actual = get_app_host()
-        assert actual == "host_is_set"
-
-    def test_get_app_host_raises_runtime_error_if_host_name_not_set(self) -> None:
-        del os.environ["FLASK_HOST"]
-
-        with pytest.raises(RuntimeError):
-            _ = get_app_host()
-
-    def test_get_app_port_returns_set_port_number(self) -> None:
-        os.environ["FLASK_PORT"] = "8080"
-
-        actual = get_app_port()
-        assert actual == 8080
-
-    def test_get_app_port_raises_runtime_error_if_port_not_set(self) -> None:
-        del os.environ["FLASK_PORT"]
-
-        with pytest.raises(RuntimeError):
-            _ = get_app_port()
+    def test_get_env_var_raises_runtime_error_if_env_var_not_set(self) -> None:
+        with NewEnvVars({"FLASK_HOST": None}), pytest.raises(RuntimeError):
+            _ = get_env_var("FLASK_HOST", str)
 
     def test_logging_app_startup_details_on_app_initialization(
         self, mocker: MockerFixture
@@ -62,7 +46,9 @@ class TestAppInitialization:
 
         host = "test_host"
         port = 1234
-        log_starting_app(app, host, port)
+        pds_base_url = "test_pds_url"
+        sds_base_url = "test_sds_url"
+        log_starting_app(app, host, port, pds_base_url, sds_base_url)
 
         # Check that the app startup details were logged
         log_info_mock.assert_called_with(
@@ -70,6 +56,8 @@ class TestAppInitialization:
                 "description": "Starting Flask app",
                 "host": host,
                 "port": port,
+                "pds_base_url": pds_base_url,
+                "sds_base_url": sds_base_url,
             }
         )
 

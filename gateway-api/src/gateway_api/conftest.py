@@ -22,12 +22,18 @@ os.environ["SDS_URL"] = "stub"
 
 
 class NewEnvVars:
-    def __init__(self, new_env_vars: dict[str, str]) -> None:
+    def __init__(self, new_env_vars: dict[str, str | None]) -> None:
         self.new_env_vars = new_env_vars
-        self.original_env_vars = {key: os.environ.get(key) for key in new_env_vars}
+        self.original_env_vars = {
+            key: os.environ.get(key) for key in new_env_vars if key in os.environ
+        }
 
     def __enter__(self) -> "NewEnvVars":
-        os.environ.update(self.new_env_vars)
+        for key, value in self.new_env_vars.items():
+            if value is None and key in os.environ:
+                del os.environ[key]
+            elif value is not None:
+                os.environ[key] = value
         return self
 
     def __exit__(
@@ -36,11 +42,7 @@ class NewEnvVars:
         _value: BaseException | None,
         _traceback: TracebackType | None,
     ) -> None:
-        for key, value in self.original_env_vars.items():
-            if value is not None:
-                os.environ[key] = value
-            else:
-                del os.environ[key]
+        os.environ.update(self.original_env_vars)
 
 
 @dataclass
