@@ -34,6 +34,18 @@ When reviewing code, ensure you compare the changes made to files to all README.
 - Use docstrings on high-level functions and classes to explain their purpose, inputs, outputs, and any side effects
 - Avoid comments that state the obvious or repeat what the code does; instead, focus on explaining the intent behind the code, the reasons for non-obvious decisions, and any important trade-offs or constraints
 
+## Formatting
+
+- For Python files, use 4-space indentation and keep line lengths within Ruff limits (default 88 chars unless configured otherwise)
+- For Python changes, keep code compatible with both `ruff format` and `ruff check`
+- Let Ruff manage import ordering (isort rules are enabled via Ruff)
+- Follow `.editorconfig` basics for all files: UTF-8, LF line endings, final newline, and no trailing whitespace
+- Use tabs (not spaces) in `Makefile` and `.mk` files, per `.editorconfig`
+- When wrapping a long string value inside parentheses, do not add a trailing comma if the value must remain a string
+- For Markdown changes, keep content compatible with markdownlint checks (rules in `scripts/config/.markdownlint.yaml`; enforced by `scripts/githooks/check-markdown-format.sh`)
+- For Markdown prose, write content that passes Vale English usage checks (rules in `scripts/config/vale/vale.ini`; enforced by `scripts/githooks/check-english-usage.sh`)
+- For Terraform changes, keep files compatible with `terraform fmt`
+
 ## Commits
 
 Prepend `[AI-generated]` to the commit message when committing changes made by an AI agent.

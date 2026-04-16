@@ -26,14 +26,16 @@ from typing import Any
 
 from gateway_api.clinical_jwt import JWT, JWTValidator
 from gateway_api.common.error import JWTValidationError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+)
 from requests import Response
 
-from stubs.base_stub import StubBase
+from stubs.base_stub import PostStub, StubBase
 from stubs.data.bundles import Bundles
 
 
-class GpProviderStub(StubBase):
+class GpProviderStub(StubBase, PostStub):
     """
     A minimal in-memory stub for a Provider GP System FHIR API,
     implementing only accessRecordStructured to read basic
@@ -43,6 +45,28 @@ class GpProviderStub(StubBase):
     FHIR/STU3 Patient resource with only administrative data based on Example 2
     # https://simplifier.net/guide/gp-connect-access-record-structured/Home/Examples/Allergy-examples?version=1.6.2
     """
+
+    def __init__(self) -> None:
+        self._post_url: str = ""
+        self._post_headers: dict[str, str] = {}
+        self._post_data: str = ""
+        self._post_timeout: int | None = None
+
+    @property
+    def post_url(self) -> str:
+        return self._post_url
+
+    @property
+    def post_headers(self) -> dict[str, str]:
+        return self._post_headers
+
+    @property
+    def post_data(self) -> str:
+        return self._post_data
+
+    @property
+    def post_timeout(self) -> int | None:
+        return self._post_timeout
 
     def _validate_headers(self, headers: dict[str, Any]) -> Response | None:
         """
@@ -131,7 +155,7 @@ class GpProviderStub(StubBase):
                             "severity": "error",
                             "code": "invalid",
                             "diagnostics": (
-                                "Authorization header must start with 'Bearer '",
+                                "Authorization header must start with 'Bearer '"
                             ),
                         }
                     ],
@@ -191,11 +215,9 @@ class GpProviderStub(StubBase):
         """
         # Validate that all required parameters are provided
         missing_params: list[str] = []
-        if trace_id is None:
-            missing_params.append("trace_id")
-        if body is None:
+        if not body:
             missing_params.append("body")
-        if headers is None:
+        if not headers:
             missing_params.append("headers")
 
         if missing_params:
@@ -273,38 +295,19 @@ class GpProviderStub(StubBase):
 
     def post(
         self,
-        _url: str,
+        url: str,
         data: str,
-        _json: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Response:
         """
         Handle HTTP POST requests for the stub.
-
-        :param url: Request URL.
-        :param headers: Request headers.
-        :param data: Request body data.
-        :param timeout: Request timeout in seconds.
-        :return: A :class:`requests.Response` instance.
         """
         headers = kwargs.get("headers", {})
         trace_id = headers.get("Ssp-TraceID", "no-trace-id")
+
+        self._post_url = url
+        self._post_headers = headers
+        self._post_data = data
+        self._post_timeout = kwargs.get("timeout")
+
         return self.access_record_structured(trace_id, data, headers)
-
-    def get(
-        self,
-        url: str,
-        headers: dict[str, str],
-        params: dict[str, Any],
-        timeout: int,
-    ) -> Response:
-        """
-        Handle HTTP GET requests for the stub.
-
-        :param url: Request URL.
-        :param headers: Request headers.
-        :param params: Query parameters.
-        :param timeout: Request timeout in seconds.
-        :raises NotImplementedError: GET requests are not supported by this stub.
-        """
-        raise NotImplementedError("GET requests are not supported by GpProviderStub")

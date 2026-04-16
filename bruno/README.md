@@ -48,7 +48,7 @@ Given the API is currently set up with CIS2 user-restricted access, and with the
 The proxy base path defines to which proxy instance your request will be directed. For preview environments, the proxy base path has the GitHub PR number appended to it. As such you will need to add this to your `.env` file so that Bruno can correctly build the URL.
 
 ```plaintext
-PR_NNUMBER=<pr number from GitHub>
+PR_NUMBER=<pr number from GitHub>
 ```
 
 ### Environments

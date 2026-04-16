@@ -90,8 +90,7 @@ class PostStub(Protocol):
     def post(
         self,
         url: str,
-        data: bytes | dict[str, Any] | None = None,
-        json: dict[str, Any] | None = None,
+        data: str,
         **kwargs: Any,
     ) -> Response:
         """

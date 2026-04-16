@@ -65,7 +65,7 @@ RUN echo "permit :wheel" >> /etc/doas.conf \
 ENV PYENV_ROOT="/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 
-# Install Python (via pyenv) and intialize it.
+# Install Python (via pyenv) and initialise it.
 RUN curl --proto "=https" -fsSL https://pyenv.run | bash && \
     /.pyenv/bin/pyenv install ${PYTHON_VERSION} && \
     /.pyenv/bin/pyenv global ${PYTHON_VERSION} && \
@@ -80,7 +80,7 @@ ENV ASDF_DATA_DIR="/.asdf"
 RUN mkdir /asdf
 WORKDIR /asdf
 
-# If we're running on an arm64 architecture download the arm64 executeable.
+# If we're running on an arm64 architecture download the arm64 executable.
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \
         echo "Installing ARM asdf executable..." && \
         wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \
