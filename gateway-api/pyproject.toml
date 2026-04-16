@@ -23,7 +23,7 @@ packages = [{include = "gateway_api", from = "src"},
 
 [tool.coverage.run]
 relative_files = true
-omit = ["*/tests/*", "*/features/*", "*/test_*.py"]
+omit = ["*/tests/*", "*/features/*", "*/test_*.py", "*/conftest.py"]
 
 [tool.coverage.paths]
 source = [

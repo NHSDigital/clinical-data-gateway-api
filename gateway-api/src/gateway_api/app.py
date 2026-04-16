@@ -19,12 +19,19 @@ app.logger.setLevel("INFO")
 
 def start_app(app: Flask) -> None:
     log_env_vars(app)
-    app_host = get_env_var("FLASK_HOST", str)
-    app_port = get_env_var("FLASK_PORT", int)
-    pds_base_url = get_env_var("PDS_URL", str)
-    sds_base_url = get_env_var("SDS_URL", str)
-    log_starting_app(app, app_host, app_port, pds_base_url, sds_base_url)
-    app.run(host=app_host, port=app_port)
+    configure_app(app)
+    log_starting_app(app)
+    app.run(host=app.config["FLASK_HOST"], port=app.config["FLASK_PORT"])
+
+
+def configure_app(app: Flask) -> None:
+    config = {
+        "FLASK_HOST": get_env_var("FLASK_HOST", str),
+        "FLASK_PORT": get_env_var("FLASK_PORT", int),
+        "PDS_URL": get_env_var("PDS_URL", str),
+        "SDS_URL": get_env_var("SDS_URL", str),
+    }
+    app.config.update(config)
 
 
 def get_env_var(name: str, loader: Callable[[str], Any]) -> Any:
@@ -35,20 +42,6 @@ def get_env_var(name: str, loader: Callable[[str], Any]) -> Any:
         return loader(value)
     except Exception as e:
         raise RuntimeError(f"Error loading {name} environment variable: {e}") from e
-
-
-def get_app_host() -> str:
-    host = os.getenv("FLASK_HOST")
-    if host is None:
-        raise RuntimeError("FLASK_HOST environment variable is not set.")
-    return host
-
-
-def get_app_port() -> int:
-    port = os.getenv("FLASK_PORT")
-    if port is None:
-        raise RuntimeError("FLASK_PORT environment variable is not set.")
-    return int(port)
 
 
 def log_request_received(request: Request) -> None:
@@ -79,15 +72,13 @@ def log_env_vars(app: Flask) -> None:
     app.logger.info(log_details)
 
 
-def log_starting_app(
-    app: Flask, host: str, port: int, pds_base_url: str, sds_base_url: str
-) -> None:
+def log_starting_app(app: Flask) -> None:
     log_details = {
         "description": "Starting Flask app",
-        "host": host,
-        "port": port,
-        "pds_base_url": pds_base_url,
-        "sds_base_url": sds_base_url,
+        "host": app.config["FLASK_HOST"],
+        "port": app.config["FLASK_PORT"],
+        "pds_base_url": app.config["PDS_URL"],
+        "sds_base_url": app.config["SDS_URL"],
     }
     app.logger.info(log_details)
 

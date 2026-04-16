@@ -14,9 +14,9 @@ from pytest_mock import MockerFixture
 
 from gateway_api.app import (
     app,
+    configure_app,
     get_env_var,
     log_env_vars,
-    log_starting_app,
     start_app,
 )
 from gateway_api.conftest import NewEnvVars
@@ -39,27 +39,29 @@ class TestAppInitialization:
         with NewEnvVars({"FLASK_HOST": None}), pytest.raises(RuntimeError):
             _ = get_env_var("FLASK_HOST", str)
 
-    def test_logging_app_startup_details_on_app_initialization(
-        self, mocker: MockerFixture
-    ) -> None:
-        log_info_mock = mocker.patch.object(app.logger, "info")
+    def test_get_env_var_raises_runtime_error_if_loader_fails(self) -> None:
+        with NewEnvVars({"FLASK_PORT": "not_an_int"}), pytest.raises(RuntimeError):
+            _ = get_env_var("FLASK_PORT", int)
 
-        host = "test_host"
-        port = 1234
-        pds_base_url = "test_pds_url"
-        sds_base_url = "test_sds_url"
-        log_starting_app(app, host, port, pds_base_url, sds_base_url)
+    def test_configure_app(self) -> None:
+        test_app = Mock()
+        config = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+        }
 
-        # Check that the app startup details were logged
-        log_info_mock.assert_called_with(
-            {
-                "description": "Starting Flask app",
-                "host": host,
-                "port": port,
-                "pds_base_url": pds_base_url,
-                "sds_base_url": sds_base_url,
-            }
-        )
+        with NewEnvVars(config):
+            configure_app(test_app)
+
+        expected = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": 1234,
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+        }
+        test_app.config.update.assert_called_with(expected)
 
     def test_logging_environment_variables_on_app_initialization(
         self, mocker: MockerFixture
@@ -78,6 +80,7 @@ class TestAppInitialization:
 
     def test_start_app_logs_startup_details(self) -> None:
         test_app = Mock()
+        test_app.config = {}
 
         test_env_vars = {
             "FLASK_HOST": "test_host",
