@@ -15,6 +15,13 @@ app = Flask(__name__)
 app.logger.setLevel("INFO")
 
 
+def start_app(app: Flask) -> None:
+    log_env_vars(app)
+    host, port = get_app_host(), get_app_port()
+    log_starting_app(app, host, port)
+    app.run(host=host, port=port)
+
+
 def get_app_host() -> str:
     host = os.getenv("FLASK_HOST")
     if host is None:
@@ -49,7 +56,7 @@ def log_error(error: AbstractCDGError) -> None:
     app.logger.error(log_details)
 
 
-def log_env_vars() -> None:
+def log_env_vars(app: Flask) -> None:
     log_details = {
         "description": "Initializing Flask app",
         "env_vars": os.environ.items(),
@@ -57,7 +64,7 @@ def log_env_vars() -> None:
     app.logger.info(log_details)
 
 
-def log_starting_app(host: str, port: int) -> None:
+def log_starting_app(app: Flask, host: str, port: int) -> None:
     log_details = {
         "description": "Starting Flask app",
         "host": host,
@@ -101,7 +108,4 @@ def health_check() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    log_env_vars()
-    host, port = get_app_host(), get_app_port()
-    log_starting_app(host, port)
-    app.run(host=host, port=port)
+    start_app(app)

@@ -3,6 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
+from types import TracebackType
 from typing import Any
 
 import pytest
@@ -18,6 +19,28 @@ from gateway_api.clinical_jwt import JWT
 os.environ["PDS_URL"] = "stub"
 os.environ["PROVIDER_URL"] = "not-stub"
 os.environ["SDS_URL"] = "stub"
+
+
+class NewEnvVars:
+    def __init__(self, new_env_vars: dict[str, str]) -> None:
+        self.new_env_vars = new_env_vars
+        self.original_env_vars = {key: os.environ.get(key) for key in new_env_vars}
+
+    def __enter__(self) -> "NewEnvVars":
+        os.environ.update(self.new_env_vars)
+        return self
+
+    def __exit__(
+        self,
+        _type: type[BaseException] | None,
+        _value: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        for key, value in self.original_env_vars.items():
+            if value is not None:
+                os.environ[key] = value
+            else:
+                del os.environ[key]
 
 
 @dataclass

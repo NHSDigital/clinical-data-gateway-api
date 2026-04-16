@@ -12,7 +12,15 @@ from flask import Flask
 from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
 
-from gateway_api.app import app, get_app_host, get_app_port
+from gateway_api.app import (
+    app,
+    get_app_host,
+    get_app_port,
+    log_env_vars,
+    log_starting_app,
+    start_app,
+)
+from gateway_api.conftest import NewEnvVars
 
 
 @pytest.fixture
@@ -46,6 +54,52 @@ class TestAppInitialization:
 
         with pytest.raises(RuntimeError):
             _ = get_app_port()
+
+    def test_logging_app_startup_details_on_app_initialization(
+        self, mocker: MockerFixture
+    ) -> None:
+        log_info_mock = mocker.patch.object(app.logger, "info")
+
+        host = "test_host"
+        port = 1234
+        log_starting_app(app, host, port)
+
+        # Check that the app startup details were logged
+        log_info_mock.assert_called_with(
+            {
+                "description": "Starting Flask app",
+                "host": host,
+                "port": port,
+            }
+        )
+
+    def test_logging_environment_variables_on_app_initialization(
+        self, mocker: MockerFixture
+    ) -> None:
+        log_info_mock = mocker.patch.object(app.logger, "info")
+
+        log_env_vars(app)
+
+        # Check that the environment variables were logged
+        log_info_mock.assert_called_with(
+            {
+                "description": "Initializing Flask app",
+                "env_vars": os.environ.items(),
+            }
+        )
+
+    def test_start_app_logs_startup_details(self) -> None:
+        test_app = Mock()
+
+        test_env_vars = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+        }
+
+        with NewEnvVars(test_env_vars):
+            start_app(test_app)
+
+            test_app.run.assert_called_with(host="test_host", port=1234)
 
 
 class TestGetStructuredRecord:
