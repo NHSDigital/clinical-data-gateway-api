@@ -73,6 +73,7 @@ NOSONAR
 NPFIT
 ONESHELL
 opencollection
+orangebox
 pipefail
 PIPX
 pkce

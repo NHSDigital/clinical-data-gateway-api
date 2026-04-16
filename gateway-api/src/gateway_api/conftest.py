@@ -1,7 +1,10 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
 import json
+import os
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import TracebackType
 from typing import Any
 
 import pytest
@@ -12,6 +15,36 @@ from requests.structures import CaseInsensitiveDict
 from werkzeug.test import EnvironBuilder
 
 from gateway_api.clinical_jwt import JWT
+
+# TODO: Do this better.
+os.environ["PDS_URL"] = "stub"
+os.environ["PROVIDER_URL"] = "not-stub"
+os.environ["SDS_URL"] = "stub"
+
+
+class NewEnvVars:
+    def __init__(self, new_env_vars: Mapping[str, str | None]) -> None:
+        self.new_env_vars = new_env_vars
+        self.original_env_vars = {}
+        for key in new_env_vars:
+            if key in os.environ:
+                self.original_env_vars[key] = os.environ[key]
+
+    def __enter__(self) -> "NewEnvVars":
+        for key, value in self.new_env_vars.items():
+            if value is None and key in os.environ:
+                del os.environ[key]
+            elif value is not None:
+                os.environ[key] = value
+        return self
+
+    def __exit__(
+        self,
+        _type: type[BaseException] | None,
+        _value: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        os.environ.update(self.original_env_vars)
 
 
 @dataclass

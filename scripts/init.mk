@@ -2,6 +2,7 @@
 
 include scripts/docker/docker.mk
 include scripts/tests/test.mk
+include scripts/env/env.mk
 -include scripts/terraform/terraform.mk
 
 # ==============================================================================

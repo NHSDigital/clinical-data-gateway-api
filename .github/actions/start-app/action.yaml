@@ -4,7 +4,8 @@ inputs:
   deploy-command:
     description: "Command to start app"
     required: false
-    default: "make deploy"
+    # TODO: rename this make deploy-ci?
+    default: "make deploy-dev"
   health-path:
     description: "Health check path"
     required: false

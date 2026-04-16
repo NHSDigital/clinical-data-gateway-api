@@ -20,7 +20,6 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 
 import os
 import uuid
-from collections.abc import Callable
 
 import requests
 from fhir.r4 import Patient
@@ -29,18 +28,17 @@ from pydantic import ValidationError
 from gateway_api.common.error import PdsRequestFailedError
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_PDS environment variable and just
+#       we should remove the PDS_URL environment variable and just
 #       use the stub client
-STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
+STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
 
-get: Callable[..., requests.Response]
 if not STUB_PDS:
-    get = requests.get
+    from requests import get
 else:
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
-    get = pds.get
+    get = pds.get  # type: ignore
 
 
 class PdsClient:
@@ -67,15 +65,10 @@ class PdsClient:
             print(result)
     """
 
-    # URLs for different PDS environments. Requires authentication to use live.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    PROD_URL = "https://api.service.nhs.uk/personal-demographics/FHIR/R4"
-
     def __init__(
         self,
         auth_token: str,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
@@ -83,6 +76,8 @@ class PdsClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.ignore_dates = ignore_dates
+
+        # TODO: Add logging to show stub behaviour
 
     def _build_headers(
         self,
@@ -123,7 +118,8 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
-        # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
+        # This normally calls requests.get, but if PDS_URL is set it uses the stub.
+        # TODO: Log request to confirm client behaviour
         response = get(
             url,
             headers=headers,
@@ -133,6 +129,7 @@ class PdsClient:
 
         try:
             response.raise_for_status()
+            # TODO: Log response to confirm stub behaviour
         except requests.HTTPError as err:
             raise PdsRequestFailedError(error_reason=err.response.reason) from err
 

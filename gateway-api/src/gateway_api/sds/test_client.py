@@ -36,7 +36,7 @@ def test_sds_client_get_org_details_success(
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     result = client.get_org_details(ods_code="PROVIDER")
 
@@ -113,7 +113,7 @@ def test_sds_client_get_org_details_with_endpoint(
         },
     )
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="TESTORG")
 
     assert result is not None
@@ -130,7 +130,7 @@ def test_sds_client_sends_correct_headers(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     correlation_id = "test-correlation-123"
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
@@ -152,7 +152,7 @@ def test_sds_client_timeout_parameter(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL, timeout=30)
+    client = SdsClient(base_url="https://test.com", timeout=30)
 
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
@@ -195,7 +195,7 @@ def test_sds_client_custom_service_interaction_id(
     )
 
     client = SdsClient(
-        base_url=SdsClient.SANDBOX_URL,
+        base_url="https://test.com",
         service_interaction_id=custom_interaction,
     )
 
@@ -221,7 +221,7 @@ def test_sds_client_builds_correct_device_query_params(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     client.get_org_details(ods_code="PROVIDER")
 
@@ -249,7 +249,7 @@ def test_sds_client_extract_party_key_from_device(
     :param mock_requests_get: Capture fixture for request details.
     """
     # The default seeded PROVIDER device has a party key
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     stub.upsert_device(
         organization_ods="WITHPARTYKEY",
@@ -322,7 +322,7 @@ def test_sds_client_raises_sds_request_failed_error_on_http_error(
 
     monkeypatch.setattr("gateway_api.sds.client.get", get_without_apikey)
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     with pytest.raises(SdsRequestFailedError, match="SDS FHIR API request failed"):
         client.get_org_details(ods_code="PROVIDER")
@@ -365,7 +365,7 @@ def test_sds_client_endpoint_entry_without_address_returns_none(
         },
     )
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="NOADDR")
 
     assert result.asid == "111111111111"
@@ -381,9 +381,9 @@ def test_sds_client_empty_device_bundle_returns_none_asid() -> None:
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
-    # "UNKNOWNORG" has no seeded devices, so the bundle entry list will be empty
-    result = client.get_org_details(ods_code="UNKNOWNORG", get_endpoint=False)
+    client = SdsClient(base_url="https://test.com")
+    # "UNKNOWN_ORG" has no seeded devices, so the bundle entry list will be empty
+    result = client.get_org_details(ods_code="UNKNOWN_ORG", get_endpoint=False)
 
     assert result.asid is None
 
@@ -412,7 +412,7 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
     )
     # Deliberately do not seed any endpoint for NOENDPOINT
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="NOENDPOINT")
 
     assert result.asid == "222222222222"

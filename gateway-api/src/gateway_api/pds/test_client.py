@@ -24,7 +24,7 @@ def test_search_patient_by_nhs_number_happy_path(
     )
     mocker.patch("gateway_api.pds.client.get", return_value=happy_path_response)
 
-    client = PdsClient(auth_token)
+    client = PdsClient(auth_token, base_url="https://test.com")
     patient = client.search_patient_by_nhs_number("9999999999")
 
     assert isinstance(patient, Patient)
@@ -44,7 +44,7 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
     )
     mocker.patch("gateway_api.pds.client.get", return_value=gp_less_response)
 
-    client = PdsClient(auth_token)
+    client = PdsClient(auth_token, base_url="https://test.com")
     patient = client.search_patient_by_nhs_number("9999999999")
 
     assert isinstance(patient, Patient)
@@ -67,7 +67,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     request_id = str(uuid4())
     correlation_id = "corr-123"
 
-    client = PdsClient(auth_token)
+    client = PdsClient(auth_token, base_url="https://test.com")
     _ = client.search_patient_by_nhs_number(
         "9000000009",
         request_id=request_id,
@@ -96,7 +96,7 @@ def test_search_patient_by_nhs_number_generates_request_id(
         "gateway_api.pds.client.get", return_value=happy_path_response
     )
 
-    client = PdsClient(auth_token)
+    client = PdsClient(auth_token, base_url="https://test.com")
 
     _ = client.search_patient_by_nhs_number("9000000009")
 
@@ -117,7 +117,7 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         reason="Not Found",
     )
     mocker.patch("gateway_api.pds.client.get", return_value=not_found_response)
-    pds = PdsClient(auth_token)
+    pds = PdsClient(auth_token, base_url="https://test.com")
 
     with pytest.raises(
         PdsRequestFailedError, match="PDS FHIR API request failed: Not Found"
@@ -140,7 +140,7 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
     )
     mocker.patch("gateway_api.pds.client.get", return_value=response)
 
-    client = PdsClient(auth_token)
+    client = PdsClient(auth_token, base_url="https://test.com")
 
     with pytest.raises(PdsRequestFailedError) as error:
         client.search_patient_by_nhs_number("9999999999")

@@ -22,9 +22,9 @@ from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTI
 from gateway_api.sds.search_results import SdsSearchResults
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_SDS environment variable and just
+#       we should remove the SDS_URL environment variable and just
 #       use the stub client
-STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
 if not STUB_SDS:
     from requests import get
 else:
@@ -54,7 +54,7 @@ class SdsClient:
 
     **Stubbing**:
 
-    For testing, set the environment variable ``$STUB_SDS`` to use the
+    For testing, set the environment variable ``$SDS_URL`` to use the
     :class:`SdsFhirApiStub` instead of making real HTTP requests.
 
     **Usage example**::
@@ -71,16 +71,12 @@ class SdsClient:
             print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
-    # URLs for different SDS environments. Will move to a config file eventually.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
@@ -90,6 +86,8 @@ class SdsClient:
             service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
         )
         self.api_key = self._get_api_key()
+
+        # TODO: Add logging to show stub behaviour
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -194,6 +192,7 @@ class SdsClient:
         if party_key is not None:
             params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
+        # TODO: Log request to confirm stub behaviour
         response = get(
             url,
             headers=headers,
@@ -203,6 +202,7 @@ class SdsClient:
 
         try:
             response.raise_for_status()
+            # TODO: Log response to confirm stub behaviour
         except HTTPError as e:
             raise SdsRequestFailedError(error_reason=str(e)) from e
 
