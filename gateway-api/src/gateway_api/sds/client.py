@@ -54,7 +54,7 @@ class SdsClient:
 
     **Stubbing**:
 
-    For testing, set the environment variable ``$SDS_URL` to use the
+    For testing, set the environment variable ``$SDS_URL`` to use the
     :class:`SdsFhirApiStub` instead of making real HTTP requests.
 
     **Usage example**::
@@ -80,7 +80,7 @@ class SdsClient:
 
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:

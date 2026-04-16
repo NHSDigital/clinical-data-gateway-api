@@ -73,7 +73,7 @@ class PdsClient:
     def __init__(
         self,
         auth_token: str,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
