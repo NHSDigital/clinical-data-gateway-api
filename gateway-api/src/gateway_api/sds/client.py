@@ -26,8 +26,18 @@ from gateway_api.sds.search_results import SdsSearchResults
 #       use the stub client
 STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
 if not STUB_SDS:
+    log_details = {
+        "description": "Using real SDS client",
+        "sds_url": os.environ["SDS_URL"],
+    }
+    print(log_details, flush=True)
     from requests import get
 else:
+    log_details = {
+        "description": "Using stub SDS client",
+        "sds_url": "stub",
+    }
+    print(log_details, flush=True)
     from stubs import SdsFhirApiStub
 
     sds = SdsFhirApiStub()

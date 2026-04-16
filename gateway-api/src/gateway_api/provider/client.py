@@ -37,8 +37,20 @@ from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTI
 #       use the stub client
 STUB_PROVIDER = os.environ["PROVIDER_URL"].lower() == "stub"
 if not STUB_PROVIDER:
+    log_details = {
+        "description": "Using real GP Provider client",
+        # TODO: There is a nuance to this: the URL is actually from SDS.
+        # Find a better wording for this.
+        "provider_url": os.environ["PROVIDER_URL"],
+    }
+    print(log_details, flush=True)
     from requests import post
 else:
+    log_details = {
+        "description": "Using stub GP Provider client",
+        "provider_url": "stub",
+    }
+    print(log_details, flush=True)
     from stubs.provider.stub import GpProviderStub
 
     provider_stub = GpProviderStub()

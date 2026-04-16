@@ -33,8 +33,18 @@ from gateway_api.common.error import PdsRequestFailedError
 STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
 
 if not STUB_PDS:
+    log_details = {
+        "description": "Using real PDS client",
+        "pds_url": os.environ["PDS_URL"],
+    }
+    print(log_details, flush=True)
     from requests import get
 else:
+    log_details = {
+        "description": "Using stub PDS client",
+        "pds_url": "stub",
+    }
+    print(log_details, flush=True)
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
