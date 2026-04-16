@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any
@@ -22,11 +23,12 @@ os.environ["SDS_URL"] = "stub"
 
 
 class NewEnvVars:
-    def __init__(self, new_env_vars: dict[str, str | None]) -> None:
+    def __init__(self, new_env_vars: Mapping[str, str | None]) -> None:
         self.new_env_vars = new_env_vars
-        self.original_env_vars = {
-            key: os.environ.get(key) for key in new_env_vars if key in os.environ
-        }
+        self.original_env_vars = {}
+        for key in new_env_vars:
+            if key in os.environ:
+                self.original_env_vars[key] = os.environ[key]
 
     def __enter__(self) -> "NewEnvVars":
         for key, value in self.new_env_vars.items():
