@@ -65,11 +65,6 @@ class PdsClient:
             print(result)
     """
 
-    # URLs for different PDS environments. Requires authentication to use live.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    PROD_URL = "https://api.service.nhs.uk/personal-demographics/FHIR/R4"
-
     def __init__(
         self,
         auth_token: str,

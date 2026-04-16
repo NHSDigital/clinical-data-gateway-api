@@ -71,10 +71,6 @@ class SdsClient:
             print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
-    # URLs for different SDS environments. Will move to a config file eventually.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
