@@ -69,6 +69,7 @@ test: # Run all the test tasks @Testing
 		test-acceptance\
 		test-schema
 
+# TODO: have _test target="proxy"/"local"?
 _test:
 	set -e
 	script="./scripts/tests/${name}.sh"

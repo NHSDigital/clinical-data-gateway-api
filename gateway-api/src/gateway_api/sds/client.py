@@ -26,18 +26,8 @@ from gateway_api.sds.search_results import SdsSearchResults
 #       use the stub client
 STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
 if not STUB_SDS:
-    log_details = {
-        "description": "Using real SDS client",
-        "sds_url": os.environ["SDS_URL"],
-    }
-    print(log_details, flush=True)
     from requests import get
 else:
-    log_details = {
-        "description": "Using stub SDS client",
-        "sds_url": "stub",
-    }
-    print(log_details, flush=True)
     from stubs import SdsFhirApiStub
 
     sds = SdsFhirApiStub()
@@ -100,6 +90,8 @@ class SdsClient:
             service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
         )
         self.api_key = self._get_api_key()
+
+        # TODO: Add logging to show stub behaviour
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -204,6 +196,7 @@ class SdsClient:
         if party_key is not None:
             params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
+        # TODO: Log request to confirm stub behaviour
         response = get(
             url,
             headers=headers,
@@ -213,6 +206,7 @@ class SdsClient:
 
         try:
             response.raise_for_status()
+            # TODO: Log response to confirm stub behaviour
         except HTTPError as e:
             raise SdsRequestFailedError(error_reason=str(e)) from e
 

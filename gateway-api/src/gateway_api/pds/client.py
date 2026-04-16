@@ -33,18 +33,8 @@ from gateway_api.common.error import PdsRequestFailedError
 STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
 
 if not STUB_PDS:
-    log_details = {
-        "description": "Using real PDS client",
-        "pds_url": os.environ["PDS_URL"],
-    }
-    print(log_details, flush=True)
     from requests import get
 else:
-    log_details = {
-        "description": "Using stub PDS client",
-        "pds_url": "stub",
-    }
-    print(log_details, flush=True)
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
@@ -92,6 +82,8 @@ class PdsClient:
         self.timeout = timeout
         self.ignore_dates = ignore_dates
 
+        # TODO: Add logging to show stub behaviour
+
     def _build_headers(
         self,
         request_id: str | None = None,
@@ -132,6 +124,7 @@ class PdsClient:
         url = f"{self.base_url}/Patient/{nhs_number}"
 
         # This normally calls requests.get, but if PDS_URL is set it uses the stub.
+        # TODO: Log request to confirm client behaviour
         response = get(
             url,
             headers=headers,
@@ -141,6 +134,7 @@ class PdsClient:
 
         try:
             response.raise_for_status()
+            # TODO: Log response to confirm stub behaviour
         except requests.HTTPError as err:
             raise PdsRequestFailedError(error_reason=err.response.reason) from err
 

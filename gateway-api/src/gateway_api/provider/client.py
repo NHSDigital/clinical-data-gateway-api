@@ -37,20 +37,8 @@ from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTI
 #       use the stub client
 STUB_PROVIDER = os.environ["PROVIDER_URL"].lower() == "stub"
 if not STUB_PROVIDER:
-    log_details = {
-        "description": "Using real GP Provider client",
-        # TODO: There is a nuance to this: the URL is actually from SDS.
-        # Find a better wording for this.
-        "provider_url": os.environ["PROVIDER_URL"],
-    }
-    print(log_details, flush=True)
     from requests import post
 else:
-    log_details = {
-        "description": "Using stub GP Provider client",
-        "provider_url": "stub",
-    }
-    print(log_details, flush=True)
     from stubs.provider.stub import GpProviderStub
 
     provider_stub = GpProviderStub()
@@ -95,6 +83,8 @@ class GpProviderClient:
         self.token = token
         self.endpoint_path = endpoint_path
 
+        # TODO: Add logging to show stub behaviour
+
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
@@ -129,6 +119,7 @@ class GpProviderClient:
         base_endpoint = self.provider_endpoint.rstrip("/") + "/"
         url = urljoin(base_endpoint, self.endpoint_path)
 
+        # TODO: Log request to confirm client behaviour
         response = post(
             url,
             headers=headers,
@@ -138,6 +129,7 @@ class GpProviderClient:
 
         try:
             response.raise_for_status()
+            # TODOL: Log response to confirm stub behaviour
         except HTTPError as err:
             # TODO: GPCAPIM-353 Consider what error information we want to return here.
             #   Post-steel-thread we probably want to log rather than dumping like this
