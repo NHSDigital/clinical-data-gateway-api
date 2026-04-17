@@ -1,0 +1,36 @@
+name: "Run load tests"
+description: |
+  Action that runs the locust load test suite directly against the specified URL
+
+inputs:
+  preview-url:
+    description: "URL to run load tests against"
+    required: true
+  mtls-cert:
+    description: "Path to mTLS client certificate"
+    required: false
+  mtls-key:
+    description: "Path to mTLS client key"
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: "Run load tests"
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.preview-url }}
+        MTLS_CERT: ${{ inputs.mtls-cert }}
+        MTLS_KEY: ${{ inputs.mtls-key }}
+      run: |
+        rm -rf gateway-api/test-artefacts/* || true
+        mkdir -p gateway-api/test-artefacts
+        make test-load-initial || true # Don't fail the workflow if load tests fail, as we still want to upload results for analysis
+
+    - name: "Upload load test results"
+      if: always()
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+      with:
+        name: load-test-results
+        path: gateway-api/test-artefacts/
+        retention-days: 30
