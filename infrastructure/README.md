@@ -33,7 +33,7 @@ The `preview/` environment creates an isolated, per-branch deployment of the Gat
 Key input variables:
 
 | Variable | Description | Default |
-|---|---|---|
+| --- | --- | --- |
 | `branch_name` | Git branch name — used to derive the hostname and resource names | *(required)* |
 | `image_tag` | Docker image tag to deploy; defaults to `branch_name` if empty | `""` |
 | `base_domain` | Base domain for the preview URL | `dev.endpoints.clinical-data-gateway.national.nhs.uk` |
@@ -70,7 +70,6 @@ A dev container image used by CI/CD pipelines, based on the VS Code Alpine base 
 - Python (via asdf)
 - Docker CLI and Buildx
 - Linters and checkers: vale, hadolint (via npm/markdownlint), ShellCheck
-- Development certificate support for machines behind corporate proxies
 
 ## Terraform Operations
 
