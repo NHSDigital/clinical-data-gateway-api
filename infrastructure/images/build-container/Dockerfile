@@ -2,9 +2,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/base:alpine3.23 AS gateway-build-con
 
 ENV PYTHON_VERSION="3.14"
 
-# Mar 2, 2026: https://github.com/asdf-vm/asdf/releases 6a97697d3d88d6b7ad19c4bd3157679b052ab657
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.1"
-# Jan 22, 2026: https://github.com/editorconfig-checker/editorconfig-checker/releases/tag/v3.6.1 aa06cea887b26f372f9368aa53665266ec6dc364
 ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.6.1"
 
 ARG INCLUDE_DEV_CERTS
