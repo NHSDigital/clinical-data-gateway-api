@@ -23,6 +23,8 @@ RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] && [ -d /resources/dev-certificates ]; 
 WORKDIR /resources/build/gateway-api
 
 ENV PYTHONPATH=/resources/build/gateway-api
+ENV FLASK_HOST="0.0.0.0"
+ENV FLASK_PORT="8080"
 
 ARG COMMIT_VERSION
 # TODO: Do we want to do something with this env var?
