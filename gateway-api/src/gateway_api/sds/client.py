@@ -78,6 +78,10 @@ class SdsClient:
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
+    # Data in SDS Sandbox only works with this interaction ID.
+    # For sandbox, that's fine. Anything else needs to work with the default one.
+    SANDBOX_INTERACTION_ID = "urn:nhs:names:services:psis:REPC_IN150016UK05"
+
     def __init__(
         self,
         base_url: str = SANDBOX_URL,
@@ -86,10 +90,14 @@ class SdsClient:
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.service_interaction_id = (
-            service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
-        )
         self.api_key = self._get_api_key()
+
+        if service_interaction_id is not None:
+            self.service_interaction_id = service_interaction_id
+        elif self.base_url == self.SANDBOX_URL:
+            self.service_interaction_id = self.SANDBOX_INTERACTION_ID
+        else:
+            self.service_interaction_id = self.DEFAULT_SERVICE_INTERACTION_ID
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -134,9 +142,6 @@ class SdsClient:
             return empty_search_results
 
         asid = self._extract_device_identifier(device, FHIRSystem.NHS_SPINE_ASID)
-        party_key = self._extract_device_identifier(
-            device, FHIRSystem.NHS_MHS_PARTY_KEY
-        )
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
@@ -146,7 +151,6 @@ class SdsClient:
 
         endpoint_bundle = self._query_sds(
             ods_code=ods_code,
-            party_key=party_key,
             correlation_id=correlation_id,
             timeout=timeout,
             querytype=SdsResourceType.ENDPOINT,
@@ -173,7 +177,6 @@ class SdsClient:
     def _query_sds(
         self,
         ods_code: str,
-        party_key: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = 10,
         querytype: SdsResourceType = SdsResourceType.DEVICE,
@@ -190,9 +193,6 @@ class SdsClient:
                 f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|{self.service_interaction_id}"
             ],
         }
-
-        if party_key is not None:
-            params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
         response = get(
             url,
