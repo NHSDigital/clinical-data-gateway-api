@@ -537,10 +537,12 @@ class TestUpsertOperations:
             "resourceType": "Device",
             "id": "new-device-123",
             "identifier": [],
-            "owner": {"identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEWORG"}},
+            "owner": {
+                "identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEW_ORG"}
+            },
         }
         stub.upsert_device(
-            organization_ods="NEWORG",
+            organization_ods="NEW_ORG",
             service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             party_key=None,
             device=new_device,
@@ -549,7 +551,7 @@ class TestUpsertOperations:
         response = stub.get_device_bundle(
             headers={"apikey": "test-key"},
             params={
-                "organization": f"{FHIRSystem.ODS_CODE}|NEWORG",
+                "organization": f"{FHIRSystem.ODS_CODE}|NEW_ORG",
                 "identifier": _INTERACTION_ID_PARAM,
             },
         )
@@ -574,7 +576,7 @@ class TestUpsertOperations:
         """An endpoint added via upsert_endpoint must be returned in subsequent
         queries."""
         stub.clear_endpoints()
-        new_party_key = "NEWORG-0000999"
+        new_party_key = "NEW_ORG-0000999"
         new_endpoint: dict[str, object] = {
             "resourceType": "Endpoint",
             "id": "new-endpoint-456",
@@ -587,14 +589,14 @@ class TestUpsertOperations:
             "payloadType": [{"coding": [{"system": SdsFhirApiStub.CODING_SYSTEM}]}],
             "address": "https://new.example.com/fhir",
             "managingOrganization": {
-                "identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEWORG"}
+                "identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEW_ORG"}
             },
             "identifier": [
                 {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": new_party_key}
             ],
         }
         stub.upsert_endpoint(
-            organization_ods="NEWORG",
+            organization_ods="NEW_ORG",
             service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
             party_key=new_party_key,
             endpoint=new_endpoint,

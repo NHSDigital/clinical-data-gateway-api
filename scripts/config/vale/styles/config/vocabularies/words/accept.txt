@@ -28,7 +28,9 @@ hostname
 Hotspots
 IDE
 idempotence
+[Ii]sort
 JUnit
+markdownlint
 mypy
 namespaces
 OAuth

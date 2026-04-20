@@ -148,3 +148,17 @@ test-remote: env-remote
 		BASE_URL="$${BASE_URL}-pr-$${PR_NUMBER}" && \
 		export APIGEE_ACCESS_TOKEN BASE_URL && \
 		$(MAKE) test
+
+# Run your load tests from scripts/test/load @Testing
+test-load-initial:
+	@$(MAKE) _test name="load"
+
+# Run your load tests from scripts/test/load @Testing with UI enabled
+test-load-ui:
+	@bash -c '\
+		if [[ -z "$$APIGEE_ACCESS_TOKEN" ]]; then \
+			set -a && source .env && set +a && \
+			APIGEE_ACCESS_TOKEN=$$(./scripts/get_apigee_token.sh) && \
+			export APIGEE_ACCESS_TOKEN; \
+		fi && \
+		UI=true $(MAKE) _test name="load"'

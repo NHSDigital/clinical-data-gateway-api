@@ -1,0 +1,20 @@
+{
+  "name": "gateway-bruno",
+  "version": "0.0.1",
+  "description": "Packages requried for using Bruno in Gateway API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@usebruno/cli": "^3.2.2",
+    "axios": "^1.15.0"
+  },
+  "overrides": {
+    "@usebruno/cli": {
+      "axios": "$axios"
+    }
+  }
+}
