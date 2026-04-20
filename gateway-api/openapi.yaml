@@ -25,6 +25,7 @@ paths:
           name: Content-Type
           schema:
             type: string
+            example: "application/fhir+json"
             enum: [application/fhir+json]
           required: true
         - in: header
