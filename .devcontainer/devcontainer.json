@@ -40,9 +40,10 @@
     }
   },
   "postCreateCommand": "doas apk add --no-cache openjdk21-jre && scripts/devcontainer/configure-zsh.sh && bash -c 'source ~/.bashrc && make config && pyenv activate gateway && make dependencies'",
-  "initializeCommand": "scripts/devcontainer/create-docker-network-if-required.sh && cp .tool-versions ${localWorkspaceFolder}/infrastructure/images/build-container/resources/.tool-versions",
+  "initializeCommand": "scripts/devcontainer/create-docker-network-if-required.sh && cp .tool-versions ${localWorkspaceFolder}/infrastructure/images/build-container/resources/.tool-versions && mkdir -p ${localEnv:HOME}/.proxygen",
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached"
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.proxygen,target=/home/gateway-dev/.proxygen,type=bind,consistency=cached"
   ],
   "remoteUser": "gateway-dev",
   "containerUser": "gateway-dev",
