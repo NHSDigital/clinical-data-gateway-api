@@ -10,7 +10,6 @@ env:
   ECR_REPOSITORY_NAME: "whoami"
   TF_STATE_BUCKET: "cds-cdg-dev-tfstate-900119715266"
   PREVIEW_STATE_PREFIX: "dev/preview/"
-  BASE_URL: "https://internal-dev.api.service.nhs.uk/clinical-data-gateway-api-poc-pr-${{ github.event.pull_request.number }}"
   python_version: "3.14"
   PROXYGEN_API_NAME: ${{ vars.PROXYGEN_API_NAME }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
