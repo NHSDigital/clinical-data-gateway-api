@@ -22,8 +22,8 @@ runs:
   using: composite
   steps:
     - name: Set up environment
-      run: |
-        make env-test-{{ inputs.env }}
+      shell: bash
+      run: make env-test-{{ inputs.env }}
 
     - name: "Run ${{ inputs.test-type }} tests"
       shell: bash
