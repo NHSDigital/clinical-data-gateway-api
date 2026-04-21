@@ -1,5 +1,6 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
+import copy
 import os
 from datetime import timedelta
 from typing import Any, Protocol, cast
@@ -17,6 +18,20 @@ DEFAULT_REQUEST_HEADERS = {
     "Content-Type": "application/fhir+json",
     "Ods-from": "CONSUMER",
     "Ssp-TraceID": "test-trace-id",
+}
+
+
+SIMPLE_PAYLOAD = {
+    "resourceType": "Parameters",
+    "parameter": [
+        {
+            "name": "patientNHSNumber",
+            "valueIdentifier": {
+                "system": FHIRSystem.NHS_NUMBER,
+                "value": "9999999999",
+            },
+        },
+    ],
 }
 
 
@@ -145,18 +160,7 @@ class RemoteClient:
 
 @pytest.fixture
 def simple_request_payload() -> dict[str, Any]:
-    return {
-        "resourceType": "Parameters",
-        "parameter": [
-            {
-                "name": "patientNHSNumber",
-                "valueIdentifier": {
-                    "system": FHIRSystem.NHS_NUMBER,
-                    "value": "9999999999",
-                },
-            },
-        ],
-    }
+    return copy.deepcopy(SIMPLE_PAYLOAD)
 
 
 @pytest.fixture
