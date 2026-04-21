@@ -23,7 +23,9 @@ runs:
   steps:
     - name: Set up environment
       shell: bash
-      run: make env-test-{{ inputs.env }}
+      env:
+        ENV: ${{ inputs.env }}
+      run: make env-test-"${ENV}"
 
     - name: "Run ${{ inputs.test-type }} tests"
       shell: bash
