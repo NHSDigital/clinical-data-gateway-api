@@ -6,12 +6,7 @@ from typing import Any, Protocol, cast
 
 import pytest
 import requests
-from dotenv import find_dotenv, load_dotenv
 from fhir.constants import FHIRSystem
-
-# Load environment variables from .env file in the workspace root
-load_dotenv(find_dotenv(usecwd=True))
-
 
 DEFAULT_REQUEST_HEADERS = {
     "Content-Type": "application/fhir+json",
@@ -160,9 +155,8 @@ def simple_request_payload() -> dict[str, Any]:
 
 
 @pytest.fixture
-def get_headers(request: pytest.FixtureRequest) -> dict[str, str]:
+def get_headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
     """Return auth headers for remote tests, or Apigee token for local."""
-    env = request.config.getoption("--env")
     if env == "local":
         token = os.environ.get("APIGEE_ACCESS_TOKEN", "")
         return {"Authorization": f"Bearer {token}"} if token else {}
@@ -178,11 +172,12 @@ def get_headers(request: pytest.FixtureRequest) -> dict[str, str]:
 
 @pytest.fixture
 def client(
-    request: pytest.FixtureRequest, base_url: str, get_headers: dict[str, str]
+    env: str,
+    request: pytest.FixtureRequest,
+    get_headers: dict[str, str],
 ) -> Client:
-    env = request.config.getoption("--env")
-
     if env == "local":
+        base_url = request.getfixturevalue("base_url")
         return LocalClient(base_url=base_url, auth_headers=get_headers)
     elif env == "remote":
         proxy_url = request.getfixturevalue("nhsd_apim_proxy_url")
@@ -192,15 +187,22 @@ def client(
 
 
 @pytest.fixture(scope="module")
-def base_url() -> str:
-    """Retrieves the base URL of the currently deployed application."""
-    return _fetch_env_variable("BASE_URL", str)
+def env() -> str:
+    return get_env()
+
+
+def get_env() -> str:
+    try:
+        _ = _fetch_env_variable("BASE_URL", str)
+        return "local"
+    except ValueError:
+        return "remote"
 
 
 @pytest.fixture(scope="module")
-def hostname() -> str:
-    """Retrieves the hostname of the currently deployed application."""
-    return _fetch_env_variable("HOST", str)
+def base_url() -> str:
+    """Retrieves the base URL of the currently deployed application."""
+    return _fetch_env_variable("BASE_URL", str)
 
 
 def _fetch_env_variable[T](
@@ -222,19 +224,9 @@ def _get_remote_test_username() -> str:
     return os.getenv(REMOTE_TEST_USERNAME_ENV_VAR, DEFAULT_REMOTE_TEST_USERNAME)
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--env",
-        action="store",
-        default="local",
-        help="Environment to run tests against",
-    )
-
-
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
-    if config.getoption("--env") == "remote":
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    is_remote = get_env() == "remote"
+    if is_remote:
         for item in items:
             item.add_marker(
                 pytest.mark.nhsd_apim_authorization(
