@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/vscode/devcontainers/base:alpine3.23 AS gateway-build-container
+FROM mcr.microsoft.com/devcontainers/base:alpine3.23 AS gateway-build-container
 
 ENV PYTHON_VERSION="3.14"
 
