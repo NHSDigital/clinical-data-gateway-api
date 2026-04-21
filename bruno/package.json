@@ -9,6 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@usebruno/cli": "^3.2.2"
+    "@usebruno/cli": "^3.2.2",
+    "axios": "^1.15.0"
+  },
+  "overrides": {
+    "@usebruno/cli": {
+      "axios": "$axios"
+    }
   }
 }

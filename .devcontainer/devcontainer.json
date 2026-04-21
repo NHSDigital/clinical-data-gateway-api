@@ -52,6 +52,7 @@
       "onAutoForward": "ignore"
     }
   },
+  "forwardPorts": [8089],
   "runArgs": [
     "--network=gateway-local"
   ]

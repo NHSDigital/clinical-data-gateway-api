@@ -209,6 +209,41 @@ Shared fixtures in `tests/conftest.py` are available across all test types:
 - **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
 - **`client`**: An HTTP client instance for sending requests to the APIs
 
+### Load Testing with Locust ('load/')
+
+Load testing is performed using Locust. You have the option of running via the CLI or UI.
+
+**How it works:**
+    - Tests are defined in tests/load/.
+    - The test extracts the target host from the `BASE_URL` in your .env file.
+    - Tests can be ran in the terminal (headless) or controlled via a web UI.
+    - Requires `make deploy` to have been ran first
+    - Proxygen is required to be configured in order to run locally
+
+**Running Load Tests:**
+
+To run the default headless load test:
+
+```bash
+make test-load-initial
+```
+
+To run the test using the interactive web UI:
+
+```bash
+make test-load-ui
+```
+
+Once the server starts, open <http://localhost:8089> in your browser to set your parameters and observe the behaviour.
+
+**Common CLI Parameters:**
+If you need to adjust the headless execution within ```scripts/tests/load.sh``` or run Locust directly, use these flags <https://docs.locust.io/en/stable/running-without-web-ui.html>:
+    -u or --users: Peak number of concurrent users (e.g., 100)
+    -r or --spawn-rate: Number of users to spawn per second (e.g., 10)
+    -t or --run-time: Duration of the test (e.g., 10s, 1m, 1h)
+    --host: The target base URL
+    --headless: Disables the web UI and executes immediately
+
 ## Test Reports
 
 Test execution generates multiple report formats for both local development and CI/CD pipelines:

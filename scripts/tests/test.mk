@@ -69,6 +69,12 @@ test: # Run all the test tasks @Testing
 		test-acceptance\
 		test-schema
 
+test-load-initial: # Run your load tests from scripts/test/load @Testing
+	@$(MAKE) _test name="load"
+
+test-load-ui: # Run your load tests from scripts/test/load @Testing with UI enabled
+	@UI=true $(MAKE) _test name="load"'
+
 # TODO: have _test target="proxy"/"local"?
 _test:
 	set -e
@@ -97,3 +103,4 @@ ${VERBOSE}.SILENT: \
 	test-unit \
 	test-acceptance \
 	test-schema\
+

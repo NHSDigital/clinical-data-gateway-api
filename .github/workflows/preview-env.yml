@@ -320,6 +320,15 @@ jobs:
         with:
           test-type: unit
 
+      - name: "Run load tests"
+        if: github.event.action != 'closed' && steps.smoke-test.outputs.http_result != 'unexpected-status'
+            && steps.tf-output.outputs.preview_url != '' && steps.tf-output.outputs.preview_url != 'null'
+        uses: ./.github/actions/run-load-tests
+        with:
+          mtls-cert: /tmp/client1-cert.pem
+          mtls-key: /tmp/client1-key.pem
+          preview-url: ${{ steps.tf-output.outputs.preview_url }}
+
       - name: "Run contract tests"
         if: github.event.action != 'closed'
         uses: ./.github/actions/run-test-suite
@@ -355,7 +364,7 @@ jobs:
 
       - name: Comment function name on PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const alb = '${{ steps.tf-output.outputs.target_group }}';
