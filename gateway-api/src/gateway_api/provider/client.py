@@ -22,6 +22,7 @@ Usage:
         The response from the provider FHIR API.
 """
 
+import logging
 import os
 from urllib.parse import urljoin
 
@@ -43,6 +44,8 @@ else:
 
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 # Default endpoint path for access record structured interaction (standard GP Connect)
 ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"
@@ -83,7 +86,14 @@ class GpProviderClient:
         self.token = token
         self.endpoint_path = endpoint_path
 
-        # TODO: Add logging to show stub behaviour
+        log_details = {
+            "description": "Initialized GpProviderClient",
+            "provider_endpoint": self.provider_endpoint,
+            "provider_asid": self.provider_asid,
+            "consumer_asid": self.consumer_asid,
+            "endpoint_path": self.endpoint_path,
+        }
+        logger.info(log_details)
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
@@ -119,17 +129,27 @@ class GpProviderClient:
         base_endpoint = self.provider_endpoint.rstrip("/") + "/"
         url = urljoin(base_endpoint, self.endpoint_path)
 
-        # TODO: Log request to confirm client behaviour
+        log_details = {
+            "description": "GPProvider FHIR API request",
+            "url": url,
+            "headers": headers,
+        }
+        logger.info(log_details)
+
         response = post(
             url,
             headers=headers,
             data=body,
             timeout=TIMEOUT,
         )
+        log_details = {
+            "description": "GPProvider FHIR API response received",
+            "status_code": str(response.status_code),
+        }
+        logger.info(log_details)
 
         try:
             response.raise_for_status()
-            # TODOL: Log response to confirm stub behaviour
         except HTTPError as err:
             # TODO: GPCAPIM-353 Consider what error information we want to return here.
             #   Post-steel-thread we probably want to log rather than dumping like this

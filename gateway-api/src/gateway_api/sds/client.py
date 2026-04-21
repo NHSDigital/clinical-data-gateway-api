@@ -8,6 +8,7 @@ This module provides a client for querying the Spine Directory Service to retrie
 
 from __future__ import annotations
 
+import logging
 import os
 from enum import StrEnum
 from typing import Any
@@ -32,6 +33,8 @@ else:
 
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class SdsResourceType(StrEnum):
@@ -87,7 +90,12 @@ class SdsClient:
         )
         self.api_key = self._get_api_key()
 
-        # TODO: Add logging to show stub behaviour
+        log_details = {
+            "description": "Initialized SdsClient",
+            "base_url": self.base_url,
+            "service_interaction_id": self.service_interaction_id,
+        }
+        logger.info(log_details)
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -192,17 +200,27 @@ class SdsClient:
         if party_key is not None:
             params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
 
-        # TODO: Log request to confirm stub behaviour
+        log_details = {
+            "description": "SDS request",
+            "url": url,
+            "headers": headers,
+            "params": params,
+        }
+        logger.info(log_details)
         response = get(
             url,
             headers=headers,
             params=params,
             timeout=timeout or self.timeout,
         )
+        log_details = {
+            "description": "SDS response received",
+            "status_code": str(response.status_code),
+        }
+        logger.info(log_details)
 
         try:
             response.raise_for_status()
-            # TODO: Log response to confirm stub behaviour
         except HTTPError as e:
             raise SdsRequestFailedError(error_reason=str(e)) from e
 

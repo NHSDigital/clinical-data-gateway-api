@@ -18,6 +18,7 @@ If required keys are missing, a ``KeyError`` is raised intentionally. This is tr
 malformed upstream data (or malformed test fixtures) and should be corrected at source.
 """
 
+import logging
 import os
 import uuid
 
@@ -39,6 +40,8 @@ else:
 
     pds = PdsFhirApiStub()
     get = pds.get  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class PdsClient:
@@ -77,7 +80,11 @@ class PdsClient:
         self.timeout = timeout
         self.ignore_dates = ignore_dates
 
-        # TODO: Add logging to show stub behaviour
+        log_details = {
+            "description": "Initialized PdsClient",
+            "base_url": self.base_url,
+        }
+        logger.info(log_details)
 
     def _build_headers(
         self,
@@ -118,18 +125,27 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
+        log_details = {
+            "description": "PDS request",
+            "url": url,
+            "headers": headers,
+        }
+        logger.info(log_details)
         # This normally calls requests.get, but if PDS_URL is set it uses the stub.
-        # TODO: Log request to confirm client behaviour
         response = get(
             url,
             headers=headers,
             params={},
             timeout=timeout or self.timeout,
         )
+        log_details = {
+            "description": "PDS response received",
+            "status_code": str(response.status_code),
+        }
+        logger.info(log_details)
 
         try:
             response.raise_for_status()
-            # TODO: Log response to confirm stub behaviour
         except requests.HTTPError as err:
             raise PdsRequestFailedError(error_reason=err.response.reason) from err
 
