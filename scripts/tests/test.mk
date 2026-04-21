@@ -75,7 +75,6 @@ test-load-initial: # Run your load tests from scripts/test/load @Testing
 test-load-ui: # Run your load tests from scripts/test/load @Testing with UI enabled
 	@UI=true $(MAKE) _test name="load"'
 
-# TODO: have _test target="proxy"/"local"?
 _test:
 	set -e
 	script="./scripts/tests/${name}.sh"

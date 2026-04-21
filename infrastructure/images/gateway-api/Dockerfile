@@ -27,10 +27,8 @@ ENV FLASK_HOST="0.0.0.0"
 ENV FLASK_PORT="8080"
 
 ARG COMMIT_VERSION
-# TODO: Do we want to do something with this env var?
 ENV COMMIT_VERSION=$COMMIT_VERSION
 ARG BUILD_DATE
-# TODO: Do we want to do something with this env var?
 ENV BUILD_DATE=$BUILD_DATE
 
 USER gateway_api_user
