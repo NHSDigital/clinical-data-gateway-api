@@ -56,6 +56,7 @@ class TestParameters:
                 "resourceType": "Parameters",
                 "parameter": [
                     {
+                        "name": "patientNHSNumber",
                         "valueIdentifier": {
                             "system": "https://fhir.nhs.uk/Id/nhs-number",
                             "value": "9000000009",
