@@ -17,9 +17,9 @@ config:
 request:
   headers:
     - name: Ssp-TraceID
-      value: test-trace-id
+      value: d525685c-1baf-41f0-952b-9c588a83ec96
     - name: ODS-from
-      value: test-ods-code
+      value: S55555
   auth:
     type: oauth2
     flow: authorization_code

@@ -1,4 +1,6 @@
+name: local
 variables:
   - name: base_url
     value: http://localhost:5000
-    enabled: true
+  - name: nhs_number
+    value: "9999999999"
