@@ -226,10 +226,10 @@ To be able to use the `load-tests` or `local-tests`, you will need to have Proxy
 
 - Please follow the [guide here](https://nhsd-confluence.digital.nhs.uk/spaces/DCA/pages/1236046532/Proxygen)
 - When the devcontainer has built, the Proxygen configuration is created on the host at `~/gateway/ptl/.proxygen` and bind-mounted into the container as `~/.proxygen`.
-- For *settings*:
+- For _settings_:
   - Set the `api` value
   - `endpoint_url` and `spec_output_format` should be already set.
-- For *credentials*:
+- For _credentials_:
   - Set the `base_url`, `client_secret`, `password` and `username` values.
   - Remove unused fields.
 
