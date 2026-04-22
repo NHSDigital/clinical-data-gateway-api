@@ -81,7 +81,7 @@ deploy: clean build # Deploy the project artefact to the target environment @Pip
 		if $(docker) ps --filter "name=gateway-api" --filter "status=running" --format "{{.Names}}" | grep -q "^gateway-api$$"; then \
 			exit 0 ; \
 		fi ; \
-		sleep 2 ; \
+		sleep $$((attempt * 2)) ; \
 		attempt=$$((attempt + 1)) ; \
 	done ; \
 	echo "ERROR: gateway-api container failed to start. Logs:" ; \
