@@ -32,6 +32,12 @@ else
 fi
 
 source .env.test
+if [[ "$TEST_TYPE" = "unit" ]]; then
+  set -a
+  source .env
+  set +a
+fi
+
 cd gateway-api
 mkdir -p test-artefacts
 

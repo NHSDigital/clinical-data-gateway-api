@@ -20,6 +20,7 @@ env-test-local: # Create .env.test file that will have tests send requests to th
 
 env-test-ci: # Create .env.test file that will have tests send requests to a CI-local app.
 	make _env-test env="ci" overwrite=true
+	make env-ci
 
 env-test-pr-%: # Create .env.test file that will have tests send requests to a proxy deployed for the PR.
 	make _env-test env="pr-$*" overwrite=true

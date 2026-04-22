@@ -147,6 +147,8 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 
 ### Environment Variables
 
+<!-- TODO: Improve docs -->
+
 | Variable | Description |
 | --- | --- |
 | `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`, or `http://gateway-api:8080` from within the devcontainer) |

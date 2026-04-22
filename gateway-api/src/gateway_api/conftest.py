@@ -16,11 +16,6 @@ from werkzeug.test import EnvironBuilder
 
 from gateway_api.clinical_jwt import JWT
 
-# TODO: Do this better.
-os.environ["PDS_URL"] = "stub"
-os.environ["PROVIDER_URL"] = "not-stub"
-os.environ["SDS_URL"] = "stub"
-
 
 class NewEnvVars:
     def __init__(self, new_env_vars: Mapping[str, str | None]) -> None:
