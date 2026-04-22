@@ -121,18 +121,19 @@ def get_env() -> str:
 
 
 @pytest.fixture
-def base_url(request: pytest.FixtureRequest, env: str) -> str:
+def base_url(env: str, request: pytest.FixtureRequest) -> str:
     """Retrieves the base URL of the currently deployed application."""
     if env == "remote":
         return str(request.getfixturevalue("nhsd_apim_proxy_url"))
     return _fetch_env_variable("BASE_URL", str)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def health_endpoint(env: str) -> str:
     if env == "local":
         return "health"
-    return "_status"
+    else:
+        return "_status"
 
 
 def _fetch_env_variable[T](name: str, parser: Callable[[str], T]) -> T:
@@ -148,8 +149,8 @@ def _get_remote_test_username() -> str:
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
-    is_remote = get_env() == "remote"
-    if is_remote:
+    target_is_remote = get_env() == "remote"
+    if target_is_remote:
         for item in items:
             item.add_marker(
                 pytest.mark.nhsd_apim_authorization(

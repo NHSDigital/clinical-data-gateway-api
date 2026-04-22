@@ -42,6 +42,9 @@ cd gateway-api
 mkdir -p test-artefacts
 
 echo "Running ${TEST_TYPE} tests against ${TARGET_ENV} environment..."
+if [[ "$PROXY_BASE_PATH" != "none" ]]; then
+  echo "Using proxy base path: ${PROXY_BASE_PATH}"
+fi
 
 # Set coverage path based on test type
 if [[ "$TEST_TYPE" = "unit" ]]; then

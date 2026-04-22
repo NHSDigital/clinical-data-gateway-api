@@ -8,6 +8,7 @@ from pathlib import Path
 
 import schemathesis
 import yaml
+from hypothesis import HealthCheck, settings
 from schemathesis.generation.case import Case
 from schemathesis.openapi import from_dict
 
@@ -19,6 +20,7 @@ schema = from_dict(schema_dict)
 
 
 @schema.parametrize()
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_api_schema_compliance(case: Case, base_url: str) -> None:
     """Test API endpoints against the OpenAPI schema.
 
