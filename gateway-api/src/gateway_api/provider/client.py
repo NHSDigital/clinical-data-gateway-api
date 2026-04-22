@@ -26,6 +26,7 @@ import logging
 import os
 from urllib.parse import urljoin
 
+from flask.logging import default_handler
 from requests import HTTPError, Response
 
 from gateway_api.clinical_jwt import JWT, JWTValidator
@@ -46,6 +47,8 @@ else:
     post = provider_stub.post  # type: ignore
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(default_handler)
 
 # Default endpoint path for access record structured interaction (standard GP Connect)
 ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"

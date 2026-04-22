@@ -24,6 +24,7 @@ import uuid
 
 import requests
 from fhir.r4 import Patient
+from flask.logging import default_handler
 from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError
@@ -42,6 +43,8 @@ else:
     get = pds.get  # type: ignore
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(default_handler)
 
 
 class PdsClient:

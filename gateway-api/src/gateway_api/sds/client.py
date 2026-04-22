@@ -16,6 +16,7 @@ from typing import Any
 from fhir import Resource
 from fhir.constants import FHIRSystem
 from fhir.r4 import Bundle, Device, Endpoint
+from flask.logging import default_handler
 from requests import HTTPError
 
 from gateway_api.common.error import SdsRequestFailedError
@@ -35,6 +36,8 @@ else:
     get = sds.get  # type: ignore
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(default_handler)
 
 
 class SdsResourceType(StrEnum):
