@@ -147,20 +147,39 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 
 ### Environment Variables
 
-<!-- TODO: Improve docs -->
+Make commands help build the `.env` and `.env.test` files used to populate the required environment variables.
+
+#### .env
+
+`make deploy` will feed the `.env` variables in to the app's environment.
+
+Environment variables control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
+
+| Variable | Description |
+| --- | --- |
+| `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
+| `PDS_API_TOKEN`| Leave unset in development environment. |
+| `PDS_API_SECRET`| Leave unset in development environment. |
+| `PDS_API_KID`| Leave unset in development environment. |
+| `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
+| `SDS_API_TOKEN`| Leave unset in development environment. |
+| `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
+| `CDG_DEBUG` | `true`, return additional debug information when the call to the GP provider returns an error. |
+
+See `make env-*` in `scripts/env/app/env.mk` for the commands that will write these variables to a file.
+
+_Note: `FLASK_HOST` and `FLASK_PORT` are hardcoded in to the Dockerfile. These are for container, and do not need adjusting._
+
+#### .env.test
 
 | Variable | Description |
 | --- | --- |
 | `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`, or `http://gateway-api:8080` from within the devcontainer) |
-| `HOST` | hostname portion of `BASE_URL` |
-| `FLASK_HOST` | Host the Flask app binds to |
-| `FLASK_PORT` | Port the Flask app listens on |
-| `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
-| `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
-| `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
-| `CDG_DEBUG` | `true`, return additional debug information when the call to the GP provider returns an error. |
-
-Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
+| `APIGEE_ACCESS_TOKEN` | An access token to Apigee API used by `pytest_nhds_apim`, fed from the environment variables at run time. |
+| `PROXYGEN_API_NAME` | The name of the API defined in Proxygen. Used by `pytest_nhsd_apim` to run tests against, fed in the CLI arguments in `make test-*` |
+| `PROXY_BASE_PATH` | The suffix of the proxy instance being deployed. Used by `pytest_nhsd_apim` to run tests against, fed in the CLI arguments in `make test-*` |
+| `BASE_URL` | Set if targeting a locally deployed application; otherwise, leave unset. |
+| `TARGET_ENV` | Either `local` or `remote`, to inform the HTTP client used by the tests how to behave - e.g. add auth headers, etc. |
 
 ## Testing
 
