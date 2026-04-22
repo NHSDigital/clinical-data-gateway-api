@@ -5,6 +5,7 @@ set -e
 
 source scripts/env/test/target.sh
 source scripts/env/test/apigee.sh
+source scripts/env/test/user.sh
 
 env="$1"
 BASE_URL=$(get_base_url "$env")
@@ -17,6 +18,7 @@ else
 fi
 APIGEE_ACCESS_TOKEN=$(get_apigee_access_token "$env")
 TARGET_ENV=$(get_target_env "$env")
+REMOTE_TEST_USERNAME=$(get_test_user "$env")
 
 ENV_FILE=".env.test"
 
@@ -26,8 +28,12 @@ set -a
 APIGEE_ACCESS_TOKEN=${APIGEE_ACCESS_TOKEN}
 PROXYGEN_API_NAME=${PROXYGEN_API_NAME}
 PROXY_BASE_PATH=$PROXY_BASE_PATH
+
 BASE_URL=$BASE_URL
+
 TARGET_ENV=$TARGET_ENV
+
+REMOTE_TEST_USERNAME=$REMOTE_TEST_USERNAME
 set +a
 EOF
 

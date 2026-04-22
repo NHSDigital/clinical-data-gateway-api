@@ -180,6 +180,7 @@ _Note: `FLASK_HOST` and `FLASK_PORT` are hardcoded in to the Dockerfile. These a
 | `PROXY_BASE_PATH` | The suffix of the proxy instance being deployed. Used by `pytest_nhsd_apim` to run tests against, fed in the CLI arguments in `make test-*` |
 | `BASE_URL` | Set if targeting a locally deployed application; otherwise, leave unset. |
 | `TARGET_ENV` | Either `local` or `remote`, to inform the HTTP client used by the tests how to behave - e.g. add auth headers, etc. |
+| `REMOTE_TEST_USERNAME` | The test user through which the tests will be authenticated against when run against a remote target. |
 
 ## Testing
 

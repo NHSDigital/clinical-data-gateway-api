@@ -47,11 +47,11 @@ get_proxy_base_path() {
 get_target_env() {
   env="$1"
   case "$env" in
-    *)
-      echo "local"
-      ;;
     pr-*|alpha-int)
       echo "remote"
+      ;;
+    *)
+      echo "local"
       ;;
   esac
 }

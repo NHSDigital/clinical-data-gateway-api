@@ -2,6 +2,7 @@
 
 import copy
 import os
+from collections.abc import Callable
 from datetime import timedelta
 from typing import Any, cast
 
@@ -119,7 +120,7 @@ def get_env() -> str:
     return _fetch_env_variable("TARGET_ENV", str)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def base_url(request: pytest.FixtureRequest, env: str) -> str:
     """Retrieves the base URL of the currently deployed application."""
     if env == "remote":
@@ -134,24 +135,16 @@ def health_endpoint(env: str) -> str:
     return "_status"
 
 
-def _fetch_env_variable[T](
-    name: str,
-    # TODO: Can we do this better?
-    t: type[T],  # NOQA ARG001 This is actually used for type hinting
-) -> T:
+def _fetch_env_variable[T](name: str, parser: Callable[[str], T]) -> T:
     value = os.getenv(name)
-    if not value:
+    if value is None:
         raise ValueError(f"{name} environment variable is not set.")
-    return cast("T", value)
-
-
-REMOTE_TEST_USERNAME_ENV_VAR = "REMOTE_TEST_USERNAME"
-DEFAULT_REMOTE_TEST_USERNAME = "656005750101"
+    return parser(value)
 
 
 def _get_remote_test_username() -> str:
     """Return the username to use for remote tests, allowing override via env."""
-    return os.getenv(REMOTE_TEST_USERNAME_ENV_VAR, DEFAULT_REMOTE_TEST_USERNAME)
+    return _fetch_env_variable("REMOTE_TEST_USERNAME", str)
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
