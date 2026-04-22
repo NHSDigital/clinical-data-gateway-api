@@ -4,11 +4,8 @@ set -e
 source scripts/env/pds.sh
 source scripts/env/sds.sh
 source scripts/env/provider.sh
-source scripts/env/helper.sh
 
 ENV_FILE=".env"
-
-confirm_overwrite "$ENV_FILE"
 
 PDS_URL=$(prompt_pds_url "$env")
 SDS_URL=$(prompt_sds_url "$env")

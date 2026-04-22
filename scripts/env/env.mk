@@ -20,20 +20,20 @@ env-test-local: # Create .env.test file that will have tests send requests to th
 	make env-dev # Ensure unit tests run with stub environment variables
 
 env-test-ci: # Create .env.test file that will have tests send requests to a CI-local app.
-	make _env-test env="ci" overwrite=true
+	make _env-test env="ci"
 	make env-ci # Ensure unit tests run with stub environment variables
 
 env-test-pr-%: # Create .env.test file that will have tests send requests to a proxy deployed for the PR.
-	make _env-test env="pr-$*" overwrite=true
+	make _env-test env="pr-$*"
 
 env-test-alpha-int: # Create .env.test file that will have tests send requests to the alpha integration environment.
-	make _env-test env="alpha-int" overwrite=true
+	make _env-test env="alpha-int"
 
 _env:
 	scripts/env/app-env.sh "$(env)"
 
 _env-test:
-	scripts/env/test-env.sh "$(env)" "$(overwrite)"
+	scripts/env/test-env.sh "$(env)"
 
 ${VERBOSE}.SILENT: \
 	_env \
