@@ -23,12 +23,6 @@ tests/
 ```
 
 ## Running Tests
->
-> [!NOTE]<br>
-> When running tests the following environment variables need to be provided:
->
-> - `BASE_URL` - defines the protocol, hostname and port that should used to access the running APIs. Should be included as a URL in the format <protocol>:<hostname>:<port>, for example "<http://localhost:5000>" if the APIs are available on the "localhost" host via HTTP using port 5000. If running locally in a dev container, using gateway-api as the host will allow the tests to communicate with an instance launched from `make deploy-dev`.
-> - `HOST` - defines the hostname that should be used to access the running APIs. This should match the host portion of the URL provided in the `BASE_URL` environment variable above.
 
 ### Install Dependencies (if not using Dev container)
 
@@ -38,6 +32,19 @@ Dev container users can skip this - dependencies are pre-installed during contai
 cd gateway-api
 poetry sync
 ```
+
+### Setup `.env.test` file
+
+When `make test-*` is called, the script will place `source` the variables in `.env.test` before running the tests.
+
+Use the following commands to create the appropriate `.env.test` file for the target environment.
+
+* `make env-test-local` to write a `.env.test` file for testing a locally deployed application, from within the dev container.
+* `make env-test-ci` to write a `.env.test` file for testing a locally deployed application, from outside the dev container.
+* `make env-test-pr-<pr number>` to write a `.env.test` file for testing an application deployed behind a PR proxy.
+* `make env-test-alpha-int` to write a `.env.test` file for testing an application deployed to the "alpha integration" environment.
+
+_Note: Unit tests require the `.env` file, as these tests do not test a deployed application`_
 
 ### Run All Tests (with Verbose Output)
 
@@ -69,14 +76,14 @@ Run `make deploy` before running any tests that hit the real API.
 
 This command requires a `.env` file to set the app's behaviour - see `env.mk` on how to make `.env` files.
 
-- **Requires deployed/running app (`make deploy`):**
-  - Acceptance tests (`tests/acceptance/`)
-  - Integration tests (`tests/integration/`)
-  - Schema validation tests (`tests/schema/`)
-  - Provider contract tests (`tests/contract/test_provider_contract.py`)
-- **Does not require deployed/running app:**
-  - Unit tests
-  - Consumer contract tests (`tests/contract/test_consumer_contract.py`) - these run against a Pact mock server
+* **Requires deployed/running app (`make deploy`):**
+  * Acceptance tests (`tests/acceptance/`)
+  * Integration tests (`tests/integration/`)
+  * Schema validation tests (`tests/schema/`)
+  * Provider contract tests (`tests/contract/test_provider_contract.py`)
+* **Does not require deployed/running app:**
+  * Unit tests
+  * Consumer contract tests (`tests/contract/test_consumer_contract.py`) - these run against a Pact mock server
 
 ## Test Types
 
@@ -86,9 +93,9 @@ behaviour-driven development (BDD) tests using pytest-bdd and Gherkin syntax. Th
 
 **Structure:**
 
-- **Feature files** (`features/*.feature`): Written in Gherkin, these define scenarios in plain language
-- **Step definitions** (`steps/*.py`): Python implementations that map Gherkin steps to actual test code
-- **Test bindings** (`scenarios/test_*.py`): Link scenarios to pytest test functions using `@scenario` decorator
+* **Feature files** (`features/*.feature`): Written in Gherkin, these define scenarios in plain language
+* **Step definitions** (`steps/*.py`): Python implementations that map Gherkin steps to actual test code
+* **Test bindings** (`scenarios/test_*.py`): Link scenarios to pytest test functions using `@scenario` decorator
 
 **How it works:**
 
@@ -116,23 +123,23 @@ Integration tests that validate the APIs’ behaviour through HTTP requests. The
 
 **How it works:**
 
-- Tests use the `Client` class from `conftest.py` to interact with the API
-- The client sends HTTP POST requests to the APIs
-- Tests verify response status codes, headers, and response bodies
-- Tests validate both successful requests and error handling
+* Tests use the `Client` class from `conftest.py` to interact with the API
+* The client sends HTTP POST requests to the APIs
+* Tests verify response status codes, headers, and response bodies
+* Tests validate both successful requests and error handling
 
 **Example test cases:**
 
-- Successful "hello world" responses
-- Error handling for missing or empty payloads
-- Error handling for non-existent resources
-- Content-Type header validation
+* Successful "hello world" responses
+* Error handling for missing or empty payloads
+* Error handling for non-existent resources
+* Content-Type header validation
 
 **Key difference from acceptance tests:**
 
-- Integration tests use direct pytest assertions without Gherkin syntax
-- More focused on testing specific API behaviours and edge cases
-- Uses the same `Client` fixture as acceptance tests but with standard pytest structure
+* Integration tests use direct pytest assertions without Gherkin syntax
+* More focused on testing specific API behaviours and edge cases
+* Uses the same `Client` fixture as acceptance tests but with standard pytest structure
 
 ### Schema Validation Tests (`schema/`)
 
@@ -140,14 +147,14 @@ Property-based API schema validation tests using Schemathesis. These tests autom
 
 **How it works:**
 
-- Loads the OpenAPI schema from `openapi.yaml`
-- Uses the `base_url` fixture to test against the running API
-- Automatically generates test cases including:
-  - Valid inputs
-  - Edge cases
-  - Boundary values
-  - Invalid inputs
-- Validates that responses match the schema definitions
+* Loads the OpenAPI schema from `openapi.yaml`
+* Uses the `base_url` fixture to test against the running API
+* Automatically generates test cases including:
+  * Valid inputs
+  * Edge cases
+  * Boundary values
+  * Invalid inputs
+* Validates that responses match the schema definitions
 
 ### Contract Testing with Pact (`contract/`)
 
@@ -158,17 +165,17 @@ There are two types of tests in this folder. The stub tests (contained in the st
 **How it works (Pact-based tests):**
 
 1. **Consumer Tests** (`test_consumer_contract.py`):
-   - Define what the consumer EXPECTS from the API
-   - Test against a **mock Pact server** (not the real API)
-   - The mock server responds based on the defined expectations
-   - Generates a pact contract file (`GatewayAPIConsumer-GatewayAPIProvider.json`) with all interactions
-   - **Key point:** These tests don't call the real API
+   * Define what the consumer EXPECTS from the API
+   * Test against a **mock Pact server** (not the real API)
+   * The mock server responds based on the defined expectations
+   * Generates a pact contract file (`GatewayAPIConsumer-GatewayAPIProvider.json`) with all interactions
+   * **Key point:** These tests don't call the real API
 
 2. **Provider Integration Tests** (`test_provider_contract.py`):
-   - Verify the **actual deployed API** implementation
-   - Read the pact contract file generated by consumer tests
-   - Verify that the real API implementation satisfies the consumer's expectations
-   - **Key point:** This is where the real API gets tested
+   * Verify the **actual deployed API** implementation
+   * Read the pact contract file generated by consumer tests
+   * Verify that the real API implementation satisfies the consumer's expectations
+   * **Key point:** This is where the real API gets tested
 
 **The Flow:**
 
@@ -180,11 +187,11 @@ Consumer Test → Mock Pact Server → Contract File (JSON)
 
 **Why this approach as opposed to a standard integration test?**
 
-- **Explicit contract documentation** - The pact file is a versioned artefact that documents the API contract
-- **Contract evolution tracking** - Because of the above - Git diffs will show exactly how API contracts change over time
+* **Explicit contract documentation** - The pact file is a versioned artefact that documents the API contract
+* **Contract evolution tracking** - Because of the above - Git diffs will show exactly how API contracts change over time
 
-- **Consumer-driven development** - Consumers define their needs; providers verify they meet them
-- **Prevents breaking changes** - Provider tests fail if changes break existing consumer expectations
+* **Consumer-driven development** - Consumers define their needs; providers verify they meet them
+* **Prevents breaking changes** - Provider tests fail if changes break existing consumer expectations
 
 ### Contract Testing Workflow
 
@@ -196,18 +203,18 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 
 **Key points:**
 
-- The pact contract file represents the contract between the consumer and provider
-- This file is committed to version control so you can track contract changes through git diffs
-- The `pact.write_file()` call merges interactions (updates existing or adds new ones)
-- Interactions with the same description get replaced; different descriptions get added
+* The pact contract file represents the contract between the consumer and provider
+* This file is committed to version control so you can track contract changes through git diffs
+* The `pact.write_file()` call merges interactions (updates existing or adds new ones)
+* Interactions with the same description get replaced; different descriptions get added
 
 ## Shared Fixtures
 
 Shared fixtures in `tests/conftest.py` are available across all test types:
 
-- **`base_url`**: The base URL of the deployed Lambda function (from `BASE_URL` environment variable highlighted above)
-- **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
-- **`client`**: An HTTP client instance for sending requests to the APIs
+* **`base_url`**: The base URL of the deployed Lambda function (from `BASE_URL` environment variable highlighted above)
+* **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
+* **`client`**: An HTTP client instance for sending requests to the APIs
 
 ### Load Testing with Locust ('load/')
 
@@ -255,8 +262,8 @@ JUnit XML format is used for CI/CD integration and test result summaries. All re
 
 **All Test Types (Unit, Contract, Schema, Integration, Acceptance):**
 
-- Generated with `--junit-xml=test-artefacts/{type}-tests.xml`
-- Contains test results, execution times, and failure details
+* Generated with `--junit-xml=test-artefacts/{type}-tests.xml`
+* Contains test results, execution times, and failure details
 
 ### HTML Test Reports
 
@@ -264,12 +271,12 @@ Human-readable HTML reports for detailed test analysis:
 
 **Tests using pytest (Unit, Contract, Schema, Integration, Acceptance):**
 
-- Generated with `--html=test-artefacts/{type}-tests.html --self-contained-html`
-- Self-contained HTML files with embedded CSS/JavaScript
-- Include:
-  - Test results with pass/fail status
-  - Execution times
-  - Test metadata
+* Generated with `--html=test-artefacts/{type}-tests.html --self-contained-html`
+* Self-contained HTML files with embedded CSS/JavaScript
+* Include:
+  * Test results with pass/fail status
+  * Execution times
+  * Test metadata
 
 ### CI/CD Report Artefacts
 
@@ -291,10 +298,10 @@ Each test execution script (`scripts/tests/*.sh`) collects coverage data indepen
 
 **Unit, Contract, Schema, Integration, and Acceptance Tests** (pytest-based):
 
-- Use `pytest-cov` plugin with `--cov=src/gateway_api` flag
-- Generate individual coverage data files: `.coverage`
-- Each test type saves its coverage file as `coverage.{type}` (e.g., `coverage.unit`, `coverage.contract`, `coverage.schema`)
-- Produce HTML reports for local viewing and terminal output for CI logs
+* Use `pytest-cov` plugin with `--cov=src/gateway_api` flag
+* Generate individual coverage data files: `.coverage`
+* Each test type saves its coverage file as `coverage.{type}` (e.g., `coverage.unit`, `coverage.contract`, `coverage.schema`)
+* Produce HTML reports for local viewing and terminal output for CI logs
 
 ### CI/CD Coverage Workflow
 
