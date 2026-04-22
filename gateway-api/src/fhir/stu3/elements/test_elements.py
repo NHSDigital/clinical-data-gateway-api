@@ -8,6 +8,7 @@ class TestParameters:
     def test_create(self) -> None:
         """Test creating a Parameters resource."""
         parameter = Parameters.Parameter(
+            name="patientNHSNumber",
             valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
@@ -26,11 +27,13 @@ class TestParameters:
     def test_create_with_multiple_parameters(self) -> None:
         """Test creating a Parameters resource with multiple parameters."""
         param_a = Parameters.Parameter(
+            name="patientNHSNumber",
             valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
         )
         param_b = Parameters.Parameter(
+            name="patientNHSNumber",
             valueIdentifier=PatientIdentifier(
                 value="9000000017",
             ),
@@ -53,6 +56,7 @@ class TestParameters:
                 "resourceType": "Parameters",
                 "parameter": [
                     {
+                        "name": "patientNHSNumber",
                         "valueIdentifier": {
                             "system": "https://fhir.nhs.uk/Id/nhs-number",
                             "value": "9000000009",
@@ -87,6 +91,7 @@ class TestParameters:
                     "resourceType": "Patient",
                     "parameter": [
                         {
+                            "name": "patientNHSNumber",
                             "valueIdentifier": {
                                 "system": "https://fhir.nhs.uk/Id/nhs-number",
                                 "value": "9000000009",
@@ -110,6 +115,7 @@ class TestParameters:
                     "resourceType": "Parameters",
                     "parameter": [
                         {
+                            "name": "patientNHSNumber",
                             "valueIdentifier": {
                                 "system": "https://example.org/invalid",
                                 "value": "9000000009",
@@ -143,6 +149,7 @@ class TestParameters:
         params = Parameters.create(
             parameter=[
                 Parameters.Parameter(
+                    name="patientNHSNumber",
                     valueIdentifier=PatientIdentifier(
                         value="9000000009",
                     ),
@@ -164,6 +171,7 @@ class TestParameters:
         params = Parameters.create(
             parameter=[
                 Parameters.Parameter(
+                    name="patientNHSNumber",
                     valueIdentifier=PatientIdentifier(
                         value="9000000009",
                     ),
@@ -181,7 +189,9 @@ class TestParameter:
         identifier = PatientIdentifier(
             value="9000000009",
         )
-        parameter = Parameters.Parameter(valueIdentifier=identifier)
+        parameter = Parameters.Parameter(
+            name="patientNHSNumber", valueIdentifier=identifier
+        )
 
         assert parameter.valueIdentifier == identifier, (
             "valueIdentifier should match the provided identifier"
@@ -196,6 +206,7 @@ class TestParameter:
     def test_is_frozen(self) -> None:
         """Test that Parameter fields are frozen (immutable)."""
         parameter = Parameters.Parameter(
+            name="patientNHSNumber",
             valueIdentifier=PatientIdentifier(
                 value="9000000009",
             ),
