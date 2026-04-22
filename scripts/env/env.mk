@@ -33,10 +33,10 @@ env-test-alpha-int: # Create .env.test file that will have tests send requests t
 	make _env-test env="alpha-int"
 
 _env:
-	scripts/env/app-env.sh "$(env)"
+	scripts/env/app/env.sh "$(env)"
 
 _env-test:
-	scripts/env/test-env.sh "$(env)"
+	scripts/env/test/env.sh "$(env)"
 
 ${VERBOSE}.SILENT: \
 	_env \
@@ -47,6 +47,7 @@ ${VERBOSE}.SILENT: \
 	env-sandbox-pds \
 	env-sandbox-sds \
 	env-int \
+	_env-test \
 	env-test-local \
 	env-test-ci \
 	env-test-pr-%

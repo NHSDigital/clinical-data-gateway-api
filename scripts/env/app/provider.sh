@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-prompt_provider_url() {
+get_provider_url() {
   env="$1"
   case "$env" in
     int)

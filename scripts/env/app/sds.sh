@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-prompt_sds_url() {
+get_sds_url() {
   env="$1"
   case "$env" in
     sandbox-sds)

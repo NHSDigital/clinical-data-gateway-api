@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-prompt_base_url() {
+get_base_url() {
   env="$1"
   case "$env" in
     local)
@@ -16,7 +16,7 @@ prompt_base_url() {
   esac
 }
 
-prompt_proxygen_api_name() {
+get_proxygen_api_name() {
   env="$1"
   case "$env" in
     pr-*|alpha-int)
@@ -28,7 +28,7 @@ prompt_proxygen_api_name() {
   esac
 }
 
-prompt_proxy_base_path() {
+get_proxy_base_path() {
   env="$1"
   case "$env" in
     pr-*)
@@ -44,7 +44,7 @@ prompt_proxy_base_path() {
   esac
 }
 
-prompt_target_env() {
+get_target_env() {
   env="$1"
   case "$env" in
     *)

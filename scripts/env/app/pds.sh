@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-prompt_pds_url() {
+get_pds_url() {
   env="$1"
   case "$env" in
     sandbox-pds)

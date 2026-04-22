@@ -3,20 +3,20 @@
 # See scripts/env/env.mk for the make targets that call this script.
 set -e
 
-source scripts/env/target.sh
-source scripts/env/apigee.sh
+source scripts/env/test/target.sh
+source scripts/env/test/apigee.sh
 
 env="$1"
-BASE_URL=$(prompt_base_url "$env")
-PROXYGEN_API_NAME=$(prompt_proxygen_api_name "$env")
-PROXY_BASE_PATH=$(prompt_proxy_base_path "$env")
+BASE_URL=$(get_base_url "$env")
+PROXYGEN_API_NAME=$(get_proxygen_api_name "$env")
+PROXY_BASE_PATH=$(get_proxy_base_path "$env")
 if [[ -z "$PROXYGEN_API_NAME" || -z "$PROXY_BASE_PATH" ]]; then
   PROXY_NAME=""
 else
   PROXY_NAME="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}"
 fi
-APIGEE_ACCESS_TOKEN=$(prompt_apigee_access_token "$env")
-TARGET_ENV=$(prompt_target_env "$env")
+APIGEE_ACCESS_TOKEN=$(get_apigee_access_token "$env")
+TARGET_ENV=$(get_target_env "$env")
 
 ENV_FILE=".env.test"
 

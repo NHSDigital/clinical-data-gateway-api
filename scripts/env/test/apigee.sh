@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-prompt_apigee_access_token() {
+get_apigee_access_token() {
   env="$1"
   case "$env" in
     pr-*|alpha-int)
