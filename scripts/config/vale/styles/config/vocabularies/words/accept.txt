@@ -29,6 +29,7 @@ Hotspots
 IDE
 idempotence
 [Ii]sort
+Jira
 JUnit
 markdownlint
 mypy
