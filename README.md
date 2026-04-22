@@ -17,6 +17,7 @@ For detailed GP Connect specifications, see [GP Connect specifications for devel
 - [Testing](#testing)
 - [Design](#design)
 - [CI/CD](#cicd)
+- [Proxygen](#proxygen)
 - [Licence](#licence)
 
 ## Architecture Overview
@@ -218,6 +219,19 @@ The project uses GitHub Actions for continuous integration and deployment, organ
 | [Deploy](.github/workflows/cicd-3-deploy.yaml) | Manual dispatch | Deploys a selected tag to an environment |
 
 For full details on each workflow and composite action, see the [CI/CD documentation](.github/github_actions.md).
+
+## Proxygen
+
+To be able to use the `load-tests` or `local-tests`, you will need to have Proxygen access setup.
+
+- Please follow the [guide here](https://nhsd-confluence.digital.nhs.uk/spaces/DCA/pages/1236046532/Proxygen)
+- When the devcontainer has built, the Proxygen configuration is created on the host at `~/gateway/ptl/.proxygen` and bind-mounted into the container as `~/.proxygen`.
+- For *settings*:
+  - Set the `api` value
+  - `endpoint_url` and `spec_output_format` should be already set.
+- For *credentials*:
+  - Set the `base_url`, `client_secret`, `password` and `username` values.
+  - Remove unused fields.
 
 ## Licence
 
