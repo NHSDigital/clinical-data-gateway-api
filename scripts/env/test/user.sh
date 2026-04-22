@@ -8,5 +8,9 @@ get_test_user() {
       echo "656005750101"
       return 0
       ;;
+    *)
+      echo ""
+      return 0
+      ;;
   esac
 }
