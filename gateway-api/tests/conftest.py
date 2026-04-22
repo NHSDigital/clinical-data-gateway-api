@@ -3,7 +3,7 @@
 import copy
 import os
 from datetime import timedelta
-from typing import Any, Protocol, cast
+from typing import Any, cast
 
 import pytest
 import requests
@@ -30,93 +30,18 @@ SIMPLE_PAYLOAD = {
 }
 
 
-class Client(Protocol):
-    """Protocol defining the interface for HTTP clients."""
-
-    base_url: str
-
-    def send_to_get_structured_record_endpoint(
-        self, payload: str, headers: dict[str, str] | None = None
-    ) -> requests.Response:
-        """
-        Send a request to the get_structured_record endpoint with the given NHS number.
-        """
-        ...
-
-    def send_health_check(self) -> requests.Response:
-        """
-        Send a health check request to the API.
-        """
-        ...
-
-    def send_post_to_path(
-        self,
-        path: str,
-        payload: str,
-        headers: dict[str, str] | None = None,
-    ) -> requests.Response:
-        """Send a POST request to the given API path."""
-        ...
-
-
-class LocalClient:
-    """HTTP client that sends requests directly to the API.
-
-    Includes optional Apigee Authorization headers when an access token is provided.
-    """
+class Client:
+    """Client for sending HTTP requests"""
 
     def __init__(
         self,
         base_url: str,
+        health_endpoint: str,
         auth_headers: dict[str, str],
         timeout: timedelta = timedelta(seconds=35),
     ):
         self.base_url = base_url
-        self._auth_headers = auth_headers
-        self._timeout = timeout.total_seconds()
-
-    def send_to_get_structured_record_endpoint(
-        self, payload: str, headers: dict[str, str] | None = None
-    ) -> requests.Response:
-        return self.send_post_to_path(
-            path="/patient/$gpc.getstructuredrecord",
-            payload=payload,
-            headers=headers,
-        )
-
-    def send_post_to_path(
-        self,
-        path: str,
-        payload: str,
-        headers: dict[str, str] | None = None,
-    ) -> requests.Response:
-        url = f"{self.base_url}/{path.lstrip('/')}"
-        default_headers = self._auth_headers | DEFAULT_REQUEST_HEADERS
-        if headers:
-            default_headers.update(headers)
-
-        return requests.post(
-            url=url,
-            data=payload,
-            headers=default_headers,
-            timeout=self._timeout,
-        )
-
-    def send_health_check(self) -> requests.Response:
-        url = f"{self.base_url}/health"
-        return requests.get(url=url, headers=self._auth_headers, timeout=self._timeout)
-
-
-class RemoteClient:
-    """HTTP client for remote testing via the APIM proxy."""
-
-    def __init__(
-        self,
-        base_url: str,
-        auth_headers: dict[str, str],
-        timeout: timedelta = timedelta(seconds=35),
-    ):
-        self.base_url = base_url
+        self.health_endpoint = health_endpoint
         self._auth_headers = auth_headers
         self._timeout = timeout.total_seconds()
 
@@ -149,7 +74,7 @@ class RemoteClient:
         )
 
     def send_health_check(self) -> requests.Response:
-        url = f"{self.base_url}/_status"
+        url = f"{self.base_url}/{self.health_endpoint}"
         return requests.get(url=url, headers=self._auth_headers, timeout=self._timeout)
 
 
@@ -176,18 +101,13 @@ def get_headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
 
 @pytest.fixture
 def client(
-    env: str,
-    request: pytest.FixtureRequest,
+    base_url: str,
+    health_endpoint: str,
     get_headers: dict[str, str],
 ) -> Client:
-    if env == "local":
-        base_url = request.getfixturevalue("base_url")
-        return LocalClient(base_url=base_url, auth_headers=get_headers)
-    elif env == "remote":
-        proxy_url = request.getfixturevalue("nhsd_apim_proxy_url")
-        return RemoteClient(base_url=proxy_url, auth_headers=get_headers)
-    else:
-        raise ValueError(f"Unknown env: {env}")
+    return Client(
+        base_url=base_url, health_endpoint=health_endpoint, auth_headers=get_headers
+    )
 
 
 @pytest.fixture(scope="module")
@@ -196,21 +116,27 @@ def env() -> str:
 
 
 def get_env() -> str:
-    try:
-        _ = _fetch_env_variable("BASE_URL", str)
-        return "local"
-    except ValueError:
-        return "remote"
+    return _fetch_env_variable("TARGET_ENV", str)
 
 
 @pytest.fixture(scope="module")
-def base_url() -> str:
+def base_url(request: pytest.FixtureRequest, env: str) -> str:
     """Retrieves the base URL of the currently deployed application."""
+    if env == "remote":
+        return str(request.getfixturevalue("nhsd_apim_proxy_url"))
     return _fetch_env_variable("BASE_URL", str)
+
+
+@pytest.fixture(scope="module")
+def health_endpoint(env: str) -> str:
+    if env == "local":
+        return "health"
+    return "_status"
 
 
 def _fetch_env_variable[T](
     name: str,
+    # TODO: Can we do this better?
     t: type[T],  # NOQA ARG001 This is actually used for type hinting
 ) -> T:
     value = os.getenv(name)

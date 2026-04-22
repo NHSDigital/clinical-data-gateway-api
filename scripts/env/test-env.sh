@@ -17,6 +17,7 @@ else
   PROXY_NAME="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}"
 fi
 APIGEE_ACCESS_TOKEN=$(prompt_apigee_access_token "$env")
+TARGET_ENV=$(prompt_target_env "$env")
 
 ENV_FILE=".env.test"
 overwrite="$2"
@@ -32,6 +33,7 @@ PROXYGEN_API_NAME=${PROXYGEN_API_NAME}
 PROXY_NAME=${PROXY_NAME}
 PROXY_BASE_PATH=$PROXY_BASE_PATH
 BASE_URL=$BASE_URL
+TARGET_ENV=$TARGET_ENV
 set +a
 EOF
 

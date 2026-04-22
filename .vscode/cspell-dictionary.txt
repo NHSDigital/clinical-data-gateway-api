@@ -36,6 +36,7 @@ eamodio
 errstr
 Farsley
 fhir
+getfixturevalue
 getstructuredrecord
 gocloc
 GPCAPIM

@@ -6,7 +6,6 @@ from the OpenAPI specification and validate the API implementation.
 
 from pathlib import Path
 
-import pytest
 import schemathesis
 import yaml
 from schemathesis.generation.case import Case
@@ -20,9 +19,7 @@ schema = from_dict(schema_dict)
 
 
 @schema.parametrize()
-def test_api_schema_compliance(
-    case: Case, env: str, request: pytest.FixtureRequest
-) -> None:
+def test_api_schema_compliance(case: Case, base_url: str) -> None:
     """Test API endpoints against the OpenAPI schema.
 
     Schemathesis automatically generates test cases with:
@@ -43,12 +40,6 @@ def test_api_schema_compliance(
 
     case.headers["Ods-from"] = "test-ods-code"
     case.headers["Ssp-TraceID"] = "test-trace-id"
-
-    # TODO: Do this better
-    if env == "local":
-        base_url = request.getfixturevalue("base_url")
-    else:
-        base_url = request.getfixturevalue("nhsd_apim_proxy_url")
 
     case.call_and_validate(
         base_url=base_url,

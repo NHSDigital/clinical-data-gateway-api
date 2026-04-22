@@ -44,3 +44,15 @@ prompt_proxy_base_path() {
   esac
 }
 
+prompt_target_env() {
+  env="$1"
+  case "$env" in
+    *)
+      echo "local"
+      ;;
+    pr-*|alpha-int)
+      echo "remote"
+      ;;
+  esac
+}
+

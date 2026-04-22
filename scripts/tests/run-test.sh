@@ -41,7 +41,7 @@ fi
 cd gateway-api
 mkdir -p test-artefacts
 
-echo "Running ${TEST_TYPE} tests..."
+echo "Running ${TEST_TYPE} tests against ${TARGET_ENV} environment..."
 
 # Set coverage path based on test type
 if [[ "$TEST_TYPE" = "unit" ]]; then
