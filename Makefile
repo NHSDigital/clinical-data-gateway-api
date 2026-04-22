@@ -75,6 +75,12 @@ deploy: clean build # Deploy the project artefact to the target environment @Pip
 	else \
 		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
 	fi
+	@sleep 2
+	@if ! $(docker) ps --filter "name=gateway-api" --filter "status=running" --format "{{.Names}}" | grep -q gateway-api; then \
+		echo "ERROR: gateway-api container failed to start. Logs:" ; \
+		$(docker) logs gateway-api ; \
+		exit 1 ; \
+	fi
 
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."
