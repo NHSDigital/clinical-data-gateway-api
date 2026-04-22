@@ -53,7 +53,6 @@ else
   COV_PATH="src/gateway_api"
 fi
 
-# TODO: Add some logging to prove which URLS are being hit
 poetry run pytest ${TEST_PATH} -v \
   --api-name="${PROXYGEN_API_NAME}" \
   --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \
