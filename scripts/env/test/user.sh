@@ -6,6 +6,7 @@ get_test_user() {
   case "$env" in
     pr-*|alpha-int)
       echo "656005750101"
+      return 0
       ;;
   esac
 }

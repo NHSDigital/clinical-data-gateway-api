@@ -6,12 +6,15 @@ get_base_url() {
   case "$env" in
     local)
       echo "http://gateway-api:8080"
+      return 0
       ;;
     ci)
       echo "http://localhost:5000"
+      return 0
       ;;
     *)
       echo ""
+      return 0
       ;;
   esac
 }
@@ -21,9 +24,11 @@ get_proxygen_api_name() {
   case "$env" in
     pr-*|alpha-int)
       echo "clinical-data-gateway-api-poc"
+      return 0
       ;;
     *)
       echo ""
+      return 0
       ;;
   esac
 }
@@ -34,12 +39,15 @@ get_proxy_base_path() {
     pr-*)
       pr_number="${env#pr-}"
       echo "clinical-data-gateway-api-poc-pr-${pr_number}"
+      return 0
       ;;
     alpha-int)
       echo "clinical-data-gateway-api-poc-alpha-integration"
+      return 0
       ;;
     *)
       echo ""
+      return 0
       ;;
   esac
 }
@@ -49,9 +57,11 @@ get_target_env() {
   case "$env" in
     pr-*|alpha-int)
       echo "remote"
+      return 0
       ;;
     *)
       echo "local"
+      return 0
       ;;
   esac
 }

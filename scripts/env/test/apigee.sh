@@ -6,9 +6,11 @@ get_apigee_access_token() {
   case "$env" in
     pr-*|alpha-int)
       echo $(./scripts/get_apigee_token.sh)
+      return 0
       ;;
     *)
       echo ""
+      return 0
       ;;
   esac
 }
