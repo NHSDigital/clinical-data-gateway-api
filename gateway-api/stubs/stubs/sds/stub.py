@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from fhir.constants import FHIRSystem
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.sds.client import SdsClient
 
 from stubs.base_stub import GetStub, StubBase
 
@@ -382,18 +383,26 @@ class SdsFhirApiStub(StubBase, GetStub):
             },
         ]
 
-        # Iterate through test data and create devices
+        # Seed each device for both interaction IDs so the stub works whether
+        # the SdsClient is connecting to the sandbox (SANDBOX_INTERACTION_ID)
+        # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
+        interaction_ids = [
+            ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+            SdsClient.SANDBOX_INTERACTION_ID,
+        ]
+
         for data in device_data:
-            self.upsert_device(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                device=self._create_device_resource(
-                    device_id=data["device_id"],
-                    asid=data["asid"],
-                    org_ods=data["org_ods"],
-                    display=data["display"],
-                ),
-            )
+            for interaction_id in interaction_ids:
+                self.upsert_device(
+                    organization_ods=data["org_ods"],
+                    service_interaction_id=interaction_id,
+                    device=self._create_device_resource(
+                        device_id=data["device_id"],
+                        asid=data["asid"],
+                        org_ods=data["org_ods"],
+                        display=data["display"],
+                    ),
+                )
 
     def _seed_default_endpoints(self) -> None:
         """Seed the stub with some default Endpoint records for testing."""
@@ -425,18 +434,26 @@ class SdsFhirApiStub(StubBase, GetStub):
             },
         ]
 
-        # Iterate through test data and create endpoints
+        # Seed each endpoint for both interaction IDs so the stub works whether
+        # the SdsClient is connecting to the sandbox (SANDBOX_INTERACTION_ID)
+        # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
+        interaction_ids = [
+            ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+            SdsClient.SANDBOX_INTERACTION_ID,
+        ]
+
         for data in endpoint_data:
-            self.upsert_endpoint(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                endpoint=self._create_endpoint_resource(
-                    endpoint_id=data["endpoint_id"],
-                    asid=data["asid"],
-                    org_ods=data["org_ods"],
-                    address=data["address"],
-                ),
-            )
+            for interaction_id in interaction_ids:
+                self.upsert_endpoint(
+                    organization_ods=data["org_ods"],
+                    service_interaction_id=interaction_id,
+                    endpoint=self._create_endpoint_resource(
+                        endpoint_id=data["endpoint_id"],
+                        asid=data["asid"],
+                        org_ods=data["org_ods"],
+                        address=data["address"],
+                    ),
+                )
 
     def _create_device_resource(
         self,
