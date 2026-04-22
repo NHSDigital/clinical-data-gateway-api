@@ -18,7 +18,10 @@ from fhir.r4 import Bundle, Device, Endpoint
 from requests import HTTPError
 
 from gateway_api.common.error import SdsRequestFailedError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 from gateway_api.sds.search_results import SdsSearchResults
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
@@ -78,10 +81,6 @@ class SdsClient:
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
-    # Data in SDS Sandbox only works with this interaction ID.
-    # For sandbox, that's fine. Anything else needs to work with the default one.
-    SANDBOX_INTERACTION_ID = "urn:nhs:names:services:psis:REPC_IN150016UK05"
-
     def __init__(
         self,
         base_url: str = SANDBOX_URL,
@@ -95,7 +94,7 @@ class SdsClient:
         if service_interaction_id is not None:
             self.service_interaction_id = service_interaction_id
         elif self.base_url == self.SANDBOX_URL:
-            self.service_interaction_id = self.SANDBOX_INTERACTION_ID
+            self.service_interaction_id = SDS_SANDBOX_INTERACTION_ID
         else:
             self.service_interaction_id = self.DEFAULT_SERVICE_INTERACTION_ID
 

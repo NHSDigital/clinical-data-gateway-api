@@ -10,8 +10,10 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from fhir.constants import FHIRSystem
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-from gateway_api.sds.client import SdsClient
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 
 from stubs.base_stub import GetStub, StubBase
 
@@ -388,7 +390,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
         interaction_ids = [
             ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-            SdsClient.SANDBOX_INTERACTION_ID,
+            SDS_SANDBOX_INTERACTION_ID,
         ]
 
         for data in device_data:
@@ -439,7 +441,7 @@ class SdsFhirApiStub(StubBase, GetStub):
         # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
         interaction_ids = [
             ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-            SdsClient.SANDBOX_INTERACTION_ID,
+            SDS_SANDBOX_INTERACTION_ID,
         ]
 
         for data in endpoint_data:

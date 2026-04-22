@@ -9,7 +9,10 @@ from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 from gateway_api.sds import (
     SdsClient,
     SdsSearchResults,
@@ -241,12 +244,10 @@ def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
 
     :param stub: SDS stub fixture.
     """
-    sandbox_interaction_id = SdsClient.SANDBOX_INTERACTION_ID
-
     # Seed the stub with data keyed by the sandbox interaction ID
     stub.upsert_device(
         organization_ods="SANDBOXORG",
-        service_interaction_id=sandbox_interaction_id,
+        service_interaction_id=SDS_SANDBOX_INTERACTION_ID,
         device={
             "resourceType": "Device",
             "id": "sandbox-device-id",
@@ -271,7 +272,8 @@ def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
     # Verify the sandbox interaction ID was sent
     params = stub.get_params
     assert any(
-        sandbox_interaction_id in str(ident) for ident in params.get("identifier", [])
+        SDS_SANDBOX_INTERACTION_ID in str(ident)
+        for ident in params.get("identifier", [])
     )
     # Verify the default interaction ID was NOT used
     assert not any(
