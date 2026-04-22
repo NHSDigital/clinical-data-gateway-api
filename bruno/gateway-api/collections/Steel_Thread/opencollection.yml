@@ -17,7 +17,7 @@ config:
 request:
   headers:
     - name: Ssp-TraceID
-      value: d525685c-1baf-41f0-952b-9c588a83ec96
+      value: "{{$guid}}"
     - name: ODS-from
       value: S55555
   auth:
