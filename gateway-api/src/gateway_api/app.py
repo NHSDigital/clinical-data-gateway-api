@@ -1,7 +1,6 @@
 import os
 import traceback
 from collections.abc import Callable
-from typing import Any
 
 from flask import Flask, Request, request
 from flask.wrappers import Response
@@ -34,12 +33,12 @@ def configure_app(app: Flask) -> None:
     app.config.update(config)
 
 
-def get_env_var(name: str, loader: Callable[[str], Any]) -> Any:
+def get_env_var[T](name: str, parser: Callable[[str], T]) -> T:
     value = os.getenv(name)
     if value is None:
         raise RuntimeError(f"{name} environment variable is not set.")
     try:
-        return loader(value)
+        return parser(value)
     except Exception as e:
         raise RuntimeError(f"Error loading {name} environment variable: {e}") from e
 
