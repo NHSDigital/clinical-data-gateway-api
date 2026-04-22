@@ -130,10 +130,10 @@ The project uses `make` targets to build, deploy, and manage the application. Ru
 | --- | --- |
 | `make dependencies` | Install all project dependencies via Poetry |
 | `make build` | Type-check, package, and build the Docker image |
+| `make env` | Create a `.env` to be consumed when starting the app, e.g. `make deploy` |
 | `make deploy` | Build and start the Gateway API container using the environment variables defined in `.env` |
 | `make clean` | Stop and remove the Gateway API container |
 | `make config` | Configure the development environment |
-| `make env` | Create a `.env` to be consumed when starting the app, e.g. `make deploy` |
 
 ### API Endpoints
 
