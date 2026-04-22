@@ -45,7 +45,6 @@ else
 fi
 
 # TODO: Add some logging to prove which URLS are being hit
-# TODO: Can we remove the cli args for pytest_nhsd_apim - they _should_ be retrievable from the env
 poetry run pytest ${TEST_PATH} -v \
   --api-name="${PROXYGEN_API_NAME}" \
   --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \

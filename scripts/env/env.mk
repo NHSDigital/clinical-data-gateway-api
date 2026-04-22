@@ -1,6 +1,6 @@
 .PHONY: env env-% _env
 
-env env-dev: # Create .env file with environment variables for development environment (stubs)
+env env-dev env-ci: # Create .env file with environment variables for development environment (stubs)
 	make _env env="dev"
 
 env-orangebox: # Create .env file that will have the app send requests to the provider "orangebox", stubs otherwise.

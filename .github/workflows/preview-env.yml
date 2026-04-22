@@ -247,7 +247,6 @@ jobs:
           --services ${{ steps.tf-output.outputs.ecs_service }} \
           --region ${{ env.AWS_REGION }}
 
-      # TODO: We don't need these anymore, as we are testing against the proxy.
       - name: Get mTLS certs for testing
         if: github.event.action != 'closed'
         id: mtls-certs
