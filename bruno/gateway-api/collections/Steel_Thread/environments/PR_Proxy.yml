@@ -1,10 +1,12 @@
+name: PR_Proxy
 variables:
   - name: base_url
     value: https://{{apigee_env}}.api.service.nhs.uk/{{proxy_base_path}}
-    enabled: true
   - name: apigee_env
     value: internal-dev
-    enabled: true
   - name: proxy_base_path
     value: clinical-data-gateway-api-poc-pr-{{process.env.PR_NUMBER}}
-    enabled: true
+  - name: nhs_number
+    value: "9999999999"
+  - name: ods_code
+    value: A12345

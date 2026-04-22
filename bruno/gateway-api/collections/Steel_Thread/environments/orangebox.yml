@@ -1,8 +1,8 @@
-name: local
+name: orangebox
 variables:
+  - name: nhs_number
+    value: "9690937278"
   - name: base_url
     value: http://localhost:5000
-  - name: nhs_number
-    value: "9999999999"
   - name: ods_code
-    value: A12345
+    value: S55555
