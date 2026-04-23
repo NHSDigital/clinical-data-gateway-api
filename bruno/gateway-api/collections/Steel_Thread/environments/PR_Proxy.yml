@@ -8,3 +8,9 @@ variables:
     value: clinical-data-gateway-api-poc-pr-{{process.env.PR_NUMBER}}
   - name: nhs_number
     value: "9999999999"
+  - name: from_ods
+    value: S55555
+  - name: session_urid
+    value: "555254242106"
+  - name: session_uuid
+    value: "656005750108"

@@ -20,10 +20,12 @@ http:
                   "valueIdentifier": {
                       "system": "https://fhir.nhs.uk/Id/nhs-number",
                       "value": "{{nhs_number}}"
+                      "value": "{{nhs_number}}"
                   }
               }
           ]
       }
+  auth: inherit
   auth: inherit
 
 runtime:
@@ -37,5 +39,7 @@ runtime:
 settings:
   encodeUrl: true
   timeout: 0
+  followRedirects: true
+  maxRedirects: 5
   followRedirects: true
   maxRedirects: 5

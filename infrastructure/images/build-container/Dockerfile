@@ -1,30 +1,13 @@
-FROM mcr.microsoft.com/vscode/devcontainers/base:alpine3.23 AS gateway-build-container
+FROM mcr.microsoft.com/devcontainers/base:alpine3.23 AS gateway-build-container
 
 ENV PYTHON_VERSION="3.14"
 
 ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.1"
 ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.6.1"
 
-ARG INCLUDE_DEV_CERTS
-ARG DEV_CERT_FILENAME
-
-# Add development certificates to node if provided.
-ENV NODE_EXTRA_CA_CERTS=${INCLUDE_DEV_CERTS:+/etc/ssl/certs/ca-certificates.crt}
-ENV DEV_CERTS_INCLUDED=$INCLUDE_DEV_CERTS
-
 ENV IN_BUILD_CONTAINER=true
 
 COPY resources/ /resources
-
-# Install required certificates for dev machines.
-RUN if [ "$INCLUDE_DEV_CERTS" = "true" ] ; then \
-    cp -r /resources/dev-certificates/* /usr/local/share/ca-certificates/; \
-    update-ca-certificates; \
-
-    cp -r /resources/dev-certificates/* /etc/ssl/certs/; \
-else \
-    rm -r /resources/dev-certificates; \
-fi
 
 RUN apk update && \
     apk add --no-cache --update bash \
@@ -52,14 +35,13 @@ RUN apk update && \
     readline-dev \
     sqlite-dev \
     tk-dev \
-    zstd-dev
-
-# Configure doas to allow members of the wheel group to run commands as root.
-RUN echo "permit :wheel" >> /etc/doas.conf \
-    && echo "permit nopass :wheel as root cmd apk" >> /etc/doas.conf \
-    && echo "permit nopass :wheel as root cmd docker" >> /etc/doas.conf \
+    zstd-dev && \
+    # Configure doas to allow members of the wheel group to run commands as root.
+    echo "permit :wheel" >> /etc/doas.conf && \
+    echo "permit nopass :wheel as root cmd apk" >> /etc/doas.conf && \
+    echo "permit nopass :wheel as root cmd docker" >> /etc/doas.conf && \
     # Change default shell to bash for root user.
-    && chsh -s /bin/bash root
+    chsh -s /bin/bash root
 
 # Ensure pyenv is on the PATH
 ENV PYENV_ROOT="/.pyenv"
@@ -153,5 +135,7 @@ RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" && 
 
 # Update gateway-dev user's bash configuration.
 COPY /resources/.bashrc /home/gateway-dev/.bashrc
+
+EXPOSE 8089
 
 USER gateway-dev
