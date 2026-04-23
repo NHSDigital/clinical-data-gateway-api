@@ -31,8 +31,8 @@ else
   TEST_PATH="tests/${TEST_TYPE}/"
 fi
 
-if [[ ! -d "$TEST_PATH" ]]; then
-  echo "Error: Test path '$TEST_PATH' does not exist" >&2
+if [[ ! -f ".env.test" ]]; then
+    echo "Error: .env.test file not found. Please run 'make env-test-<env>' to generate it." >&2
   exit 1
 fi
 source .env.test
