@@ -18,3 +18,23 @@ get_sds_url() {
       ;;
   esac
 }
+
+get_sds_api_token() {
+  env="$1"
+  secret_file=".secrets/sds/api_token"
+  case "$env" in
+    int|int-sds)
+      if [ -f "$secret_file" ]; then
+        cat "$secret_file"
+        return 0
+      else
+        printf "Warning: $secret_file not found." >&2
+        return 1
+      fi
+      ;;
+    *)
+      echo ""
+      return 0
+      ;;
+  esac
+}

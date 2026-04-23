@@ -15,8 +15,14 @@ env-sandbox-pds: # Create .env file that will have the app send requests to the 
 env-sandbox-sds: # Create .env file that will have the app send requests to the SDS sandbox environment (sandbox SDS), stubs otherwise.
 	make _env env="sandbox-sds"
 
-env-int: # Create .env file with environment variables for integration environment
+env-int: # Create .env file that will have the app send requests to the SDS and PDS integration environments.
 	make _env env="int"
+
+env-int-pds: # Create .env file that will have the app send requests to the PDS integration environment (int PDS), stubs otherwise.
+	make _env env="int-pds"
+
+env-int-sds: # Create .env file that will have the app send requests to the SDS integration environment (int SDS), stubs otherwise.
+	make _env env="int-sds"
 
 env-test-local: # Create .env.test file that will have tests send requests to the local app.
 	make _env-test env="local"
@@ -47,6 +53,8 @@ ${VERBOSE}.SILENT: \
 	env-sandbox-pds \
 	env-sandbox-sds \
 	env-int \
+	env-int-pds \
+	env-int-sds \
 	_env-test \
 	env-test-local \
 	env-test-ci \

@@ -26,3 +26,6 @@ gateway-api/test-artefacts/
 **/.env.*
 **/.DS_Store
 **/.terraform.lock.hcl
+
+# Any file within .secrets
+.secrets/**

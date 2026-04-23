@@ -4,8 +4,8 @@ set -e
 get_provider_url() {
   env="$1"
   case "$env" in
-    int)
-      echo "how do we test integration with _all_ providers?"
+    int|int-pds|int-sds)
+      echo "how_do_we_do_this?"
       return 0
       ;;
     orangebox)
