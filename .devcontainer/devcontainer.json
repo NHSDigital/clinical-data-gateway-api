@@ -1,10 +1,7 @@
 {
   "name": "gateway-api-build-container",
   "build": {
-    "dockerfile": "../infrastructure/images/build-container/Dockerfile",
-    "args": {
-      "INCLUDE_DEV_CERTS": "true"
-    }
+    "dockerfile": "../infrastructure/images/build-container/Dockerfile"
   },
   "customizations": {
     "vscode": {

@@ -110,8 +110,6 @@ The project is configured to run inside a [Dev Container](https://containers.dev
 The dev container sits on the same network, `gateway-local`, as [the `gateway-api` container](infrastructure/README.md#docker-images), if deployed. Docker DNS will resolve <http://gateway-api> to the deployed Gateway API.
 
 > [!NOTE]
-> **Certificates:** If additional certificates are needed, add them to `infrastructure/images/build-container/resources/dev-certificates` and set the `INCLUDE_DEV_CERTS` Docker build argument to `true`.
->
 > **WSL users:** Configure the Dev Containers extension with `{"dev.containers.executeInWSL": true}`, clone the repository into the WSL filesystem, connect VS Code to WSL first, then open the repository folder and build the container.
 
 ### Prerequisites

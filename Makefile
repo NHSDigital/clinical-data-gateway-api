@@ -20,7 +20,6 @@ endif
 IMAGE_NAME := ${IMAGE_REPOSITORY}:${IMAGE_TAG}
 COMMIT_VERSION := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u +"%Y%m%d")
-INCLUDE_DEV_CERTS ?= ${DEV_CERTS_INCLUDED}
 # ==============================================================================
 
 # Example CI/CD targets are: dependencies, build, publish, deploy, clean, etc.
@@ -42,25 +41,13 @@ build-gateway-api: dependencies
 	@rm -rf ../infrastructure/images/gateway-api/resources/build/
 	@mkdir ../infrastructure/images/gateway-api/resources/build/
 	@cp -r ./target/gateway-api ../infrastructure/images/gateway-api/resources/build/
-	# If dev certificates are present inside the dev container, copy them into
-	# the gateway-api image build context so they can be installed there too.
-	@if [ -d "/resources/dev-certificates" ]; then \
-		rm -rf ../infrastructure/images/gateway-api/resources/dev-certificates; \
-		mkdir -p ../infrastructure/images/gateway-api/resources/dev-certificates; \
-		cp -r /resources/dev-certificates/* ../infrastructure/images/gateway-api/resources/dev-certificates/; \
-	fi
 	# Remove temporary build artefacts once build has completed
 	@rm -rf target && rm -rf dist
 
 .PHONY: build
 build: build-gateway-api # Build the project artefact @Pipeline
 	@echo "Building Docker x86 image using Docker. Utilising python version: ${PYTHON_VERSION} ..."
-	@if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
-		echo "building with dev certs ..." ; \
-		$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} --build-arg INCLUDE_DEV_CERTS=${INCLUDE_DEV_CERTS} -t ${IMAGE_NAME} infrastructure/images/gateway-api
-	else \
-		$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME} infrastructure/images/gateway-api
-	fi
+	$(docker) buildx build --platform linux/amd64 --load --provenance=false --build-arg PYTHON_VERSION=${PYTHON_VERSION} --build-arg COMMIT_VERSION=${COMMIT_VERSION} --build-arg BUILD_DATE=${BUILD_DATE} -t ${IMAGE_NAME} infrastructure/images/gateway-api
 	@echo "Docker image '${IMAGE_NAME}' built successfully!"
 
 publish: # Publish the project artefact @Pipeline
@@ -102,11 +89,6 @@ stop:
 	@$(docker) stop gateway-api || echo "No Gateway API container currently running."
 
 config:: # Configure development environment (main) @Configuration
-	# Configure poetry to trust dev certificate if specified
-	@if [[ -n "$${DEV_CERTS_INCLUDED}" ]]; then \
-		echo "Configuring poetry to trust the dev certificate..."  ; \
-		poetry config certificates.PyPI.cert /etc/ssl/cert.pem ; \
-	fi
 	make _install-dependencies
 
 # ==============================================================================
