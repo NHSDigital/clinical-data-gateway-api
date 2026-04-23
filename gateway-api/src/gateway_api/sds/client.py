@@ -15,23 +15,28 @@ from typing import Any
 from fhir import Resource
 from fhir.constants import FHIRSystem
 from fhir.r4 import Bundle, Device, Endpoint
-from requests import HTTPError
+from requests import HTTPError, Response
+from requests import get as external_sds_get
+from stubs import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds.search_results import SdsSearchResults
 
-# TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_SDS environment variable and just
-#       use the stub client
-STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
-if not STUB_SDS:
-    from requests import get
-else:
-    from stubs import SdsFhirApiStub
 
-    sds = SdsFhirApiStub()
-    get = sds.get  # type: ignore
+def get(
+    url: str,
+    headers: dict[str, str],
+    params: dict[str, str],
+    timeout: int,
+) -> Response:
+    STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+    if not STUB_SDS:
+        return external_sds_get(url, headers=headers, params=params, timeout=timeout)
+    else:
+        return SdsFhirApiStub().get(
+            url, headers=headers, params=params, timeout=timeout
+        )
 
 
 class SdsResourceType(StrEnum):
@@ -80,7 +85,7 @@ class SdsClient:
 
     def __init__(
         self,
-        base_url: str = INT_URL,
+        base_url: str = SANDBOX_URL,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
