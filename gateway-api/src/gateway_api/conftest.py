@@ -39,6 +39,9 @@ class NewEnvVars:
         _value: BaseException | None,
         _traceback: TracebackType | None,
     ) -> None:
+        for key in self.new_env_vars:
+            if key in os.environ:
+                del os.environ[key]
         os.environ.update(self.original_env_vars)
 
 
