@@ -60,7 +60,7 @@ A lightweight Alpine-based Python image that runs the Flask application. Built w
 
 - A configurable `PYTHON_VERSION` build argument
 - A non-root user (`gateway_api_user`)
-- Stubs enabled by default (`STUB_PDS`, `STUB_SDS`, `STUB_PROVIDER` all set to `true`)
+- Stubs enabled by default (`PDS_URL`, `SDS_URL`, `PROVIDER_URL` all set to `stub`)
 - Flask listening on `0.0.0.0:8080`
 
 ### `build-container`

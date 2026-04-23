@@ -91,6 +91,7 @@ class TestParameters:
                     "resourceType": "Patient",
                     "parameter": [
                         {
+                            "name": "patientNHSNumber",
                             "valueIdentifier": {
                                 "system": "https://fhir.nhs.uk/Id/nhs-number",
                                 "value": "9000000009",
@@ -114,6 +115,7 @@ class TestParameters:
                     "resourceType": "Parameters",
                     "parameter": [
                         {
+                            "name": "patientNHSNumber",
                             "valueIdentifier": {
                                 "system": "https://example.org/invalid",
                                 "value": "9000000009",

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import schemathesis
 import yaml
+from hypothesis import HealthCheck, settings
 from schemathesis.generation.case import Case
 from schemathesis.openapi import from_dict
 
@@ -18,7 +19,15 @@ with open(schema_path) as f:
 schema = from_dict(schema_dict)
 
 
+# Schemathesis warns you that this test is running a function-scoped fixture - a fixture
+# that is executed once per test function, not per test case. Given schemathesis
+# generates multiple test cases from the same test function, this means that the fixture
+# will be executed only once for all generated cases, this can be a problem for certain
+# fixtures. However, in this case, as base_url should not change during a test run,
+# using the cached value for each test case is acceptable.
+# See https://hypothesis.readthedocs.io/en/latest/reference/api.html#hypothesis.HealthCheck.function_scoped_fixture
 @schema.parametrize()
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_api_schema_compliance(case: Case, base_url: str) -> None:
     """Test API endpoints against the OpenAPI schema.
 
