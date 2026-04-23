@@ -1,0 +1,8 @@
+name: local - PDS_INT
+variables:
+  - name: base_url
+    value: http://localhost:5000
+  - name: nhs_number
+    value: "9692140466"
+  - name: PDS_INT_apikey
+    value: DLK1Ei2XjHHIlwsoBdSzXYMwcBVv7A0A
