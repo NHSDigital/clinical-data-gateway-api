@@ -5,7 +5,8 @@ get_provider_url() {
   env="$1"
   case "$env" in
     int|int-pds|int-sds)
-      echo "how_do_we_do_this?"
+      # TODO [GPCAPIM-397]: Update this.
+      echo "stub"
       return 0
       ;;
     orangebox)
