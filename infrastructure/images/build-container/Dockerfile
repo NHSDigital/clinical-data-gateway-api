@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/vscode/devcontainers/base:alpine-3.22 AS gateway-build-container
+FROM mcr.microsoft.com/vscode/devcontainers/base:alpine3.23 AS gateway-build-container
 
 ENV PYTHON_VERSION="3.14"
 
-ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.0"
-ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.4.1"
+ENV ASDF_DOWNLOAD_URL="https://github.com/asdf-vm/asdf/releases/download/v0.18.1"
+ENV EDITORCONFIG_DOWNLOAD_URL="https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.6.1"
 
 ARG INCLUDE_DEV_CERTS
 ARG DEV_CERT_FILENAME
@@ -83,10 +83,10 @@ WORKDIR /asdf
 # If we're running on an arm64 architecture download the arm64 executable.
 RUN if [ "$(uname -m)" = "aarch64" ] ; then \
         echo "Installing ARM asdf executable..." && \
-        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-arm64.tar.gz"; \
+        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.1-linux-arm64.tar.gz"; \
     else \
         echo "Installing x86 asdf executable..." && \
-        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.0-linux-amd64.tar.gz"; \
+        wget -O asdf.tar.gz "$ASDF_DOWNLOAD_URL/asdf-v0.18.1-linux-amd64.tar.gz"; \
     fi && \
     tar -xvf asdf.tar.gz && \
 
@@ -153,5 +153,7 @@ RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" && 
 
 # Update gateway-dev user's bash configuration.
 COPY /resources/.bashrc /home/gateway-dev/.bashrc
+
+EXPOSE 8089
 
 USER gateway-dev
