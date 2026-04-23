@@ -4,7 +4,7 @@ set -e
 get_provider_url() {
   env="$1"
   case "$env" in
-    int|int-pds|int-sds)
+    int)
       # TODO [GPCAPIM-397]: Update this.
       echo "stub"
       return 0
