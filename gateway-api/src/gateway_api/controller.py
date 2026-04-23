@@ -63,50 +63,43 @@ class Controller:
             request.ods_from.strip(), provider_ods
         )
 
-        # Extract CDG-specific fields from the FHIR Parameters before forwarding.
-        # These parameters are not part of the GP Connect spec and must not be
-        # sent to the provider. They are identified by their "name" field within
-        # the "parameter" array:
+        # TODO: De-ai-ify this comment
+        # Extract CDG-specific identity fields from the FHIR Parameters before
+        # forwarding. These fields are not part of the GP Connect spec and must
+        # not be sent to the provider. They are provided in the top-level
+        # "identity" array (separate from "parameter"), each identified by their
+        # "name" field:
         #   - "issuer"                 → string value in the "value" key
-        #   - "requestingDevice"       → remainder of the parameter object
-        #   - "requestingPractitioner" → remainder of the parameter object
+        #   - "requestingDevice"       → remainder of the identity object
+        #   - "requestingPractitioner" → remainder of the identity object
         request_body: dict[str, Any] = json.loads(request.request_body)
-        parameters: list[dict[str, Any]] = request_body.get("parameter", [])
 
-        cdg_parameter_names = {"issuer", "requestingDevice", "requestingPractitioner"}
-        cdg_parameters: dict[str, dict[str, Any]] = {}
-        forwarded_parameters: list[dict[str, Any]] = []
-        for parameter in parameters:
-            if parameter.get("name") in cdg_parameter_names:
-                cdg_parameters[parameter["name"]] = parameter
-            else:
-                forwarded_parameters.append(parameter)
-
-        issuer_param = cdg_parameters.get("issuer")
-        issuer: str | None = issuer_param.get("value") if issuer_param else None
-
-        requesting_device_param = cdg_parameters.get("requestingDevice")
-        if not requesting_device_param:
-            # TODO: Handle this better, return correct http error
-            raise ValueError("Missing 'requestingDevice' parameter in request body")
-
-        device_details: dict[str, Any] = {
-            k: v for k, v in requesting_device_param.items() if k != "name"
+        identity_items: list[dict[str, Any]] = request_body.pop("identity", [])
+        cdg_identity: dict[str, dict[str, Any]] = {
+            item["name"]: item for item in identity_items if "name" in item
         }
-        requesting_device: Device = Device.model_validate(device_details)
 
-        requesting_practitioner_param = cdg_parameters.get("requestingPractitioner")
-        if not requesting_practitioner_param:
+        issuer_item = cdg_identity.get("issuer")
+        issuer: str | None = issuer_item.get("value") if issuer_item else None
+
+        requesting_device_item = cdg_identity.get("requestingDevice")
+        if not requesting_device_item:
+            # TODO: Handle this better, return correct http error
+            raise ValueError("Missing 'requestingDevice' in identity in request body")
+
+        requesting_device: Device = Device.model_validate(
+            {k: v for k, v in requesting_device_item.items() if k != "name"}
+        )
+
+        requesting_practitioner_item = cdg_identity.get("requestingPractitioner")
+        if not requesting_practitioner_item:
             # TODO: Handle this better, return correct http error
             raise ValueError(
-                "Missing 'requestingPractitioner' parameter in request body"
+                "Missing 'requestingPractitioner' in identity in request body"
             )
 
-        practitioner_details: dict[str, Any] = {
-            k: v for k, v in requesting_practitioner_param.items() if k != "name"
-        }
         requesting_practitioner: Practitioner = Practitioner.model_validate(
-            practitioner_details
+            {k: v for k, v in requesting_practitioner_item.items() if k != "name"}
         )
 
         if (
@@ -121,9 +114,7 @@ class Controller:
                 " parameter in request body"
             )
 
-        forwarded_request_body = json.dumps(
-            {**request_body, "parameter": forwarded_parameters}
-        )
+        forwarded_request_body = json.dumps(request_body)
 
         token = self.get_jwt_for_provider(
             provider_endpoint=provider_endpoint,
@@ -169,14 +160,6 @@ class Controller:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_device-claim
         # For requesting practitioner details, see:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_practitioner-claim
-
-        # TODO [GPCAPIM-362]: Get requesting device details
-        # requesting_device = Device(
-        #     system="https://consumersupplier.com/Id/device-identifier",
-        #     value="CONS-APP-4",
-        #     model="Consumer product name",
-        #     version="5.3.0",
-        # )
 
         # requesting_device = Device.model_validate(
         #     {
