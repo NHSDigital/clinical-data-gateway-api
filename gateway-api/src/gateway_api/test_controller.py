@@ -358,3 +358,94 @@ def test_controller_creates_jwt_token_with_correct_claims(
 
     # Verify the requesting organization matches the consumer ODS
     assert jwt_token.requesting_organization["identifier"][0]["value"] == consumer_ods
+
+
+def test_controller_respects_pds_url(
+    mocker: MockerFixture,
+    happy_path_pds_response_body: dict[str, Any],
+) -> None:
+    """
+    Test that the controller uses the PDS URL provided in the constructor.
+    """
+    mocked_get_pds = mocker.patch(
+        "gateway_api.pds.client.get",
+        return_value=FakeResponse(
+            status_code=200, headers={}, _json=happy_path_pds_response_body
+        ),
+    )
+    custom_pds_url = "https://a.different.url/base"
+
+    controller = create_test_controller(pds_base_url=custom_pds_url)
+    controller._get_pds_details("auth_token", "9000000009")
+
+    actual_pds_url = mocked_get_pds.call_args.args[0]
+    assert actual_pds_url == "https://a.different.url/base/Patient/9000000009"
+
+
+@pytest.fixture
+def mock_request_with_headers(valid_simple_request_payload: dict[str, Any]) -> Request:
+    headers = {
+        "Ssp-TraceID": "test-trace-id",
+        "ODS-from": "test-ods",
+    }
+    return create_mock_request(headers, valid_simple_request_payload)
+
+
+def test_controller_respects_sds_url(
+    mocker: MockerFixture,
+) -> None:
+    """
+    Test that the controller uses the SDS URL provided in the constructor.
+    """
+    device_bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "fullUrl": "https://example.test/sds/Device/1",
+                "resource": {
+                    "resourceType": "Device",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                            "value": "test-asid",
+                        },
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                            "value": "test-party-key",
+                        },
+                    ],
+                },
+            }
+        ],
+    }
+    endpoint_bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "fullUrl": "https://example.test/sds/Endpoint/1",
+                "resource": {
+                    "resourceType": "Endpoint",
+                    "address": "https://example.provider.org/endpoint",
+                },
+            }
+        ],
+    }
+    mocked_get_sds = mocker.patch(
+        "gateway_api.sds.client.get",
+        side_effect=[
+            FakeResponse(status_code=200, headers={}, _json=device_bundle),
+            FakeResponse(status_code=200, headers={}, _json=endpoint_bundle),
+            FakeResponse(status_code=200, headers={}, _json=device_bundle),
+        ],
+    )
+    custom_sds_url = "https://a.different.url/base"
+
+    controller = create_test_controller(sds_base_url=custom_sds_url)
+    controller._get_sds_details("test-ods-1", "test-ods-2")
+
+    actual_sds_url = mocked_get_sds.call_args.args[0]
+    assert actual_sds_url == "https://a.different.url/base/Device"
