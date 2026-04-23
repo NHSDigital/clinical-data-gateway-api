@@ -68,8 +68,6 @@ publish: # Publish the project artefact @Pipeline
 
 deploy: clean build # Build project artefact and deploy locally @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
-	@echo "Using environment variables from .env"
-	@cat .env
 	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
 		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local --env-file .env -d ${IMAGE_NAME} ; \
