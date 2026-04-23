@@ -73,7 +73,7 @@ test-load-initial: # Run your load tests from scripts/test/load @Testing
 	@$(MAKE) _test name="load"
 
 test-load-ui: # Run your load tests from scripts/test/load @Testing with UI enabled
-	@UI=true $(MAKE) _test name="load"'
+	@UI=true $(MAKE) _test name="load"
 
 _test:
 	set -e
