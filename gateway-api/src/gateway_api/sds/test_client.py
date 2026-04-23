@@ -9,6 +9,7 @@ from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
+from gateway_api.conftest import NewEnvVars
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds import (
     SdsClient,
@@ -130,17 +131,15 @@ def test_sds_client_sends_correct_headers(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    with NewEnvVars({"SDS_API_KEY": "example_api_key"}):
+        client = SdsClient(base_url=SdsClient.SANDBOX_URL)
 
-    correlation_id = "test-correlation-123"
-    client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
+        correlation_id = "test-correlation-123"
+        client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
-    # Check that the headers were
-    assert stub.get_headers["X-Correlation-Id"] == correlation_id
-
-    # In future when _get_api_key calls AWS secrets, this will break.
-    # That's a good thing, because we'll want to mock that call.
-    assert stub.get_headers["apikey"] == "test_api_key_DO_NOT_REPLACE_HERE"
+        # Check that the headers were
+        assert stub.get_headers["X-Correlation-Id"] == correlation_id
+        assert stub.get_headers["apikey"] == "example_api_key"
 
 
 def test_sds_client_timeout_parameter(
