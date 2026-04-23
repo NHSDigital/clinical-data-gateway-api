@@ -26,6 +26,7 @@
             "id": "1",
             "type": "Organization",
             "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
                 "value": "S55555",
                 "system": "https://fhir.nhs.uk/Id/ods-organization-code",
                 "period": {"start": "2020-01-01", "end": "9999-12-31"}
