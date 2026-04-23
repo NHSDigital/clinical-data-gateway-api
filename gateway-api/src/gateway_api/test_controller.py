@@ -382,15 +382,6 @@ def test_controller_respects_pds_url(
     assert actual_pds_url == "https://a.different.url/base/Patient/9000000009"
 
 
-@pytest.fixture
-def mock_request_with_headers(valid_simple_request_payload: dict[str, Any]) -> Request:
-    headers = {
-        "Ssp-TraceID": "test-trace-id",
-        "ODS-from": "test-ods",
-    }
-    return create_mock_request(headers, valid_simple_request_payload)
-
-
 def test_controller_respects_sds_url(
     mocker: MockerFixture,
 ) -> None:
