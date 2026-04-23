@@ -15,6 +15,7 @@ class Parameters(Resource, resource_type="Parameters"):
     class Parameter(ABC):
         """A FHIR STU3 Parameter resource."""
 
+        name: Annotated[str, Field(frozen=True)]
         valueIdentifier: Annotated[PatientIdentifier, Field(frozen=True)]
 
     parameter: Annotated[list[Parameter], Field(frozen=True, min_length=1)]
