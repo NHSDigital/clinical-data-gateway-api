@@ -9,7 +9,7 @@ variables:
   - name: nhs_number
     value: "9999999999"
   - name: from_ods
-    value: test-ods-code
+    value: S55555
   - name: session_urid
     value: "555254242106"
   - name: session_uuid
