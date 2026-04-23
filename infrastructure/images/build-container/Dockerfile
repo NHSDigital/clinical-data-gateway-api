@@ -154,4 +154,6 @@ RUN bash -c "source ~/.bashrc && pyenv virtualenv ${PYTHON_VERSION} gateway" && 
 # Update gateway-dev user's bash configuration.
 COPY /resources/.bashrc /home/gateway-dev/.bashrc
 
+EXPOSE 8089
+
 USER gateway-dev

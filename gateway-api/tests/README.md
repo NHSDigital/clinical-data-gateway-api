@@ -210,6 +210,7 @@ Shared fixtures in `tests/conftest.py` are available across all test types:
 ### Load Testing with Locust ('load/')
 
 Load testing is performed using Locust. You have the option of running via the CLI or UI.
+You will need [Proxygen setup](../../README.md#proxygen) to run the load tests.
 
 **How it works:**
     - Tests are defined in tests/load/.
