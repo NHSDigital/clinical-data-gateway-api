@@ -279,6 +279,12 @@ class GpProviderStub(StubBase, PostStub):
                 json_data=Bundles.ALICE_JONES_9999999999,
             )
 
+        if nhs_number == "9658218865":
+            return self._create_response(
+                status_code=200,
+                json_data=Bundles.INT_9658218865,
+            )
+
         return self._create_response(
             status_code=404,
             json_data={

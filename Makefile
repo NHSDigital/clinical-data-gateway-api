@@ -66,6 +66,9 @@ deploy: clean build # Deploy the project artefact to the target environment @Pip
 	if [[ -n "$${STUB_SDS}" ]]; then \
 		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
 	fi ; \
+	if [[ -n "$${SDS_API_KEY}" ]]; then \
+		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e SDS_API_KEY=$${SDS_API_KEY}" ; \
+	fi ; \
 	if [[ -n "$${CDG_DEBUG}" ]]; then \
 		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
 	fi ; \

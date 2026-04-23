@@ -53,6 +53,7 @@ class PdsFhirApiStub(StubBase):
             ("9000000012", Patients.INDUCE_PROVIDER_ERROR_9000000012),
             ("9000000013", Patients.BLANK_ENDPOINT_SDS_RESULT_9000000013),
             ("9690937278", Patients.ORANGE_BOX_TRIGGER_9690937278),
+            ("9658218865", Patients.INT_9658218865),
         ]
         for nhs_number, patient in test_patients:
             self.upsert_patient(
