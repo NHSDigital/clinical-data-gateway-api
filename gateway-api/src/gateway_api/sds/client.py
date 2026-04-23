@@ -80,7 +80,7 @@ class SdsClient:
 
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str = INT_URL,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
@@ -161,14 +161,8 @@ class SdsClient:
     def _get_api_key() -> str:
         """
         Retrieve the API key to use for SDS requests.
-
-        This is a placeholder at present because we don't have a real API key.
-        Ultimately it will probably obtain the key from AWS secrets
         """
-
-        # TODO [GPCAPIM-366]: Obtain key from AWS secrets
-        # DO NOT PUT A REAL KEY HERE, IT WILL BE VISIBLE ON GITHUB
-        return "test_api_key_DO_NOT_REPLACE_HERE"
+        return os.environ.get("SDS_API_KEY", "")
 
     def _query_sds(
         self,

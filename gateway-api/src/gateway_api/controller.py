@@ -28,7 +28,7 @@ class Controller:
     def __init__(
         self,
         pds_base_url: str = PdsClient.SANDBOX_URL,
-        sds_base_url: str = SdsClient.SANDBOX_URL,
+        sds_base_url: str = SdsClient.INT_URL,
         timeout: int = 10,
     ) -> None:
         """

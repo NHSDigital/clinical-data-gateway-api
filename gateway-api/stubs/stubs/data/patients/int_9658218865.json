@@ -1,0 +1,35 @@
+{
+    "resourceType": "Patient",
+    "id": "9658218865",
+    "meta": {
+        "versionId": "1",
+        "lastUpdated": "2020-01-01T00:00:00Z"
+    },
+    "identifier": [
+        {
+            "system": "https://fhir.nhs.uk/Id/nhs-number",
+            "value": "9658218865"
+        }
+    ],
+    "name": [
+        {
+            "use": "official",
+            "family": "Samual",
+            "given": ["Lucien"],
+            "period": {"start": "1900-01-01", "end": "9999-12-31"}
+        }
+    ],
+    "gender": "male",
+    "birthDate": "1938-12-11",
+    "generalPractitioner": [
+        {
+            "id": "1",
+            "type": "Organization",
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "A20047",
+                "period": {"start": "2020-01-01", "end": "9999-12-31"}
+            }
+        }
+    ]
+}

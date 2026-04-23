@@ -1,0 +1,8 @@
+name: localInt
+variables:
+  - name: base_url
+    value: http://localhost:5000
+  - name: nhs_number
+    value: "9658218865"
+  - name: from_ods
+    value: A20047
