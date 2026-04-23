@@ -29,3 +29,4 @@ gateway-api/test-artefacts/
 
 # Any file within .secrets
 .secrets/**
+!.secrets/README.md
