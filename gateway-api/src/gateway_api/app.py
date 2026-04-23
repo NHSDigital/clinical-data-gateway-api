@@ -64,9 +64,14 @@ def log_error(error: AbstractCDGError) -> None:
 
 
 def log_env_vars(app: Flask) -> None:
+    env_vars = {
+        key: value
+        for key, value in os.environ.items()
+        if key in {"FLASK_HOST", "FLASK_PORT", "PDS_URL", "SDS_URL"}
+    }
     log_details = {
         "description": "Initializing Flask app",
-        "env_vars": os.environ.items(),
+        "env_vars": env_vars,
     }
     app.logger.info(log_details)
 
