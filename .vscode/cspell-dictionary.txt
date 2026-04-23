@@ -36,6 +36,7 @@ eamodio
 errstr
 Farsley
 fhir
+getfixturevalue
 getstructuredrecord
 gocloc
 GPCAPIM
@@ -73,6 +74,7 @@ NOSONAR
 NPFIT
 ONESHELL
 opencollection
+orangebox
 pipefail
 PIPX
 pkce

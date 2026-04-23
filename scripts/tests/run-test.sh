@@ -31,10 +31,29 @@ else
   TEST_PATH="tests/${TEST_TYPE}/"
 fi
 
+if [[ ! -f ".env.test" ]]; then
+    echo "Error: .env.test file not found. Please run 'make env-test-<env>' to generate it." >&2
+  exit 1
+fi
+source .env.test
+
+if [[ "$TEST_TYPE" = "unit" ]]; then
+  if [[ ! -f ".env" ]]; then
+    echo "Error: .env file not found. Please run 'make env-<env>' to generate it." >&2
+    exit 1
+  fi
+  set -a
+  source .env
+  set +a
+fi
+
 cd gateway-api
 mkdir -p test-artefacts
 
-echo "Running ${TEST_TYPE} tests..."
+echo "Running ${TEST_TYPE} tests against ${TARGET_ENV} environment..."
+if [[ -n "${PROXY_BASE_PATH:-}" && "$PROXY_BASE_PATH" != "none" ]]; then
+  echo "Using proxy base path: ${PROXY_BASE_PATH}"
+fi
 
 # Set coverage path based on test type
 if [[ "$TEST_TYPE" = "unit" ]]; then
@@ -43,34 +62,14 @@ else
   COV_PATH="src/gateway_api"
 fi
 
-if [[ "${ENV:-local}" = "remote" ]] && [[ "$TEST_TYPE" != "unit" ]]; then
-  echo "[run-test] Branch: remote non-unit path"
-  echo "[run-test] ENV=${ENV:-local}, TEST_TYPE=${TEST_TYPE}"
-  echo "[run-test] Running via APIM proxy options"
-  if [[ -z "${PROXY_BASE_PATH:-}" ]]; then
-    echo "Error: PROXY_BASE_PATH must be set when ENV=remote and TEST_TYPE is not unit" >&2
-    exit 1
-  fi
-  # Note: TEST_PATH is intentionally unquoted to allow glob expansion
-  poetry run pytest ${TEST_PATH} --env="remote" -v \
-    --api-name="${PROXYGEN_API_NAME}" \
-    --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \
-    --cov="${COV_PATH}" \
-    --cov-report=html:test-artefacts/coverage-html \
-    --cov-report=term \
-    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
-    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
-else
-  echo "[run-test] Branch: local/default path"
-  echo "[run-test] ENV=${ENV:-local}, TEST_TYPE=${TEST_TYPE}"
-  echo "[run-test] Running direct tests without APIM proxy options"
-  poetry run pytest ${TEST_PATH} -v \
-    --cov="${COV_PATH}" \
-    --cov-report=html:test-artefacts/coverage-html \
-    --cov-report=term \
-    --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
-    --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
-fi
+poetry run pytest ${TEST_PATH} -v \
+  --api-name="${PROXYGEN_API_NAME}" \
+  --proxy-name="${PROXYGEN_API_NAME}--internal-dev--${PROXY_BASE_PATH}" \
+  --cov="${COV_PATH}" \
+  --cov-report=html:test-artefacts/coverage-html \
+  --cov-report=term \
+  --junit-xml="test-artefacts/${TEST_TYPE}-tests.xml" \
+  --html="test-artefacts/${TEST_TYPE}-tests.html" --self-contained-html
 
 # Save coverage data file for merging
 mv .coverage "test-artefacts/coverage.${TEST_TYPE}"
