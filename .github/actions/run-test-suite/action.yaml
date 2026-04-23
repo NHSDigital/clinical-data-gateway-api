@@ -10,13 +10,9 @@ inputs:
     description: "Type of test to run"
     required: true
   env:
-    description: "Environment to run tests against - see env.mk"
+    description: "Environment to run tests against: ci, alpha-int, pr-<number> - see env.mk"
     required: false
     default: "ci"
-    options:
-      - ci
-      - alpha-int
-      - pr-<number>
 
 runs:
   using: composite
