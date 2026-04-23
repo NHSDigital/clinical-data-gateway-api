@@ -9,20 +9,11 @@ env-ci: # Create .env file with environment variables for CI environment (stubs)
 env-orangebox: # Create .env file that will have the app send requests to the provider "orangebox", stubs otherwise.
 	make _env env="orangebox"
 
-env-sandbox-pds: # Create .env file that will have the app send requests to the PDS sandbox environment (sandbox PDS), stubs otherwise.
-	make _env env="sandbox-pds"
-
-env-sandbox-sds: # Create .env file that will have the app send requests to the SDS sandbox environment (sandbox SDS), stubs otherwise.
-	make _env env="sandbox-sds"
+env-sandbox: # Create .env file that will have the app send requests to the SDS and PDS sandbox environment, stubs otherwise.
+	make _env env="sandbox"
 
 env-int: # Create .env file that will have the app send requests to the SDS and PDS integration environments.
 	make _env env="int"
-
-env-int-pds: # Create .env file that will have the app send requests to the PDS integration environment (int PDS), stubs otherwise.
-	make _env env="int-pds"
-
-env-int-sds: # Create .env file that will have the app send requests to the SDS integration environment (int SDS), stubs otherwise.
-	make _env env="int-sds"
 
 env-test-local: # Create .env.test file that will have tests send requests to the local app.
 	make _env-test env="local"
@@ -50,8 +41,7 @@ ${VERBOSE}.SILENT: \
 	env-dev \
 	env-ci \
 	env-orangebox \
-	env-sandbox-pds \
-	env-sandbox-sds \
+	env-sandbox \
 	env-int \
 	env-int-pds \
 	env-int-sds \

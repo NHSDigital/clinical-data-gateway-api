@@ -4,7 +4,7 @@ set -e
 get_sds_url() {
   env="$1"
   case "$env" in
-    sandbox-sds)
+    sandbox)
       echo "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
       return 0
       ;;
@@ -23,7 +23,7 @@ get_sds_api_token() {
   env="$1"
   secret_file=".secrets/sds/api_token"
   case "$env" in
-    int|int-sds)
+    int)
       if [ -f "$secret_file" ]; then
         cat "$secret_file"
         return 0
