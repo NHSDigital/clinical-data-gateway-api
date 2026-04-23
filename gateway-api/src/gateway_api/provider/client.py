@@ -135,7 +135,6 @@ class GpProviderClient:
         log_details = {
             "description": "GPProvider FHIR API request",
             "url": url,
-            "headers": headers,
         }
         logger.info(log_details)
 
