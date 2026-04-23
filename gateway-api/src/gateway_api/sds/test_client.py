@@ -4,6 +4,8 @@ Unit tests for :mod:`gateway_api.sds_search`.
 
 from __future__ import annotations
 
+from unittest.mock import Mock, patch
+
 import pytest
 from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
@@ -11,10 +13,7 @@ from stubs.sds.stub import SdsFhirApiStub
 from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.conftest import NewEnvVars
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
-from gateway_api.sds import (
-    SdsClient,
-    SdsSearchResults,
-)
+from gateway_api.sds import SdsClient, SdsSearchResults, get
 
 
 @pytest.fixture
@@ -416,3 +415,21 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
 
     assert result.asid == "222222222222"
     assert result.endpoint is None
+
+
+@patch("gateway_api.sds.client.SdsFhirApiStub")
+@patch("gateway_api.sds.client.external_sds_get")
+def test_get_with_stub(mock_external_get: Mock, mock_stub: Mock) -> None:
+    with NewEnvVars({"STUB_SDS": "true"}):
+        get("https://example.com/", headers={}, params={}, timeout=10)
+        assert mock_stub.return_value.get.called
+        assert not mock_external_get.called
+
+
+@patch("gateway_api.sds.client.SdsFhirApiStub")
+@patch("gateway_api.sds.client.external_sds_get")
+def test_get_without_stub(mock_external_get: Mock, mock_stub: Mock) -> None:
+    with NewEnvVars({"STUB_SDS": "false"}):
+        get("https://example.com/", headers={}, params={}, timeout=10)
+        assert mock_external_get.called
+        assert not mock_stub.return_value.get.called

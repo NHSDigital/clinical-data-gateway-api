@@ -34,6 +34,7 @@ def get(
     if not STUB_SDS:
         return external_sds_get(url, headers=headers, params=params, timeout=timeout)
     else:
+        print("IanR: Calling stub ", SdsFhirApiStub().get)
         return SdsFhirApiStub().get(
             url, headers=headers, params=params, timeout=timeout
         )
