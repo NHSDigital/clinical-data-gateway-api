@@ -52,6 +52,8 @@ docs:
       | 656005750107| R8000 | Clinical Practitioner        | AAL3                         |
       | 656005750111| R0260 | General Medical Practitioner | AAL2                         |
       | 656005750109| R8000 | Clinical Practitioner        | AAL2                         |
+
+    It is recommended to use 656005750107 because it only has one associated role. For users with multiple roles you will need to the NHSD-Session-URID and NHSD-Session-UUID headers. See the APIM userinfo endpoint to find role ids for any particular user.
   type: text/markdown
 bundled: false
 extensions: {}
