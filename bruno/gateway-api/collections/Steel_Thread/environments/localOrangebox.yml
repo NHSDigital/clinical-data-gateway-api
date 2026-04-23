@@ -4,3 +4,5 @@ variables:
     value: http://localhost:5000
   - name: nhs_number
     value: "9690937278"
+  - name: from_ods
+    value: S55555

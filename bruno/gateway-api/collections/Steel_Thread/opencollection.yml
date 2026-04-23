@@ -19,7 +19,7 @@ request:
     - name: Ssp-TraceID
       value: "{{$guid}}"
     - name: ODS-from
-      value: S55555
+      value: "{{from_ods}}"
   auth:
     type: oauth2
     flow: authorization_code
