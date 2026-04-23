@@ -206,7 +206,6 @@ class SdsClient:
         log_details = {
             "description": "SDS request",
             "url": url,
-            "headers": headers,
             "params": params,
         }
         logger.info(log_details)

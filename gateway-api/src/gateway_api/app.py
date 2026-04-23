@@ -44,11 +44,16 @@ def get_env_var[T](name: str, parser: Callable[[str], T]) -> T:
 
 
 def log_request_received(request: Request) -> None:
+    sanitized_headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() != "authorization"
+    }
     log_details = {
         "description": "Received request",
         "method": request.method,
         "path": request.path,
-        "headers": dict(request.headers),
+        "headers": sanitized_headers,
     }
     app.logger.info(log_details)
 
