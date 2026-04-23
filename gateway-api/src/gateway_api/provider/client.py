@@ -26,7 +26,6 @@ import logging
 import os
 from urllib.parse import urljoin
 
-from flask.logging import default_handler
 from requests import HTTPError, Response
 
 from gateway_api.clinical_jwt import JWT, JWTValidator
@@ -46,9 +45,7 @@ else:
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(default_handler)
+_logger = logging.getLogger(__name__)
 
 # Default endpoint path for access record structured interaction (standard GP Connect)
 ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"
@@ -96,7 +93,7 @@ class GpProviderClient:
             "consumer_asid": self.consumer_asid,
             "endpoint_path": self.endpoint_path,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
@@ -136,7 +133,7 @@ class GpProviderClient:
             "description": "GPProvider FHIR API request",
             "url": url,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
         response = post(
             url,
@@ -148,7 +145,7 @@ class GpProviderClient:
             "description": "GPProvider FHIR API response received",
             "status_code": str(response.status_code),
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

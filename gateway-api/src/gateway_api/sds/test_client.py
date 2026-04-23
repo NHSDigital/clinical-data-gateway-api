@@ -2,13 +2,14 @@
 Unit tests for :mod:`gateway_api.sds_search`.
 """
 
-from __future__ import annotations
-
 import pytest
 from fhir.constants import FHIRSystem
+from fhir.r4.resources.bundle import Bundle
+from pytest_mock import MockerFixture
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
+from gateway_api.conftest import FakeResponse
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 from gateway_api.sds import (
     SdsClient,
@@ -417,3 +418,19 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
 
     assert result.asid == "222222222222"
     assert result.endpoint is None
+
+
+def test_sds_client_respects_url(
+    mocker: MockerFixture,
+) -> None:
+    empty_bundle = Bundle.empty("searchset").model_dump()
+    mocked_get = mocker.patch(
+        "gateway_api.sds.client.get",
+        return_value=FakeResponse(status_code=200, headers={}, _json=empty_bundle),
+    )
+
+    client = SdsClient(base_url="https://a.different.url/base")
+    _ = client.get_org_details(ods_code="A12345", get_endpoint=False)
+
+    actual_url = mocked_get.call_args.args[0]
+    assert actual_url == "https://a.different.url/base/Device"

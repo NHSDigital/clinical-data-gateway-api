@@ -51,7 +51,7 @@ cd gateway-api
 mkdir -p test-artefacts
 
 echo "Running ${TEST_TYPE} tests against ${TARGET_ENV} environment..."
-if [[ "$PROXY_BASE_PATH" != "none" ]]; then
+if [[ -n "${PROXY_BASE_PATH:-}" && "$PROXY_BASE_PATH" != "none" ]]; then
   echo "Using proxy base path: ${PROXY_BASE_PATH}"
 fi
 

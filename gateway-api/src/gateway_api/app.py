@@ -1,6 +1,7 @@
 import os
 import traceback
 from collections.abc import Callable
+from logging import basicConfig, getLogger
 
 from flask import Flask, Request, request
 from flask.wrappers import Response
@@ -13,14 +14,21 @@ from gateway_api.get_structured_record import (
 )
 
 app = Flask(__name__)
-app.logger.setLevel("INFO")
+_logger = getLogger(__name__)
 
 
 def start_app(app: Flask) -> None:
-    log_env_vars(app)
+    setup_logging()
+    log_env_vars()
     configure_app(app)
     log_starting_app(app)
     app.run(host=app.config["FLASK_HOST"], port=app.config["FLASK_PORT"])
+
+
+def setup_logging() -> None:
+    basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+    )
 
 
 def configure_app(app: Flask) -> None:
@@ -55,7 +63,7 @@ def log_request_received(request: Request) -> None:
         "path": request.path,
         "headers": sanitized_headers,
     }
-    app.logger.info(log_details)
+    _logger.info(log_details)
 
 
 def log_error(error: AbstractCDGError) -> None:
@@ -65,10 +73,10 @@ def log_error(error: AbstractCDGError) -> None:
         "error_message": str(error),
         "traceback": traceback.format_exc(),
     }
-    app.logger.error(log_details)
+    _logger.error(log_details)
 
 
-def log_env_vars(app: Flask) -> None:
+def log_env_vars() -> None:
     env_vars = {
         key: value
         for key, value in os.environ.items()
@@ -78,7 +86,7 @@ def log_env_vars(app: Flask) -> None:
         "description": "Initializing Flask app",
         "env_vars": env_vars,
     }
-    app.logger.info(log_details)
+    _logger.info(log_details)
 
 
 def log_starting_app(app: Flask) -> None:
@@ -89,7 +97,7 @@ def log_starting_app(app: Flask) -> None:
         "pds_base_url": app.config["PDS_URL"],
         "sds_base_url": app.config["SDS_URL"],
     }
-    app.logger.info(log_details)
+    _logger.info(log_details)
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])

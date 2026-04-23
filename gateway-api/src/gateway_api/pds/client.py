@@ -24,7 +24,6 @@ import uuid
 
 import requests
 from fhir.r4 import Patient
-from flask.logging import default_handler
 from pydantic import ValidationError
 
 from gateway_api.common.error import PdsRequestFailedError
@@ -42,9 +41,7 @@ else:
     pds = PdsFhirApiStub()
     get = pds.get  # type: ignore
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(default_handler)
+_logger = logging.getLogger(__name__)
 
 
 class PdsClient:
@@ -87,7 +84,7 @@ class PdsClient:
             "description": "Initialized PdsClient",
             "base_url": self.base_url,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
     def _build_headers(
         self,
@@ -133,7 +130,7 @@ class PdsClient:
             "url": url,
             "headers": headers,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
         # This normally calls requests.get, but if PDS_URL is set it uses the stub.
         response = get(
             url,
@@ -145,7 +142,7 @@ class PdsClient:
             "description": "PDS response received",
             "status_code": str(response.status_code),
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

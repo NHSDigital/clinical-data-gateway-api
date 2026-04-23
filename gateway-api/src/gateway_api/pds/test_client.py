@@ -147,3 +147,22 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
 
     assert "'identifier'" in str(error.value)
     assert "too_short" in str(error.value)
+
+
+def test_search_patient_respects_url(
+    auth_token: str,
+    mocker: MockerFixture,
+    happy_path_pds_response_body: dict[str, Any],
+) -> None:
+    happy_path_response = FakeResponse(
+        status_code=200, headers={}, _json=happy_path_pds_response_body
+    )
+    mocked_get = mocker.patch(
+        "gateway_api.pds.client.get", return_value=happy_path_response
+    )
+
+    client = PdsClient(auth_token, base_url="https://a.different.url/base")
+    _ = client.search_patient_by_nhs_number("9000000009")
+
+    actual_url = mocked_get.call_args.args[0]
+    assert actual_url == "https://a.different.url/base/Patient/9000000009"

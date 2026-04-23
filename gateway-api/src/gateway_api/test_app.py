@@ -1,7 +1,6 @@
 """Unit tests for the Flask app endpoints."""
 
 import json
-import os
 from collections.abc import Generator
 from copy import copy
 from typing import Any
@@ -75,15 +74,22 @@ class TestAppInitialization:
     def test_logging_environment_variables_on_app_initialization(
         self, mocker: MockerFixture
     ) -> None:
-        log_info_mock = mocker.patch.object(app.logger, "info")
+        log_mock_info = mocker.patch("gateway_api.app._logger.info")
 
-        log_env_vars(app)
+        config = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+        }
+        with NewEnvVars(config):
+            log_env_vars()
 
         # Check that the environment variables were logged
-        log_info_mock.assert_called_with(
+        log_mock_info.assert_called_with(
             {
                 "description": "Initializing Flask app",
-                "env_vars": os.environ.items(),
+                "env_vars": config,
             }
         )
 

@@ -16,7 +16,6 @@ from typing import Any
 from fhir import Resource
 from fhir.constants import FHIRSystem
 from fhir.r4 import Bundle, Device, Endpoint
-from flask.logging import default_handler
 from requests import HTTPError
 
 from gateway_api.common.error import SdsRequestFailedError
@@ -35,9 +34,7 @@ else:
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(default_handler)
+_logger = logging.getLogger(__name__)
 
 
 class SdsResourceType(StrEnum):
@@ -98,7 +95,7 @@ class SdsClient:
             "base_url": self.base_url,
             "service_interaction_id": self.service_interaction_id,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -208,7 +205,7 @@ class SdsClient:
             "url": url,
             "params": params,
         }
-        logger.info(log_details)
+        _logger.info(log_details)
         response = get(
             url,
             headers=headers,
@@ -219,7 +216,7 @@ class SdsClient:
             "description": "SDS response received",
             "status_code": str(response.status_code),
         }
-        logger.info(log_details)
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()
