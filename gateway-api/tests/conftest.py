@@ -85,7 +85,7 @@ def simple_request_payload() -> dict[str, Any]:
 
 
 @pytest.fixture
-def get_headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
+def headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
     """Return auth headers for remote tests, or Apigee token for local."""
     if env == "local":
         token = os.environ.get("APIGEE_ACCESS_TOKEN", "")
@@ -104,10 +104,10 @@ def get_headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
 def client(
     base_url: str,
     health_endpoint: str,
-    get_headers: dict[str, str],
+    headers: dict[str, str],
 ) -> Client:
     return Client(
-        base_url=base_url, health_endpoint=health_endpoint, auth_headers=get_headers
+        base_url=base_url, health_endpoint=health_endpoint, auth_headers=headers
     )
 
 
