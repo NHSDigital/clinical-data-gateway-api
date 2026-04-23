@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 
@@ -13,6 +14,7 @@ from gateway_api.get_structured_record import (
 
 app = Flask(__name__)
 app.logger.setLevel("INFO")
+logging.basicConfig(level=logging.INFO)
 
 
 def get_app_host() -> str:
