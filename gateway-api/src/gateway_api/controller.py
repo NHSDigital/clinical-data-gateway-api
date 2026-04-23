@@ -2,6 +2,9 @@
 Controller layer for orchestrating calls to external services
 """
 
+import json
+from typing import Any
+
 from fhir.r4 import Device, Organization, Practitioner
 from requests import Response
 
@@ -60,7 +63,75 @@ class Controller:
             request.ods_from.strip(), provider_ods
         )
 
-        token = self.get_jwt_for_provider(provider_endpoint, request.ods_from.strip())
+        # Extract CDG-specific fields from the FHIR Parameters before forwarding.
+        # These parameters are not part of the GP Connect spec and must not be
+        # sent to the provider. They are identified by their "name" field within
+        # the "parameter" array:
+        #   - "issuer"                 → string value in the "value" key
+        #   - "requestingDevice"       → remainder of the parameter object
+        #   - "requestingPractitioner" → remainder of the parameter object
+        request_body: dict[str, Any] = json.loads(request.request_body)
+        parameters: list[dict[str, Any]] = request_body.get("parameter", [])
+
+        cdg_parameter_names = {"issuer", "requestingDevice", "requestingPractitioner"}
+        cdg_parameters: dict[str, dict[str, Any]] = {}
+        forwarded_parameters: list[dict[str, Any]] = []
+        for parameter in parameters:
+            if parameter.get("name") in cdg_parameter_names:
+                cdg_parameters[parameter["name"]] = parameter
+            else:
+                forwarded_parameters.append(parameter)
+
+        issuer_param = cdg_parameters.get("issuer")
+        issuer: str | None = issuer_param.get("value") if issuer_param else None
+
+        requesting_device_param = cdg_parameters.get("requestingDevice")
+        if not requesting_device_param:
+            # TODO: Handle this better, return correct http error
+            raise ValueError("Missing 'requestingDevice' parameter in request body")
+
+        device_details: dict[str, Any] = {
+            k: v for k, v in requesting_device_param.items() if k != "name"
+        }
+        requesting_device: Device = Device.model_validate(device_details)
+
+        requesting_practitioner_param = cdg_parameters.get("requestingPractitioner")
+        if not requesting_practitioner_param:
+            # TODO: Handle this better, return correct http error
+            raise ValueError(
+                "Missing 'requestingPractitioner' parameter in request body"
+            )
+
+        practitioner_details: dict[str, Any] = {
+            k: v for k, v in requesting_practitioner_param.items() if k != "name"
+        }
+        requesting_practitioner: Practitioner = Practitioner.model_validate(
+            practitioner_details
+        )
+
+        if (
+            issuer is None
+            or requesting_device is None
+            or requesting_practitioner is None
+        ):
+            # TODO: Handle this better, return all missing fields, return correct
+            # http error
+            raise ValueError(
+                "Missing 'issuer', 'requestingDevice', or 'requestingPractitioner'"
+                " parameter in request body"
+            )
+
+        forwarded_request_body = json.dumps(
+            {**request_body, "parameter": forwarded_parameters}
+        )
+
+        token = self.get_jwt_for_provider(
+            provider_endpoint=provider_endpoint,
+            consumer_ods=request.ods_from.strip(),
+            issuer=issuer,
+            requesting_device=requesting_device,
+            requesting_practitioner=requesting_practitioner,
+        )
 
         # Call GP provider with correct parameters
         self.gp_provider_client = GpProviderClient(
@@ -72,7 +143,7 @@ class Controller:
 
         provider_response = self.gp_provider_client.access_structured_record(
             trace_id=request.trace_id,
-            body=request.request_body,
+            body=forwarded_request_body,
         )
 
         return provider_response
@@ -86,7 +157,14 @@ class Controller:
         """
         return "AUTH_TOKEN123"
 
-    def get_jwt_for_provider(self, provider_endpoint: str, consumer_ods: str) -> JWT:
+    def get_jwt_for_provider(
+        self,
+        provider_endpoint: str,
+        consumer_ods: str,
+        issuer: str,
+        requesting_device: Device,
+        requesting_practitioner: Practitioner,
+    ) -> JWT:
         # For requesting device details, see:
         # https://webarchive.nationalarchives.gov.uk/ukgwa/20250307092533/https://developer.nhs.uk/apis/gpconnect/integration_cross_organisation_audit_and_provenance.html#requesting_device-claim
         # For requesting practitioner details, see:
@@ -100,48 +178,48 @@ class Controller:
         #     version="5.3.0",
         # )
 
-        requesting_device = Device.model_validate(
-            {
-                "resourceType": "Device",
-                "identifier": [
-                    {
-                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
-                        "value": "gpcdemonstrator-1-orange",
-                    }
-                ],
-                "model": "GP Connect Demonstrator",
-                "version": "1.5.0",
-            }
-        )
+        # requesting_device = Device.model_validate(
+        #     {
+        #         "resourceType": "Device",
+        #         "identifier": [
+        #             {
+        #                 "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+        #                 "value": "gpcdemonstrator-1-orange",
+        #             }
+        #         ],
+        #         "model": "GP Connect Demonstrator",
+        #         "version": "1.5.0",
+        #     }
+        # )
 
-        # TODO [GPCAPIM-309]: Get practitioner details
-        requesting_practitioner = Practitioner.model_validate(
-            {
-                "resourceType": "Practitioner",
-                "id": "10019",
-                "name": [
-                    {
-                        "family": "Doe",
-                        "given": ["John"],
-                        "prefix": ["Mr"],
-                    }
-                ],
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/sds-user-id",
-                        "value": "111222333444",
-                    },
-                    {
-                        "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
-                        "value": "444555666777",
-                    },
-                    {
-                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
-                        "value": "98ed4f78-814d-4266-8d5b-cde742f3093c",
-                    },
-                ],
-            }
-        )
+        # # TODO [GPCAPIM-309]: Get practitioner details
+        # requesting_practitioner = Practitioner.model_validate(
+        #     {
+        #         "resourceType": "Practitioner",
+        #         "id": "10019",
+        #         "name": [
+        #             {
+        #                 "family": "Doe",
+        #                 "given": ["John"],
+        #                 "prefix": ["Mr"],
+        #             }
+        #         ],
+        #         "identifier": [
+        #             {
+        #                 "system": "https://fhir.nhs.uk/Id/sds-user-id",
+        #                 "value": "111222333444",
+        #             },
+        #             {
+        #                 "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+        #                 "value": "444555666777",
+        #             },
+        #             {
+        #                 "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
+        #                 "value": "98ed4f78-814d-4266-8d5b-cde742f3093c",
+        #             },
+        #         ],
+        #     }
+        # )
 
         # TODO [GPCAPIM-363]: Get the consumer org name
         requesting_organization = Organization.from_ods_code(
@@ -149,7 +227,7 @@ class Controller:
         )
 
         # TODO [GPCAPIM-364]: Get consumer URL for issuer. Use CDG API URL for now.
-        issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
+        # issuer = "https://clinical-data-gateway-api.sandbox.nhs.uk"
         audience = provider_endpoint
 
         token = JWT(
