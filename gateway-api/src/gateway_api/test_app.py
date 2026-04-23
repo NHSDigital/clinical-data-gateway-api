@@ -18,12 +18,12 @@ from gateway_api.app import (
     log_env_vars,
     start_app,
 )
-from gateway_api.conftest import NewEnvVars
+from gateway_api.conftest import ScopedEnvVars
 
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask]]:
-    with NewEnvVars(
+    with ScopedEnvVars(
         {
             "FLASK_HOST": "localhost",
             "FLASK_PORT": "5000",
@@ -39,16 +39,16 @@ def client() -> Generator[FlaskClient[Flask]]:
 
 class TestAppInitialization:
     def test_get_env_var_when_env_var_is_set(self) -> None:
-        with NewEnvVars({"FLASK_HOST": "host_is_set"}):
+        with ScopedEnvVars({"FLASK_HOST": "host_is_set"}):
             actual = get_env_var("FLASK_HOST", str)
             assert actual == "host_is_set"
 
     def test_get_env_var_raises_runtime_error_if_env_var_not_set(self) -> None:
-        with NewEnvVars({"FLASK_HOST": None}), pytest.raises(RuntimeError):
+        with ScopedEnvVars({"FLASK_HOST": None}), pytest.raises(RuntimeError):
             _ = get_env_var("FLASK_HOST", str)
 
     def test_get_env_var_raises_runtime_error_if_loader_fails(self) -> None:
-        with NewEnvVars({"FLASK_PORT": "not_an_int"}), pytest.raises(RuntimeError):
+        with ScopedEnvVars({"FLASK_PORT": "not_an_int"}), pytest.raises(RuntimeError):
             _ = get_env_var("FLASK_PORT", int)
 
     def test_configure_app(self) -> None:
@@ -60,7 +60,7 @@ class TestAppInitialization:
             "SDS_URL": "test_sds_url",
         }
 
-        with NewEnvVars(config):
+        with ScopedEnvVars(config):
             configure_app(test_app)
 
         expected = {
@@ -82,7 +82,7 @@ class TestAppInitialization:
             "PDS_URL": "test_pds_url",
             "SDS_URL": "test_sds_url",
         }
-        with NewEnvVars(config):
+        with ScopedEnvVars(config):
             log_env_vars()
 
         # Check that the environment variables were logged
@@ -102,7 +102,7 @@ class TestAppInitialization:
             "FLASK_PORT": "1234",
         }
 
-        with NewEnvVars(test_env_vars):
+        with ScopedEnvVars(test_env_vars):
             start_app(test_app)
 
             test_app.run.assert_called_with(host="test_host", port=1234)
