@@ -1,2 +1,6 @@
 [generation]
-mode = "positive"
+mode = "all"
+
+[checks.missing_required_header]
+# Override expected status codes
+expected-statuses = ["400"]
