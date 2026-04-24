@@ -66,15 +66,24 @@ class Controller:
         # TODO: De-ai-ify this comment
         # Extract CDG-specific identity fields from the FHIR Parameters before
         # forwarding. These fields are not part of the GP Connect spec and must
-        # not be sent to the provider. They are provided in the top-level
-        # "identity" array (separate from "parameter"), each identified by their
-        # "name" field:
+        # not be sent to the provider. They are provided as a parameter named
+        # "identity" within the "parameter" array, with sub-items in "part":
         #   - "issuer"                 → string value in the "value" key
-        #   - "requestingDevice"       → remainder of the identity object
-        #   - "requestingPractitioner" → remainder of the identity object
+        #   - "requestingDevice"       → remainder of the identity part object
+        #   - "requestingPractitioner" → remainder of the identity part object
         request_body: dict[str, Any] = json.loads(request.request_body)
 
-        identity_items: list[dict[str, Any]] = request_body.pop("identity", [])
+        parameters: list[dict[str, Any]] = request_body.get("parameter", [])
+        identity_param: dict[str, Any] | None = next(
+            (p for p in parameters if p.get("name") == "identity"), None
+        )
+        request_body["parameter"] = [
+            p for p in parameters if p.get("name") != "identity"
+        ]
+
+        identity_items: list[dict[str, Any]] = (
+            identity_param.get("part", []) if identity_param else []
+        )
         cdg_identity: dict[str, dict[str, Any]] = {
             item["name"]: item for item in identity_items if "name" in item
         }
