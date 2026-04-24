@@ -13,7 +13,7 @@ For detailed GP Connect specifications, see [GP Connect specifications for devel
 - [Tech Stack](#tech-stack)
 - [Repository Structure](#repository-structure)
 - [Setup](#setup)
-- [Usage](#usage)
+- [Usage change](#usage-change)
 - [Testing](#testing)
 - [Design](#design)
 - [CI/CD](#cicd)
@@ -120,7 +120,7 @@ The dev container sits on the same network, `gateway-local`, as [the `gateway-ap
 
 This project depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library for shared utilities. It is declared as a Git dependency in `gateway-api/pyproject.toml` and installed automatically by Poetry.
 
-## Usage
+## Usage change
 
 The project uses `make` targets to build, deploy, and manage the application. Run these from the repository root:
 
