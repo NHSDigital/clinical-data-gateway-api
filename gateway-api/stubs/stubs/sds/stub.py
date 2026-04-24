@@ -10,7 +10,10 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from fhir.constants import FHIRSystem
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 
 from stubs.base_stub import GetStub, StubBase
 
@@ -27,10 +30,10 @@ class SdsFhirApiStub(StubBase, GetStub):
 
     * ``/Device`` requires query params:
         - ``organization`` (required): ODS code with FHIR identifier prefix
-        - ``identifier`` (required, repeatable): Service interaction ID and/or party key
+        - ``identifier`` (required, repeatable): Service interaction ID
         - ``manufacturing-organization`` (optional): Manufacturing org ODS code
     * ``/Endpoint`` requires query param:
-        - ``identifier`` (required, repeatable): Service interaction ID and/or party key
+        - ``identifier`` (required, repeatable): Service interaction ID
         - ``organization`` (optional): ODS code with FHIR identifier prefix
     * ``X-Correlation-Id`` is optional and echoed back if supplied
     * ``apikey`` header is required (but any value accepted in stub mode)
@@ -53,18 +56,17 @@ class SdsFhirApiStub(StubBase, GetStub):
         :param strict_validation: If ``True``, enforce required query parameters and
             apikey header. If ``False``, validation is relaxed.
         """
-        # Internal store: (org_ods, interaction_id, party_key) -> list[device_resource]
-        # party_key may be None if not specified
-        self._devices: defaultdict[
-            tuple[str, str, str | None], list[dict[str, Any]]
-        ] = defaultdict(list)
+        # Internal store: (org_ods, interaction_id) -> list[device_resource]
+        self._devices: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(
+            list
+        )
 
         # Internal store for endpoints:
-        #   (org_ods, interaction_id, party_key) -> list[endpoint_resource]
-        # org_ods and/or interaction_id may be None since they're optional for
+        #   (org_ods, interaction_id) -> list[endpoint_resource]
+        # org_ods may be None since it's optional for
         # endpoint queries
         self._endpoints: defaultdict[
-            tuple[str | None, str | None, str | None], list[dict[str, Any]]
+            tuple[str | None, str | None], list[dict[str, Any]]
         ] = defaultdict(list)
 
         # Seed some deterministic examples matching common test scenarios
@@ -100,7 +102,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         self,
         organization_ods: str,
         service_interaction_id: str,
-        party_key: str | None,
         device: dict[str, Any],
     ) -> None:
         """
@@ -111,10 +112,9 @@ class SdsFhirApiStub(StubBase, GetStub):
 
         :param organization_ods: Organization ODS code.
         :param service_interaction_id: Service interaction ID.
-        :param party_key: Optional MHS party key.
         :param device: Device resource dictionary.
         """
-        key = (organization_ods, service_interaction_id, party_key)
+        key = (organization_ods, service_interaction_id)
         self._devices[key].append(device)
 
     def clear_devices(self) -> None:
@@ -125,7 +125,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         self,
         organization_ods: str | None,
         service_interaction_id: str | None,
-        party_key: str | None,
         endpoint: dict[str, Any],
     ) -> None:
         """
@@ -136,10 +135,9 @@ class SdsFhirApiStub(StubBase, GetStub):
 
         :param organization_ods: Organization ODS code (optional for endpoints).
         :param service_interaction_id: Service interaction ID (optional for endpoints).
-        :param party_key: Optional MHS party key.
         :param endpoint: Endpoint resource dictionary.
         """
-        key = (organization_ods, service_interaction_id, party_key)
+        key = (organization_ods, service_interaction_id)
         self._endpoints[key].append(endpoint)
 
     def clear_endpoints(self) -> None:
@@ -204,16 +202,11 @@ class SdsFhirApiStub(StubBase, GetStub):
         #     identifier_list = identifier
 
         service_interaction_id: str | None = None
-        party_key: str | None = None
 
         for ident in identifier_list:
             if FHIRSystem.NHS_SERVICE_INTERACTION_ID in ident:
                 service_interaction_id = self._extract_param_value(
                     ident, FHIRSystem.NHS_SERVICE_INTERACTION_ID
-                )
-            elif FHIRSystem.NHS_MHS_PARTY_KEY in ident:
-                party_key = self._extract_param_value(
-                    ident, FHIRSystem.NHS_MHS_PARTY_KEY
                 )
 
         # Always validate service interaction ID is present
@@ -228,7 +221,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         devices = self._lookup_devices(
             org_ods=org_ods or "",
             service_interaction_id=service_interaction_id or "",
-            party_key=party_key,
         )
 
         # Build FHIR Bundle response
@@ -293,23 +285,17 @@ class SdsFhirApiStub(StubBase, GetStub):
             identifier = [identifier]
 
         service_interaction_id: str | None = None
-        party_key: str | None = None
 
         for ident in identifier or []:
             if FHIRSystem.NHS_SERVICE_INTERACTION_ID in ident:
                 service_interaction_id = self._extract_param_value(
                     ident, FHIRSystem.NHS_SERVICE_INTERACTION_ID
                 )
-            elif FHIRSystem.NHS_MHS_PARTY_KEY in ident:
-                party_key = self._extract_param_value(
-                    ident, FHIRSystem.NHS_MHS_PARTY_KEY
-                )
 
         # Look up endpoints
         endpoints = self._lookup_endpoints(
             org_ods=org_ods,
             service_interaction_id=service_interaction_id,
-            party_key=party_key,
         )
 
         # Build FHIR Bundle response
@@ -357,69 +343,68 @@ class SdsFhirApiStub(StubBase, GetStub):
         device_data = [
             {
                 "org_ods": "PROVIDER",
-                "party_key": "PROVIDER-0000806",
                 "device_id": "F0F0E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_PROV",
                 "display": "Example NHS Trust",
             },
             {
                 "org_ods": "CONSUMER",
-                "party_key": "CONSUMER-0000807",
                 "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_CONS",
                 "display": "Example Consumer Organisation",
             },
             {
                 "org_ods": "A12345",
-                "party_key": "A12345-0000808",
                 "device_id": "A1A1E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_A12345",
                 "display": "Example GP Practice A12345",
             },
             {
                 "org_ods": "BlankAsidInSDS",
-                "party_key": "BlankAsidInSDS",
                 "device_id": "1f453b59-3bc5-48ff-9835-3d9d0ef636ef",
                 "asid": "",
                 "display": "GP with blank ASID - testing error handling",
             },
             {
                 "org_ods": "BlankEndpointInSDS",
-                "party_key": "BlankEndpointInSDS",
                 "device_id": "74b40e5d-d72a-4667-beb5-b15ae6b4e25d",
                 "asid": "ASIDforGPWithoutEndpoint",
                 "display": "GP with no provider endpoint - testing error handling",
             },
             {
                 "org_ods": "S44444",
-                "party_key": "S44444-0000809",
                 "device_id": "B2B2E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "200000000359",
                 "display": "Dummy ODS/ASID for Orange Box",
             },
             {
                 "org_ods": "S55555",
-                "party_key": "S55555-0000809",
                 "device_id": "B3B3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
                 "display": "ODS/ASID triggering Orange Box",
             },
         ]
 
-        # Iterate through test data and create devices
+        # Seed each device for both interaction IDs so the stub works whether
+        # the SdsClient is connecting to the sandbox (SANDBOX_INTERACTION_ID)
+        # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
+        interaction_ids = [
+            ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+            SDS_SANDBOX_INTERACTION_ID,
+        ]
+
         for data in device_data:
-            self.upsert_device(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                party_key=data["party_key"],
-                device=self._create_device_resource(
-                    device_id=data["device_id"],
-                    asid=data["asid"],
-                    party_key=data["party_key"],
-                    org_ods=data["org_ods"],
-                    display=data["display"],
-                ),
-            )
+            for interaction_id in interaction_ids:
+                self.upsert_device(
+                    organization_ods=data["org_ods"],
+                    service_interaction_id=interaction_id,
+                    device=self._create_device_resource(
+                        device_id=data["device_id"],
+                        asid=data["asid"],
+                        org_ods=data["org_ods"],
+                        display=data["display"],
+                    ),
+                )
 
     def _seed_default_endpoints(self) -> None:
         """Seed the stub with some default Endpoint records for testing."""
@@ -427,54 +412,55 @@ class SdsFhirApiStub(StubBase, GetStub):
         endpoint_data = [
             {
                 "org_ods": "PROVIDER",
-                "party_key": "PROVIDER-0000806",
                 "endpoint_id": "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_PROV",
                 "address": "https://provider.example.com/fhir",
             },
             {
                 "org_ods": "CONSUMER",
-                "party_key": "CONSUMER-0000807",
                 "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_CONS",
                 "address": "https://consumer.example.com/fhir",
             },
             {
                 "org_ods": "A12345",
-                "party_key": "A12345-0000808",
                 "endpoint_id": "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "asid_A12345",
                 "address": "https://a12345.example.com/fhir",
             },
             {
                 "org_ods": "S55555",
-                "party_key": "S55555-0000809",
                 "endpoint_id": "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
                 "address": "https://orange.testlab.nhs.uk/B82617/STU3/1/gpconnect/structured/fhir/",
             },
         ]
 
-        # Iterate through test data and create endpoints
+        # Seed each endpoint for both interaction IDs so the stub works whether
+        # the SdsClient is connecting to the sandbox (SANDBOX_INTERACTION_ID)
+        # or a non-sandbox environment (ACCESS_RECORD_STRUCTURED_INTERACTION_ID).
+        interaction_ids = [
+            ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+            SDS_SANDBOX_INTERACTION_ID,
+        ]
+
         for data in endpoint_data:
-            self.upsert_endpoint(
-                organization_ods=data["org_ods"],
-                service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-                party_key=data["party_key"],
-                endpoint=self._create_endpoint_resource(
-                    endpoint_id=data["endpoint_id"],
-                    asid=data["asid"],
-                    party_key=data["party_key"],
-                    org_ods=data["org_ods"],
-                    address=data["address"],
-                ),
-            )
+            for interaction_id in interaction_ids:
+                self.upsert_endpoint(
+                    organization_ods=data["org_ods"],
+                    service_interaction_id=interaction_id,
+                    endpoint=self._create_endpoint_resource(
+                        endpoint_id=data["endpoint_id"],
+                        asid=data["asid"],
+                        org_ods=data["org_ods"],
+                        address=data["address"],
+                    ),
+                )
 
     def _create_device_resource(
         self,
         device_id: str,
         asid: str,
-        party_key: str,
         org_ods: str,
         display: str,
     ) -> dict[str, Any]:
@@ -486,10 +472,6 @@ class SdsFhirApiStub(StubBase, GetStub):
                 {
                     "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": asid,
-                },
-                {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": party_key,
                 },
             ],
             "owner": {
@@ -505,7 +487,6 @@ class SdsFhirApiStub(StubBase, GetStub):
         self,
         endpoint_id: str,
         asid: str,
-        party_key: str,
         org_ods: str,
         address: str,
     ) -> dict[str, Any]:
@@ -542,74 +523,44 @@ class SdsFhirApiStub(StubBase, GetStub):
                     "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": asid,
                 },
-                {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": party_key,
-                },
             ],
         }
 
     def _lookup_devices(
-        self, org_ods: str, service_interaction_id: str, party_key: str | None
+        self, org_ods: str, service_interaction_id: str
     ) -> list[dict[str, Any]]:
         """
         Look up devices matching the query parameters.
 
         :param org_ods: Organization ODS code.
         :param service_interaction_id: Service interaction ID.
-        :param party_key: Optional party key.
         :return: List of matching Device resources.
         """
-        # Exact match with party key (or None)
-        key = (org_ods, service_interaction_id, party_key)
+        key = (org_ods, service_interaction_id)
         if key in self._devices:
             return list(self._devices[key])
-
-        # If no party_key was provided (None), search for any entries with the
-        # same org+interaction
-        # This allows querying without knowing the party_key upfront
-        if party_key is None:
-            for stored_key, devices in self._devices.items():
-                stored_org, stored_interaction, _ = stored_key
-                if (
-                    stored_org == org_ods
-                    and stored_interaction == service_interaction_id
-                ):
-                    return list(devices)
-
-        # If party_key was provided but no exact match, try without party key
-        if party_key:
-            key_without_party = (org_ods, service_interaction_id, None)
-            if key_without_party in self._devices:
-                return list(self._devices[key_without_party])
-
         return []
 
     def _lookup_endpoints(
         self,
         org_ods: str | None,
         service_interaction_id: str | None,
-        party_key: str | None,
     ) -> list[dict[str, Any]]:
         """
         Look up endpoints matching the query parameters.
 
-        For /Endpoint, the query combinations are more flexible:
-        - organization + service_interaction_id + party_key
-        - organization + party_key
+        For /Endpoint, the query combinations are:
         - organization + service_interaction_id
-        - service_interaction_id + party_key
 
         :param org_ods: Organization ODS code (optional).
         :param service_interaction_id: Service interaction ID (optional).
-        :param party_key: Optional party key.
         :return: List of matching Endpoint resources.
         """
         results = []
 
         # Try to find exact matches and partial matches
         for key, endpoints in self._endpoints.items():
-            stored_org, stored_interaction, stored_party = key
+            stored_org, stored_interaction = key
 
             # Check if the query parameters match
             org_match = org_ods is None or stored_org is None or org_ods == stored_org
@@ -618,21 +569,14 @@ class SdsFhirApiStub(StubBase, GetStub):
                 or stored_interaction is None
                 or service_interaction_id == stored_interaction
             )
-            party_match = (
-                party_key is None or stored_party is None or party_key == stored_party
-            )
 
             # If all specified parameters match, include these endpoints
-            if org_match and interaction_match and party_match:
+            if org_match and interaction_match:
                 # But at least one must be non-None and match
-                has_match = (
-                    (org_ods and stored_org and org_ods == stored_org)
-                    or (
-                        service_interaction_id
-                        and stored_interaction
-                        and service_interaction_id == stored_interaction
-                    )
-                    or (party_key and stored_party and party_key == stored_party)
+                has_match = (org_ods and stored_org and org_ods == stored_org) or (
+                    service_interaction_id
+                    and stored_interaction
+                    and service_interaction_id == stored_interaction
                 )
                 if has_match:
                     results.extend(endpoints)
