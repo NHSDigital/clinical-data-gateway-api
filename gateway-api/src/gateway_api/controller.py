@@ -89,7 +89,24 @@ class Controller:
         }
 
         issuer_item = cdg_identity.get("issuer")
-        issuer: str | None = issuer_item.get("value") if issuer_item else None
+        if not issuer_item:
+            # TODO: Handle this better, return correct http error
+            raise ValueError("Missing 'issuer' in identity in request body")
+        issuer: str = issuer_item.get("value")
+        if not issuer:
+            # TODO: Handle this better, return correct http error
+            raise ValueError("Missing 'issuer' value in identity in request body")
+
+        requesting_org_item = cdg_identity.get("requestingOrgName")
+        if not requesting_org_item:
+            # TODO: Handle this better, return correct http error
+            raise ValueError("Missing 'requestingOrgName' in identity in request body")
+        requesting_org: str = requesting_org_item.get("value")
+        if not requesting_org:
+            # TODO: Handle this better, return correct http error
+            raise ValueError(
+                "Missing 'requestingOrgName' value in identity in request body"
+            )
 
         requesting_device_item = cdg_identity.get("requestingDevice")
         if not requesting_device_item:
