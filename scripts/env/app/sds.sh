@@ -24,7 +24,7 @@ get_sds_api_token() {
   secret_file=".secrets/sds/api_token"
   case "$env" in
     int)
-      if [ -f "$secret_file" ]; then
+      if [[ -f "$secret_file" ]]; then
         cat "$secret_file"
         return 0
       else
