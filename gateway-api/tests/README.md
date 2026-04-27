@@ -43,6 +43,7 @@ Use the following commands to create the appropriate `.env.test` file for the ta
 * `make env-test-ci` to write a `.env.test` file for testing a locally deployed application, from outside the dev container.
 * `make env-test-pr-<pr number>` to write a `.env.test` file for testing an application deployed behind a PR proxy.
 * `make env-test-alpha-int` to write a `.env.test` file for testing an application deployed to the "alpha integration" environment.
+* `make env-test-int` to write a `.env.test` file for testing an application that sends requests to PDS, SDS and Provider integration environments.
 
 _Note: Unit tests require the `.env` file, as these tests do not test a deployed application`_
 
