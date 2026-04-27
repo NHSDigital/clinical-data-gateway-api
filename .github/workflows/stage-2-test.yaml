@@ -44,7 +44,7 @@ jobs:
         run: make test-unit
       - name: "Upload unit test results"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unit-test-results
           path: gateway-api/test-artefacts/
@@ -76,7 +76,7 @@ jobs:
         run: make test-contract
       - name: "Upload contract test results"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: contract-test-results
           path: gateway-api/test-artefacts/
@@ -108,7 +108,7 @@ jobs:
         run: make test-schema
       - name: "Upload schema test results"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: schema-test-results
           path: gateway-api/test-artefacts/
@@ -140,7 +140,7 @@ jobs:
         run: make test-integration
       - name: "Upload integration test results"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integration-test-results
           path: gateway-api/test-artefacts/
@@ -173,7 +173,7 @@ jobs:
         run: make test-acceptance
       - name: "Upload acceptance test results"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: acceptance-test-results
           path: gateway-api/test-artefacts/
@@ -217,7 +217,7 @@ jobs:
           mv coverage-merged.xml ${{ needs.create-coverage-name.outputs.coverage-name }}.xml
       - name: "Upload combined coverage report"
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ needs.create-coverage-name.outputs.coverage-name }}
           path: gateway-api/test-artefacts
