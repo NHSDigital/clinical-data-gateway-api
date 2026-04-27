@@ -31,8 +31,6 @@ _ORG_UNKNOWN = f"{FHIRSystem.ODS_CODE}|UNKNOWN_ORG_XYZ"
 _INTERACTION_ID_PARAM = (
     f"{FHIRSystem.NHS_SERVICE_INTERACTION_ID}|{ACCESS_RECORD_STRUCTURED_INTERACTION_ID}"
 )
-_PARTY_KEY_PROVIDER = f"{FHIRSystem.NHS_MHS_PARTY_KEY}|PROVIDER-0000806"
-
 _VALID_CORRELATION_ID = "test-correlation-id-12345"
 
 _BASE_DEVICE_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4/Device"
@@ -118,21 +116,6 @@ class TestGetDeviceBundleSuccess:
         assert body["total"] == 0
         assert body["entry"] == []
 
-    def test_query_with_party_key_returns_matching_device(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Including a party key identifier should still return a match."""
-        response = stub.get_device_bundle(
-            headers={"apikey": "test-key"},
-            params={
-                "organization": _ORG_PROVIDER,
-                "identifier": [_INTERACTION_ID_PARAM, _PARTY_KEY_PROVIDER],
-            },
-        )
-        assert response.status_code == 200
-        body = response.json()
-        assert body["total"] == 1
-
 
 # ---------------------------------------------------------------------------
 # GET /Device – Device resource structure
@@ -158,11 +141,10 @@ class TestGetDeviceResourceStructure:
         assert resource["id"] == "F0F0E921-92CA-4A88-A550-2DBB36F703AF"
         assert resource["owner"]["identifier"]["system"] == FHIRSystem.ODS_CODE
 
-        assert len(resource["identifier"]) == 2
+        assert len(resource["identifier"]) == 1
         identifiers = resource["identifier"]
         assert identifiers[0]["system"] == FHIRSystem.NHS_SPINE_ASID
         assert identifiers[0]["value"] == "asid_PROV"
-        assert identifiers[1]["system"] == FHIRSystem.NHS_MHS_PARTY_KEY
 
 
 # ---------------------------------------------------------------------------
@@ -202,23 +184,6 @@ class TestGetDeviceBundleValidationErrors:
         assert response.status_code == 400
         self.verify_error_response_body(
             response, "Missing required query parameter: identifier"
-        )
-
-    def test_identifier_without_interaction_id_returns_400(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """``identifier`` must include nhsServiceInteractionId for /Device."""
-        response = stub.get_device_bundle(
-            headers={"apikey": "test-key"},
-            params={
-                "organization": _ORG_PROVIDER,
-                "identifier": _PARTY_KEY_PROVIDER,  # party key only, no interaction ID
-            },
-        )
-        assert response.status_code == 400
-        self.verify_error_response_body(
-            response,
-            "identifier must include nhsServiceInteractionId",
         )
 
     def test_missing_apikey_echoes_correlation_id(self, stub: SdsFhirApiStub) -> None:
@@ -291,20 +256,6 @@ class TestGetEndpointBundleSuccess:
             assert entry["resource"]["id"] == endpoint_id
             assert entry["search"]["mode"] == "match"
 
-    def test_query_with_party_key_returns_matching_endpoint(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """Including a party key identifier should return matching Endpoint entries."""
-        response = stub.get_endpoint_bundle(
-            headers={"apikey": "test-key"},
-            params={
-                "identifier": [_INTERACTION_ID_PARAM, _PARTY_KEY_PROVIDER],
-            },
-        )
-        assert response.status_code == 200
-        body = response.json()
-        assert body["total"] == 1
-
     def test_x_correlation_id_echoed_back_when_provided(
         self, stub: SdsFhirApiStub
     ) -> None:
@@ -325,14 +276,14 @@ class TestGetEndpointBundleSuccess:
         )
         assert "X-Correlation-Id" not in response.headers
 
-    def test_empty_bundle_returned_for_unknown_party_key(
-        self, stub: SdsFhirApiStub
-    ) -> None:
-        """A party key not present in the stub must yield an empty Bundle."""
-        unknown_party_key = f"{FHIRSystem.NHS_MHS_PARTY_KEY}|UNKNOWN-9999999"
+    def test_empty_bundle_returned_for_unknown_org(self, stub: SdsFhirApiStub) -> None:
+        """An organisation not present in the stub must yield an empty Bundle."""
         response = stub.get_endpoint_bundle(
             headers={"apikey": "test-key"},
-            params={"identifier": unknown_party_key},
+            params={
+                "organization": _ORG_UNKNOWN,
+                "identifier": _INTERACTION_ID_PARAM,
+            },
         )
         assert response.status_code == 200
         body = response.json()
@@ -353,7 +304,10 @@ class TestGetEndpointResourceStructure:
         """Each resource inside the Bundle must have ``resourceType: "Endpoint"``."""
         response = stub.get_endpoint_bundle(
             headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
+            params={
+                "organization": _ORG_PROVIDER,
+                "identifier": _INTERACTION_ID_PARAM,
+            },
         )
         body = response.json()
         assert len(body["entry"]) == 1
@@ -383,11 +337,10 @@ class TestGetEndpointResourceStructure:
         assert managing_org["identifier"]["system"] == FHIRSystem.ODS_CODE
 
         assert isinstance(resource["identifier"], list)
-        assert len(resource["identifier"]) == 2
+        assert len(resource["identifier"]) == 1
 
         identifiers = resource["identifier"]
         assert identifiers[0]["system"] == FHIRSystem.NHS_SPINE_ASID
-        assert identifiers[1]["system"] == FHIRSystem.NHS_MHS_PARTY_KEY
 
 
 # ---------------------------------------------------------------------------
@@ -471,7 +424,7 @@ class TestGetConvenienceMethod:
         response = stub.get(
             url=_BASE_ENDPOINT_URL,
             headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
+            params={"identifier": _INTERACTION_ID_PARAM},
         )
         assert response.status_code == 200
         body = response.json()
@@ -544,7 +497,6 @@ class TestUpsertOperations:
         stub.upsert_device(
             organization_ods="NEW_ORG",
             service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-            party_key=None,
             device=new_device,
         )
 
@@ -576,7 +528,7 @@ class TestUpsertOperations:
         """An endpoint added via upsert_endpoint must be returned in subsequent
         queries."""
         stub.clear_endpoints()
-        new_party_key = "NEW_ORG-0000999"
+        new_asid = "999000000001"
         new_endpoint: dict[str, object] = {
             "resourceType": "Endpoint",
             "id": "new-endpoint-456",
@@ -591,21 +543,19 @@ class TestUpsertOperations:
             "managingOrganization": {
                 "identifier": {"system": FHIRSystem.ODS_CODE, "value": "NEW_ORG"}
             },
-            "identifier": [
-                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": new_party_key}
-            ],
+            "identifier": [{"system": FHIRSystem.NHS_SPINE_ASID, "value": new_asid}],
         }
         stub.upsert_endpoint(
             organization_ods="NEW_ORG",
             service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-            party_key=new_party_key,
             endpoint=new_endpoint,
         )
 
         response = stub.get_endpoint_bundle(
             headers={"apikey": "test-key"},
             params={
-                "identifier": f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{new_party_key}",
+                "organization": f"{FHIRSystem.ODS_CODE}|NEW_ORG",
+                "identifier": _INTERACTION_ID_PARAM,
             },
         )
         body = response.json()
@@ -618,7 +568,7 @@ class TestUpsertOperations:
 
         response = stub.get_endpoint_bundle(
             headers={"apikey": "test-key"},
-            params={"identifier": _PARTY_KEY_PROVIDER},
+            params={"identifier": _INTERACTION_ID_PARAM},
         )
         body = response.json()
         assert body["total"] == 0

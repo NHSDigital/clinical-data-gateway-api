@@ -128,7 +128,6 @@ class PdsClient:
         log_details = {
             "description": "PDS request",
             "url": url,
-            "headers": headers,
         }
         _logger.info(log_details)
         # This normally calls requests.get, but if PDS_URL is set it uses the stub.

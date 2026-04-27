@@ -24,7 +24,7 @@ get_pds_api_token() {
   secret_file=".secrets/pds/api_token"
   case "$env" in
     int)
-      if [ -f "$secret_file" ]; then
+      if [[ -f "$secret_file" ]]; then
         cat "$secret_file"
         return 0
       else
@@ -44,7 +44,7 @@ get_pds_api_secret() {
   secret_file=".secrets/pds/api_secret"
   case "$env" in
     int)
-      if [ -f "$secret_file" ]; then
+      if [[ -f "$secret_file" ]]; then
         cat "$secret_file"
         return 0
       else
@@ -64,7 +64,7 @@ get_pds_api_kid() {
   secret_file=".secrets/pds/api_kid"
   case "$env" in
     int)
-      if [ -f "$secret_file" ]; then
+      if [[ -f "$secret_file" ]]; then
         cat "$secret_file"
         return 0
       else
