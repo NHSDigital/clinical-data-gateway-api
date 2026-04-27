@@ -55,25 +55,23 @@ publish: # Publish the project artefact @Pipeline
 
 deploy: clean build # Deploy the project artefact to the target environment @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
-	# Build up list of environment variables to pass to the container
-	@ENVIRONMENT_STRING="" ; \
-	if [[ -n "$${STUB_PROVIDER}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PROVIDER=$${STUB_PROVIDER}" ; \
-	fi ; \
-	if [[ -n "$${STUB_PDS}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_PDS=$${STUB_PDS}" ; \
-	fi ; \
-	if [[ -n "$${STUB_SDS}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e STUB_SDS=$${STUB_SDS}" ; \
-	fi ; \
-	if [[ -n "$${CDG_DEBUG}" ]]; then \
-		ENVIRONMENT_STRING="$${ENVIRONMENT_STRING} -e CDG_DEBUG=$${CDG_DEBUG}" ; \
-	fi ; \
+	# Build up list of environment variables to pass to the container.
+	# Note: Values (e.g. APIM_PRIVATE_KEY) may contain spaces; use a bash array to avoid breaking `docker run` argument parsing.
+	@ENVIRONMENT_ARGS=() ; \
+	if [[ -n "$${STUB_PROVIDER}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_PROVIDER=$${STUB_PROVIDER}" ); fi ; \
+	if [[ -n "$${STUB_PDS}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_PDS=$${STUB_PDS}" ); fi ; \
+	if [[ -n "$${STUB_SDS}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_SDS=$${STUB_SDS}" ); fi ; \
+	if [[ -n "$${CDG_DEBUG}" ]]; then ENVIRONMENT_ARGS+=( -e "CDG_DEBUG=$${CDG_DEBUG}" ); fi ; \
+	if [[ -n "$${APIM_TOKEN_URL}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_TOKEN_URL=$${APIM_TOKEN_URL}" ); fi ; \
+	if [[ -n "$${APIM_API_KEY}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_API_KEY=$${APIM_API_KEY}" ); fi ; \
+	if [[ -n "$${APIM_TOKEN_EXPIRY_THRESHOLD}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_TOKEN_EXPIRY_THRESHOLD=$${APIM_TOKEN_EXPIRY_THRESHOLD}" ); fi ; \
+	if [[ -n "$${APIM_KEY_ID}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_KEY_ID=$${APIM_KEY_ID}" ); fi ; \
+	if [[ -n "$${APIM_PRIVATE_KEY}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_PRIVATE_KEY=$${APIM_PRIVATE_KEY}" ); fi ; \
 	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local "$${ENVIRONMENT_ARGS[@]}" -d "${IMAGE_NAME}" ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 $${ENVIRONMENT_STRING} -d ${IMAGE_NAME} ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 "$${ENVIRONMENT_ARGS[@]}" -d "${IMAGE_NAME}" ; \
 	fi
 
 clean:: stop # Clean-up project resources (main) @Operations

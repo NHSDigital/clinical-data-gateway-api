@@ -67,12 +67,10 @@ class TestEnvironment:
 
         assert environ["client_timeout"].timedelta == timedelta(seconds=30)
         assert environ["apim_token_url"] == "token_url"  # noqa S105 - dummy value
-        assert environ["apim_private_key_name"] == "private_key_name"
-        assert environ["apim_api_key_name"] == "api_key_name"
+        assert environ["apim_private_key"] == "private_key_name"
+        assert environ["apim_api_key"] == "api_key_name"
         assert environ["apim_token_expiry_threshold"].timedelta == timedelta(seconds=60)
         assert environ["apim_key_id"] == "key_id"
-        assert environ["pdm_url"] == "pdm_url"
-        assert environ["mns_url"] == "mns_url"
 
     @patch("gateway_api.apim_app_auth.environment.parameters.get_secret")
     @patch("gateway_api.apim_app_auth.environment.values")
@@ -87,14 +85,12 @@ class TestEnvironment:
         session_manager_mock.return_value = expected_session_manager
 
         environ: environment.Environment = {
-            "apim_private_key_name": "private_key_name",
-            "apim_api_key_name": "api_key_name",
+            "apim_private_key": "private_key_name",
+            "apim_api_key": "api_key_name",
             "apim_key_id": "key_id",
             "apim_token_expiry_threshold": Duration(DurationUnit.SECONDS, 60),
             "apim_token_url": "token_url",
             "client_timeout": Duration(DurationUnit.SECONDS, 30),
-            "pdm_url": "pdm_url",
-            "mns_url": "mns_url",
         }
 
         values_mock.return_value = environ

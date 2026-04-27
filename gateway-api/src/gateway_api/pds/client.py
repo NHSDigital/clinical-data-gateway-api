@@ -21,11 +21,14 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 import os
 import uuid
 from collections.abc import Callable
+from typing import Any
 
 import requests
 from fhir.r4 import Patient
 from pydantic import ValidationError
 
+from gateway_api.apim_app_auth import environment
+from gateway_api.apim_app_auth.request_context import set_correlation_id
 from gateway_api.common.error import PdsRequestFailedError
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
@@ -124,10 +127,19 @@ class PdsClient:
         url = f"{self.base_url}/Patient/{nhs_number}"
 
         # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
-        response = get(
+        # response = get(
+        #     url,
+        #     headers=headers,
+        #     params={},
+        #     timeout=timeout or self.timeout,
+        # )
+        set_correlation_id(
+            full_id=correlation_id or "no-correlation-id",
+            short_id=correlation_id or "no-correlation-id",
+        )
+        response = _make_get_request(
             url,
             headers=headers,
-            params={},
             timeout=timeout or self.timeout,
         )
 
@@ -145,3 +157,20 @@ class PdsClient:
             ) from err
 
         return patient
+
+
+@environment.apim_authenticator().auth
+def _make_get_request(
+    # TODO 395: no longer required if we use the auth decorator?
+    session: requests.Session,
+    url: str,
+    headers: dict[str, str],
+    timeout: int,
+) -> Any:
+    response = session.get(
+        url=url,
+        headers=headers,
+        params={},
+        timeout=timeout,
+    )
+    return response

@@ -169,6 +169,7 @@ class Controller:
         """
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
+            # TODO 395: is this needed if we use the auth decorator?
             auth_token=auth_token,
             base_url=self.pds_base_url,
             timeout=self.timeout,

@@ -20,12 +20,10 @@ __all__ = [
 class Environment(TypedDict):
     client_timeout: Duration
     apim_token_url: str
-    apim_private_key_name: str
-    apim_api_key_name: str
+    apim_api_key: str
     apim_token_expiry_threshold: Duration
     apim_key_id: str
-    pdm_url: str
-    mns_url: str
+    apim_private_key: str
 
 
 _environment: Environment | None = None
@@ -45,12 +43,8 @@ def values() -> Environment:
                 "APIM_TOKEN_URL",
                 str,
             ),
-            apim_private_key_name=get_environment_variable(
-                "APIM_PRIVATE_KEY_NAME",
-                str,
-            ),
-            apim_api_key_name=get_environment_variable(
-                "APIM_API_KEY_NAME",
+            apim_api_key=get_environment_variable(
+                "APIM_API_KEY",
                 str,
             ),
             apim_token_expiry_threshold=get_environment_variable(
@@ -61,12 +55,8 @@ def values() -> Environment:
                 "APIM_KEY_ID",
                 str,
             ),
-            pdm_url=get_environment_variable(
-                "PDM_BUNDLE_URL",
-                str,
-            ),
-            mns_url=get_environment_variable(
-                "MNS_EVENT_URL",
+            apim_private_key=get_environment_variable(
+                "APIM_PRIVATE_KEY",
                 str,
             ),
         )
@@ -96,9 +86,9 @@ def apim_authenticator() -> ApimAuthenticator:
     if _apim_authenticator is None:
         env = values()
         _apim_authenticator = ApimAuthenticator(
-            private_key="",  # TODO: 395 get private key
+            private_key=env["apim_private_key"],
             key_id=env["apim_key_id"],
-            api_key="",  # TODO: 395 get api key
+            api_key=env["apim_api_key"],
             token_endpoint=env["apim_token_url"],
             token_validity_threshold=env["apim_token_expiry_threshold"].timedelta,
             session_manager=session_manager(),
