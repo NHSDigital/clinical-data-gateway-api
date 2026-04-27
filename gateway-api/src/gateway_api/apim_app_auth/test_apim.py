@@ -37,8 +37,8 @@ class TestApimAuthenticator:
 
         return wrapper
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth(self, mock_jwt: MagicMock, mock_session_manager: MagicMock) -> None:
         mock_session_manager.with_session = self.mock_with_session
 
@@ -96,8 +96,8 @@ class TestApimAuthenticator:
 
         method()
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_existing_valid_token(
         self, mock_jwt: MagicMock, mock_session_manager: MagicMock
     ) -> None:
@@ -128,8 +128,8 @@ class TestApimAuthenticator:
 
         method()
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_existing_invalid_token(
         self, mock_jwt: MagicMock, mock_session_manager: MagicMock
     ) -> None:
@@ -194,8 +194,8 @@ class TestApimAuthenticator:
 
         method()
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_unsuccessful_status_code(
         self, mock_jwt: MagicMock, mock_session_manager: MagicMock
     ) -> None:
@@ -223,8 +223,8 @@ class TestApimAuthenticator:
         with pytest.raises(ApimAuthenticationException):
             method()
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_session_post_raises_exception(
         self, mock_jwt: MagicMock, mock_session_manager: MagicMock
     ) -> None:
@@ -253,8 +253,8 @@ class TestApimAuthenticator:
         with pytest.raises(requests.RequestException, match="Connection failed"):
             method()
 
-    @patch("pathology_api.http.SessionManager")
-    @patch("pathology_api.apim.jwt.encode")
+    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_jwt_encode_raises_exception(
         self, mock_jwt: MagicMock, mock_session_manager: MagicMock
     ) -> None:
