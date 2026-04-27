@@ -20,7 +20,7 @@ class TestGetStructuredRecord:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
         )
-        assert response.status_code == 500
+        assert response.status_code == 200
 
     def test_happy_path_returns_correct_message(
         self,
