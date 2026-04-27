@@ -150,6 +150,11 @@ class TestGetStructuredRecord:
     def test_internal_server_error_message_returned_when_provider_returns_error(
         self, response_when_provider_returns_error: Response
     ) -> None:
+        """
+        WARNING: This can fail if the CDG_DEBUG env var is set to true in the
+        deployed app - see GpProviderClient.access_structured_record().
+        TODO [GPCAPIM-401]: Ensure integration tests are not affected by CDG_DEBUG
+        """
         expected = {
             "resourceType": "OperationOutcome",
             "issue": [

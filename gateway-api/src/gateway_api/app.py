@@ -1,5 +1,7 @@
 import os
 import traceback
+from collections.abc import Callable
+from logging import basicConfig, getLogger
 
 from flask import Flask, Request, request
 from flask.wrappers import Response
@@ -12,33 +14,56 @@ from gateway_api.get_structured_record import (
 )
 
 app = Flask(__name__)
-app.logger.setLevel("INFO")
+_logger = getLogger(__name__)
 
 
-def get_app_host() -> str:
-    host = os.getenv("FLASK_HOST")
-    if host is None:
-        raise RuntimeError("FLASK_HOST environment variable is not set.")
-    print(f"Starting Flask app on host: {host}")
-    return host
+def start_app(app: Flask) -> None:
+    setup_logging()
+    log_env_vars()
+    configure_app(app)
+    log_starting_app(app)
+    app.run(host=app.config["FLASK_HOST"], port=app.config["FLASK_PORT"])
 
 
-def get_app_port() -> int:
-    port = os.getenv("FLASK_PORT")
-    if port is None:
-        raise RuntimeError("FLASK_PORT environment variable is not set.")
-    print(f"Starting Flask app on port: {port}")
-    return int(port)
+def setup_logging() -> None:
+    basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+    )
+
+
+def configure_app(app: Flask) -> None:
+    config = {
+        "FLASK_HOST": get_env_var("FLASK_HOST", str),
+        "FLASK_PORT": get_env_var("FLASK_PORT", int),
+        "PDS_URL": get_env_var("PDS_URL", str),
+        "SDS_URL": get_env_var("SDS_URL", str),
+    }
+    app.config.update(config)
+
+
+def get_env_var[T](name: str, parser: Callable[[str], T]) -> T:
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(f"{name} environment variable is not set.")
+    try:
+        return parser(value)
+    except Exception as e:
+        raise RuntimeError(f"Error loading {name} environment variable: {e}") from e
 
 
 def log_request_received(request: Request) -> None:
+    sanitized_headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() != "authorization"
+    }
     log_details = {
         "description": "Received request",
         "method": request.method,
         "path": request.path,
-        "headers": dict(request.headers),
+        "headers": sanitized_headers,
     }
-    app.logger.info(log_details)
+    _logger.info(log_details)
 
 
 def log_error(error: AbstractCDGError) -> None:
@@ -48,7 +73,31 @@ def log_error(error: AbstractCDGError) -> None:
         "error_message": str(error),
         "traceback": traceback.format_exc(),
     }
-    app.logger.error(log_details)
+    _logger.error(log_details)
+
+
+def log_env_vars() -> None:
+    env_vars = {
+        key: value
+        for key, value in os.environ.items()
+        if key in {"FLASK_HOST", "FLASK_PORT", "PDS_URL", "SDS_URL"}
+    }
+    log_details = {
+        "description": "Initializing Flask app",
+        "env_vars": env_vars,
+    }
+    _logger.info(log_details)
+
+
+def log_starting_app(app: Flask) -> None:
+    log_details = {
+        "description": "Starting Flask app",
+        "host": app.config["FLASK_HOST"],
+        "port": app.config["FLASK_PORT"],
+        "pds_base_url": app.config["PDS_URL"],
+        "sds_base_url": app.config["SDS_URL"],
+    }
+    _logger.info(log_details)
 
 
 @app.route("/patient/$gpc.getstructuredrecord", methods=["POST"])
@@ -58,7 +107,9 @@ def get_structured_record() -> Response:
     response.mirror_headers(request)
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
-        controller = Controller()
+        controller = Controller(
+            pds_base_url=app.config["PDS_URL"], sds_base_url=app.config["SDS_URL"]
+        )
         provider_response = controller.run(request=get_structured_record_request)
         response.add_provider_response(provider_response)
     except AbstractCDGError as e:
@@ -86,6 +137,4 @@ def health_check() -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    host, port = get_app_host(), get_app_port()
-    print(f"Version: {os.getenv('COMMIT_VERSION')}")
-    app.run(host=host, port=port)
+    start_app(app)

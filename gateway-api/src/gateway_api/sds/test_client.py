@@ -2,13 +2,14 @@
 Unit tests for :mod:`gateway_api.sds_search`.
 """
 
-from __future__ import annotations
-
 import pytest
 from fhir.constants import FHIRSystem
+from fhir.r4.resources.bundle import Bundle
+from pytest_mock import MockerFixture
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
+from gateway_api.conftest import FakeResponse
 from gateway_api.get_structured_record import (
     ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
     SDS_SANDBOX_INTERACTION_ID,
@@ -39,7 +40,7 @@ def test_sds_client_get_org_details_success(
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
 
     result = client.get_org_details(ods_code="PROVIDER")
 
@@ -110,7 +111,7 @@ def test_sds_client_get_org_details_with_endpoint(
         },
     )
 
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="TESTORG")
 
     assert result is not None
@@ -127,7 +128,7 @@ def test_sds_client_sends_correct_headers(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
 
     correlation_id = "test-correlation-123"
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
@@ -149,7 +150,7 @@ def test_sds_client_timeout_parameter(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.INT_URL, timeout=30)
+    client = SdsClient(base_url="https://test.com", timeout=30)
 
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
@@ -191,7 +192,7 @@ def test_sds_client_custom_service_interaction_id(
     )
 
     client = SdsClient(
-        base_url=SdsClient.INT_URL,
+        base_url="https://test.com",
         service_interaction_id=custom_interaction,
     )
 
@@ -217,7 +218,7 @@ def test_sds_client_builds_correct_device_query_params(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
 
     client.get_org_details(ods_code="PROVIDER")
 
@@ -246,7 +247,7 @@ def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
     """
     # Seed the stub with data keyed by the sandbox interaction ID
     stub.upsert_device(
-        organization_ods="SANDBOXORG",
+        organization_ods="SANDBOX_ORG",
         service_interaction_id=SDS_SANDBOX_INTERACTION_ID,
         device={
             "resourceType": "Device",
@@ -260,14 +261,16 @@ def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
             "owner": {
                 "identifier": {
                     "system": FHIRSystem.ODS_CODE,
-                    "value": "SANDBOXORG",
+                    "value": "SANDBOX_ORG",
                 }
             },
         },
     )
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
-    result = client.get_org_details(ods_code="SANDBOXORG", get_endpoint=False)
+    client = SdsClient(
+        base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
+    )
+    result = client.get_org_details(ods_code="SANDBOX_ORG", get_endpoint=False)
 
     # Verify the sandbox interaction ID was sent
     params = stub.get_params
@@ -310,7 +313,7 @@ def test_sds_client_raises_sds_request_failed_error_on_http_error(
 
     monkeypatch.setattr("gateway_api.sds.client.get", get_without_apikey)
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url="https://test.com")
 
     with pytest.raises(SdsRequestFailedError, match="SDS FHIR API request failed"):
         client.get_org_details(ods_code="PROVIDER")
@@ -350,7 +353,7 @@ def test_sds_client_endpoint_entry_without_address_returns_none(
         },
     )
 
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="NOADDR")
 
     assert result.asid == "111111111111"
@@ -366,9 +369,9 @@ def test_sds_client_empty_device_bundle_returns_none_asid() -> None:
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.INT_URL)
-    # "UNKNOWNORG" has no seeded devices, so the bundle entry list will be empty
-    result = client.get_org_details(ods_code="UNKNOWNORG", get_endpoint=False)
+    client = SdsClient(base_url="https://test.com")
+    # "UNKNOWN_ORG" has no seeded devices, so the bundle entry list will be empty
+    result = client.get_org_details(ods_code="UNKNOWN_ORG", get_endpoint=False)
 
     assert result.asid is None
 
@@ -395,8 +398,24 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
     )
     # Deliberately do not seed any endpoint for NOENDPOINT
 
-    client = SdsClient(base_url=SdsClient.INT_URL)
+    client = SdsClient(base_url="https://test.com")
     result = client.get_org_details(ods_code="NOENDPOINT")
 
     assert result.asid == "222222222222"
     assert result.endpoint is None
+
+
+def test_sds_client_respects_url(
+    mocker: MockerFixture,
+) -> None:
+    empty_bundle = Bundle.empty("searchset").model_dump()
+    mocked_get = mocker.patch(
+        "gateway_api.sds.client.get",
+        return_value=FakeResponse(status_code=200, headers={}, _json=empty_bundle),
+    )
+
+    client = SdsClient(base_url="https://a.different.url/base")
+    _ = client.get_org_details(ods_code="A12345", get_endpoint=False)
+
+    actual_url = mocked_get.call_args.args[0]
+    assert actual_url == "https://a.different.url/base/Device"

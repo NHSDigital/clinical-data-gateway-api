@@ -2,17 +2,13 @@
 
 import copy
 import os
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Protocol, cast
+from typing import Any, cast
 
 import pytest
 import requests
-from dotenv import find_dotenv, load_dotenv
 from fhir.constants import FHIRSystem
-
-# Load environment variables from .env file in the workspace root
-load_dotenv(find_dotenv(usecwd=True))
-
 
 DEFAULT_REQUEST_HEADERS = {
     "Content-Type": "application/fhir+json",
@@ -35,93 +31,18 @@ SIMPLE_PAYLOAD = {
 }
 
 
-class Client(Protocol):
-    """Protocol defining the interface for HTTP clients."""
-
-    base_url: str
-
-    def send_to_get_structured_record_endpoint(
-        self, payload: str, headers: dict[str, str] | None = None
-    ) -> requests.Response:
-        """
-        Send a request to the get_structured_record endpoint with the given NHS number.
-        """
-        ...
-
-    def send_health_check(self) -> requests.Response:
-        """
-        Send a health check request to the API.
-        """
-        ...
-
-    def send_post_to_path(
-        self,
-        path: str,
-        payload: str,
-        headers: dict[str, str] | None = None,
-    ) -> requests.Response:
-        """Send a POST request to the given API path."""
-        ...
-
-
-class LocalClient:
-    """HTTP client that sends requests directly to the API.
-
-    Includes optional Apigee Authorization headers when an access token is provided.
-    """
+class Client:
+    """Client for sending HTTP requests"""
 
     def __init__(
         self,
         base_url: str,
+        health_endpoint: str,
         auth_headers: dict[str, str],
         timeout: timedelta = timedelta(seconds=35),
     ):
         self.base_url = base_url
-        self._auth_headers = auth_headers
-        self._timeout = timeout.total_seconds()
-
-    def send_to_get_structured_record_endpoint(
-        self, payload: str, headers: dict[str, str] | None = None
-    ) -> requests.Response:
-        return self.send_post_to_path(
-            path="/patient/$gpc.getstructuredrecord",
-            payload=payload,
-            headers=headers,
-        )
-
-    def send_post_to_path(
-        self,
-        path: str,
-        payload: str,
-        headers: dict[str, str] | None = None,
-    ) -> requests.Response:
-        url = f"{self.base_url}/{path.lstrip('/')}"
-        default_headers = self._auth_headers | DEFAULT_REQUEST_HEADERS
-        if headers:
-            default_headers.update(headers)
-
-        return requests.post(
-            url=url,
-            data=payload,
-            headers=default_headers,
-            timeout=self._timeout,
-        )
-
-    def send_health_check(self) -> requests.Response:
-        url = f"{self.base_url}/health"
-        return requests.get(url=url, headers=self._auth_headers, timeout=self._timeout)
-
-
-class RemoteClient:
-    """HTTP client for remote testing via the APIM proxy."""
-
-    def __init__(
-        self,
-        base_url: str,
-        auth_headers: dict[str, str],
-        timeout: timedelta = timedelta(seconds=35),
-    ):
-        self.base_url = base_url
+        self.health_endpoint = health_endpoint
         self._auth_headers = auth_headers
         self._timeout = timeout.total_seconds()
 
@@ -154,7 +75,7 @@ class RemoteClient:
         )
 
     def send_health_check(self) -> requests.Response:
-        url = f"{self.base_url}/_status"
+        url = f"{self.base_url}/{self.health_endpoint}"
         return requests.get(url=url, headers=self._auth_headers, timeout=self._timeout)
 
 
@@ -164,9 +85,8 @@ def simple_request_payload() -> dict[str, Any]:
 
 
 @pytest.fixture
-def get_headers(request: pytest.FixtureRequest) -> dict[str, str]:
+def headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
     """Return auth headers for remote tests, or Apigee token for local."""
-    env = request.config.getoption("--env")
     if env == "local":
         token = os.environ.get("APIGEE_ACCESS_TOKEN", "")
         return {"Authorization": f"Bearer {token}"} if token else {}
@@ -182,63 +102,55 @@ def get_headers(request: pytest.FixtureRequest) -> dict[str, str]:
 
 @pytest.fixture
 def client(
-    request: pytest.FixtureRequest, base_url: str, get_headers: dict[str, str]
+    base_url: str,
+    health_endpoint: str,
+    headers: dict[str, str],
 ) -> Client:
-    env = request.config.getoption("--env")
-
-    if env == "local":
-        return LocalClient(base_url=base_url, auth_headers=get_headers)
-    elif env == "remote":
-        proxy_url = request.getfixturevalue("nhsd_apim_proxy_url")
-        return RemoteClient(base_url=proxy_url, auth_headers=get_headers)
-    else:
-        raise ValueError(f"Unknown env: {env}")
+    return Client(
+        base_url=base_url, health_endpoint=health_endpoint, auth_headers=headers
+    )
 
 
 @pytest.fixture(scope="module")
-def base_url() -> str:
+def env() -> str:
+    return get_env()
+
+
+def get_env() -> str:
+    return _fetch_env_variable("TARGET_ENV", str)
+
+
+@pytest.fixture
+def base_url(env: str, request: pytest.FixtureRequest) -> str:
     """Retrieves the base URL of the currently deployed application."""
+    if env == "remote":
+        return str(request.getfixturevalue("nhsd_apim_proxy_url"))
     return _fetch_env_variable("BASE_URL", str)
 
 
-@pytest.fixture(scope="module")
-def hostname() -> str:
-    """Retrieves the hostname of the currently deployed application."""
-    return _fetch_env_variable("HOST", str)
+@pytest.fixture
+def health_endpoint(env: str) -> str:
+    if env == "local":
+        return "health"
+    else:
+        return "_status"
 
 
-def _fetch_env_variable[T](
-    name: str,
-    t: type[T],  # NOQA ARG001 This is actually used for type hinting
-) -> T:
+def _fetch_env_variable[T](name: str, parser: Callable[[str], T]) -> T:
     value = os.getenv(name)
-    if not value:
+    if value is None:
         raise ValueError(f"{name} environment variable is not set.")
-    return cast("T", value)
-
-
-REMOTE_TEST_USERNAME_ENV_VAR = "REMOTE_TEST_USERNAME"
-DEFAULT_REMOTE_TEST_USERNAME = "656005750101"
+    return parser(value)
 
 
 def _get_remote_test_username() -> str:
     """Return the username to use for remote tests, allowing override via env."""
-    return os.getenv(REMOTE_TEST_USERNAME_ENV_VAR, DEFAULT_REMOTE_TEST_USERNAME)
+    return _fetch_env_variable("REMOTE_TEST_USERNAME", str)
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--env",
-        action="store",
-        default="local",
-        help="Environment to run tests against",
-    )
-
-
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
-    if config.getoption("--env") == "remote":
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    target_is_remote = get_env() == "remote"
+    if target_is_remote:
         for item in items:
             item.add_marker(
                 pytest.mark.nhsd_apim_authorization(

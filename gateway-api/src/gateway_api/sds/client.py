@@ -8,6 +8,7 @@ This module provides a client for querying the Spine Directory Service to retrie
 
 from __future__ import annotations
 
+import logging
 import os
 from enum import StrEnum
 from typing import Any
@@ -25,9 +26,9 @@ from gateway_api.get_structured_record import (
 from gateway_api.sds.search_results import SdsSearchResults
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_SDS environment variable and just
+#       we should remove the SDS_URL environment variable and just
 #       use the stub client
-STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
 if not STUB_SDS:
     from requests import get
 else:
@@ -35,6 +36,8 @@ else:
 
     sds = SdsFhirApiStub()
     get = sds.get  # type: ignore
+
+_logger = logging.getLogger(__name__)
 
 
 class SdsResourceType(StrEnum):
@@ -57,7 +60,7 @@ class SdsClient:
 
     **Stubbing**:
 
-    For testing, set the environment variable ``$STUB_SDS`` to use the
+    For testing, set the environment variable ``$SDS_URL`` to use the
     :class:`SdsFhirApiStub` instead of making real HTTP requests.
 
     **Usage example**::
@@ -74,16 +77,12 @@ class SdsClient:
             print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
-    # URLs for different SDS environments. Will move to a config file eventually.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
@@ -93,10 +92,20 @@ class SdsClient:
 
         if service_interaction_id is not None:
             self.service_interaction_id = service_interaction_id
-        elif self.base_url == self.SANDBOX_URL:
+        elif (
+            self.base_url
+            == "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
+        ):
             self.service_interaction_id = SDS_SANDBOX_INTERACTION_ID
         else:
             self.service_interaction_id = self.DEFAULT_SERVICE_INTERACTION_ID
+
+        log_details = {
+            "description": "Initialized SdsClient",
+            "base_url": self.base_url,
+            "service_interaction_id": self.service_interaction_id,
+        }
+        _logger.info(log_details)
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -193,12 +202,23 @@ class SdsClient:
             ],
         }
 
+        log_details = {
+            "description": "SDS request",
+            "url": url,
+            "params": params,
+        }
+        _logger.info(log_details)
         response = get(
             url,
             headers=headers,
             params=params,
             timeout=timeout or self.timeout,
         )
+        log_details = {
+            "description": "SDS response received",
+            "status_code": str(response.status_code),
+        }
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

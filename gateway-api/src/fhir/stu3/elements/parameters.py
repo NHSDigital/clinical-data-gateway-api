@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -15,7 +15,7 @@ class Parameters(Resource, resource_type="Parameters"):
     class Parameter(ABC):
         """A FHIR STU3 Parameter resource."""
 
-        name: Annotated[str, Field(frozen=True)]
+        name: Annotated[Literal["patientNHSNumber"], Field(frozen=True)]
         valueIdentifier: Annotated[PatientIdentifier, Field(frozen=True)]
 
     parameter: Annotated[list[Parameter], Field(frozen=True, min_length=1)]
