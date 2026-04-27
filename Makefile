@@ -61,6 +61,18 @@ deploy: clean build # Build project artefact and deploy locally @Pipeline
 	else \
 		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --env-file .env -d ${IMAGE_NAME} ; \
 	fi
+	@max_attempts=5 ; \
+	attempt=1 ; \
+	while [[ $$attempt -le $$max_attempts ]]; do \
+		if $(docker) ps --filter "name=gateway-api" --filter "status=running" --format "{{.Names}}" | grep -q "^gateway-api$$"; then \
+			exit 0 ; \
+		fi ; \
+		sleep $$((attempt * 2)) ; \
+		attempt=$$((attempt + 1)) ; \
+	done ; \
+	echo "ERROR: gateway-api container failed to start. Logs:" ; \
+	$(docker) logs gateway-api ; \
+	exit 1
 
 deploy-%: # Build project artefact and deploy locally as specified environment - mandatory: name=[name of the environment, e.g. 'dev'] @Pipeline
 	make env-$* deploy
