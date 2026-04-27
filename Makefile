@@ -53,26 +53,29 @@ build: build-gateway-api # Build the project artefact @Pipeline
 publish: # Publish the project artefact @Pipeline
 	# TODO [GPCAPIM-283]:  Implement the artefact publishing step
 
-deploy: clean build # Deploy the project artefact to the target environment @Pipeline
+deploy: clean build # Build project artefact and deploy locally @Pipeline
 	@$(docker) network inspect gateway-local >/dev/null 2>&1 || $(docker) network create gateway-local
-	# Build up list of environment variables to pass to the container.
-	# Note: Values (e.g. APIM_PRIVATE_KEY) may contain spaces; use a bash array to avoid breaking `docker run` argument parsing.
-	@ENVIRONMENT_ARGS=() ; \
-	if [[ -n "$${STUB_PROVIDER}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_PROVIDER=$${STUB_PROVIDER}" ); fi ; \
-	if [[ -n "$${STUB_PDS}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_PDS=$${STUB_PDS}" ); fi ; \
-	if [[ -n "$${STUB_SDS}" ]]; then ENVIRONMENT_ARGS+=( -e "STUB_SDS=$${STUB_SDS}" ); fi ; \
-	if [[ -n "$${CDG_DEBUG}" ]]; then ENVIRONMENT_ARGS+=( -e "CDG_DEBUG=$${CDG_DEBUG}" ); fi ; \
-	if [[ -n "$${APIM_TOKEN_URL}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_TOKEN_URL=$${APIM_TOKEN_URL}" ); fi ; \
-	if [[ -n "$${APIM_API_KEY}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_API_KEY=$${APIM_API_KEY}" ); fi ; \
-	if [[ -n "$${APIM_TOKEN_EXPIRY_THRESHOLD}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_TOKEN_EXPIRY_THRESHOLD=$${APIM_TOKEN_EXPIRY_THRESHOLD}" ); fi ; \
-	if [[ -n "$${APIM_KEY_ID}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_KEY_ID=$${APIM_KEY_ID}" ); fi ; \
-	if [[ -n "$${APIM_PRIVATE_KEY}" ]]; then ENVIRONMENT_ARGS+=( -e "APIM_PRIVATE_KEY=$${APIM_PRIVATE_KEY}" ); fi ; \
 	if [[ -n "$${IN_BUILD_CONTAINER}" ]]; then \
 		echo "Starting using local docker network ..." ; \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local "$${ENVIRONMENT_ARGS[@]}" -d "${IMAGE_NAME}" ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --network gateway-local --env-file .env -d ${IMAGE_NAME} ; \
 	else \
-		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 "$${ENVIRONMENT_ARGS[@]}" -d "${IMAGE_NAME}" ; \
+		$(docker) run --platform linux/amd64 --name gateway-api -p 5000:8080 --env-file .env -d ${IMAGE_NAME} ; \
 	fi
+	@max_attempts=5 ; \
+	attempt=1 ; \
+	while [[ $$attempt -le $$max_attempts ]]; do \
+		if $(docker) ps --filter "name=gateway-api" --filter "status=running" --format "{{.Names}}" | grep -q "^gateway-api$$"; then \
+			exit 0 ; \
+		fi ; \
+		sleep $$((attempt * 2)) ; \
+		attempt=$$((attempt + 1)) ; \
+	done ; \
+	echo "ERROR: gateway-api container failed to start. Logs:" ; \
+	$(docker) logs gateway-api ; \
+	exit 1
+
+deploy-%: # Build project artefact and deploy locally as specified environment - mandatory: name=[name of the environment, e.g. 'dev'] @Pipeline
+	make env-$* deploy
 
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."

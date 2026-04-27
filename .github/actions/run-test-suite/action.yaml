@@ -9,33 +9,25 @@ inputs:
   test-type:
     description: "Type of test to run"
     required: true
-  apigee-access-token:
-    description: "Apigee access token"
-    required: false
-  base-url:
-    description: "The URL of the environment to test"
-    required: false
   env:
-    description: "Environment: local or remote"
+    description: "Environment to run tests against: ci, alpha-int, pr-<number> - see env.mk"
     required: false
-    default: "remote"
+    default: "ci"
 
 runs:
   using: composite
   steps:
+    - name: Set up environment
+      shell: bash
+      env:
+        ENV: ${{ inputs.env }}
+      run: make env-test-"${ENV}"
+
     - name: "Run ${{ inputs.test-type }} tests"
       shell: bash
       env:
-        APIGEE_ACCESS_TOKEN: ${{ inputs.apigee-access-token }}
-        BASE_URL: ${{ inputs.base-url }}
-        ENV: ${{ inputs.env }}
         TEST_TYPE: ${{ inputs.test-type }}
       run: |
-        if [[ -n "${APIGEE_ACCESS_TOKEN}" ]]; then
-          echo "::add-mask::${APIGEE_ACCESS_TOKEN}"
-        fi
-
-        # Clean test artefacts so each suite uploads only its own results
         rm -rf gateway-api/test-artefacts/* || true
         mkdir -p gateway-api/test-artefacts
         make test-"${TEST_TYPE}"

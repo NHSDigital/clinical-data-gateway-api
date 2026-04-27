@@ -12,7 +12,6 @@ from fhir.r4 import (
     Entry,
     GeneralPractitioner,
     OrganizationIdentifier,
-    PartyKeyIdentifier,
     Patient,
     PatientIdentifier,
     Practitioner,
@@ -375,45 +374,10 @@ class TestDevice:
             "identifier value should match"
         )
 
-    def test_create_with_party_key_identifier(self) -> None:
-        device = Device.create(
-            identifier=[
-                PartyKeyIdentifier(
-                    system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
-                    value="P12345-000001",
-                )
-            ],
-        )
-
-        assert device.identifier[0].system == "https://fhir.nhs.uk/Id/nhsMhsPartyKey", (
-            "system should match the party key URI"
-        )
-
-    def test_create_with_mixed_identifiers(self) -> None:
-        device = Device.create(
-            identifier=[
-                ASIDIdentifier(
-                    system="https://fhir.nhs.uk/Id/nhsSpineASID",
-                    value="123",
-                ),
-                PartyKeyIdentifier(
-                    system="https://fhir.nhs.uk/Id/nhsMhsPartyKey",
-                    value="PK-1",
-                ),
-            ],
-        )
-
-        assert len(device.identifier) == 2, "should have two identifiers"
-
     def test_asid_identifier_expected_system(self) -> None:
         assert ASIDIdentifier._expected_system == (
             "https://fhir.nhs.uk/Id/nhsSpineASID"
         ), "_expected_system should be the ASID URI"
-
-    def test_party_key_identifier_expected_system(self) -> None:
-        assert PartyKeyIdentifier._expected_system == (
-            "https://fhir.nhs.uk/Id/nhsMhsPartyKey"
-        ), "_expected_system should be the party key URI"
 
 
 class TestDeviceModelValidate:

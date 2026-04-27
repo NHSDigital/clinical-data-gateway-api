@@ -1,0 +1,6 @@
+name: internal-dev
+variables:
+  - name: host
+    value: internal-dev.api.service.nhs.uk
+  - secret: true
+    name: token

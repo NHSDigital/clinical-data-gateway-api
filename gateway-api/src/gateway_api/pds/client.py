@@ -18,9 +18,9 @@ If required keys are missing, a ``KeyError`` is raised intentionally. This is tr
 malformed upstream data (or malformed test fixtures) and should be corrected at source.
 """
 
+import logging
 import os
 import uuid
-from collections.abc import Callable
 from typing import Any
 
 import requests
@@ -32,18 +32,19 @@ from gateway_api.apim_app_auth.request_context import set_correlation_id
 from gateway_api.common.error import PdsRequestFailedError
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_PDS environment variable and just
+#       we should remove the PDS_URL environment variable and just
 #       use the stub client
-STUB_PDS = os.environ.get("STUB_PDS", "false").lower() == "true"
+STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
 
-get: Callable[..., requests.Response]
 if not STUB_PDS:
-    get = requests.get
+    from requests import get
 else:
     from stubs.pds.stub import PdsFhirApiStub
 
     pds = PdsFhirApiStub()
-    get = pds.get
+    get = pds.get  # type: ignore
+
+_logger = logging.getLogger(__name__)
 
 
 class PdsClient:
@@ -70,20 +71,21 @@ class PdsClient:
             print(result)
     """
 
-    # URLs for different PDS environments. Requires authentication to use live.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4"
-    PROD_URL = "https://api.service.nhs.uk/personal-demographics/FHIR/R4"
-
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.ignore_dates = ignore_dates
+
+        log_details = {
+            "description": "Initialized PdsClient",
+            "base_url": self.base_url,
+        }
+        _logger.info(log_details)
 
     def _build_headers(
         self,
@@ -123,7 +125,13 @@ class PdsClient:
 
         url = f"{self.base_url}/Patient/{nhs_number}"
 
-        # This normally calls requests.get, but if STUB_PDS is set it uses the stub.
+        log_details = {
+            "description": "PDS request",
+            "url": url,
+        }
+        _logger.info(log_details)
+
+        # This normally calls requests.get, but if PDS_URL is set it uses the stub.
         # response = get(
         #     url,
         #     headers=headers,
@@ -139,6 +147,11 @@ class PdsClient:
             headers=headers,
             timeout=timeout or self.timeout,
         )
+        log_details = {
+            "description": "PDS response received",
+            "status_code": str(response.status_code),
+        }
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

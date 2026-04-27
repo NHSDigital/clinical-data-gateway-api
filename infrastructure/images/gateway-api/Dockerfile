@@ -14,9 +14,6 @@ WORKDIR /resources/build/gateway-api
 ENV PYTHONPATH=/resources/build/gateway-api
 ENV FLASK_HOST="0.0.0.0"
 ENV FLASK_PORT="8080"
-ENV STUB_PDS="true"
-ENV STUB_PROVIDER="true"
-ENV STUB_SDS="true"
 
 ENV APIM_API_KEY="default_api_key"
 ENV APIM_TOKEN_EXPIRY_THRESHOLD="30s"

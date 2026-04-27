@@ -128,7 +128,8 @@ The project uses `make` targets to build, deploy, and manage the application. Ru
 | --- | --- |
 | `make dependencies` | Install all project dependencies via Poetry |
 | `make build` | Type-check, package, and build the Docker image |
-| `make deploy` | Build and start the Gateway API container at `localhost:5000` |
+| `make env` | Create a `.env` to be consumed when starting the app, e.g. `make deploy` |
+| `make deploy` | Build and start the Gateway API container using the environment variables defined in `.env` |
 | `make clean` | Stop and remove the Gateway API container |
 | `make config` | Configure the development environment |
 
@@ -145,18 +146,40 @@ The full API schema is defined in [gateway-api/openapi.yaml](gateway-api/openapi
 
 ### Environment Variables
 
+Make commands help build the `.env` and `.env.test` files used to populate the required environment variables.
+
+#### .env
+
+`make deploy` will feed the `.env` variables in to the app's environment.
+
+Environment variables control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
+
+| Variable | Description |
+| --- | --- |
+| `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
+| `PDS_API_TOKEN` | Leave unset in development environment. |
+| `PDS_API_SECRET` | Leave unset in development environment. |
+| `PDS_API_KID` | Leave unset in development environment. |
+| `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
+| `SDS_API_TOKEN` | Leave unset in development environment. |
+| `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
+| `CDG_DEBUG` | `true`, return additional debug information when the call to the GP provider returns an error. |
+
+See `make env-*` in `scripts/env/app/env.mk` for the commands that will write these variables to a file.
+
+_Note: `FLASK_HOST` and `FLASK_PORT` are hardcoded in to the Dockerfile. These are for container, and do not need adjusting._
+
+#### .env.test
+
 | Variable | Description |
 | --- | --- |
 | `BASE_URL` | Protocol, hostname and port for the running API (e.g. `http://localhost:5000`, or `http://gateway-api:8080` from within the devcontainer) |
-| `HOST` | hostname portion of `BASE_URL` |
-| `FLASK_HOST` | Host the Flask app binds to |
-| `FLASK_PORT` | Port the Flask app listens on |
-| `STUB_PDS` | `true`, use the stubs/stubs/pds/stub.py to return stubbed responses for PDS FHIR API; otherwise, not. |
-| `STUB_SDS` | `true`, use the stubs/stubs/sds/stub.py to return stubbed responses for SDS FHIR API; otherwise, not. |
-| `STUB_PROVIDER` | `true`, use the stubs/stubs/provider/stub.py to return stubbed responses for the provider system; otherwise, not. |
-| `CDG_DEBUG` | `true`, Return additional debug information when the call to the GP provider returns an error. Note if set true causes the unit tests to fail, because expected return values are changed. |
-
-Environment variables also control whether stubs are used in place of the real PDS, SDS, and Provider services during local development.
+| `APIGEE_ACCESS_TOKEN` | An access token to Apigee API used by `pytest_nhds_apim`, fed from the environment variables at run time. |
+| `PROXYGEN_API_NAME` | The name of the API defined in Proxygen. Used by `pytest_nhsd_apim` to run tests against, fed in the CLI arguments in `make test-*` |
+| `PROXY_BASE_PATH` | The suffix of the proxy instance being deployed. Used by `pytest_nhsd_apim` to run tests against, fed in the CLI arguments in `make test-*` |
+| `BASE_URL` | Set if targeting a locally deployed application; otherwise, leave unset. |
+| `TARGET_ENV` | Either `local` or `remote`, to inform the HTTP client used by the tests how to behave - e.g. add auth headers, etc. |
+| `REMOTE_TEST_USERNAME` | The test user through which the tests will be authenticated against when run against a remote target. |
 
 ## Testing
 
@@ -201,10 +224,10 @@ To be able to use the `load-tests` or `local-tests`, you will need to have Proxy
 
 - Please follow the [guide here](https://nhsd-confluence.digital.nhs.uk/spaces/DCA/pages/1236046532/Proxygen)
 - When the devcontainer has built, the Proxygen configuration is created on the host at `~/gateway/ptl/.proxygen` and bind-mounted into the container as `~/.proxygen`.
-- For *settings*:
+- For _settings_:
   - Set the `api` value
   - `endpoint_url` and `spec_output_format` should be already set.
-- For *credentials*:
+- For _credentials_:
   - Set the `base_url`, `client_secret`, `password` and `username` values.
   - Remove unused fields.
 
