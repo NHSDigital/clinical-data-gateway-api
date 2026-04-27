@@ -53,9 +53,8 @@ class Controller:
         3) Call SDS using consumer ODS to obtain consumer ASID.
         4) Call GP provider to obtain patient records.
         """
-        auth_token = self.get_auth_token()
 
-        provider_ods = self._get_pds_details(auth_token, request.nhs_number)
+        provider_ods = self._get_pds_details(request.nhs_number)
 
         consumer_asid, provider_asid, provider_endpoint = self._get_sds_details(
             request.ods_from.strip(), provider_ods
@@ -163,14 +162,12 @@ class Controller:
         )
         return token
 
-    def _get_pds_details(self, auth_token: str, nhs_number: str) -> str:
+    def _get_pds_details(self, nhs_number: str) -> str:
         """
         Call PDS to find the provider ODS code (GP ODS code) for a patient.
         """
         # PDS: find patient and extract GP ODS code (provider ODS)
         pds = PdsClient(
-            # TODO 395: is this needed if we use the auth decorator?
-            auth_token=auth_token,
             base_url=self.pds_base_url,
             timeout=self.timeout,
             ignore_dates=True,

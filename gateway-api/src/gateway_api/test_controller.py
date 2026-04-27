@@ -67,7 +67,6 @@ def test_controller_run_happy_path_returns_returns_expected_body(
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
     mocker.patch(
@@ -76,14 +75,13 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     )
     controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
 
-    actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
+    actual = controller._get_pds_details(nhs_number)  # noqa: SLF001 testing private method
 
     assert actual == "A12345"
 
 
 def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
     mocker.patch(
@@ -97,7 +95,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         NoCurrentProviderError,
         match="PDS patient 9000000009 did not contain a current provider ODS code",
     ):
-        _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
+        _ = controller._get_pds_details(nhs_number)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(

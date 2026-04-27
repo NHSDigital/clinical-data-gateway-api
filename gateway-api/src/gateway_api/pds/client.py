@@ -77,12 +77,10 @@ class PdsClient:
 
     def __init__(
         self,
-        auth_token: str,
         base_url: str = SANDBOX_URL,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
-        self.auth_token = auth_token
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.ignore_dates = ignore_dates
@@ -98,7 +96,6 @@ class PdsClient:
         headers = {
             "X-Request-ID": request_id or str(uuid.uuid4()),
             "Accept": "application/fhir+json",
-            "Authorization": f"Bearer {self.auth_token}",
         }
 
         if correlation_id:
@@ -161,7 +158,6 @@ class PdsClient:
 
 @environment.apim_authenticator().auth
 def _make_get_request(
-    # TODO 395: no longer required if we use the auth decorator?
     session: requests.Session,
     url: str,
     headers: dict[str, str],
