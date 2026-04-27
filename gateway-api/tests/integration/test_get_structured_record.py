@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from requests import Response
@@ -26,11 +26,16 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        expected_response_message_for_simple_request: dict[str, Any],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
             json.dumps(simple_request_payload)
         )
-        assert response.json() == Bundles.ALICE_JONES_9999999999
+        actual_response = response.json()
+        # TODO: Do this better.
+        if "id" in actual_response:
+            del actual_response["id"]
+        assert actual_response == expected_response_message_for_simple_request
 
     def test_happy_path_content_type(
         self,
@@ -354,3 +359,22 @@ class TestGetStructuredRecord:
             return response
 
         return requester
+
+    @pytest.fixture
+    def expected_response_message_for_simple_request(
+        self, nhs_number: str
+    ) -> dict[str, Any]:
+        # TODO: Do this better.
+        if nhs_number == "9999999999":
+            return Bundles.ALICE_JONES_9999999999
+        elif nhs_number == "9692140466":
+            with open("tests/integration/data/emis_int_test_9692140466.json") as f:
+                expected_response = cast(
+                    "dict[str, Any]", json.load(f)
+                )  # TODO: Avoid cast here
+            del expected_response["id"]
+            return expected_response
+        else:
+            raise ValueError(
+                f"No expected response message defined for nhs_number {nhs_number}"
+            )

@@ -350,7 +350,7 @@ class SdsFhirApiStub(StubBase, GetStub):
             {
                 "org_ods": "CONSUMER",
                 "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
+                "asid": "210987654321",
                 "display": "Example Consumer Organisation",
             },
             {
@@ -382,6 +382,13 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "device_id": "B3B3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
                 "display": "ODS/ASID triggering Orange Box",
+            },
+            {
+                "org_ods": "EMIS_INT_ODS_CODE",
+                "party_key": "EMIS_INT_ODS_CODE-0000809",
+                "device_id": "5CF77971-5732-43C6-959B-90F0DB6E49AD",
+                "asid": "200000000948",
+                "display": "GP with endpoint to get to EMIS INT TEST",
             },
         ]
 
@@ -419,7 +426,7 @@ class SdsFhirApiStub(StubBase, GetStub):
             {
                 "org_ods": "CONSUMER",
                 "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
+                "asid": "210987654321",
                 "address": "https://consumer.example.com/fhir",
             },
             {
@@ -433,6 +440,13 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "endpoint_id": "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
                 "address": "https://orange.testlab.nhs.uk/B82617/STU3/1/gpconnect/structured/fhir/",
+            },
+            {
+                "org_ods": "EMIS_INT_ODS_CODE",
+                "party_key": "EMIS_INT_ODS_CODE-0000809",
+                "endpoint_id": "BD635368-97E0-4935-A0D7-55CFDE574C93",
+                "asid": "200000000948",
+                "address": "https://gpcassurance-b86047.emis.thirdparty.nhs.uk/A82038/STU3/1/GPConnect/structured",
             },
         ]
 

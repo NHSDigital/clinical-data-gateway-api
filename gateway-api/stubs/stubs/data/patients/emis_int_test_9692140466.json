@@ -1,0 +1,83 @@
+{
+        "resourceType": "Patient",
+        "id": "593C97B5-7B99-4326-9140-B329CC03A0D1",
+        "meta": {
+          "versionId": "1533356236474679227",
+          "profile": [
+            "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://fhir.nhs.uk/STU3/StructureDefinition/Extension-CareConnect-GPC-RegistrationDetails-1",
+            "extension": [
+              {
+                "url": "preferredBranchSurgery",
+                "valueReference": {
+                  "reference": "Location/EB3994A6-5A87-4B53-A414-913137072F57"
+                }
+              }
+            ]
+          }
+        ],
+        "identifier": [
+          {
+            "extension": [
+              {
+                "url": "https://fhir.nhs.uk/STU3/StructureDefinition/Extension-CareConnect-GPC-NHSNumberVerificationStatus-1",
+                "valueCodeableConcept": {
+                  "coding": [
+                    {
+                      "system": "https://fhir.nhs.uk/STU3/CodeSystem/CareConnect-NHSNumberVerificationStatus-1",
+                      "code": "01",
+                      "display": "Number present and verified"
+                    }
+                  ],
+                  "text": "Number present and verified"
+                }
+              }
+            ],
+            "system": "https://fhir.nhs.uk/Id/nhs-number",
+            "value": "9692140466"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Egan",
+            "given": [
+              "Lester"
+            ],
+            "prefix": [
+              "Mr"
+            ]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1958-02-02",
+        "address": [
+          {
+            "use": "home",
+            "type": "physical",
+            "line": [
+              "Cornerways",
+              "Leek Hill",
+              "Winterton"
+            ],
+            "city": "Scunthorpe",
+            "district": "S Humberside",
+            "postalCode": "DN15 9SR"
+          }
+        ],
+    "generalPractitioner": [
+        {
+            "id": "1",
+            "type": "Organization",
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "EMIS_INT_ODS_CODE",
+                "period": {"start": "2020-01-01", "end": "9999-12-31"}
+            }
+        }
+    ]
+}
