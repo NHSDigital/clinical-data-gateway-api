@@ -9,7 +9,10 @@ from fhir.constants import FHIRSystem
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 from gateway_api.sds import (
     SdsClient,
     SdsSearchResults,
@@ -36,7 +39,7 @@ def test_sds_client_get_org_details_success(
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
 
     result = client.get_org_details(ods_code="PROVIDER")
 
@@ -66,7 +69,6 @@ def test_sds_client_get_org_details_with_endpoint(
     stub.upsert_device(
         organization_ods="TESTORG",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="TESTORG-123456",
         device={
             "resourceType": "Device",
             "id": "test-device-id",
@@ -74,10 +76,6 @@ def test_sds_client_get_org_details_with_endpoint(
                 {
                     "system": FHIRSystem.NHS_SPINE_ASID,
                     "value": "999999999999",
-                },
-                {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": "TESTORG-123456",
                 },
             ],
             "owner": {
@@ -92,7 +90,6 @@ def test_sds_client_get_org_details_with_endpoint(
     stub.upsert_endpoint(
         organization_ods="TESTORG",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="TESTORG-123456",
         endpoint={
             "resourceType": "Endpoint",
             "id": "test-endpoint-id",
@@ -106,14 +103,14 @@ def test_sds_client_get_org_details_with_endpoint(
             },
             "identifier": [
                 {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": "TESTORG-123456",
-                }
+                    "system": FHIRSystem.NHS_SPINE_ASID,
+                    "value": "999999999999",
+                },
             ],
         },
     )
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
     result = client.get_org_details(ods_code="TESTORG")
 
     assert result is not None
@@ -130,7 +127,7 @@ def test_sds_client_sends_correct_headers(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
 
     correlation_id = "test-correlation-123"
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
@@ -152,7 +149,7 @@ def test_sds_client_timeout_parameter(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL, timeout=30)
+    client = SdsClient(base_url=SdsClient.INT_URL, timeout=30)
 
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
@@ -175,7 +172,6 @@ def test_sds_client_custom_service_interaction_id(
     stub.upsert_device(
         organization_ods="CUSTOMINT",
         service_interaction_id=custom_interaction,
-        party_key=None,
         device={
             "resourceType": "Device",
             "id": "custom-device",
@@ -195,7 +191,7 @@ def test_sds_client_custom_service_interaction_id(
     )
 
     client = SdsClient(
-        base_url=SdsClient.SANDBOX_URL,
+        base_url=SdsClient.INT_URL,
         service_interaction_id=custom_interaction,
     )
 
@@ -221,7 +217,7 @@ def test_sds_client_builds_correct_device_query_params(
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
 
     client.get_org_details(ods_code="PROVIDER")
 
@@ -239,62 +235,54 @@ def test_sds_client_builds_correct_device_query_params(
     )
 
 
-def test_sds_client_extract_party_key_from_device(
+def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
     stub: SdsFhirApiStub,
 ) -> None:
     """
-    Test party key extraction and subsequent endpoint lookup.
+    Test that SdsClient uses SANDBOX_INTERACTION_ID when connecting to the
+    sandbox environment, not the default ACCESS_RECORD_STRUCTURED_INTERACTION_ID.
 
     :param stub: SDS stub fixture.
-    :param mock_requests_get: Capture fixture for request details.
     """
-    # The default seeded PROVIDER device has a party key
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
-
+    # Seed the stub with data keyed by the sandbox interaction ID
     stub.upsert_device(
-        organization_ods="WITHPARTYKEY",
-        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="WITHPARTYKEY-654321",
+        organization_ods="SANDBOXORG",
+        service_interaction_id=SDS_SANDBOX_INTERACTION_ID,
         device={
             "resourceType": "Device",
-            "id": "device-with-party-key",
+            "id": "sandbox-device-id",
             "identifier": [
                 {
                     "system": FHIRSystem.NHS_SPINE_ASID,
-                    "value": "888888888888",
-                },
-                {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": "WITHPARTYKEY-654321",
+                    "value": "555555555555",
                 },
             ],
-        },
-    )
-
-    stub.upsert_endpoint(
-        organization_ods="WITHPARTYKEY",
-        service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="WITHPARTYKEY-654321",
-        endpoint={
-            "resourceType": "Endpoint",
-            "id": "endpoint-for-party-key",
-            "status": "active",
-            "address": "https://withpartykey.example.com/fhir",
-            "identifier": [
-                {
-                    "system": FHIRSystem.NHS_MHS_PARTY_KEY,
-                    "value": "WITHPARTYKEY-654321",
+            "owner": {
+                "identifier": {
+                    "system": FHIRSystem.ODS_CODE,
+                    "value": "SANDBOXORG",
                 }
-            ],
+            },
         },
     )
 
-    result = client.get_org_details(ods_code="WITHPARTYKEY", get_endpoint=True)
+    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    result = client.get_org_details(ods_code="SANDBOXORG", get_endpoint=False)
 
-    # Should have found ASID but may not have endpoint depending on seeding
+    # Verify the sandbox interaction ID was sent
+    params = stub.get_params
+    assert any(
+        SDS_SANDBOX_INTERACTION_ID in str(ident)
+        for ident in params.get("identifier", [])
+    )
+    # Verify the default interaction ID was NOT used
+    assert not any(
+        ACCESS_RECORD_STRUCTURED_INTERACTION_ID in str(ident)
+        for ident in params.get("identifier", [])
+    )
+
     assert result is not None
-    assert result.asid == "888888888888"
-    assert result.endpoint == "https://withpartykey.example.com/fhir"
+    assert result.asid == "555555555555"
 
 
 def test_sds_client_raises_sds_request_failed_error_on_http_error(
@@ -340,32 +328,29 @@ def test_sds_client_endpoint_entry_without_address_returns_none(
     stub.upsert_device(
         organization_ods="NOADDR",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="NOADDR-000001",
         device={
             "resourceType": "Device",
             "id": "noaddr-device",
             "identifier": [
                 {"system": FHIRSystem.NHS_SPINE_ASID, "value": "111111111111"},
-                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOADDR-000001"},
             ],
         },
     )
     stub.upsert_endpoint(
         organization_ods="NOADDR",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="NOADDR-000001",
         endpoint={
             "resourceType": "Endpoint",
             "id": "noaddr-endpoint",
             "status": "active",
             # no "address" field
             "identifier": [
-                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOADDR-000001"}
+                {"system": FHIRSystem.NHS_SPINE_ASID, "value": "111111111111"}
             ],
         },
     )
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
     result = client.get_org_details(ods_code="NOADDR")
 
     assert result.asid == "111111111111"
@@ -381,7 +366,7 @@ def test_sds_client_empty_device_bundle_returns_none_asid() -> None:
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
     # "UNKNOWNORG" has no seeded devices, so the bundle entry list will be empty
     result = client.get_org_details(ods_code="UNKNOWNORG", get_endpoint=False)
 
@@ -400,19 +385,17 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
     stub.upsert_device(
         organization_ods="NOENDPOINT",
         service_interaction_id=ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
-        party_key="NOENDPOINT-000001",
         device={
             "resourceType": "Device",
             "id": "noendpoint-device",
             "identifier": [
                 {"system": FHIRSystem.NHS_SPINE_ASID, "value": "222222222222"},
-                {"system": FHIRSystem.NHS_MHS_PARTY_KEY, "value": "NOENDPOINT-000001"},
             ],
         },
     )
     # Deliberately do not seed any endpoint for NOENDPOINT
 
-    client = SdsClient(base_url=SdsClient.SANDBOX_URL)
+    client = SdsClient(base_url=SdsClient.INT_URL)
     result = client.get_org_details(ods_code="NOENDPOINT")
 
     assert result.asid == "222222222222"

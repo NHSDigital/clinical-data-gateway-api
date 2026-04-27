@@ -4,7 +4,6 @@ from .elements.entry import Entry
 from .elements.identifier import (
     ASIDIdentifier,
     OrganizationIdentifier,
-    PartyKeyIdentifier,
     PatientIdentifier,
     UUIDIdentifier,
 )
@@ -25,7 +24,6 @@ __all__ = [
     "GeneralPractitioner",
     "OrganizationIdentifier",
     "Organization",
-    "PartyKeyIdentifier",
     "Patient",
     "PatientIdentifier",
     "Practitioner",
