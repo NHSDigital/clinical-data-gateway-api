@@ -1,0 +1,30 @@
+{
+    "resourceType": "Patient",
+    "id": "593C97B5-7B99-4326-9140-B329CC03A0D1",
+    "meta": {
+      "versionId": "1533356236474679227",
+      "profile": [
+        "https://fhir.nhs.uk/STU3/StructureDefinition/CareConnect-GPC-Patient-1"
+      ]
+    },
+    "identifier": [
+      {
+        "system": "https://fhir.nhs.uk/Id/nhs-number",
+        "value": "9692140466"
+      }
+    ],
+    "name": [
+      {
+        "use": "official",
+        "family": "Egan",
+        "given": ["Lester"]
+      }
+    ],
+    "gender": "male",
+    "birthDate": "1958-02-02",
+    "generalPractitioner": [
+      {
+        "reference": "Practitioner/C8FD0E2C-3124-4C72-AC8D-ABEA65537D1B"
+      }
+    ]
+  }
