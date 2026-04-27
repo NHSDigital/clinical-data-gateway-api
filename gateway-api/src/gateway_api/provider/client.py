@@ -22,6 +22,7 @@ Usage:
         The response from the provider FHIR API.
 """
 
+import logging
 import os
 from urllib.parse import urljoin
 
@@ -33,9 +34,9 @@ from gateway_api.common.error import JWTValidationError, ProviderRequestFailedEr
 from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the STUB_PROVIDER environment variable and just
+#       we should remove the PROVIDER_URL environment variable and just
 #       use the stub client
-STUB_PROVIDER = os.environ.get("STUB_PROVIDER", "false").lower() == "true"
+STUB_PROVIDER = os.environ["PROVIDER_URL"].lower() == "stub"
 if not STUB_PROVIDER:
     from requests import post
 else:
@@ -43,6 +44,8 @@ else:
 
     provider_stub = GpProviderStub()
     post = provider_stub.post  # type: ignore
+
+_logger = logging.getLogger(__name__)
 
 # Default endpoint path for access record structured interaction (standard GP Connect)
 ARS_ENDPOINT_PATH = "Patient/$gpc.getstructuredrecord"
@@ -83,6 +86,15 @@ class GpProviderClient:
         self.token = token
         self.endpoint_path = endpoint_path
 
+        log_details = {
+            "description": "Initialized GpProviderClient",
+            "provider_endpoint": self.provider_endpoint,
+            "provider_asid": self.provider_asid,
+            "consumer_asid": self.consumer_asid,
+            "endpoint_path": self.endpoint_path,
+        }
+        _logger.info(log_details)
+
     def _build_headers(self, trace_id: str) -> dict[str, str]:
         """
         Build the headers required for the GPProvider FHIR API request.
@@ -117,12 +129,23 @@ class GpProviderClient:
         base_endpoint = self.provider_endpoint.rstrip("/") + "/"
         url = urljoin(base_endpoint, self.endpoint_path)
 
+        log_details = {
+            "description": "GPProvider FHIR API request",
+            "url": url,
+        }
+        _logger.info(log_details)
+
         response = post(
             url,
             headers=headers,
             data=body,
             timeout=TIMEOUT,
         )
+        log_details = {
+            "description": "GPProvider FHIR API response received",
+            "status_code": str(response.status_code),
+        }
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

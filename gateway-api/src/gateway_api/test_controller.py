@@ -1,6 +1,7 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from fhir.r4 import (
@@ -24,6 +25,13 @@ from gateway_api.get_structured_record import GetStructuredRecordRequest
 from gateway_api.sds import SdsSearchResults
 
 
+@pytest.fixture
+def mock_flask() -> Mock:
+    mock_flask = Mock()
+    mock_flask.config = {"SDS_API_TOKEN": "example"}
+    return mock_flask
+
+
 def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
     general_practitioner = None
     if gp_ods_code is not None:
@@ -42,12 +50,24 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
     )
 
 
+def create_test_controller(
+    pds_base_url: str = "https://example.test/pds",
+    sds_base_url: str = "https://example.test/sds",
+    sds_api_key: str = "example_sds_api_key",
+) -> Controller:
+    return Controller(
+        pds_base_url=pds_base_url,
+        sds_base_url=sds_base_url,
+        sds_api_key=sds_api_key,
+    )
+
+
 def test_controller_run_happy_path_returns_200_status_code(
     mock_happy_path_get_structured_record_request: Request,
 ) -> None:
     request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
 
-    controller = Controller()
+    controller = create_test_controller()
     actual_response = controller.run(request)
 
     assert actual_response.status_code == 200
@@ -59,7 +79,7 @@ def test_controller_run_happy_path_returns_returns_expected_body(
 ) -> None:
     request = GetStructuredRecordRequest(mock_happy_path_get_structured_record_request)
 
-    controller = Controller()
+    controller = create_test_controller()
     actual_response = controller.run(request)
 
     assert actual_response.json() == valid_simple_response_payload
@@ -74,7 +94,7 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
         "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
         return_value=_create_patient(nhs_number, "A12345"),
     )
-    controller = Controller(pds_base_url="https://example.test/pds", timeout=7)
+    controller = create_test_controller()
 
     actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
 
@@ -91,7 +111,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         return_value=_create_patient(nhs_number, None),
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoCurrentProviderError,
@@ -117,7 +137,7 @@ def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
         side_effect=sds_results,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     expected = ("ConsumerASID", "ProviderASID", "https://example.provider.org/endpoint")
     actual = controller._get_sds_details(consumer_ods, provider_ods)  # noqa: SLF001 testing private method
@@ -135,7 +155,7 @@ def test_get_sds_details_raises_no_organisation_found_when_sds_returns_none(
         return_value=no_results_for_provider,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoOrganisationFoundError,
@@ -157,7 +177,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_asid(
         return_value=blank_asid_sds_result,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoAsidFoundError,
@@ -180,7 +200,7 @@ def test_get_sds_details_raises_no_current_endpoint_when_sds_returns_empty_endpo
         return_value=blank_endpoint_sds_result,
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoCurrentEndpointError,
@@ -207,7 +227,7 @@ def test_get_sds_details_raises_no_org_found_when_sds_returns_none_for_consumer(
         side_effect=[happy_path_provider_sds_result, none_result_for_consumer],
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoOrganisationFoundError,
@@ -233,7 +253,7 @@ def test_get_sds_details_raises_no_asid_found_when_sds_returns_empty_consumer_as
         side_effect=[happy_path_provider_sds_result, consumer_asid_blank_sds_result],
     )
 
-    controller = Controller()
+    controller = create_test_controller()
 
     with pytest.raises(
         NoAsidFoundError,
@@ -337,7 +357,7 @@ def test_controller_creates_jwt_token_with_correct_claims(
 
     get_structured_record_request = GetStructuredRecordRequest(request)
 
-    controller = Controller()
+    controller = create_test_controller()
     controller.run(get_structured_record_request)
 
     # Verify that GpProviderClient was called and extract the JWT token
@@ -351,3 +371,85 @@ def test_controller_creates_jwt_token_with_correct_claims(
 
     # Verify the requesting organization matches the consumer ODS
     assert jwt_token.requesting_organization["identifier"][0]["value"] == consumer_ods
+
+
+def test_controller_respects_pds_url(
+    mocker: MockerFixture,
+    happy_path_pds_response_body: dict[str, Any],
+) -> None:
+    """
+    Test that the controller uses the PDS URL provided in the constructor.
+    """
+    mocked_get_pds = mocker.patch(
+        "gateway_api.pds.client.get",
+        return_value=FakeResponse(
+            status_code=200, headers={}, _json=happy_path_pds_response_body
+        ),
+    )
+    custom_pds_url = "https://a.different.url/base"
+
+    controller = create_test_controller(pds_base_url=custom_pds_url)
+    controller._get_pds_details("auth_token", "9000000009")
+
+    actual_pds_url = mocked_get_pds.call_args.args[0]
+    assert actual_pds_url == "https://a.different.url/base/Patient/9000000009"
+
+
+def test_controller_respects_sds_url(
+    mocker: MockerFixture,
+) -> None:
+    """
+    Test that the controller uses the SDS URL provided in the constructor.
+    """
+    device_bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "fullUrl": "https://example.test/sds/Device/1",
+                "resource": {
+                    "resourceType": "Device",
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
+                            "value": "test-asid",
+                        },
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
+                            "value": "test-party-key",
+                        },
+                    ],
+                },
+            }
+        ],
+    }
+    endpoint_bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 1,
+        "entry": [
+            {
+                "fullUrl": "https://example.test/sds/Endpoint/1",
+                "resource": {
+                    "resourceType": "Endpoint",
+                    "address": "https://example.provider.org/endpoint",
+                },
+            }
+        ],
+    }
+    mocked_get_sds = mocker.patch(
+        "gateway_api.sds.client.get",
+        side_effect=[
+            FakeResponse(status_code=200, headers={}, _json=device_bundle),
+            FakeResponse(status_code=200, headers={}, _json=endpoint_bundle),
+            FakeResponse(status_code=200, headers={}, _json=device_bundle),
+        ],
+    )
+    custom_sds_url = "https://a.different.url/base"
+
+    controller = create_test_controller(sds_base_url=custom_sds_url)
+    controller._get_sds_details("test-ods-1", "test-ods-2")
+
+    actual_sds_url = mocked_get_sds.call_args.args[0]
+    assert actual_sds_url == "https://a.different.url/base/Device"

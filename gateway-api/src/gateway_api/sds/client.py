@@ -8,6 +8,7 @@ This module provides a client for querying the Spine Directory Service to retrie
 
 from __future__ import annotations
 
+import logging
 import os
 from enum import StrEnum
 from typing import Any
@@ -20,7 +21,10 @@ from requests import get as external_sds_get
 from stubs import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
-from gateway_api.get_structured_record import ACCESS_RECORD_STRUCTURED_INTERACTION_ID
+from gateway_api.get_structured_record import (
+    ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
+    SDS_SANDBOX_INTERACTION_ID,
+)
 from gateway_api.sds.search_results import SdsSearchResults
 
 
@@ -30,13 +34,16 @@ def get(
     params: dict[str, str],
     timeout: int,
 ) -> Response:
-    STUB_SDS = os.environ.get("STUB_SDS", "false").lower() == "true"
+    STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
     if not STUB_SDS:
         return external_sds_get(url, headers=headers, params=params, timeout=timeout)
     else:
         return SdsFhirApiStub().get(
             url, headers=headers, params=params, timeout=timeout
         )
+
+
+_logger = logging.getLogger(__name__)
 
 
 class SdsResourceType(StrEnum):
@@ -59,7 +66,7 @@ class SdsClient:
 
     **Stubbing**:
 
-    For testing, set the environment variable ``$STUB_SDS`` to use the
+    For testing, set the environment variable ``$SDS_URL`` to use the
     :class:`SdsFhirApiStub` instead of making real HTTP requests.
 
     **Usage example**::
@@ -76,25 +83,36 @@ class SdsClient:
             print(f"ASID: {result.asid}, Endpoint: {result.endpoint}")
     """
 
-    # URLs for different SDS environments. Will move to a config file eventually.
-    SANDBOX_URL = "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
-    INT_URL = "https://int.api.service.nhs.uk/spine-directory/FHIR/R4"
-
     # Default service interaction ID for GP Connect
     DEFAULT_SERVICE_INTERACTION_ID = ACCESS_RECORD_STRUCTURED_INTERACTION_ID
 
     def __init__(
         self,
-        base_url: str = SANDBOX_URL,
+        base_url: str,
+        api_key: str,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.service_interaction_id = (
-            service_interaction_id or self.DEFAULT_SERVICE_INTERACTION_ID
-        )
-        self.api_key = self._get_api_key()
+        self.api_key = api_key
+
+        if service_interaction_id is not None:
+            self.service_interaction_id = service_interaction_id
+        elif (
+            self.base_url
+            == "https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
+        ):
+            self.service_interaction_id = SDS_SANDBOX_INTERACTION_ID
+        else:
+            self.service_interaction_id = self.DEFAULT_SERVICE_INTERACTION_ID
+
+        log_details = {
+            "description": "Initialized SdsClient",
+            "base_url": self.base_url,
+            "service_interaction_id": self.service_interaction_id,
+        }
+        _logger.info(log_details)
 
     def _build_headers(self, correlation_id: str | None = None) -> dict[str, str]:
         """
@@ -139,9 +157,6 @@ class SdsClient:
             return empty_search_results
 
         asid = self._extract_device_identifier(device, FHIRSystem.NHS_SPINE_ASID)
-        party_key = self._extract_device_identifier(
-            device, FHIRSystem.NHS_MHS_PARTY_KEY
-        )
 
         # Step 2: Get Endpoint to obtain endpoint URL
         endpoint_url: str | None = None
@@ -151,7 +166,6 @@ class SdsClient:
 
         endpoint_bundle = self._query_sds(
             ods_code=ods_code,
-            party_key=party_key,
             correlation_id=correlation_id,
             timeout=timeout,
             querytype=SdsResourceType.ENDPOINT,
@@ -162,17 +176,9 @@ class SdsClient:
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
 
-    @staticmethod
-    def _get_api_key() -> str:
-        """
-        Retrieve the API key to use for SDS requests.
-        """
-        return os.environ.get("SDS_API_KEY", "")
-
     def _query_sds(
         self,
         ods_code: str,
-        party_key: str | None = None,
         correlation_id: str | None = None,
         timeout: int | None = 10,
         querytype: SdsResourceType = SdsResourceType.DEVICE,
@@ -190,15 +196,23 @@ class SdsClient:
             ],
         }
 
-        if party_key is not None:
-            params["identifier"].append(f"{FHIRSystem.NHS_MHS_PARTY_KEY}|{party_key}")
-
+        log_details = {
+            "description": "SDS request",
+            "url": url,
+            "params": params,
+        }
+        _logger.info(log_details)
         response = get(
             url,
             headers=headers,
             params=params,
             timeout=timeout or self.timeout,
         )
+        log_details = {
+            "description": "SDS response received",
+            "status_code": str(response.status_code),
+        }
+        _logger.info(log_details)
 
         try:
             response.raise_for_status()

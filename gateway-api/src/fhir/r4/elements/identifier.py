@@ -33,12 +33,6 @@ class ASIDIdentifier(Identifier, expected_system="https://fhir.nhs.uk/Id/nhsSpin
     """A FHIR R4 ASID Identifier."""
 
 
-class PartyKeyIdentifier(
-    Identifier, expected_system="https://fhir.nhs.uk/Id/nhsMhsPartyKey"
-):
-    """A FHIR R4 Party Key Identifier."""
-
-
 class AgnosticDeviceIdentifier(Identifier, expected_system="__unknown__"):
     """TODO [GPCAPIM-358]: define system once JWT Device details are understood."""
 

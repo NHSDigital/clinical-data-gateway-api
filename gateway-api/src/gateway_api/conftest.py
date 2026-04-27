@@ -17,7 +17,7 @@ from werkzeug.test import EnvironBuilder
 from gateway_api.clinical_jwt import JWT
 
 
-class NewEnvVars:
+class ScopedEnvVars:
     def __init__(self, new_env_vars: Mapping[str, str | None]) -> None:
         self.new_env_vars = new_env_vars
         self.original_env_vars = {}
@@ -25,7 +25,7 @@ class NewEnvVars:
             if key in os.environ:
                 self.original_env_vars[key] = os.environ[key]
 
-    def __enter__(self) -> "NewEnvVars":
+    def __enter__(self) -> "ScopedEnvVars":
         for key, value in self.new_env_vars.items():
             if value is None and key in os.environ:
                 del os.environ[key]

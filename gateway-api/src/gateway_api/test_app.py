@@ -1,7 +1,6 @@
 """Unit tests for the Flask app endpoints."""
 
 import json
-import os
 from collections.abc import Generator
 from copy import copy
 from typing import Any
@@ -12,40 +11,103 @@ from flask import Flask
 from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
 
-from gateway_api.app import app, get_app_host, get_app_port
+from gateway_api.app import (
+    app,
+    configure_app,
+    get_env_var,
+    log_env_vars,
+    start_app,
+)
+from gateway_api.conftest import ScopedEnvVars
 
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask]]:
-    app.config["TESTING"] = True
+    with ScopedEnvVars(
+        {
+            "FLASK_HOST": "localhost",
+            "FLASK_PORT": "5000",
+            "PDS_URL": "http://test-pds-url",
+            "SDS_URL": "http://test-sds-url",
+        }
+    ):
+        configure_app(app)
+        app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
 
 class TestAppInitialization:
-    def test_get_app_host_returns_set_host_name(self) -> None:
-        os.environ["FLASK_HOST"] = "host_is_set"
+    def test_get_env_var_when_env_var_is_set(self) -> None:
+        with ScopedEnvVars({"FLASK_HOST": "host_is_set"}):
+            actual = get_env_var("FLASK_HOST", str)
+            assert actual == "host_is_set"
 
-        actual = get_app_host()
-        assert actual == "host_is_set"
+    def test_get_env_var_raises_runtime_error_if_env_var_not_set(self) -> None:
+        with ScopedEnvVars({"FLASK_HOST": None}), pytest.raises(RuntimeError):
+            _ = get_env_var("FLASK_HOST", str)
 
-    def test_get_app_host_raises_runtime_error_if_host_name_not_set(self) -> None:
-        del os.environ["FLASK_HOST"]
+    def test_get_env_var_raises_runtime_error_if_loader_fails(self) -> None:
+        with ScopedEnvVars({"FLASK_PORT": "not_an_int"}), pytest.raises(RuntimeError):
+            _ = get_env_var("FLASK_PORT", int)
 
-        with pytest.raises(RuntimeError):
-            _ = get_app_host()
+    def test_configure_app(self) -> None:
+        test_app = Mock()
+        config = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+            "SDS_API_TOKEN": "test_sds_api_token",
+        }
 
-    def test_get_app_port_returns_set_port_number(self) -> None:
-        os.environ["FLASK_PORT"] = "8080"
+        with ScopedEnvVars(config):
+            configure_app(test_app)
 
-        actual = get_app_port()
-        assert actual == 8080
+        expected = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": 1234,
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+            "SDS_API_TOKEN": "test_sds_api_token",
+        }
+        test_app.config.update.assert_called_with(expected)
 
-    def test_get_app_port_raises_runtime_error_if_port_not_set(self) -> None:
-        del os.environ["FLASK_PORT"]
+    def test_logging_environment_variables_on_app_initialization(
+        self, mocker: MockerFixture
+    ) -> None:
+        log_mock_info = mocker.patch("gateway_api.app._logger.info")
 
-        with pytest.raises(RuntimeError):
-            _ = get_app_port()
+        config = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+            "PDS_URL": "test_pds_url",
+            "SDS_URL": "test_sds_url",
+        }
+        with ScopedEnvVars(config):
+            log_env_vars()
+
+        # Check that the environment variables were logged
+        log_mock_info.assert_called_with(
+            {
+                "description": "Initializing Flask app",
+                "env_vars": config,
+            }
+        )
+
+    def test_start_app_logs_startup_details(self) -> None:
+        test_app = Mock()
+        test_app.config = {}
+
+        test_env_vars = {
+            "FLASK_HOST": "test_host",
+            "FLASK_PORT": "1234",
+        }
+
+        with ScopedEnvVars(test_env_vars):
+            start_app(test_app)
+
+            test_app.run.assert_called_with(host="test_host", port=1234)
 
 
 class TestGetStructuredRecord:

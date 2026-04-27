@@ -7,7 +7,6 @@ from fhir import Resource
 from ..elements.identifier import (
     AgnosticDeviceIdentifier,
     ASIDIdentifier,
-    PartyKeyIdentifier,
 )
 
 
@@ -17,6 +16,6 @@ class Device(Resource, resource_type="Device"):
     model_config = ConfigDict(extra="allow")
 
     identifier: Annotated[
-        list[ASIDIdentifier | PartyKeyIdentifier | AgnosticDeviceIdentifier],
+        list[ASIDIdentifier | AgnosticDeviceIdentifier],
         Field(frozen=True, min_length=1),
     ]
