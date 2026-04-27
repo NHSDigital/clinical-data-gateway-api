@@ -404,6 +404,13 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "asid": "918999198738",
                 "display": "ODS/ASID triggering Orange Box",
             },
+            {
+                "org_ods": "A82038",
+                "party_key": "A82038-0000809",
+                "device_id": "B3B3E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "ASID_A82038",
+                "display": "ODS/ASID from PDS_INT patient",
+            },
         ]
 
         # Iterate through test data and create devices
@@ -451,6 +458,13 @@ class SdsFhirApiStub(StubBase, GetStub):
                 "party_key": "S55555-0000809",
                 "endpoint_id": "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
                 "asid": "918999198738",
+                "address": "https://orange.testlab.nhs.uk/B82617/STU3/1/gpconnect/structured/fhir/",
+            },
+            {
+                "org_ods": "A82038",
+                "party_key": "A82038-0000809",
+                "endpoint_id": "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
+                "asid": "ASID_A82038",
                 "address": "https://orange.testlab.nhs.uk/B82617/STU3/1/gpconnect/structured/fhir/",
             },
         ]
