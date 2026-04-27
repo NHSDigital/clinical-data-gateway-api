@@ -140,6 +140,7 @@ class GpProviderClient:
             headers=headers,
             data=body,
             timeout=TIMEOUT,
+            verify=False,  # TODO: change this.
         )
         log_details = {
             "description": "GPProvider FHIR API response received",
