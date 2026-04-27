@@ -145,6 +145,7 @@ class GpProviderClient:
         log_details = {
             "description": "GPProvider FHIR API response received",
             "status_code": str(response.status_code),
+            "body": response.text,  # TODO: Remove me before putting up for review
         }
         _logger.info(log_details)
 
