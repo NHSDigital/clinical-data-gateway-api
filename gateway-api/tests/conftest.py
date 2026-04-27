@@ -1,10 +1,10 @@
 """Pytest configuration and shared fixtures for gateway API tests."""
 
-import copy
 import os
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Any, cast
+from uuid import uuid4
 
 import pytest
 import requests
@@ -13,7 +13,7 @@ from fhir.constants import FHIRSystem
 DEFAULT_REQUEST_HEADERS = {
     "Content-Type": "application/fhir+json",
     "Ods-from": "CONSUMER",
-    "Ssp-TraceID": "test-trace-id",
+    "Ssp-TraceID": str(uuid4()),
 }
 
 
@@ -80,8 +80,25 @@ class Client:
 
 
 @pytest.fixture
-def simple_request_payload() -> dict[str, Any]:
-    return copy.deepcopy(SIMPLE_PAYLOAD)
+def nhs_number() -> str:
+    return _fetch_env_variable("TEST_NHS_NUMBER", str)
+
+
+@pytest.fixture
+def simple_request_payload(nhs_number: str) -> dict[str, Any]:
+    payload = {
+        "resourceType": "Parameters",
+        "parameter": [
+            {
+                "name": "patientNHSNumber",
+                "valueIdentifier": {
+                    "system": FHIRSystem.NHS_NUMBER,
+                    "value": nhs_number,
+                },
+            },
+        ],
+    }
+    return payload
 
 
 @pytest.fixture

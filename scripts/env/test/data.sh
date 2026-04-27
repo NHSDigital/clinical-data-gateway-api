@@ -14,3 +14,17 @@ get_test_user() {
       ;;
   esac
 }
+
+get_test_nhs_number() {
+  env="$1"
+  case "$env" in
+    int)
+      echo "9692140466"
+      return 0
+      ;;
+    *)
+      echo "9999999999"
+      return 0
+      ;;
+  esac
+}
