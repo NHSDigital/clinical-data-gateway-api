@@ -5,13 +5,15 @@ info:
 
 http:
   method: GET
-  url: https://internal-dev.api.service.nhs.uk/oauth2-mock/userinfo
+  url: https://{{host}}/oauth2-mock/userinfo
   auth:
     type: bearer
-    token: ""
+    token: "{{token}}"
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+
+docs: Use the `token` environment variable to set the Authorization header. Do not enter it directly into the header. This ensures that the value is never saved into git.
