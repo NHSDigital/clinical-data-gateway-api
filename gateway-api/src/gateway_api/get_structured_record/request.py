@@ -20,7 +20,7 @@ ACCESS_RECORD_STRUCTURED_INTERACTION_ID = (
 
 # The SDS Sandbox environment only returns results for this interaction ID.
 # Non-sandbox environments should use ACCESS_RECORD_STRUCTURED_INTERACTION_ID.
-# TODO: Remove this once we no longer support sandbox.
+# TODO: Remove this once we no longer support sandbox (probably in GPCAPIM-396).
 SDS_SANDBOX_INTERACTION_ID = "urn:nhs:names:services:psis:REPC_IN150016UK05"
 
 
