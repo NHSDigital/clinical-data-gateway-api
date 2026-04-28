@@ -1,4 +1,5 @@
 import base64
+import importlib
 import os
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
@@ -12,7 +13,7 @@ class TestEnvironment:
     def setup_method(self) -> None:
         # Clear any set environment variables
         os.environ.clear()
-        environment._environment = None  # noqa SLF001 - access private variable for testing purposes
+        importlib.reload(environment)
 
     def test_session_manager(self) -> None:
         environment._session_manager = (  # noqa SLF001 - access private variable for testing purposes
