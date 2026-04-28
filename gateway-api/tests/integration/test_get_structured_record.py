@@ -32,9 +32,7 @@ class TestGetStructuredRecord:
             json.dumps(simple_request_payload)
         )
         actual_response = response.json()
-        # TODO: Do this better.
-        if "id" in actual_response:
-            del actual_response["id"]
+        self.strip_randomized_fields(actual_response)
         assert actual_response == expected_response_message_for_simple_request
 
     def test_happy_path_content_type(
@@ -378,3 +376,8 @@ class TestGetStructuredRecord:
             raise ValueError(
                 f"No expected response message defined for nhs_number {nhs_number}"
             )
+
+    @staticmethod
+    def strip_randomized_fields(message: dict[str, Any]) -> None:
+        if "id" in message:
+            del message["id"]
