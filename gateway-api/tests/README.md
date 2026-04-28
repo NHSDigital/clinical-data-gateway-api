@@ -350,3 +350,26 @@ The GitHub Actions workflow (`.github/workflows/stage-2-test.yaml`) orchestrates
               │ 3. Enforce thresholds │
               └───────────────────────┘
 ```
+
+## Testing INT
+
+To test a locally deployed application against the integration environments of external services, PDS, SDS and Provider systems:
+
+* Set up secrets in `.secrets` as per the instructions in `.secrets/README.md`
+* `make env-int` - writes the `.env` file to point the application at the integration environments for each external service.
+* `make deploy` - will deploy the application, feeding the `.env` values in to its container environment.
+
+### Manual test
+
+To manually test the application against the integration environments, run the Bruno collection using the `INT.yml` environment.
+
+### Automated tests
+
+To run a subset the automated test suite, run the following commands
+
+```bash
+make env-test-int
+source .env.test
+cd gateway-api
+poetry run pytest tests/integration/test_get_structured_record.py -k happy_path
+```
