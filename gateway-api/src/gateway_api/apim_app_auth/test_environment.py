@@ -1,3 +1,4 @@
+import base64
 import os
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
@@ -25,10 +26,10 @@ class TestEnvironment:
     def test_values(self) -> None:
         os.environ["CLIENT_TIMEOUT"] = "30s"
         os.environ["APIM_TOKEN_URL"] = "token_url"  # noqa S105 - dummy value
-        os.environ["APIM_PRIVATE_KEY"] = "private_key"
-        os.environ["APIM_API_KEY"] = "api_key"
+        os.environ["PDS_API_SECRET"] = base64.b64encode(b"private_key").decode("utf-8")
+        os.environ["PDS_API_TOKEN"] = "api_key"  # noqa S105 - dummy value
         os.environ["APIM_TOKEN_EXPIRY_THRESHOLD"] = "60s"  # noqa S105 - dummy value
-        os.environ["APIM_KEY_ID"] = "key_id"
+        os.environ["PDS_API_KID"] = "key_id"
 
         environ = environment.values()
 

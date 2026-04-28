@@ -36,6 +36,8 @@ def values() -> Environment:
             base64.b64decode(get_environment_variable("PDS_API_SECRET", str))
             .decode("utf-8")
             .replace("\\n", "\n")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
             .strip()
         )
         _environment = Environment(
