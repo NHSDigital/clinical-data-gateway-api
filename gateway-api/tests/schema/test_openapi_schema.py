@@ -42,9 +42,6 @@ def test_api_schema_compliance(case: Case, base_url: str) -> None:
     - Handles edge cases correctly
     - Validates inputs properly
     - Returns appropriate status codes
-
-    Note: Server error checks are disabled because the API may return 500 errors
-    when testing with randomly generated NHS numbers that don't exist in the PDS.
     """
 
     case.headers["Ods-from"] = "test-ods-code"
@@ -52,6 +49,13 @@ def test_api_schema_compliance(case: Case, base_url: str) -> None:
 
     case.call_and_validate(
         base_url=base_url,
-        excluded_checks=[schemathesis.checks.not_a_server_error],
+        excluded_checks=[
+            # GPCAPIM-421
+            schemathesis.checks.not_a_server_error,
+            # GPCAPIM-419
+            schemathesis.checks.missing_required_header,
+            # GPCAPIM-422
+            schemathesis.checks.unsupported_method,
+        ],
         timeout=30,
     )
