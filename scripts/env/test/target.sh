@@ -12,6 +12,10 @@ get_base_url() {
       echo "http://localhost:5000"
       return 0
       ;;
+    int)
+      echo "http://gateway-api:8080" #TODO [GPCAPIM-????]: Figure out what this should be for testing int environment
+      return 0
+      ;;
     *)
       echo ""
       return 0
