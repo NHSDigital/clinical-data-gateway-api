@@ -133,9 +133,9 @@ class TestGetStructuredRecord:
     ) -> None:
         get_structured_record_response.get_json()
         cast("Mock", gateway_api.controller.Controller.__init__).assert_called_with(
-            pds_base_url="http://test-pds-url",
-            sds_base_url="http://test-sds-url",
-            sds_api_key="example-token",
+            pds_base_url=PDS_URL,
+            sds_base_url=SDS_URL,
+            sds_api_key=SDS_API_TOKEN,
         )
 
     @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
