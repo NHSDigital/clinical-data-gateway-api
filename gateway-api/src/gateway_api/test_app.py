@@ -100,6 +100,8 @@ class TestAppInitialization:
         test_env_vars = {
             "FLASK_HOST": "test_host",
             "FLASK_PORT": "1234",
+            # TODO 395 - work out where this should be set for testing
+            "PDS_URL": "test_pds_url",
         }
 
         with ScopedEnvVars(test_env_vars):
