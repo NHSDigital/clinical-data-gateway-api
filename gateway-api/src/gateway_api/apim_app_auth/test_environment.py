@@ -12,6 +12,7 @@ class TestEnvironment:
     def setup_method(self) -> None:
         # Clear any set environment variables
         os.environ.clear()
+        environment._environment = None  # noqa SLF001 - access private variable for testing purposes
 
     def test_session_manager(self) -> None:
         environment._session_manager = (  # noqa SLF001 - access private variable for testing purposes
