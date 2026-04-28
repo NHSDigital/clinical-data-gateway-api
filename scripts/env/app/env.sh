@@ -3,6 +3,7 @@ set -e
 
 source scripts/env/app/pds.sh
 source scripts/env/app/sds.sh
+source scripts/env/app/APIM_auth.sh
 source scripts/env/app/provider.sh
 source scripts/env/app/logging.sh
 
@@ -12,6 +13,8 @@ PDS_URL=$(get_pds_url "$env")
 PDS_API_TOKEN=$(get_pds_api_token "$env")
 PDS_API_SECRET=$(get_pds_api_secret "$env")
 PDS_API_KID=$(get_pds_api_kid "$env")
+
+APIM_TOKEN_URL=$(get_apim_token_url "$env")
 
 SDS_URL=$(get_sds_url "$env")
 SDS_API_TOKEN=$(get_sds_api_token "$env")
@@ -27,6 +30,10 @@ PDS_URL=$PDS_URL
 PDS_API_TOKEN=$PDS_API_TOKEN
 PDS_API_SECRET=$PDS_API_SECRET
 PDS_API_KID=$PDS_API_KID
+
+APIM_TOKEN_URL=$APIM_TOKEN_URL
+CLIENT_TIMEOUT=30s
+APIM_TOKEN_EXPIRY_THRESHOLD=30s
 
 PROVIDER_URL=$PROVIDER_URL
 

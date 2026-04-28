@@ -15,6 +15,9 @@ env-sandbox: # Create .env file that will have the app send requests to the SDS 
 env-int: # Create .env file that will have the app send requests to the SDS and PDS integration environments.
 	make _env env="int"
 
+env-PDS_int: # Create .env file that will have the app send requests to the SDS and PDS integration environments.
+	make _env env="PDS_int"
+
 env-test-local: # Create .env.test file that will have tests send requests to the local app.
 	make _env-test env="local"
 	make env-dev # Ensure unit tests run with stub environment variables

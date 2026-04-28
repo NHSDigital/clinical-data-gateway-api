@@ -27,8 +27,8 @@ def client() -> Generator[FlaskClient[Flask]]:
         {
             "FLASK_HOST": "localhost",
             "FLASK_PORT": "5000",
-            "PDS_URL": "http://test-pds-url",
-            "SDS_URL": "http://test-sds-url",
+            "PDS_URL": "https://test-pds-url",
+            "SDS_URL": "https://test-sds-url",
         }
     ):
         configure_app(app)
@@ -100,6 +100,8 @@ class TestAppInitialization:
         test_env_vars = {
             "FLASK_HOST": "test_host",
             "FLASK_PORT": "1234",
+            "PDS_URL": "https://test-pds-url",
+            "SDS_URL": "https://test-sds-url",
         }
 
         with ScopedEnvVars(test_env_vars):

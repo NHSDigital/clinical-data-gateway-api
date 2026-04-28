@@ -15,16 +15,17 @@ from gateway_api.pds.client import PdsClient
 
 
 def test_search_patient_by_nhs_number_happy_path(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
     happy_path_response = FakeResponse(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
-    mocker.patch("gateway_api.pds.client.get", return_value=happy_path_response)
+    mocker.patch(
+        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
+    )
 
-    client = PdsClient(auth_token, base_url="https://test.com")
+    client = PdsClient(base_url="https://test.com")
     patient = client.search_patient_by_nhs_number("9999999999")
 
     assert isinstance(patient, Patient)
@@ -33,7 +34,6 @@ def test_search_patient_by_nhs_number_happy_path(
 
 
 def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
@@ -42,9 +42,11 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
     gp_less_response = FakeResponse(
         status_code=200, headers={}, _json=gp_less_response_body
     )
-    mocker.patch("gateway_api.pds.client.get", return_value=gp_less_response)
+    mocker.patch(
+        "gateway_api.pds.client._make_get_request", return_value=gp_less_response
+    )
 
-    client = PdsClient(auth_token, base_url="https://test.com")
+    client = PdsClient(base_url="https://test.com")
     patient = client.search_patient_by_nhs_number("9999999999")
 
     assert isinstance(patient, Patient)
@@ -53,7 +55,6 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
 
 
 def test_search_patient_by_nhs_number_sends_expected_headers(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
@@ -61,13 +62,13 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client.get", return_value=happy_path_response
+        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
     )
 
     request_id = str(uuid4())
     correlation_id = "corr-123"
 
-    client = PdsClient(auth_token, base_url="https://test.com")
+    client = PdsClient(base_url="https://test.com")
     _ = client.search_patient_by_nhs_number(
         "9000000009",
         request_id=request_id,
@@ -75,7 +76,7 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
     )
 
     expected_headers = {
-        "Authorization": f"Bearer {auth_token}",
+        # "Authorization": f"Bearer {auth_token}",
         "Accept": "application/fhir+json",
         "X-Request-ID": request_id,
         "X-Correlation-ID": correlation_id,
@@ -85,7 +86,6 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
 
 
 def test_search_patient_by_nhs_number_generates_request_id(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
@@ -93,10 +93,10 @@ def test_search_patient_by_nhs_number_generates_request_id(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client.get", return_value=happy_path_response
+        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
     )
 
-    client = PdsClient(auth_token, base_url="https://test.com")
+    client = PdsClient(base_url="https://test.com")
 
     _ = client.search_patient_by_nhs_number("9000000009")
 
@@ -107,7 +107,6 @@ def test_search_patient_by_nhs_number_generates_request_id(
 
 
 def test_search_patient_by_nhs_number_not_found_raises_error(
-    auth_token: str,
     mocker: MockerFixture,
 ) -> None:
     not_found_response = FakeResponse(
@@ -116,8 +115,10 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         _json={"resourceType": "OperationOutcome", "issue": []},
         reason="Not Found",
     )
-    mocker.patch("gateway_api.pds.client.get", return_value=not_found_response)
-    pds = PdsClient(auth_token, base_url="https://test.com")
+    mocker.patch(
+        "gateway_api.pds.client._make_get_request", return_value=not_found_response
+    )
+    pds = PdsClient(base_url="https://test.com")
 
     with pytest.raises(
         PdsRequestFailedError, match="PDS FHIR API request failed: Not Found"
@@ -126,7 +127,6 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
 
 
 def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
@@ -138,9 +138,9 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
         headers={},
         _json=response_body_missing_nhs_number,
     )
-    mocker.patch("gateway_api.pds.client.get", return_value=response)
+    mocker.patch("gateway_api.pds.client._make_get_request", return_value=response)
 
-    client = PdsClient(auth_token, base_url="https://test.com")
+    client = PdsClient(base_url="https://test.com")
 
     with pytest.raises(PdsRequestFailedError) as error:
         client.search_patient_by_nhs_number("9999999999")
@@ -150,7 +150,6 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
 
 
 def test_search_patient_respects_url(
-    auth_token: str,
     mocker: MockerFixture,
     happy_path_pds_response_body: dict[str, Any],
 ) -> None:
@@ -158,10 +157,10 @@ def test_search_patient_respects_url(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client.get", return_value=happy_path_response
+        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
     )
 
-    client = PdsClient(auth_token, base_url="https://a.different.url/base")
+    client = PdsClient(base_url="https://a.different.url/base")
     _ = client.search_patient_by_nhs_number("9000000009")
 
     actual_url = mocked_get.call_args.args[0]

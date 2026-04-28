@@ -21,17 +21,21 @@ malformed upstream data (or malformed test fixtures) and should be corrected at 
 import logging
 import os
 import uuid
+from typing import Any
 
 import requests
 from fhir.r4 import Patient
 from pydantic import ValidationError
 
+from gateway_api.apim_app_auth import environment
+from gateway_api.apim_app_auth.request_context import set_correlation_id
 from gateway_api.common.error import PdsRequestFailedError
 
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the PDS_URL environment variable and just
 #       use the stub client
-STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
+_pds_url = os.getenv("PDS_URL", "stub")
+STUB_PDS = _pds_url.strip().lower() == "stub"
 
 if not STUB_PDS:
     from requests import get
@@ -58,7 +62,6 @@ class PdsClient:
     **Usage example**::
 
         pds = PdsClient(
-            auth_token="YOUR_ACCESS_TOKEN",
             base_url="https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4",
         )
 
@@ -70,12 +73,10 @@ class PdsClient:
 
     def __init__(
         self,
-        auth_token: str,
         base_url: str,
         timeout: int = 10,
         ignore_dates: bool = False,
     ) -> None:
-        self.auth_token = auth_token
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.ignore_dates = ignore_dates
@@ -97,7 +98,6 @@ class PdsClient:
         headers = {
             "X-Request-ID": request_id or str(uuid.uuid4()),
             "Accept": "application/fhir+json",
-            "Authorization": f"Bearer {self.auth_token}",
         }
 
         if correlation_id:
@@ -130,11 +130,21 @@ class PdsClient:
             "url": url,
         }
         _logger.info(log_details)
+
         # This normally calls requests.get, but if PDS_URL is set it uses the stub.
-        response = get(
+        # response = get(
+        #     url,
+        #     headers=headers,
+        #     params={},
+        #     timeout=timeout or self.timeout,
+        # )
+        set_correlation_id(
+            full_id=correlation_id or "no-correlation-id",
+            short_id=correlation_id or "no-correlation-id",
+        )
+        response = _make_get_request(
             url,
             headers=headers,
-            params={},
             timeout=timeout or self.timeout,
         )
         log_details = {
@@ -157,3 +167,19 @@ class PdsClient:
             ) from err
 
         return patient
+
+
+@environment.apim_authenticator().auth
+def _make_get_request(
+    session: requests.Session,
+    url: str,
+    headers: dict[str, str],
+    timeout: int,
+) -> Any:
+    response = session.get(
+        url=url,
+        headers=headers,
+        params={},
+        timeout=timeout,
+    )
+    return response

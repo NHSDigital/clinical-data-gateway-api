@@ -74,7 +74,6 @@ def test_controller_run_happy_path_returns_returns_expected_body(
 
 def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
     mocker.patch(
@@ -83,14 +82,13 @@ def test_get_pds_details_returns_provider_ods_code_for_happy_path(
     )
     controller = create_test_controller()
 
-    actual = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
+    actual = controller._get_pds_details(nhs_number)  # noqa: SLF001 testing private method
 
     assert actual == "A12345"
 
 
 def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds(
     mocker: MockerFixture,
-    auth_token: str,
 ) -> None:
     nhs_number = "9000000009"
     mocker.patch(
@@ -104,7 +102,7 @@ def test_get_pds_details_raises_no_current_provider_when_ods_code_missing_in_pds
         NoCurrentProviderError,
         match="PDS patient 9000000009 did not contain a current provider ODS code",
     ):
-        _ = controller._get_pds_details(auth_token, nhs_number)  # noqa: SLF001 testing private method
+        _ = controller._get_pds_details(nhs_number)  # noqa: SLF001 testing private method
 
 
 def test_get_sds_details_returns_consumer_and_provider_details_for_happy_path(
@@ -368,7 +366,7 @@ def test_controller_respects_pds_url(
     Test that the controller uses the PDS URL provided in the constructor.
     """
     mocked_get_pds = mocker.patch(
-        "gateway_api.pds.client.get",
+        "gateway_api.pds.client._make_get_request",
         return_value=FakeResponse(
             status_code=200, headers={}, _json=happy_path_pds_response_body
         ),
@@ -376,7 +374,7 @@ def test_controller_respects_pds_url(
     custom_pds_url = "https://a.different.url/base"
 
     controller = create_test_controller(pds_base_url=custom_pds_url)
-    controller._get_pds_details("auth_token", "9000000009")
+    controller._get_pds_details("9000000009")
 
     actual_pds_url = mocked_get_pds.call_args.args[0]
     assert actual_pds_url == "https://a.different.url/base/Patient/9000000009"

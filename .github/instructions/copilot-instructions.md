@@ -50,6 +50,16 @@ When reviewing code, ensure you compare the changes made to files to all README.
 
 Prepend `[AI-generated]` to the commit message when committing changes made by an AI agent.
 
+## Branches
+
+When creating a branch for a Jira ticket, use:
+
+`feature/<JIRA_TICKET>_<Short_description>`
+
+Example: `feature/GPCAPIM-395_Local_PDS_INT_Integration`
+
 ## Security
 
 This repository is public. Do not commit any secrets, tokens or credentials.
+
+Do not bypass file access restrictions in any way (for example, by using terminal commands to read files that Copilot tooling cannot access, such as `.env` or other local secret files).
