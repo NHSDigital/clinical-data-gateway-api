@@ -34,7 +34,8 @@ from gateway_api.common.error import PdsRequestFailedError
 # TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
 #       we should remove the PDS_URL environment variable and just
 #       use the stub client
-STUB_PDS = os.environ["PDS_URL"].lower() == "stub"
+_pds_url = os.getenv("PDS_URL", "stub")
+STUB_PDS = _pds_url.strip().lower() == "stub"
 
 if not STUB_PDS:
     from requests import get
@@ -61,7 +62,6 @@ class PdsClient:
     **Usage example**::
 
         pds = PdsClient(
-            auth_token="YOUR_ACCESS_TOKEN",
             base_url="https://sandbox.api.service.nhs.uk/personal-demographics/FHIR/R4",
         )
 

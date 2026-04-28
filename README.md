@@ -156,6 +156,9 @@ Environment variables control whether stubs are used in place of the real PDS, S
 
 | Variable | Description |
 | --- | --- |
+| `APIM_TOKEN_URL` | The URL for the APIM authentication |
+| `APIM_TOKEN_EXPIRY_THRESHOLD` | The duration which an API auth will last for |
+| `CLIENT_TIMEOUT` | Timeout used for the APIM auth request |
 | `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
 | `PDS_API_TOKEN` | Leave unset in development environment. |
 | `PDS_API_SECRET` | Leave unset in development environment. |

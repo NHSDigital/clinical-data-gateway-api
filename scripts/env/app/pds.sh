@@ -45,7 +45,9 @@ get_pds_api_secret() {
   case "$env" in
     int)
       if [[ -f "$secret_file" ]]; then
-        cat "$secret_file"
+      # Encode the secret in base64 and remove newlines
+      # to allow Docker to parse the .env
+        base64 "$secret_file" | tr -d '\n'
         return 0
       else
         printf "Warning: $secret_file not found." >&2

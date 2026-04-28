@@ -1,3 +1,4 @@
+import base64
 from typing import TypedDict
 
 from gateway_api.apim_app_auth.apim import ApimAuthenticator
@@ -31,6 +32,12 @@ _apim_authenticator: ApimAuthenticator | None = None
 def values() -> Environment:
     global _environment
     if _environment is None:
+        decoded_private_key = (
+            base64.b64decode(get_environment_variable("PDS_API_SECRET", str))
+            .decode("utf-8")
+            .replace("\\n", "\n")
+            .strip()
+        )
         _environment = Environment(
             client_timeout=get_environment_variable(
                 "CLIENT_TIMEOUT",
@@ -52,10 +59,7 @@ def values() -> Environment:
                 "PDS_API_KID",
                 str,
             ),
-            apim_private_key=get_environment_variable(
-                "PDS_API_SECRET",
-                str,
-            ),
+            apim_private_key=decoded_private_key,
         )
 
     return _environment
