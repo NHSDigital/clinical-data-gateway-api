@@ -217,7 +217,7 @@ Shared fixtures in `tests/conftest.py` are available across all test types:
 * **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
 * **`client`**: An HTTP client instance for sending requests to the APIs
 
-### Load Testing with Locust ('load/')
+## Load Testing with Locust ('load/')
 
 Load testing is performed using Locust. You have the option of running via the CLI or UI.
 You will need [Proxygen setup](../../README.md#proxygen) to run the load tests.
