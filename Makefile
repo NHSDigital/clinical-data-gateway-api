@@ -77,9 +77,6 @@ deploy: clean build # Build project artefact and deploy locally @Pipeline
 deploy-%: # Build project artefact and deploy locally as specified environment - mandatory: name=[name of the environment, e.g. 'dev'] @Pipeline
 	make env-$* deploy
 
-deploy-%: # Build project artefact and deploy locally as specified environment - mandatory: name=[name of the environment, e.g. 'dev'] @Pipeline
-	make env-$* deploy
-
 clean:: stop # Clean-up project resources (main) @Operations
 	@echo "Removing Gateway API container..."
 	@$(docker) rm gateway-api || echo "No Gateway API container currently exists."
