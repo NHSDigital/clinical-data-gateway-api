@@ -122,15 +122,14 @@ def test_sds_client_sends_correct_headers(stub: SdsFhirApiStub) -> None:
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    with ScopedEnvVars({"SDS_api_key": "example_api_key"}):
-        client = SdsClient(base_url="https://test.com", api_key="example_api_key")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 
-        correlation_id = "test-correlation-123"
-        client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
+    correlation_id = "test-correlation-123"
+    client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
-        # Check that the headers were
-        assert stub.get_headers["X-Correlation-Id"] == correlation_id
-        assert stub.get_headers["apikey"] == "example_api_key"
+    # Check that the headers were
+    assert stub.get_headers["X-Correlation-Id"] == correlation_id
+    assert stub.get_headers["apikey"] == "example_api_key"
 
 
 def test_sds_client_timeout_parameter(stub: SdsFhirApiStub) -> None:
@@ -408,7 +407,9 @@ def test_sds_client_respects_url(mocker: MockerFixture) -> None:
     _ = client.get_org_details(ods_code="A12345", get_endpoint=False)
 
     actual_url = mocked_get.call_args.args[0]
+    actual_headers = mocked_get.call_args.kwargs["headers"]
     assert actual_url == "https://a.different.url/base/Device"
+    assert actual_headers["apikey"] == "example_api_key"
 
 
 @patch("gateway_api.sds.client.SdsFhirApiStub")
