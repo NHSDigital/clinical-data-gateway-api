@@ -1,6 +1,3 @@
-# TODO: 395 update this to align with the new environment
-# variable management approach once that is implemented
-
 from typing import TypedDict
 
 from gateway_api.apim_app_auth.apim import ApimAuthenticator
@@ -44,7 +41,7 @@ def values() -> Environment:
                 str,
             ),
             apim_api_key=get_environment_variable(
-                "APIM_API_KEY",
+                "PDS_API_TOKEN",
                 str,
             ),
             apim_token_expiry_threshold=get_environment_variable(
@@ -52,11 +49,11 @@ def values() -> Environment:
                 Duration,
             ),
             apim_key_id=get_environment_variable(
-                "APIM_KEY_ID",
+                "PDS_API_KID",
                 str,
             ),
             apim_private_key=get_environment_variable(
-                "APIM_PRIVATE_KEY",
+                "PDS_API_SECRET",
                 str,
             ),
         )
