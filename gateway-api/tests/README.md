@@ -214,7 +214,6 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 Shared fixtures in `tests/conftest.py` are available across all test types:
 
 * **`base_url`**: The base URL of the deployed Lambda function (from `BASE_URL` environment variable highlighted above)
-* **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
 * **`client`**: An HTTP client instance for sending requests to the APIs
 
 ## Load Testing with Locust ('load/')
