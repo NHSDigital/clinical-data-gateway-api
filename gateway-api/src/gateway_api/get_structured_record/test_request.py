@@ -5,6 +5,7 @@ from flask import Request
 
 from gateway_api.common.error import (
     MissingOrEmptyHeaderError,
+    UnsupportedMediaTypeError,
 )
 from gateway_api.conftest import create_mock_request
 from gateway_api.get_structured_record.request import GetStructuredRecordRequest
@@ -117,4 +118,34 @@ class TestGetStructuredRecordRequest:
             MissingOrEmptyHeaderError,
             match='Missing or empty required header "Ssp-TraceID"',
         ):
+            GetStructuredRecordRequest(request=mock_request)
+
+    def test_missing_content_type_header_is_accepted(
+        self, valid_simple_request_payload: dict[str, Any]
+    ) -> None:
+        """Test that a missing Content-Type header does not raise an error."""
+        headers = {
+            "Content-Type": "",
+            "Ssp-TraceID": "test-trace-id",
+            "ODS-from": "test-ods",
+        }
+        mock_request = create_mock_request(headers, valid_simple_request_payload)
+
+        GetStructuredRecordRequest(request=mock_request)
+
+    def test_raises_unsupported_media_type_when_content_type_is_invalid(
+        self, valid_simple_request_payload: dict[str, Any]
+    ) -> None:
+        """
+        Test that UnsupportedMediaTypeError is raised when Content-Type
+        is not "application/fhir+json".
+        """
+        headers = {
+            "Content-Type": "application/json",
+            "Ssp-TraceID": "test-trace-id",
+            "ODS-from": "test-ods",
+        }
+        mock_request = create_mock_request(headers, valid_simple_request_payload)
+
+        with pytest.raises(UnsupportedMediaTypeError):
             GetStructuredRecordRequest(request=mock_request)

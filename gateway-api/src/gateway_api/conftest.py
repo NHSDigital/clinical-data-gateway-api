@@ -75,11 +75,12 @@ class FakeResponse:
 
 def create_mock_request(headers: dict[str, str], body: dict[str, Any]) -> Request:
     """Create a proper Flask Request object with headers and JSON body."""
+    content_type = headers.get("Content-Type", "application/fhir+json")
     builder = EnvironBuilder(
         method="POST",
         path="/patient/$gpc.getstructuredrecord",
         data=json.dumps(body),
-        content_type="application/fhir+json",
+        content_type=content_type,
         headers=headers,
     )
     env = builder.get_environ()

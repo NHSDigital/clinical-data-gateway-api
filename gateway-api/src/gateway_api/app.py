@@ -119,7 +119,7 @@ def get_structured_record() -> Response:
         log_error(e)
         response.add_error_response(e)
     except Exception:
-        error = UnexpectedError(traceback=traceback.format_exc())
+        error = UnexpectedError()
         log_error(error)
         response.add_error_response(error)
 

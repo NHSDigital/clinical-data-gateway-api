@@ -62,7 +62,7 @@ class TestGetStructuredRecordResponse:
         assert actual == 200, f"Expected status code to be 200, but got {actual}"
 
     def test_add_error_response_adds_error_response_body(self) -> None:
-        error = UnexpectedError(traceback="something broke")
+        error = UnexpectedError()
 
         response = GetStructuredRecordResponse()
         response.add_error_response(error)
@@ -73,7 +73,7 @@ class TestGetStructuredRecordResponse:
                 {
                     "severity": "error",
                     "code": "exception",
-                    "diagnostics": "Internal Server Error: something broke",
+                    "diagnostics": "Internal Server Error",
                 }
             ],
         }
