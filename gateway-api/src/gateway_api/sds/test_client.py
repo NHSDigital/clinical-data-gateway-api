@@ -36,7 +36,6 @@ def test_sds_client_get_org_details_success(stub: SdsFhirApiStub) -> None:
     Test SdsClient can successfully look up organization details.
 
     :param stub: SDS stub fixture.
-    :param mock_flask: Mock Flask app fixture.
     """
     client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 

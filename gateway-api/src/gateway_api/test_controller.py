@@ -1,7 +1,6 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 from fhir.r4 import (
@@ -23,13 +22,6 @@ from gateway_api.conftest import FakeResponse, create_mock_request
 from gateway_api.controller import Controller
 from gateway_api.get_structured_record import GetStructuredRecordRequest
 from gateway_api.sds import SdsSearchResults
-
-
-@pytest.fixture
-def mock_flask() -> Mock:
-    mock_flask = Mock()
-    mock_flask.config = {"SDS_API_TOKEN": "example"}
-    return mock_flask
 
 
 def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
