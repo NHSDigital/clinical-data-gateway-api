@@ -476,22 +476,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "clinical-data-common"
-version = "0.1.0"
-description = "Common code used across various clinical data API products"
-optional = false
-python-versions = ">3.13,<4.0.0"
-groups = ["main"]
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/NHSDigital/clinical-data-common.git"
-reference = "v0.1.0"
-resolved_reference = "b2fbfe7d723238bb67a2b6423c04271d87ea456b"
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -4012,4 +3996,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<4.0.0"
-content-hash = "a5b5529fa35b49450f439bf7d514f82002b101f1fb1da37ddb70f68b03777594"
+content-hash = "387b41cadd800f724776dcdb115860c07e62f72e9b69a295a6189c6538365c1b"
