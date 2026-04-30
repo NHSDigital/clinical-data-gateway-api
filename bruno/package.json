@@ -1,7 +1,7 @@
 {
   "name": "gateway-bruno",
   "version": "0.0.1",
-  "description": "Packages requried for using Bruno in Gateway API",
+  "description": "Packages required for using Bruno in Gateway API",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,7 +18,7 @@
     "@usebruno/cli": {
       "axios": "$axios",
       "uuid": "$uuid",
-      "fast-xml-parser": "$fast-xml-parser"
+      "fast-xml-parser": "^5.7.2"
     }
   }
 }
