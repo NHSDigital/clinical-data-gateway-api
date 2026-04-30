@@ -48,6 +48,7 @@ gpprovider
 HAPI
 healthcheck
 htmlcov
+HSCN
 igorshubovych
 isort
 jdkato

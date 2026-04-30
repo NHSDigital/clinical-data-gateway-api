@@ -16,9 +16,10 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
         assert response.status_code == 200
 
@@ -27,9 +28,10 @@ class TestGetStructuredRecord:
         client: Client,
         simple_request_payload: dict[str, Any],
         expected_response_message_for_simple_request: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
         actual_response = response.json()
         self.strip_randomized_fields(actual_response)
@@ -39,9 +41,10 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
@@ -49,10 +52,12 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         headers_to_be_mirrored = {"Ssp-TraceID": "a_trace_id"}
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload), headers=headers_to_be_mirrored
+            json.dumps(simple_request_payload),
+            headers=headers_to_be_mirrored | ods_header,
         )
         for header_key, header_value in headers_to_be_mirrored.items():
             assert response.headers.get(header_key) == header_value

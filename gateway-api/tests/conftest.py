@@ -118,6 +118,15 @@ def headers(env: str, request: pytest.FixtureRequest) -> dict[str, str]:
 
 
 @pytest.fixture
+def ods_header() -> dict[str, str]:
+    try:
+        ods_code = _fetch_env_variable("CONSUMER_ODS_CODE", str)
+    except ValueError:
+        ods_code = "CONSUMER"
+    return {"Ods-from": ods_code}
+
+
+@pytest.fixture
 def client(
     base_url: str,
     health_endpoint: str,

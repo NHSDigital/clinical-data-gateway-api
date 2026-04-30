@@ -21,6 +21,8 @@ TARGET_ENV=$(get_target_env "$env")
 REMOTE_TEST_USERNAME=$(get_test_user "$env")
 TEST_NHS_NUMBER=$(get_test_nhs_number "$env")
 
+CONSUMER_ODS_CODE=$(get_consumer_ods_code "$env")
+
 ENV_FILE=".env.test"
 
 cat > "$ENV_FILE" <<EOF
@@ -36,6 +38,7 @@ TARGET_ENV=$TARGET_ENV
 
 REMOTE_TEST_USERNAME=$REMOTE_TEST_USERNAME
 TEST_NHS_NUMBER=$TEST_NHS_NUMBER
+CONSUMER_ODS_CODE=$CONSUMER_ODS_CODE
 set +a
 EOF
 
