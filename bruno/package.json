@@ -10,11 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "@usebruno/cli": "^3.2.2",
-    "axios": "^1.15.0"
+    "axios": "^1.15.0",
+    "uuid": "^14.0.0",
+    "fast-xml-parser": "^5.7.2"
   },
   "overrides": {
     "@usebruno/cli": {
-      "axios": "$axios"
+      "axios": "$axios",
+      "uuid": "$uuid",
+      "fast-xml-parser": "$fast-xml-parser"
     }
   }
 }
