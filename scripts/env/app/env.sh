@@ -17,6 +17,7 @@ SDS_URL=$(get_sds_url "$env")
 SDS_API_TOKEN=$(get_sds_api_token "$env")
 
 PROVIDER_URL=$(get_provider_url "$env")
+VERIFY_PROVIDER_CERTS=$(get_verify_provider_certs "$env")
 
 LOG_LEVEL=$(get_log_level "$env")
 
@@ -29,6 +30,7 @@ PDS_API_SECRET=$PDS_API_SECRET
 PDS_API_KID=$PDS_API_KID
 
 PROVIDER_URL=$PROVIDER_URL
+VERIFY_PROVIDER_CERTS=$VERIFY_PROVIDER_CERTS
 
 SDS_URL=$SDS_URL
 SDS_API_TOKEN=$SDS_API_TOKEN

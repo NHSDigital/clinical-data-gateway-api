@@ -14,3 +14,17 @@ get_provider_url() {
       ;;
   esac
 }
+
+get_verify_provider_certs() {
+  env="$1"
+  case "$env" in
+    int)
+      echo "false"
+      return 0
+      ;;
+    *)
+      echo "true"
+      return 0
+      ;;
+  esac
+}

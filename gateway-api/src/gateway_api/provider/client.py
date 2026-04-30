@@ -129,18 +129,18 @@ class GpProviderClient:
         base_endpoint = self.provider_endpoint.rstrip("/") + "/"
         url = urljoin(base_endpoint, self.endpoint_path)
 
+        # INT provider system certs are not accepted by requests library,
+        # so we disable SSL verification for the integration environment for now.
+        verify_certs = os.environ.get("VERIFY_PROVIDER_CERTS", "true").lower() == "true"
         log_details = {
             "description": "GPProvider FHIR API request",
             "url": url,
+            "verify_certs": verify_certs,
         }
         _logger.info(log_details)
 
         response = post(
-            url,
-            headers=headers,
-            data=body,
-            timeout=TIMEOUT,
-            verify=False,  # TODO: change this.
+            url, headers=headers, data=body, timeout=TIMEOUT, verify=verify_certs
         )
         log_details = {
             "description": "GPProvider FHIR API response received",
