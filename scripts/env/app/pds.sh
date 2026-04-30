@@ -9,7 +9,6 @@ get_pds_url() {
       return 0
       ;;
     int)
-      # echo "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/" # TODO [GPCAPIM-395]: Remove stubbing
       echo "stub"
       return 0
       ;;

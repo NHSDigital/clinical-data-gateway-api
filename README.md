@@ -116,10 +116,6 @@ The dev container sits on the same network, `gateway-local`, as [the `gateway-ap
 
 - A container runtime such as [Docker](https://docs.docker.com/engine/install/) (Linux/WSL) or [Colima](https://github.com/abiosoft/colima) (macOS)
 
-### External Dependencies
-
-This project depends on the [clinical-data-common](https://github.com/NHSDigital/clinical-data-common) library for shared utilities. It is declared as a Git dependency in `gateway-api/pyproject.toml` and installed automatically by Poetry.
-
 ## Usage
 
 The project uses `make` targets to build, deploy, and manage the application. Run these from the repository root:
@@ -157,11 +153,11 @@ Environment variables control whether stubs are used in place of the real PDS, S
 | Variable | Description |
 | --- | --- |
 | `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
-| `PDS_API_TOKEN`| Leave unset in development environment. |
-| `PDS_API_SECRET`| Leave unset in development environment. |
-| `PDS_API_KID`| Leave unset in development environment. |
+| `PDS_API_TOKEN` | Leave unset in development environment. |
+| `PDS_API_SECRET` | Leave unset in development environment. |
+| `PDS_API_KID` | Leave unset in development environment. |
 | `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
-| `SDS_API_TOKEN`| Leave unset in development environment. |
+| `SDS_API_TOKEN` | Leave unset in development environment. |
 | `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
 | `CDG_DEBUG` | `true`, return additional debug information when the call to the GP provider returns an error. |
 

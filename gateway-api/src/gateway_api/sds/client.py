@@ -16,7 +16,9 @@ from typing import Any
 from fhir import Resource
 from fhir.constants import FHIRSystem
 from fhir.r4 import Bundle, Device, Endpoint
-from requests import HTTPError
+from requests import HTTPError, Response
+from requests import get as external_sds_get
+from stubs import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
 from gateway_api.get_structured_record import (
@@ -25,17 +27,21 @@ from gateway_api.get_structured_record import (
 )
 from gateway_api.sds.search_results import SdsSearchResults
 
-# TODO [GPCAPIM-359]: Once stub servers/containers made for PDS, SDS and provider
-#       we should remove the SDS_URL environment variable and just
-#       use the stub client
-STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
-if not STUB_SDS:
-    from requests import get
-else:
-    from stubs import SdsFhirApiStub
 
-    sds = SdsFhirApiStub()
-    get = sds.get  # type: ignore
+def get(
+    url: str,
+    headers: dict[str, str],
+    params: dict[str, str],
+    timeout: int,
+) -> Response:
+    STUB_SDS = os.environ["SDS_URL"].lower() == "stub"
+    if not STUB_SDS:
+        return external_sds_get(url, headers=headers, params=params, timeout=timeout)
+    else:
+        return SdsFhirApiStub().get(
+            url, headers=headers, params=params, timeout=timeout
+        )
+
 
 _logger = logging.getLogger(__name__)
 
@@ -83,12 +89,13 @@ class SdsClient:
     def __init__(
         self,
         base_url: str,
+        api_key: str,
         timeout: int = 10,
         service_interaction_id: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.api_key = self._get_api_key()
+        self.api_key = api_key
 
         if service_interaction_id is not None:
             self.service_interaction_id = service_interaction_id
@@ -168,19 +175,6 @@ class SdsClient:
             endpoint_url = str(endpoint.address).strip()
 
         return SdsSearchResults(asid=asid, endpoint=endpoint_url)
-
-    @staticmethod
-    def _get_api_key() -> str:
-        """
-        Retrieve the API key to use for SDS requests.
-
-        This is a placeholder at present because we don't have a real API key.
-        Ultimately it will probably obtain the key from AWS secrets
-        """
-
-        # TODO [GPCAPIM-366]: Obtain key from AWS secrets
-        # DO NOT PUT A REAL KEY HERE, IT WILL BE VISIBLE ON GITHUB
-        return "test_api_key_DO_NOT_REPLACE_HERE"
 
     def _query_sds(
         self,

@@ -3,7 +3,7 @@
 import json
 from collections.abc import Generator
 from copy import copy
-from typing import Any
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -11,6 +11,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from pytest_mock import MockerFixture
 
+import gateway_api
 from gateway_api.app import (
     app,
     configure_app,
@@ -20,6 +21,10 @@ from gateway_api.app import (
 )
 from gateway_api.conftest import ScopedEnvVars
 
+PDS_URL = "http://test-pds-url"
+SDS_URL = "http://test-sds-url"
+SDS_API_TOKEN = "example-token"  # noqa: S105 Not a real token
+
 
 @pytest.fixture
 def client() -> Generator[FlaskClient[Flask]]:
@@ -27,8 +32,9 @@ def client() -> Generator[FlaskClient[Flask]]:
         {
             "FLASK_HOST": "localhost",
             "FLASK_PORT": "5000",
-            "PDS_URL": "http://test-pds-url",
-            "SDS_URL": "http://test-sds-url",
+            "PDS_URL": PDS_URL,
+            "SDS_URL": SDS_URL,
+            "SDS_API_TOKEN": SDS_API_TOKEN,
         }
     ):
         configure_app(app)
@@ -58,6 +64,7 @@ class TestAppInitialization:
             "FLASK_PORT": "1234",
             "PDS_URL": "test_pds_url",
             "SDS_URL": "test_sds_url",
+            "SDS_API_TOKEN": "test_sds_api_token",
         }
 
         with ScopedEnvVars(config):
@@ -68,6 +75,7 @@ class TestAppInitialization:
             "FLASK_PORT": 1234,
             "PDS_URL": "test_pds_url",
             "SDS_URL": "test_sds_url",
+            "SDS_API_TOKEN": "test_sds_api_token",
         }
         test_app.config.update.assert_called_with(expected)
 
@@ -117,6 +125,18 @@ class TestGetStructuredRecord:
     ) -> None:
         actual_bundle = get_structured_record_response.get_json()
         assert actual_bundle == valid_simple_response_payload
+
+    @pytest.mark.usefixtures("mock_controller_constructor")
+    def test_valid_get_structured_record_request_calls_controller_correctly(
+        self,
+        get_structured_record_response: Flask,
+    ) -> None:
+        get_structured_record_response.get_json()
+        cast("Mock", gateway_api.controller.Controller.__init__).assert_called_with(
+            pds_base_url=PDS_URL,
+            sds_base_url=SDS_URL,
+            sds_api_key=SDS_API_TOKEN,
+        )
 
     @pytest.mark.usefixtures("mock_positive_return_value_from_controller_run")
     def test_valid_get_structured_record_request_returns_200(
@@ -290,6 +310,13 @@ class TestGetStructuredRecord:
         mocker.patch(
             "gateway_api.controller.Controller.run", return_value=positive_response
         )
+
+    @staticmethod
+    @pytest.fixture
+    def mock_controller_constructor(
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("gateway_api.controller.Controller.__init__", return_value=None)
 
     @staticmethod
     @pytest.fixture

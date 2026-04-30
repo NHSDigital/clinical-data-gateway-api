@@ -114,31 +114,17 @@ gateway-api/
 Specified under `[tool.poetry.dependencies]` in `pyproject.toml`:
 
 | Package | Description |
-|---|---|
+| --- | --- |
 | `flask` | Web framework powering the Gateway API |
 | `requests` | HTTP client for calling PDS, SDS, and GP provider APIs |
 | `types-flask` | Type stubs for Flask (used by mypy) |
-| `clinical-data-common` | Shared NHSE library for common utilities ([GitHub repo](https://github.com/NHSDigital/clinical-data-common)) |
-
-The `clinical-data-common` dependency is pinned to a Git tag in `pyproject.toml`:
-
-```toml
-[tool.poetry.dependencies]
-clinical-data-common = { git = "https://github.com/NHSDigital/clinical-data-common.git", tag = "v0.1.0" }
-```
-
-To update it to a newer tag or version:
-
-```bash
-poetry update clinical-data-common
-```
 
 ### Dev Dependencies
 
 Specified under `[dependency-groups] dev` in `pyproject.toml`:
 
 | Package | Description |
-|---|---|
+| --- | --- |
 | `mypy` | Static type checker (strict mode enabled) |
 | `pytest` | Test runner |
 | `pytest-bdd` | BDD-style acceptance tests with Gherkin feature files |

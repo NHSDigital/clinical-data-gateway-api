@@ -27,4 +27,4 @@ class Patients:
     )
     ALICE_JONES_9999999999 = load_patient("alice_jones_9999999999.json")
     ORANGE_BOX_TRIGGER_9690937278 = load_patient("orange_box_trigger_9690937278.json")
-    EMIS_INT_TEST_9692140466 = load_patient("emis_int_test_9692140466.json")
+    INT_9692140466 = load_patient("int_9692140466.json")
