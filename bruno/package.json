@@ -18,7 +18,7 @@
     "@usebruno/cli": {
       "axios": "$axios",
       "uuid": "$uuid",
-      "fast-xml-parser": "^5.7.2"
+      "fast-xml-parser": "$fast-xml-parser"
     }
   }
 }
