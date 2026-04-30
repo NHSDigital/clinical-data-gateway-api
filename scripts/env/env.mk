@@ -1,6 +1,9 @@
 .PHONY: env env-% _env
 
-env env-dev: # Create .env file with environment variables for development environment (stubs)
+env: # Create .env file with environment variables for development environment (stubs)
+	make _env env="dev"
+
+env-dev: # Create .env file with environment variables for development environment (stubs)
 	make _env env="dev"
 
 env-ci: # Create .env file with environment variables for CI environment (stubs)
