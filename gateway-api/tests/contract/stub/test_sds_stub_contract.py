@@ -238,11 +238,12 @@ class TestGetEndpointBundleSuccess:
         assert body["type"] == "searchset"
         assert body["total"] == len(body["entry"])
 
-        assert len(body["entry"]) == 4
+        assert len(body["entry"]) == 5
         endpoint_ids = [
             "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
             "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
             "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
+            "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
             "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
         ]
         for i in range(len(endpoint_ids)):

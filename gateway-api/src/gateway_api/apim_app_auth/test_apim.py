@@ -37,22 +37,26 @@ class TestApimAuthenticator:
 
         return wrapper
 
-    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.APIMAppAuthStub")
     @patch("gateway_api.apim_app_auth.apim.jwt.encode")
-    def test_auth(self, mock_jwt: MagicMock, mock_session_manager: MagicMock) -> None:
-        mock_session_manager.with_session = self.mock_with_session
-
+    def test_auth(
+        self, mock_jwt: MagicMock, mock_apmim_app_auth_stub: MagicMock
+    ) -> None:
         expected_client_assertion = "client_assertion"
         mock_jwt.return_value = expected_client_assertion
 
         expected_access_token = "access_token"  # noqa S105 - Dummy value
         expected_expires_in = timedelta(seconds=5)
 
-        self.mock_session.post.return_value.json.return_value = {
+        (
+            mock_apmim_app_auth_stub.return_value.session_post.return_value.json.return_value
+        ) = {
             "access_token": expected_access_token,
             "expires_in": expected_expires_in.total_seconds(),
         }
-        self.mock_session.post.return_value.status_code = 200
+        mock_apmim_app_auth_stub.return_value.session_post.return_value.status_code = (
+            200
+        )
 
         expected_api_key = "api_key"
         expected_token_endpoint = "token_endpoint"  # noqa S106 - Dummy value
@@ -63,7 +67,7 @@ class TestApimAuthenticator:
             api_key=expected_api_key,
             token_validity_threshold=timedelta(minutes=5),
             token_endpoint=expected_token_endpoint,
-            session_manager=mock_session_manager,
+            session_manager=Mock(),
         )
 
         @apim_authenticator.auth
@@ -128,24 +132,26 @@ class TestApimAuthenticator:
 
         method()
 
-    @patch("gateway_api.apim_app_auth.http.SessionManager")
+    @patch("gateway_api.apim_app_auth.apim.APIMAppAuthStub")
     @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_existing_invalid_token(
-        self, mock_jwt: MagicMock, mock_session_manager: MagicMock
+        self, mock_jwt: MagicMock, mock_apmim_app_auth_stub: MagicMock
     ) -> None:
-        mock_session_manager.with_session = self.mock_with_session
-
         expected_client_assertion = "client_assertion"
         mock_jwt.return_value = expected_client_assertion
 
         expected_access_token = "access_token"  # noqa S105 - Dummy value
         expected_expires_in = timedelta(seconds=5)
 
-        self.mock_session.post.return_value.json.return_value = {
+        (
+            mock_apmim_app_auth_stub.return_value.session_post.return_value.json.return_value
+        ) = {
             "access_token": expected_access_token,
             "expires_in": expected_expires_in.total_seconds(),
         }
-        self.mock_session.post.return_value.status_code = 200
+        mock_apmim_app_auth_stub.return_value.session_post.return_value.status_code = (
+            200
+        )
 
         expected_api_key = "api_key"
         expected_token_endpoint = "token_endpoint"  # noqa S106 - Dummy value
@@ -156,7 +162,7 @@ class TestApimAuthenticator:
             api_key=expected_api_key,
             token_validity_threshold=timedelta(minutes=5),
             token_endpoint=expected_token_endpoint,
-            session_manager=mock_session_manager,
+            session_manager=Mock(),
         )
 
         apim_authenticator._access_token = {  # noqa SLF001 - Private access to support testing
@@ -223,17 +229,21 @@ class TestApimAuthenticator:
         with pytest.raises(ApimAuthenticationException):
             method()
 
+    @patch("gateway_api.apim_app_auth.apim.APIMAppAuthStub")
     @patch("gateway_api.apim_app_auth.http.SessionManager")
     @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_session_post_raises_exception(
-        self, mock_jwt: MagicMock, mock_session_manager: MagicMock
+        self,
+        mock_jwt: MagicMock,
+        mock_session_manager: MagicMock,
+        mock_apim_app_auth_stub: MagicMock,
     ) -> None:
         mock_session_manager.with_session = self.mock_with_session
 
         mock_jwt.return_value = "client_assertion"
 
-        self.mock_session.post.side_effect = requests.RequestException(
-            "Connection failed"
+        mock_apim_app_auth_stub.return_value.session_post.side_effect = (
+            requests.RequestException("Connection failed")
         )
 
         apim_authenticator = ApimAuthenticator(

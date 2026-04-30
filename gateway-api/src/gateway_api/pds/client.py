@@ -169,6 +169,7 @@ class PdsClient:
         return patient
 
 
+# TODO [GPCAPIM-359]: consider moving this to a nested method
 @environment.apim_authenticator().auth
 def _make_get_request(
     session: requests.Session,

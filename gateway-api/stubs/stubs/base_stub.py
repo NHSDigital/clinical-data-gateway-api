@@ -11,7 +11,7 @@ from abc import abstractmethod
 from http.client import responses as http_responses
 from typing import Any, Protocol
 
-from requests import Response
+from requests import Response, Session
 from requests.structures import CaseInsensitiveDict
 
 
@@ -113,7 +113,7 @@ class PostStub(Protocol):
 
     @property
     @abstractmethod
-    def post_data(self) -> str:
+    def post_data(self) -> str | dict[str, str]:
         """
         Last post request body stub.post was called with. Empty if not called yet.
         """
@@ -123,4 +123,25 @@ class PostStub(Protocol):
     def post_timeout(self) -> int | None:
         """
         Last timeout value stub.post was called with. None if not called yet.
+        """
+
+
+class SessionPostStub(PostStub, Protocol):
+    @abstractmethod
+    def session_post(
+        self,
+        session: Session,
+        url: str,
+        data: dict[str, str],
+        **kwargs: Any,
+    ) -> Response:
+        """
+        Handle HTTP POST requests for the stub, using a provided Session.
+        """
+
+    @property
+    @abstractmethod
+    def post_session(self) -> Session:
+        """
+        Last Session stub.session_post was called with. None if not called yet.
         """

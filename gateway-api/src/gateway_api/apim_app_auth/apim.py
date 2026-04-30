@@ -1,5 +1,6 @@
 import functools
 import logging
+import os
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
@@ -7,10 +8,34 @@ from typing import Any, TypedDict
 
 import jwt
 import requests
+from stubs.apim_app_auth.stub import APIMAppAuthStub
 
 from gateway_api.apim_app_auth.http import RequestMethod, SessionManager
 
 _logger = logging.getLogger(__name__)
+
+
+# TODO [GPCAPIM-359]: change this to a new STUB_APIM_APP_AUTH env var
+_pds_url = os.getenv("APIM_TOKEN_URL", "not stub")
+STUB_APIM_APP_AUTH = _pds_url.strip().lower() == "stub"
+
+
+def _make_session_post(
+    session: requests.Session, endpoint: str, data: dict[str, str]
+) -> requests.Response:
+    print("DaveW: in _make_session_post STUB_APIM_APP_AUTH", STUB_APIM_APP_AUTH)
+    if not STUB_APIM_APP_AUTH:
+        print("DaveW: in if ", session.post)
+        return session.post(endpoint, data=data)
+    else:
+        stub = APIMAppAuthStub()
+        print("Dave W: in _make_session_post, stub:", stub.session_post)
+        print(
+            "Dave W: in _make_session_post, session_post:",
+            stub.session_post(session, endpoint, data),
+        )
+        response = stub.session_post(session, endpoint, data)
+        return response
 
 
 class ApimAuthenticationException(Exception):
@@ -107,7 +132,8 @@ class ApimAuthenticator:
 
             _logger.debug("Sending token request with created session.")
 
-            response = session.post(
+            response = _make_session_post(
+                session,
                 self._token_endpoint,
                 data={
                     "grant_type": "client_credentials",

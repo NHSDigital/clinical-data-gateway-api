@@ -12,7 +12,7 @@ from pact import Verifier
 from tests.conftest import Client
 
 
-def test_provider_honors_consumer_contract(headers: Any, client: Client) -> None:
+def test_provider_honours_consumer_contract(headers: Any, client: Client) -> None:
 
     host = urlparse(client.base_url).hostname
 
