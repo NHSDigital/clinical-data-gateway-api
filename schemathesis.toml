@@ -1,2 +1,8 @@
 [generation]
 mode = "all"
+
+[checks.missing_required_header]
+expected-statuses = [400]
+
+[checks.negative_data_rejection]
+expected-statuses = [400, 401, 403, 404, 406, 415, 422, 428, "5xx"]

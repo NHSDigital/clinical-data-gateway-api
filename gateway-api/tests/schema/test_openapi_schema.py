@@ -53,7 +53,7 @@ def test_api_schema_compliance(case: Case, base_url: str) -> None:
             # GPCAPIM-421
             schemathesis.checks.not_a_server_error,
             # GPCAPIM-419
-            schemathesis.checks.missing_required_header,
+            # schemathesis.checks.missing_required_header,
             # GPCAPIM-422
             schemathesis.checks.unsupported_method,
         ],

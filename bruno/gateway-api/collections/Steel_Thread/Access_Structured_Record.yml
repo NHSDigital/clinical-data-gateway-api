@@ -6,6 +6,9 @@ info:
 http:
   method: POST
   url: "{{base_url}}/patient/$gpc.getstructuredrecord"
+  headers:
+  - name: Content-Type
+    value: application/fhir+json
   body:
     type: json
     data: |-

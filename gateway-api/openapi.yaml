@@ -238,6 +238,30 @@ paths:
                         diagnostics:
                           type: string
                           example: "Patient not found"
+        '415':
+          description: Unsupported Media Type - Content-Type header must be "application/fhir+json"
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                properties:
+                  resourceType:
+                    type: string
+                    example: "OperationOutcome"
+                  issue:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        severity:
+                          type: string
+                          example: "error"
+                        code:
+                          type: string
+                          example: "invalid"
+                        diagnostics:
+                          type: string
+                          example: 'Unsupported "Content-Type". Expected "application/fhir+json".'
         '500':
           description: Internal server error
           content:
