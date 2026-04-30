@@ -1,12 +1,12 @@
 """Integration tests for the gateway API using pytest."""
 
 import json
+import os
 from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
 from requests import Response
-from stubs.data.bundles import Bundles
 
 from tests.conftest import Client
 
@@ -367,20 +367,18 @@ class TestGetStructuredRecord:
     def expected_response_message_for_simple_request(
         self, nhs_number: str
     ) -> dict[str, Any]:
-        # TODO: Do this better.
-        if nhs_number == "9999999999":
-            return Bundles.ALICE_JONES_9999999999
-        elif nhs_number == "9692140466":
-            with open("tests/integration/data/emis_int_test_9692140466.json") as f:
-                expected_response = cast(
-                    "dict[str, Any]", json.load(f)
-                )  # TODO: Avoid cast here
-            del expected_response["id"]
-            return expected_response
-        else:
-            raise ValueError(
-                f"No expected response message defined for nhs_number {nhs_number}"
-            )
+        test_patient_file_path = self.find_test_patient_file(nhs_number)
+        with open(test_patient_file_path) as f:
+            expected_response = cast("dict[str, Any]", json.load(f))
+        return expected_response
+
+    @staticmethod
+    def find_test_patient_file(nhs_number: str) -> str:
+        filenames = os.listdir("tests/integration/data/")
+        for filename in filenames:
+            if nhs_number in filename:
+                return "tests/integration/data/" + filename
+        raise ValueError(f"No test patient file defined for nhs_number {nhs_number}")
 
     @staticmethod
     def strip_randomized_fields(message: dict[str, Any]) -> None:
