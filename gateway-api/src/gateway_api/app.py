@@ -37,6 +37,7 @@ def configure_app(app: Flask) -> None:
         "FLASK_PORT": get_env_var("FLASK_PORT", int),
         "PDS_URL": get_env_var("PDS_URL", str),
         "SDS_URL": get_env_var("SDS_URL", str),
+        "SDS_API_TOKEN": get_env_var("SDS_API_TOKEN", str),
     }
     app.config.update(config)
 
@@ -108,7 +109,9 @@ def get_structured_record() -> Response:
     try:
         get_structured_record_request = GetStructuredRecordRequest(request)
         controller = Controller(
-            pds_base_url=app.config["PDS_URL"], sds_base_url=app.config["SDS_URL"]
+            pds_base_url=app.config["PDS_URL"],
+            sds_base_url=app.config["SDS_URL"],
+            sds_api_key=app.config["SDS_API_TOKEN"],
         )
         provider_response = controller.run(request=get_structured_record_request)
         response.add_provider_response(provider_response)

@@ -45,8 +45,13 @@ def _create_patient(nhs_number: str, gp_ods_code: str | None) -> Patient:
 def create_test_controller(
     pds_base_url: str = "https://example.test/pds",
     sds_base_url: str = "https://example.test/sds",
+    sds_api_key: str = "example_sds_api_key",
 ) -> Controller:
-    return Controller(pds_base_url=pds_base_url, sds_base_url=sds_base_url)
+    return Controller(
+        pds_base_url=pds_base_url,
+        sds_base_url=sds_base_url,
+        sds_api_key=sds_api_key,
+    )
 
 
 def test_controller_run_happy_path_returns_200_status_code(
@@ -382,61 +387,35 @@ def test_controller_respects_pds_url(
     assert actual_pds_url == "https://a.different.url/base/Patient/9000000009"
 
 
-def test_controller_respects_sds_url(
+def test_controller_respects_sds_vars(
     mocker: MockerFixture,
 ) -> None:
     """
-    Test that the controller uses the SDS URL provided in the constructor.
+    Test that the controller uses the SDS URL and API token provided in the constructor.
     """
-    device_bundle = {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "total": 1,
-        "entry": [
-            {
-                "fullUrl": "https://example.test/sds/Device/1",
-                "resource": {
-                    "resourceType": "Device",
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhsSpineASID",
-                            "value": "test-asid",
-                        },
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhsMhsPartyKey",
-                            "value": "test-party-key",
-                        },
-                    ],
-                },
-            }
-        ],
-    }
-    endpoint_bundle = {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "total": 1,
-        "entry": [
-            {
-                "fullUrl": "https://example.test/sds/Endpoint/1",
-                "resource": {
-                    "resourceType": "Endpoint",
-                    "address": "https://example.provider.org/endpoint",
-                },
-            }
-        ],
-    }
-    mocked_get_sds = mocker.patch(
-        "gateway_api.sds.client.get",
-        side_effect=[
-            FakeResponse(status_code=200, headers={}, _json=device_bundle),
-            FakeResponse(status_code=200, headers={}, _json=endpoint_bundle),
-            FakeResponse(status_code=200, headers={}, _json=device_bundle),
-        ],
+    provider_sds_results = SdsSearchResults(
+        asid="ProviderASID", endpoint="https://example.provider.org/endpoint"
+    )
+    consumer_sds_results = SdsSearchResults(
+        asid="ConsumerASID", endpoint="https://example.consumer.org/endpoint"
+    )
+    sds_results = [provider_sds_results, consumer_sds_results]
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=sds_results,
+    )
+    mocked_sds_client = mocker.patch(
+        "gateway_api.controller.SdsClient.__init__", return_value=None
     )
     custom_sds_url = "https://a.different.url/base"
+    custom_sds_api_token = "custom-sds-api-token"  # noqa: S105 Not a real token
 
-    controller = create_test_controller(sds_base_url=custom_sds_url)
+    controller = create_test_controller(
+        sds_base_url=custom_sds_url, sds_api_key=custom_sds_api_token
+    )
     controller._get_sds_details("test-ods-1", "test-ods-2")
 
-    actual_sds_url = mocked_get_sds.call_args.args[0]
-    assert actual_sds_url == "https://a.different.url/base/Device"
+    actual_sds_url = mocked_sds_client.call_args.kwargs["base_url"]
+    actual_sds_api_token = mocked_sds_client.call_args.kwargs["api_key"]
+    assert actual_sds_url == "https://a.different.url/base"
+    assert actual_sds_api_token == custom_sds_api_token

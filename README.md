@@ -157,11 +157,11 @@ Environment variables control whether stubs are used in place of the real PDS, S
 | Variable | Description |
 | --- | --- |
 | `PDS_URL` | The URL for the PDS FHIR API; set as `stub` to use development stub. |
-| `PDS_API_TOKEN`| Leave unset in development environment. |
-| `PDS_API_SECRET`| Leave unset in development environment. |
-| `PDS_API_KID`| Leave unset in development environment. |
+| `PDS_API_TOKEN` | Leave unset in development environment. |
+| `PDS_API_SECRET` | Leave unset in development environment. |
+| `PDS_API_KID` | Leave unset in development environment. |
 | `SDS_URL` | The URL for the SDS FHIR API; set as `stub` to use development stub. |
-| `SDS_API_TOKEN`| Leave unset in development environment. |
+| `SDS_API_TOKEN` | Leave unset in development environment. |
 | `PROVIDER_URL` | The URL for the GP Provider; set as `stub` to use development stub. |
 | `CDG_DEBUG` | `true`, return additional debug information when the call to the GP provider returns an error. |
 
