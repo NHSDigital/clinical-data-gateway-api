@@ -1,7 +1,7 @@
 {
   "name": "gateway-bruno",
   "version": "0.0.1",
-  "description": "Packages requried for using Bruno in Gateway API",
+  "description": "Packages required for using Bruno in Gateway API",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,11 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "@usebruno/cli": "^3.2.2",
-    "axios": "^1.15.0"
+    "axios": "^1.15.0",
+    "uuid": "^14.0.0",
+    "fast-xml-parser": "^5.7.2"
   },
   "overrides": {
     "@usebruno/cli": {
-      "axios": "$axios"
+      "axios": "$axios",
+      "uuid": "$uuid",
+      "fast-xml-parser": "$fast-xml-parser"
     }
   }
 }
