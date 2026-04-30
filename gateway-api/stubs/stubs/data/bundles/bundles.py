@@ -18,3 +18,4 @@ class Bundles:
         }
 
     ALICE_JONES_9999999999 = _wrap_patient_in_bundle(Patients.ALICE_JONES_9999999999)
+    INT_9692140466 = _wrap_patient_in_bundle(Patients.INT_9692140466)

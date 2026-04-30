@@ -2,6 +2,8 @@
 Unit tests for :mod:`gateway_api.sds_search`.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
 from fhir.constants import FHIRSystem
 from fhir.r4.resources.bundle import Bundle
@@ -9,15 +11,12 @@ from pytest_mock import MockerFixture
 from stubs.sds.stub import SdsFhirApiStub
 
 from gateway_api.common.error import SdsRequestFailedError
-from gateway_api.conftest import FakeResponse
+from gateway_api.conftest import FakeResponse, ScopedEnvVars
 from gateway_api.get_structured_record import (
     ACCESS_RECORD_STRUCTURED_INTERACTION_ID,
     SDS_SANDBOX_INTERACTION_ID,
 )
-from gateway_api.sds import (
-    SdsClient,
-    SdsSearchResults,
-)
+from gateway_api.sds import SdsClient, SdsSearchResults, get
 
 
 @pytest.fixture
@@ -32,15 +31,13 @@ def stub(monkeypatch: pytest.MonkeyPatch) -> SdsFhirApiStub:
     return stub
 
 
-def test_sds_client_get_org_details_success(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_get_org_details_success(stub: SdsFhirApiStub) -> None:
     """
     Test SdsClient can successfully look up organization details.
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 
     result = client.get_org_details(ods_code="PROVIDER")
 
@@ -56,9 +53,7 @@ def test_sds_client_get_org_details_success(
     )
 
 
-def test_sds_client_get_org_details_with_endpoint(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_get_org_details_with_endpoint(stub: SdsFhirApiStub) -> None:
     """
     Test SdsClient retrieves endpoint when available.
 
@@ -111,7 +106,7 @@ def test_sds_client_get_org_details_with_endpoint(
         },
     )
 
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
     result = client.get_org_details(ods_code="TESTORG")
 
     assert result is not None
@@ -119,38 +114,33 @@ def test_sds_client_get_org_details_with_endpoint(
     assert result.endpoint == "https://testorg.example.com/fhir"
 
 
-def test_sds_client_sends_correct_headers(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_sends_correct_headers(stub: SdsFhirApiStub) -> None:
     """
     Test that SdsClient sends X-Correlation-Id and apikey headers when provided.
 
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 
     correlation_id = "test-correlation-123"
     client.get_org_details(ods_code="PROVIDER", correlation_id=correlation_id)
 
     # Check that the headers were
     assert stub.get_headers["X-Correlation-Id"] == correlation_id
-
-    # In future when _get_api_key calls AWS secrets, this will break.
-    # That's a good thing, because we'll want to mock that call.
-    assert stub.get_headers["apikey"] == "test_api_key_DO_NOT_REPLACE_HERE"
+    assert stub.get_headers["apikey"] == "example_api_key"
 
 
-def test_sds_client_timeout_parameter(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_timeout_parameter(stub: SdsFhirApiStub) -> None:
     """
     Test that SdsClient passes timeout parameter to requests.
 
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url="https://test.com", timeout=30)
+    client = SdsClient(
+        base_url="https://test.com", api_key="example_api_key", timeout=30
+    )
 
     client.get_org_details(ods_code="PROVIDER", timeout=60)
 
@@ -158,9 +148,7 @@ def test_sds_client_timeout_parameter(
     assert stub.get_timeout == 60
 
 
-def test_sds_client_custom_service_interaction_id(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_custom_service_interaction_id(stub: SdsFhirApiStub) -> None:
     """
     Test that SdsClient uses custom interaction ID when provided.
 
@@ -194,6 +182,7 @@ def test_sds_client_custom_service_interaction_id(
     client = SdsClient(
         base_url="https://test.com",
         service_interaction_id=custom_interaction,
+        api_key="example_api_key",
     )
 
     result = client.get_org_details(ods_code="CUSTOMINT", get_endpoint=False)
@@ -209,16 +198,14 @@ def test_sds_client_custom_service_interaction_id(
     assert result.asid == "777777777777"
 
 
-def test_sds_client_builds_correct_device_query_params(
-    stub: SdsFhirApiStub,
-) -> None:
+def test_sds_client_builds_correct_device_query_params(stub: SdsFhirApiStub) -> None:
     """
     Test that SdsClient builds Device query parameters correctly.
 
     :param stub: SDS stub fixture.
     :param mock_requests_get: Capture fixture for request details.
     """
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 
     client.get_org_details(ods_code="PROVIDER")
 
@@ -268,7 +255,8 @@ def test_sds_client_uses_sandbox_interaction_id_for_sandbox_url(
     )
 
     client = SdsClient(
-        base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4"
+        base_url="https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4",
+        api_key="example_api_key",
     )
     result = client.get_org_details(ods_code="SANDBOX_ORG", get_endpoint=False)
 
@@ -313,7 +301,7 @@ def test_sds_client_raises_sds_request_failed_error_on_http_error(
 
     monkeypatch.setattr("gateway_api.sds.client.get", get_without_apikey)
 
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
 
     with pytest.raises(SdsRequestFailedError, match="SDS FHIR API request failed"):
         client.get_org_details(ods_code="PROVIDER")
@@ -353,7 +341,7 @@ def test_sds_client_endpoint_entry_without_address_returns_none(
         },
     )
 
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
     result = client.get_org_details(ods_code="NOADDR")
 
     assert result.asid == "111111111111"
@@ -369,7 +357,7 @@ def test_sds_client_empty_device_bundle_returns_none_asid() -> None:
 
     :param stub: SDS stub fixture.
     """
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
     # "UNKNOWN_ORG" has no seeded devices, so the bundle entry list will be empty
     result = client.get_org_details(ods_code="UNKNOWN_ORG", get_endpoint=False)
 
@@ -398,24 +386,44 @@ def test_sds_client_no_endpoint_bundle_entries_returns_none_endpoint(
     )
     # Deliberately do not seed any endpoint for NOENDPOINT
 
-    client = SdsClient(base_url="https://test.com")
+    client = SdsClient(base_url="https://test.com", api_key="example_api_key")
     result = client.get_org_details(ods_code="NOENDPOINT")
 
     assert result.asid == "222222222222"
     assert result.endpoint is None
 
 
-def test_sds_client_respects_url(
-    mocker: MockerFixture,
-) -> None:
+def test_sds_client_respects_url(mocker: MockerFixture) -> None:
     empty_bundle = Bundle.empty("searchset").model_dump()
     mocked_get = mocker.patch(
         "gateway_api.sds.client.get",
         return_value=FakeResponse(status_code=200, headers={}, _json=empty_bundle),
     )
 
-    client = SdsClient(base_url="https://a.different.url/base")
+    client = SdsClient(
+        base_url="https://a.different.url/base", api_key="example_api_key"
+    )
     _ = client.get_org_details(ods_code="A12345", get_endpoint=False)
 
     actual_url = mocked_get.call_args.args[0]
+    actual_headers = mocked_get.call_args.kwargs["headers"]
     assert actual_url == "https://a.different.url/base/Device"
+    assert actual_headers["apikey"] == "example_api_key"
+
+
+@patch("gateway_api.sds.client.SdsFhirApiStub")
+@patch("gateway_api.sds.client.external_sds_get")
+def test_get_with_stub(mock_external_get: Mock, mock_stub: Mock) -> None:
+    with ScopedEnvVars({"SDS_URL": "stub"}):
+        get("https://example.com/", headers={}, params={}, timeout=10)
+        assert mock_stub.return_value.get.called
+        assert not mock_external_get.called
+
+
+@patch("gateway_api.sds.client.SdsFhirApiStub")
+@patch("gateway_api.sds.client.external_sds_get")
+def test_get_without_stub(mock_external_get: Mock, mock_stub: Mock) -> None:
+    with ScopedEnvVars({"SDS_URL": "https://www.example.com/"}):
+        get("https://example.com/", headers={}, params={}, timeout=10)
+        assert mock_external_get.called
+        assert not mock_stub.return_value.get.called

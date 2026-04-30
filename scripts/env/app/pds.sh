@@ -9,7 +9,7 @@ get_pds_url() {
       return 0
       ;;
     int)
-      echo "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/"
+      echo "stub"
       return 0
       ;;
     *)

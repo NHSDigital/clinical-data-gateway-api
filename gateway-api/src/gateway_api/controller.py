@@ -29,6 +29,7 @@ class Controller:
         self,
         pds_base_url: str,
         sds_base_url: str,
+        sds_api_key: str,
         timeout: int = 10,
     ) -> None:
         """
@@ -36,6 +37,7 @@ class Controller:
         """
         self.pds_base_url = pds_base_url
         self.sds_base_url = sds_base_url
+        self.sds_api_key = sds_api_key
         self.timeout = timeout
         self.gp_provider_client = None
 
@@ -194,6 +196,7 @@ class Controller:
         # SDS: Get provider details (ASID + endpoint) for provider ODS
         sds = SdsClient(
             base_url=self.sds_base_url,
+            api_key=self.sds_api_key,
             timeout=self.timeout,
         )
 
