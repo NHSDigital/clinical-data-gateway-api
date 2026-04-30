@@ -351,7 +351,7 @@ The GitHub Actions workflow (`.github/workflows/stage-2-test.yaml`) orchestrates
               └───────────────────────┘
 ```
 
-## Testing INT
+## Testing INT locally
 
 To test a locally deployed application against the integration environments of external services, PDS, SDS and Provider systems:
 
@@ -361,7 +361,7 @@ To test a locally deployed application against the integration environments of e
 
 ### Manual test
 
-To manually test the application against the integration environments, run the Bruno collection using the `INT.yml` environment.
+To manually test the application against the integration environments, run the Bruno collection using the `localInt.yml` environment.
 
 ### Automated tests
 
@@ -370,6 +370,7 @@ To run a subset the automated test suite, run the following commands
 ```bash
 make env-test-int
 source .env.test
+set -a && source .env && set +a
 cd gateway-api
 poetry run pytest tests/integration/test_get_structured_record.py -k happy_path
 ```
