@@ -13,7 +13,9 @@ get_base_url() {
       return 0
       ;;
     int)
-      echo "http://gateway-api:8080" #TODO [GPCAPIM-????]: Figure out what this should be for testing int environment
+      # This is currently set to test a locally deployed application that is set to point
+      # at PDS, SDS and Provider INT environments.
+      echo "http://gateway-api:8080"
       return 0
       ;;
     *)
