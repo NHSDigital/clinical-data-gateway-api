@@ -41,7 +41,7 @@ def mock_request_post(
         url: str,
         headers: CaseInsensitiveDict[str],
         data: str,
-        timeout: int,  # NOQA ARG001 (unused in stub)
+        **_kwargs: str,
     ) -> Response:
         """A fake requests.post implementation."""
 

@@ -12,6 +12,12 @@ get_base_url() {
       echo "http://localhost:5000"
       return 0
       ;;
+    int)
+      # This is currently set to test a locally deployed application that is set to point
+      # at PDS, SDS and Provider INT environments.
+      echo "http://gateway-api:8080"
+      return 0
+      ;;
     *)
       echo ""
       return 0

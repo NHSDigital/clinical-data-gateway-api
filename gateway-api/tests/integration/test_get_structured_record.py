@@ -1,12 +1,12 @@
 """Integration tests for the gateway API using pytest."""
 
 import json
+import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from requests import Response
-from stubs.data.bundles import Bundles
 
 from tests.conftest import Client
 
@@ -16,9 +16,10 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
         assert response.status_code == 200
 
@@ -26,19 +27,24 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        expected_response_message_for_simple_request: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
-        assert response.json() == Bundles.ALICE_JONES_9999999999
+        actual_response = response.json()
+        self.strip_randomized_fields(actual_response)
+        assert actual_response == expected_response_message_for_simple_request
 
     def test_happy_path_content_type(
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload)
+            json.dumps(simple_request_payload), headers=ods_header
         )
         assert "application/fhir+json" in response.headers["Content-Type"]
 
@@ -46,10 +52,12 @@ class TestGetStructuredRecord:
         self,
         client: Client,
         simple_request_payload: dict[str, Any],
+        ods_header: dict[str, str],
     ) -> None:
         headers_to_be_mirrored = {"Ssp-TraceID": "a_trace_id"}
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(simple_request_payload), headers=headers_to_be_mirrored
+            json.dumps(simple_request_payload),
+            headers=headers_to_be_mirrored | ods_header,
         )
         for header_key, header_value in headers_to_be_mirrored.items():
             assert response.headers.get(header_key) == header_value
@@ -354,3 +362,25 @@ class TestGetStructuredRecord:
             return response
 
         return requester
+
+    @pytest.fixture
+    def expected_response_message_for_simple_request(
+        self, nhs_number: str
+    ) -> dict[str, Any]:
+        test_patient_file_path = self.find_test_patient_file(nhs_number)
+        with open(test_patient_file_path) as f:
+            expected_response = cast("dict[str, Any]", json.load(f))
+        return expected_response
+
+    @staticmethod
+    def find_test_patient_file(nhs_number: str) -> str:
+        filenames = os.listdir("tests/integration/data/")
+        for filename in filenames:
+            if nhs_number in filename:
+                return "tests/integration/data/" + filename
+        raise ValueError(f"No test patient file defined for nhs_number {nhs_number}")
+
+    @staticmethod
+    def strip_randomized_fields(message: dict[str, Any]) -> None:
+        if "id" in message:
+            del message["id"]

@@ -176,6 +176,8 @@ _Note: `FLASK_HOST` and `FLASK_PORT` are hardcoded in to the Dockerfile. These a
 | `BASE_URL` | Set if targeting a locally deployed application; otherwise, leave unset. |
 | `TARGET_ENV` | Either `local` or `remote`, to inform the HTTP client used by the tests how to behave - e.g. add auth headers, etc. |
 | `REMOTE_TEST_USERNAME` | The test user through which the tests will be authenticated against when run against a remote target. |
+| `TEST_NHS_NUMBER` | The NHS number to be sent in the request payload. Environments will have a limited set of NHS numbers that are able to form a full end-to-end flow. |
+| `CONSUMER_ODS_CODE` | The consumer ODS code to send in the header. ODS codes may only work in some environments. |
 
 ## Testing
 

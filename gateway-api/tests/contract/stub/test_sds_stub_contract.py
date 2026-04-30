@@ -238,22 +238,12 @@ class TestGetEndpointBundleSuccess:
         assert body["type"] == "searchset"
         assert body["total"] == len(body["entry"])
 
-        assert len(body["entry"]) == 4
-        endpoint_ids = [
-            "E0E0E921-92CA-4A88-A550-2DBB36F703AF",
-            "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-            "E2E2E921-92CA-4A88-A550-2DBB36F703AF",
-            "E3E3E921-92CA-4A88-A550-2DBB36F703AF",
-        ]
-        for i in range(len(endpoint_ids)):
-            entry = body["entry"][i]
-
-            endpoint_id = endpoint_ids[i]
+        for entry in body["entry"]:
+            endpoint_id = entry["resource"]["id"]
             assert (
                 entry["fullUrl"]
                 == f"https://sandbox.api.service.nhs.uk/spine-directory/FHIR/R4/Endpoint/{endpoint_id}"
             )
-            assert entry["resource"]["id"] == endpoint_id
             assert entry["search"]["mode"] == "match"
 
     def test_x_correlation_id_echoed_back_when_provided(

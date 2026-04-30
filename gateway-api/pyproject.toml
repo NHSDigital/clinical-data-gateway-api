@@ -64,7 +64,7 @@ dev = [
 [tool.mypy]
 strict = true
 
-[tool.pytest.ini_options]
+[tool.pytest]
 bdd_features_base_dir = "tests/acceptance/features"
 markers = [
     "status_auth_headers",

@@ -26,6 +26,7 @@ get_sds_api_token() {
     int)
       if [[ -f "$secret_file" ]]; then
         cat "$secret_file"
+        echo ""
         return 0
       else
         printf "Warning: $secret_file not found." >&2

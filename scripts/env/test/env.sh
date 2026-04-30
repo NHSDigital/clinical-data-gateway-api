@@ -5,7 +5,7 @@ set -e
 
 source scripts/env/test/target.sh
 source scripts/env/test/apigee.sh
-source scripts/env/test/user.sh
+source scripts/env/test/data.sh
 
 env="$1"
 BASE_URL=$(get_base_url "$env")
@@ -19,6 +19,9 @@ fi
 APIGEE_ACCESS_TOKEN=$(get_apigee_access_token "$env")
 TARGET_ENV=$(get_target_env "$env")
 REMOTE_TEST_USERNAME=$(get_test_user "$env")
+TEST_NHS_NUMBER=$(get_test_nhs_number "$env")
+
+CONSUMER_ODS_CODE=$(get_consumer_ods_code "$env")
 
 ENV_FILE=".env.test"
 
@@ -34,6 +37,8 @@ BASE_URL=$BASE_URL
 TARGET_ENV=$TARGET_ENV
 
 REMOTE_TEST_USERNAME=$REMOTE_TEST_USERNAME
+TEST_NHS_NUMBER=$TEST_NHS_NUMBER
+CONSUMER_ODS_CODE=$CONSUMER_ODS_CODE
 set +a
 EOF
 

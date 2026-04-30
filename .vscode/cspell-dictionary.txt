@@ -34,6 +34,7 @@ dpkg
 DSTU
 eamodio
 errstr
+EMIS
 Farsley
 fhir
 getfixturevalue
@@ -47,6 +48,7 @@ gpprovider
 HAPI
 healthcheck
 htmlcov
+HSCN
 igorshubovych
 isort
 jdkato

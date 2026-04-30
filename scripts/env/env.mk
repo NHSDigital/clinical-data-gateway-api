@@ -29,6 +29,9 @@ env-test-pr-%: # Create .env.test file that will have tests send requests to a p
 env-test-alpha-int: # Create .env.test file that will have tests send requests to the alpha integration environment.
 	make _env-test env="alpha-int"
 
+env-test-int: # Create .env.test file that will have tests send requests to the integration environments.
+	make _env-test env="int"
+
 _env:
 	scripts/env/app/env.sh "$(env)"
 
@@ -43,9 +46,9 @@ ${VERBOSE}.SILENT: \
 	env-orangebox \
 	env-sandbox \
 	env-int \
-	env-int-pds \
-	env-int-sds \
 	_env-test \
 	env-test-local \
 	env-test-ci \
-	env-test-pr-%
+	env-test-pr-% \
+	env-test-alpha-int \
+	env-test-int

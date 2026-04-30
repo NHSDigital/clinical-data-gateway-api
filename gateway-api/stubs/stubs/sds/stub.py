@@ -350,7 +350,7 @@ class SdsFhirApiStub(StubBase, GetStub):
             {
                 "org_ods": "CONSUMER",
                 "device_id": "C0C0E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
+                "asid": "210987654321",
                 "display": "Example Consumer Organisation",
             },
             {
@@ -419,7 +419,7 @@ class SdsFhirApiStub(StubBase, GetStub):
             {
                 "org_ods": "CONSUMER",
                 "endpoint_id": "E1E1E921-92CA-4A88-A550-2DBB36F703AF",
-                "asid": "asid_CONS",
+                "asid": "210987654321",
                 "address": "https://consumer.example.com/fhir",
             },
             {

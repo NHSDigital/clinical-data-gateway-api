@@ -43,6 +43,7 @@ Use the following commands to create the appropriate `.env.test` file for the ta
 * `make env-test-ci` to write a `.env.test` file for testing a locally deployed application, from outside the dev container.
 * `make env-test-pr-<pr number>` to write a `.env.test` file for testing an application deployed behind a PR proxy.
 * `make env-test-alpha-int` to write a `.env.test` file for testing an application deployed to the "alpha integration" environment.
+* `make env-test-int` to write a `.env.test` file for testing an application that sends requests to PDS, SDS and Provider integration environments.
 
 _Note: Unit tests require the `.env` file, as these tests do not test a deployed application`_
 
@@ -213,10 +214,9 @@ Consumer tests generate the pact contract files in `tests/contract/pacts/` (e.g.
 Shared fixtures in `tests/conftest.py` are available across all test types:
 
 * **`base_url`**: The base URL of the deployed Lambda function (from `BASE_URL` environment variable highlighted above)
-* **`host`**: The hostname of the deployed application (from `HOST` environment variable highlighted above)
 * **`client`**: An HTTP client instance for sending requests to the APIs
 
-### Load Testing with Locust ('load/')
+## Load Testing with Locust ('load/')
 
 Load testing is performed using Locust. You have the option of running via the CLI or UI.
 You will need [Proxygen setup](../../README.md#proxygen) to run the load tests.
@@ -349,4 +349,28 @@ The GitHub Actions workflow (`.github/workflows/stage-2-test.yaml`) orchestrates
               │ 2. Send to SonarCloud │
               │ 3. Enforce thresholds │
               └───────────────────────┘
+```
+
+## Testing INT locally
+
+To test a locally deployed application against the integration environments of external services, PDS, SDS and Provider systems:
+
+* Set up secrets in `.secrets` as per the instructions in `.secrets/README.md`
+* `make env-int` - writes the `.env` file to point the application at the integration environments for each external service.
+* `make deploy` - will deploy the application, feeding the `.env` values in to its container environment.
+
+### Manual test
+
+To manually test the application against the integration environments, run the Bruno collection using the `localInt.yml` environment.
+
+### Automated tests
+
+To run a subset the automated test suite, run the following commands
+
+```bash
+make env-test-int
+source .env.test
+set -a && source .env && set +a
+cd gateway-api
+poetry run pytest tests/integration/test_get_structured_record.py -k happy_path
 ```

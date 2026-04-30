@@ -25,7 +25,8 @@ get_pds_api_token() {
   case "$env" in
     int)
       if [[ -f "$secret_file" ]]; then
-        cat "$secret_file"
+        # cat "$secret_file" # TODO [GPCAPIM-395]: Remove stubbing
+        echo ""
         return 0
       else
         printf "Warning: $secret_file not found." >&2
@@ -45,7 +46,8 @@ get_pds_api_secret() {
   case "$env" in
     int)
       if [[ -f "$secret_file" ]]; then
-        cat "$secret_file"
+        # cat "$secret_file" # TODO [GPCAPIM-395]: Remove stubbing
+        echo ""
         return 0
       else
         printf "Warning: $secret_file not found." >&2
@@ -65,7 +67,8 @@ get_pds_api_kid() {
   case "$env" in
     int)
       if [[ -f "$secret_file" ]]; then
-        cat "$secret_file"
+        # cat "$secret_file" # TODO [GPCAPIM-395]: Remove stubbing
+        echo ""
         return 0
       else
         printf "Warning: $secret_file not found." >&2
