@@ -66,6 +66,7 @@
   "gitlens.ai.enabled": false,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
+  "python.envFile": "${workspaceFolder}/.env.test",
   "git.enableCommitSigning": true,
   "sonarlint.connectedMode.project": {
     "connectionId": "nhsdigital",
@@ -107,4 +108,5 @@
   "python.analysis.extraPaths": [
     "./gateway-api/stubs"
   ],
+  "python-envs.defaultEnvManager": "ms-python.python:pyenv",
 }
