@@ -9,13 +9,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import requests
 from requests import Response
 
-from stubs.base_stub import StubBase
+from stubs.base_stub import SessionGetStub, StubBase
 from stubs.data.patients import Patients
 
 
-class PdsFhirApiStub(StubBase):
+class PdsFhirApiStub(StubBase, SessionGetStub):
     """
     Minimal in-memory stub for the PDS FHIR API, implementing only ``GET /Patient/{id}``
 
@@ -174,6 +175,7 @@ class PdsFhirApiStub(StubBase):
             status_code=200, json_data=patient, additional_headers=headers_out
         )
 
+    # TODO [GPCAPIM-395]: remove depricated, and updated tests
     def get(
         self,
         url: str,
@@ -209,6 +211,25 @@ class PdsFhirApiStub(StubBase):
         :raises NotImplementedError: POST requests are not supported by this stub.
         """
         raise NotImplementedError("POST requests are not supported by PdsFhirApiStub")
+
+    def session_get(
+        self,
+        session: requests.Session,  # noqa: ARG002 - maintain signature for stub
+        url: str,
+        headers: dict[str, str],
+        params: dict[str, Any],  # noqa: ARG002 - maintain signature for stub
+        timeout: int,  # noqa: ARG002 - maintain signature for stub
+    ) -> Response:
+        nhs_number = url.split("/")[-1]
+
+        request_id = headers.get("X-Request-ID") if headers else None
+        correlation_id = headers.get("X-Correlation-ID") if headers else None
+
+        return self.get_patient(
+            nhs_number=nhs_number,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
 
     # ---------------------------
     # Internal helpers

@@ -145,3 +145,18 @@ class SessionPostStub(PostStub, Protocol):
         """
         Last Session stub.session_post was called with. None if not called yet.
         """
+
+
+class SessionGetStub(Protocol):
+    @abstractmethod
+    def session_get(
+        self,
+        session: Session,
+        url: str,
+        headers: dict[str, str],
+        params: dict[str, Any],
+        timeout: int,
+    ) -> Response:
+        """
+        Handle HTTP GET requests for the stub, using a provided Session.
+        """

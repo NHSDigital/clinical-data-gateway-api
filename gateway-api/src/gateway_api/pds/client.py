@@ -37,13 +37,34 @@ from gateway_api.common.error import PdsRequestFailedError
 _pds_url = os.getenv("PDS_URL", "stub")
 STUB_PDS = _pds_url.strip().lower() == "stub"
 
-if not STUB_PDS:
-    from requests import get
-else:
+if STUB_PDS:
     from stubs.pds.stub import PdsFhirApiStub
 
-    pds = PdsFhirApiStub()
-    get = pds.get  # type: ignore
+    pds_stub = PdsFhirApiStub()
+
+
+def session_get_impl(
+    session: requests.Session,
+    url: str,
+    headers: dict[str, str],
+    timeout: int,
+) -> requests.Response:
+    if STUB_PDS:
+        return pds_stub.session_get(
+            session=session,
+            url=url,
+            headers=headers,
+            params={},
+            timeout=timeout,
+        )
+
+    return session.get(
+        url=url,
+        headers=headers,
+        params={},
+        timeout=timeout,
+    )
+
 
 _logger = logging.getLogger(__name__)
 
@@ -131,18 +152,13 @@ class PdsClient:
         }
         _logger.info(log_details)
 
-        # This normally calls requests.get, but if PDS_URL is set it uses the stub.
-        # response = get(
-        #     url,
-        #     headers=headers,
-        #     params={},
-        #     timeout=timeout or self.timeout,
-        # )
+        # This uses an auth-wrapped session. The underlying GET implementation
+        # is selected at import time based on PDS_URL.
         set_correlation_id(
             full_id=correlation_id or "no-correlation-id",
             short_id=correlation_id or "no-correlation-id",
         )
-        response = _make_get_request(
+        response = _make_session_get_request(
             url,
             headers=headers,
             timeout=timeout or self.timeout,
@@ -171,16 +187,11 @@ class PdsClient:
 
 # TODO [GPCAPIM-359]: consider moving this to a nested method
 @environment.apim_authenticator().auth
-def _make_get_request(
+def _make_session_get_request(
     session: requests.Session,
     url: str,
     headers: dict[str, str],
     timeout: int,
 ) -> Any:
-    response = session.get(
-        url=url,
-        headers=headers,
-        params={},
-        timeout=timeout,
-    )
+    response = session_get_impl(session, url, headers, timeout)
     return response

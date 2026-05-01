@@ -366,7 +366,7 @@ def test_controller_respects_pds_url(
     Test that the controller uses the PDS URL provided in the constructor.
     """
     mocked_get_pds = mocker.patch(
-        "gateway_api.pds.client._make_get_request",
+        "gateway_api.pds.client._make_session_get_request",
         return_value=FakeResponse(
             status_code=200, headers={}, _json=happy_path_pds_response_body
         ),

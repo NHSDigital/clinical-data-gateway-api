@@ -22,7 +22,8 @@ def test_search_patient_by_nhs_number_happy_path(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=happy_path_response,
     )
 
     client = PdsClient(base_url="https://test.com")
@@ -43,7 +44,8 @@ def test_search_patient_by_nhs_number_has_no_gp_returns_gp_ods_code_none(
         status_code=200, headers={}, _json=gp_less_response_body
     )
     mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=gp_less_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=gp_less_response,
     )
 
     client = PdsClient(base_url="https://test.com")
@@ -62,7 +64,8 @@ def test_search_patient_by_nhs_number_sends_expected_headers(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=happy_path_response,
     )
 
     request_id = str(uuid4())
@@ -93,7 +96,8 @@ def test_search_patient_by_nhs_number_generates_request_id(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=happy_path_response,
     )
 
     client = PdsClient(base_url="https://test.com")
@@ -116,7 +120,8 @@ def test_search_patient_by_nhs_number_not_found_raises_error(
         reason="Not Found",
     )
     mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=not_found_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=not_found_response,
     )
     pds = PdsClient(base_url="https://test.com")
 
@@ -138,7 +143,9 @@ def test_search_patient_by_nhs_number_missing_nhs_number_raises_error(
         headers={},
         _json=response_body_missing_nhs_number,
     )
-    mocker.patch("gateway_api.pds.client._make_get_request", return_value=response)
+    mocker.patch(
+        "gateway_api.pds.client._make_session_get_request", return_value=response
+    )
 
     client = PdsClient(base_url="https://test.com")
 
@@ -157,7 +164,8 @@ def test_search_patient_respects_url(
         status_code=200, headers={}, _json=happy_path_pds_response_body
     )
     mocked_get = mocker.patch(
-        "gateway_api.pds.client._make_get_request", return_value=happy_path_response
+        "gateway_api.pds.client._make_session_get_request",
+        return_value=happy_path_response,
     )
 
     client = PdsClient(base_url="https://a.different.url/base")
