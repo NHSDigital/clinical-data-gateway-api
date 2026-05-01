@@ -1,5 +1,7 @@
 """Unit tests for :mod:`gateway_api.controller`."""
 
+import json
+from copy import deepcopy
 from typing import Any
 
 import pytest
@@ -287,67 +289,207 @@ def mock_happy_path_get_structured_record_request(
     return happy_path_request
 
 
+# TODO: Look at this more carefully. Does it do things done differently above?
+def _setup_pds_sds_mocks(
+    mocker: MockerFixture,
+    nhs_number: str,
+    provider_ods: str,
+    provider_endpoint: str,
+) -> None:
+    mocker.patch(
+        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
+        return_value=_create_patient(nhs_number, provider_ods),
+    )
+    mocker.patch(
+        "gateway_api.sds.SdsClient.get_org_details",
+        side_effect=[
+            SdsSearchResults(asid="asid_PROV", endpoint=provider_endpoint),
+            SdsSearchResults(asid="asid_CONS", endpoint=None),
+        ],
+    )
+
+
+def _setup_provider_mock(
+    mocker: MockerFixture,
+    valid_simple_response_payload: dict[str, Any],
+) -> Any:
+    mock_gp_provider = mocker.patch("gateway_api.controller.GpProviderClient")
+    mock_gp_provider.return_value.access_structured_record.return_value = FakeResponse(
+        status_code=200,
+        headers={"Content-Type": "application/fhir+json"},
+        _json=valid_simple_response_payload,
+    )
+    return mock_gp_provider
+
+
 def test_controller_creates_jwt_token_with_correct_claims(
     mocker: MockerFixture,
     valid_simple_request_payload: dict[str, Any],
     valid_simple_response_payload: dict[str, Any],
 ) -> None:
     """
-    Test that the controller creates a JWT token with the correct claims.
+    Test that the controller creates a JWT token with the correct claims,
+    taking issuer, requestingDevice, and requestingPractitioner from the
+    identity section of the request body.
     """
     nhs_number = "9000000009"
     provider_ods = "PROVIDER"
     consumer_ods = "CONSUMER"
     provider_endpoint = "https://provider.example/ep"
 
-    # Mock PDS to return provider ODS code
-    mocker.patch(
-        "gateway_api.pds.PdsClient.search_patient_by_nhs_number",
-        return_value=_create_patient(nhs_number, provider_ods),
-    )
+    _setup_pds_sds_mocks(mocker, nhs_number, provider_ods, provider_endpoint)
+    mock_gp_provider = _setup_provider_mock(mocker, valid_simple_response_payload)
 
-    # Mock SDS to return provider and consumer details
-    provider_sds_results = SdsSearchResults(
-        asid="asid_PROV", endpoint=provider_endpoint
-    )
-    consumer_sds_results = SdsSearchResults(asid="asid_CONS", endpoint=None)
-    mocker.patch(
-        "gateway_api.sds.SdsClient.get_org_details",
-        side_effect=[provider_sds_results, consumer_sds_results],
-    )
-
-    # Mock GpProviderClient to capture initialization arguments
-    mock_gp_provider = mocker.patch("gateway_api.controller.GpProviderClient")
-
-    # Mock the access_structured_record method to return a response
-    provider_response = FakeResponse(
-        status_code=200,
-        headers={"Content-Type": "application/fhir+json"},
-        _json=valid_simple_response_payload,
-    )
-    mock_gp_provider.return_value.access_structured_record.return_value = (
-        provider_response
-    )
-
-    # Create request and run controller
     request = create_mock_request(
         headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
         body=valid_simple_request_payload,
     )
 
-    get_structured_record_request = GetStructuredRecordRequest(request)
-
     controller = Controller()
-    controller.run(get_structured_record_request)
+    controller.run(GetStructuredRecordRequest(request))
 
-    # Verify that GpProviderClient was called and extract the JWT token
     mock_gp_provider.assert_called_once()
     jwt_token = mock_gp_provider.call_args.kwargs["token"]
 
-    # Verify the standard JWT claims
+    # Issuer, subject and audience come from the identity section and provider endpoint
     assert jwt_token.issuer == "https://clinical-data-gateway-api.sandbox.nhs.uk"
     assert jwt_token.subject == "10019"
     assert jwt_token.audience == provider_endpoint
 
-    # Verify the requesting organization matches the consumer ODS
+    # Requesting organisation is built from the consumer ODS code
     assert jwt_token.requesting_organization["identifier"][0]["value"] == consumer_ods
+
+
+def test_controller_strips_identity_from_forwarded_body(
+    mocker: MockerFixture,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
+) -> None:
+    """
+    Test that the identity parameter is removed from the body sent to the provider.
+    """
+    nhs_number = "9000000009"
+    provider_ods = "PROVIDER"
+    consumer_ods = "CONSUMER"
+    provider_endpoint = "https://provider.example/ep"
+
+    _setup_pds_sds_mocks(mocker, nhs_number, provider_ods, provider_endpoint)
+    mock_gp_provider = _setup_provider_mock(mocker, valid_simple_response_payload)
+
+    request = create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=valid_simple_request_payload,
+    )
+
+    controller = Controller()
+    controller.run(GetStructuredRecordRequest(request))
+
+    mock_gp_provider.return_value.access_structured_record.assert_called_once()
+    forwarded_body = json.loads(
+        mock_gp_provider.return_value.access_structured_record.call_args.kwargs["body"]
+    )
+
+    parameter_names = [p.get("name") for p in forwarded_body.get("parameter", [])]
+    assert "identity" not in parameter_names
+    # The patientNHSNumber parameter has no "name" key after Pydantic serialisation;
+    # verify that exactly one parameter remains and it carries the NHS number value.
+    remaining = forwarded_body.get("parameter", [])
+    assert len(remaining) == 1
+    assert remaining[0].get("valueIdentifier", {}).get("value") == "9999999999"
+
+
+def _make_request_without_identity_field(
+    consumer_ods: str,
+    base_payload: dict[str, Any],
+    field_to_remove: str,
+) -> Request:
+    """Return a mock request with the named field removed from the identity part."""
+    payload = deepcopy(base_payload)
+    identity = next(p for p in payload["parameter"] if p["name"] == "identity")
+    identity["part"] = [p for p in identity["part"] if p["name"] != field_to_remove]
+    return create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=payload,
+    )
+
+
+def _make_request_without_identity(
+    consumer_ods: str,
+    base_payload: dict[str, Any],
+) -> Request:
+    """Return a mock request with the entire identity parameter removed."""
+    payload = deepcopy(base_payload)
+    payload["parameter"] = [
+        p for p in payload["parameter"] if p.get("name") != "identity"
+    ]
+    return create_mock_request(
+        headers={"ODS-From": consumer_ods, "Ssp-TraceID": "test-trace-id"},
+        body=payload,
+    )
+
+
+@pytest.mark.parametrize(
+    ("missing_field", "expected_message"),
+    [
+        ("issuer", "Missing 'issuer' in identity in request body"),
+        (
+            "requestingOrgName",
+            "Missing 'requestingOrgName' in identity in request body",
+        ),
+        ("requestingDevice", "Missing 'requestingDevice' in identity in request body"),
+        (
+            "requestingPractitioner",
+            "Missing 'requestingPractitioner' in identity in request body",
+        ),
+    ],
+)
+def test_controller_run_raises_value_error_when_identity_field_missing(
+    mocker: MockerFixture,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
+    missing_field: str,
+    expected_message: str,
+) -> None:
+    """
+    Test that a ValueError is raised when a required identity field is absent.
+    """
+    nhs_number = "9000000009"
+    provider_ods = "PROVIDER"
+    consumer_ods = "CONSUMER"
+    provider_endpoint = "https://provider.example/ep"
+
+    _setup_pds_sds_mocks(mocker, nhs_number, provider_ods, provider_endpoint)
+    _setup_provider_mock(mocker, valid_simple_response_payload)
+
+    request = _make_request_without_identity_field(
+        consumer_ods, valid_simple_request_payload, missing_field
+    )
+
+    controller = Controller()
+    with pytest.raises(ValueError, match=expected_message):
+        controller.run(GetStructuredRecordRequest(request))
+
+
+def test_controller_run_raises_value_error_when_identity_parameter_absent(
+    mocker: MockerFixture,
+    valid_simple_request_payload: dict[str, Any],
+    valid_simple_response_payload: dict[str, Any],
+) -> None:
+    """
+    Test that a ValueError is raised when the identity parameter is entirely absent.
+    """
+    nhs_number = "9000000009"
+    provider_ods = "PROVIDER"
+    consumer_ods = "CONSUMER"
+    provider_endpoint = "https://provider.example/ep"
+
+    _setup_pds_sds_mocks(mocker, nhs_number, provider_ods, provider_endpoint)
+    _setup_provider_mock(mocker, valid_simple_response_payload)
+
+    request = _make_request_without_identity(consumer_ods, valid_simple_request_payload)
+
+    controller = Controller()
+    with pytest.raises(
+        ValueError, match="Missing 'issuer' in identity in request body"
+    ):
+        controller.run(GetStructuredRecordRequest(request))

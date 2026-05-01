@@ -28,6 +28,65 @@
                   "system": "https://fhir.nhs.uk/Id/nhs-number",
                   "value": "9999999999"
                 }
+              },
+              {
+                "name": "identity",
+                "part": [
+                  {
+                    "name": "issuer",
+                    "valueString": "https://clinical-data-gateway-api.sandbox.nhs.uk"
+                  },
+                  {
+                    "name": "requestingOrgName",
+                    "valueString": "Example Consumer Organization"
+                  },
+                  {
+                    "name": "requestingDevice",
+                    "resource": {
+                      "identifier": [
+                        {
+                          "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+                          "value": "gpcdemonstrator-1-orange"
+                        }
+                      ],
+                      "model": "GP Connect Demonstrator",
+                      "resourceType": "Device",
+                      "version": "1.5.0"
+                    }
+                  },
+                  {
+                    "name": "requestingPractitioner",
+                    "resource": {
+                      "id": "10019",
+                      "identifier": [
+                        {
+                          "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                          "value": "111222333444"
+                        },
+                        {
+                          "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                          "value": "444555666777"
+                        },
+                        {
+                          "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
+                          "value": "98ed4f78-814d-4266-8d5b-cde742f3093c"
+                        }
+                      ],
+                      "name": [
+                        {
+                          "family": "Doe",
+                          "given": [
+                            "John"
+                          ],
+                          "prefix": [
+                            "Mr"
+                          ]
+                        }
+                      ],
+                      "resourceType": "Practitioner"
+                    }
+                  }
+                ]
               }
             ],
             "resourceType": "Parameters"

@@ -21,6 +21,56 @@ DEFAULT_REQUEST_HEADERS = {
 }
 
 
+_IDENTITY_PARAMETER: dict[str, Any] = {
+    "name": "identity",
+    "part": [
+        {
+            "name": "issuer",
+            "valueString": "https://clinical-data-gateway-api.sandbox.nhs.uk",
+        },
+        {
+            "name": "requestingOrgName",
+            "valueString": "Example Consumer Organization",
+        },
+        {
+            "name": "requestingDevice",
+            "resource": {
+                "resourceType": "Device",
+                "identifier": [
+                    {
+                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-system-instance-id",
+                        "value": "gpcdemonstrator-1-orange",
+                    }
+                ],
+                "model": "GP Connect Demonstrator",
+                "version": "1.5.0",
+            },
+        },
+        {
+            "name": "requestingPractitioner",
+            "resource": {
+                "resourceType": "Practitioner",
+                "id": "10019",
+                "name": [{"family": "Doe", "given": ["John"], "prefix": ["Mr"]}],
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-user-id",
+                        "value": "111222333444",
+                    },
+                    {
+                        "system": "https://fhir.nhs.uk/Id/sds-role-profile-id",
+                        "value": "444555666777",
+                    },
+                    {
+                        "system": "https://orange.testlab.nhs.uk/gpconnect-demonstrator/Id/local-user-id",
+                        "value": "98ed4f78-814d-4266-8d5b-cde742f3093c",
+                    },
+                ],
+            },
+        },
+    ],
+}
+
 SIMPLE_PAYLOAD = {
     "resourceType": "Parameters",
     "parameter": [
@@ -31,6 +81,7 @@ SIMPLE_PAYLOAD = {
                 "value": "9999999999",
             },
         },
+        _IDENTITY_PARAMETER,
     ],
 }
 

@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from fhir.constants import FHIRSystem
-
 if TYPE_CHECKING:
     from tests.conftest import Client
+
+from tests.conftest import SIMPLE_PAYLOAD
 
 
 class TestSdsIntegration:
@@ -18,22 +18,10 @@ class TestSdsIntegration:
         """
         Test that querying by ODS code returns a valid ASID.
         """
-        # Create a request payload with a known patient
-        payload = {
-            "resourceType": "Parameters",
-            "parameter": [
-                {
-                    "name": "patientNHSNumber",
-                    "valueIdentifier": {
-                        "system": FHIRSystem.NHS_NUMBER,
-                        "value": "9999999999",  # Alice Jones with A12345 provider
-                    },
-                },
-            ],
-        }
-
         # Make request to the application endpoint
-        response = client.send_to_get_structured_record_endpoint(json.dumps(payload))
+        response = client.send_to_get_structured_record_endpoint(
+            json.dumps(SIMPLE_PAYLOAD)
+        )
 
         # Verify successful response indicates SDS lookup worked
         assert response.status_code == 200
@@ -45,23 +33,9 @@ class TestSdsIntegration:
         """
         Test that CONSUMER organization can be looked up successfully.
         """
-        # Create a request with a known patient
-        payload = {
-            "resourceType": "Parameters",
-            "parameter": [
-                {
-                    "name": "patientNHSNumber",
-                    "valueIdentifier": {
-                        "system": FHIRSystem.NHS_NUMBER,
-                        "value": "9999999999",  # Alice Jones with A12345 provider
-                    },
-                },
-            ],
-        }
-
         # Use A12345 as the consumer ODS (Ods-from header)
         response = client.send_to_get_structured_record_endpoint(
-            json.dumps(payload),
+            json.dumps(SIMPLE_PAYLOAD),
             headers={"Ods-from": "A12345"},  # Consumer ODS code
         )
 
@@ -77,22 +51,10 @@ class TestSdsIntegration:
         """
         Test that results contain both ASID and endpoint when both are available.
         """
-        # Create a request with a known patient
-        payload = {
-            "resourceType": "Parameters",
-            "parameter": [
-                {
-                    "name": "patientNHSNumber",
-                    "valueIdentifier": {
-                        "system": FHIRSystem.NHS_NUMBER,
-                        "value": "9999999999",  # Alice Jones with A12345 provider
-                    },
-                },
-            ],
-        }
-
         # Make request to the application endpoint
-        response = client.send_to_get_structured_record_endpoint(json.dumps(payload))
+        response = client.send_to_get_structured_record_endpoint(
+            json.dumps(SIMPLE_PAYLOAD)
+        )
 
         # Verify successful response (200) means both ASID and endpoint were retrieved
         # If either were missing, the application would fail with an error
