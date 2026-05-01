@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "clinical-data-gateway-api-poc",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

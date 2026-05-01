@@ -1,0 +1,64 @@
+meta {
+  name: OrangeBox
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/patient/$gpc.getstructuredrecord
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/fhir+json
+  Accept: application/fhir+json
+  Ods-From: S44444
+}
+
+body:json {
+  {
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name": "patientNHSNumber",
+        "valueIdentifier": {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "{{nhs_number}}"
+        }
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  const { v4: uuidv4 } = require('uuid');
+  req.setHeader("Ssp-TraceID", uuidv4());
+}
+
+tests {
+  test("Returns a 200 OK status", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is a standard FHIR Bundle", function() {
+    const body = res.getBody();
+    expect(body.resourceType).to.equal("Bundle");
+    expect(body.type).to.equal("collection");
+  });
+
+  test("Bundle contains the requested Patient data", function() {
+    const body = res.getBody();
+    const expectedNhsNumber = bru.getEnvVar("nhs_number");
+    const expectedFamilyName = bru.getEnvVar("family_name");
+    const patientEntry = body.entry.find(e => e.resource.resourceType === "Patient");
+
+    expect(patientEntry).to.not.be.undefined;
+
+    const nhsIdentifier = patientEntry.resource.identifier.find(
+      id => id.system === "https://fhir.nhs.uk/Id/nhs-number"
+    );
+    expect(nhsIdentifier.value).to.equal(expectedNhsNumber);
+    expect(patientEntry.resource.name[0].family.toUpperCase()).to.equal(expectedFamilyName.toUpperCase());;
+  });
+}
