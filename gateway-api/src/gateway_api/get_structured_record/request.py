@@ -48,8 +48,10 @@ class GetStructuredRecordRequest:
 
     @property
     def nhs_number(self) -> str:
-        nhs_number = self.parameters.parameter[0].valueIdentifier.value
-        return nhs_number
+        first = self.parameters.parameter[0]
+        if not isinstance(first, Parameters.Parameter):
+            raise InvalidRequestJSONError()
+        return first.valueIdentifier.value
 
     @property
     def ods_from(self) -> str:

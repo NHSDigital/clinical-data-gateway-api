@@ -39,9 +39,11 @@ class TestParameters:
         params = Parameters.create(parameter=[param_a, param_b])
 
         assert len(params.parameter) == 2, "parameter list should contain two entries"
+        assert isinstance(params.parameter[0], Parameters.Parameter)
         assert params.parameter[0].valueIdentifier.value == "9000000009", (
             "first parameter NHS number should be '9000000009'"
         )
+        assert isinstance(params.parameter[1], Parameters.Parameter)
         assert params.parameter[1].valueIdentifier.value == "9000000017", (
             "second parameter NHS number should be '9000000017'"
         )
@@ -66,6 +68,7 @@ class TestParameters:
             "resourceType should be 'Parameters'"
         )
         assert len(params.parameter) == 1, "parameter list should contain one entry"
+        assert isinstance(params.parameter[0], Parameters.Parameter)
         assert params.parameter[0].valueIdentifier.value == "9000000009", (
             "valueIdentifier value should be '9000000009'"
         )
@@ -205,6 +208,100 @@ class TestParameter:
             parameter.valueIdentifier = PatientIdentifier(  # type: ignore[misc]
                 value="0000000000",
             )
+
+
+class TestIdentityParameter:
+    def test_create(self) -> None:
+        """Test creating an IdentityParameter with part elements."""
+        part = [
+            {"name": "issuer", "valueString": "https://example.nhs.uk"},
+            {"name": "requestingOrgName", "valueString": "Example Org"},
+        ]
+        param = Parameters.IdentityParameter(name="identity", part=part)
+
+        assert param.name == "identity", "name should be 'identity'"
+        assert len(param.part) == 2, "part list should contain two entries"
+        assert param.part[0]["name"] == "issuer", "first part name should be 'issuer'"
+
+    def test_model_validate_identity_parameter_in_parameters(self) -> None:
+        """Test that a Parameters body with an identity part parameter validates."""
+        params = Parameters.model_validate(
+            {
+                "resourceType": "Parameters",
+                "parameter": [
+                    {
+                        "valueIdentifier": {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9000000009",
+                        },
+                    },
+                    {
+                        "name": "identity",
+                        "part": [
+                            {
+                                "name": "issuer",
+                                "valueString": "https://example.nhs.uk",
+                            },
+                            {
+                                "name": "requestingOrgName",
+                                "valueString": "Example Org",
+                            },
+                        ],
+                    },
+                ],
+            }
+        )
+
+        assert len(params.parameter) == 2, "parameter list should contain two entries"
+        assert isinstance(params.parameter[1], Parameters.IdentityParameter), (
+            "second parameter should be an IdentityParameter"
+        )
+        assert params.parameter[1].name == "identity", (
+            "second parameter name should be 'identity'"
+        )
+
+    def test_identity_parameter_serialises_name_and_part(self) -> None:
+        """Test that IdentityParameter serialises name and part into the JSON output."""
+        params = Parameters.model_validate(
+            {
+                "resourceType": "Parameters",
+                "parameter": [
+                    {
+                        "valueIdentifier": {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9000000009",
+                        },
+                    },
+                    {
+                        "name": "identity",
+                        "part": [
+                            {"name": "issuer", "valueString": "https://example.nhs.uk"},
+                        ],
+                    },
+                ],
+            }
+        )
+
+        json_str = params.model_dump_json()
+        assert '"name":"identity"' in json_str.replace(" ", ""), (
+            "JSON output should contain the identity parameter name"
+        )
+        assert '"part"' in json_str, "JSON output should contain the part array"
+        assert "https://example.nhs.uk" in json_str, (
+            "JSON output should contain the issuer value"
+        )
+
+    def test_is_frozen(self) -> None:
+        """Test that IdentityParameter fields are frozen (immutable)."""
+        from pydantic import ValidationError
+
+        param = Parameters.IdentityParameter(
+            name="identity",
+            part=[{"name": "issuer", "valueString": "https://example.nhs.uk"}],
+        )
+
+        with pytest.raises(ValidationError):
+            param.name = "other"
 
 
 class TestIssue:

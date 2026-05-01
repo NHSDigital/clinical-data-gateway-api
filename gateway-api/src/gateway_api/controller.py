@@ -3,7 +3,7 @@ Controller layer for orchestrating calls to external services
 """
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from fhir.r4 import Device, Organization, Practitioner
 from requests import Response
@@ -88,20 +88,22 @@ class Controller:
             item["name"]: item for item in identity_items if "name" in item
         }
 
-        issuer_item = cdg_identity.get("issuer")
+        issuer_item: dict[str, str] | None = cdg_identity.get("issuer")
         if not issuer_item:
             # TODO: Handle this better, return correct http error
             raise ValueError("Missing 'issuer' in identity in request body")
-        issuer: str = issuer_item.get("value")
+        issuer: str = cast("str", issuer_item.get("valueString"))
         if not issuer:
             # TODO: Handle this better, return correct http error
             raise ValueError("Missing 'issuer' value in identity in request body")
 
-        requesting_org_item = cdg_identity.get("requestingOrgName")
+        requesting_org_item: dict[str, str] | None = cdg_identity.get(
+            "requestingOrgName"
+        )
         if not requesting_org_item:
             # TODO: Handle this better, return correct http error
             raise ValueError("Missing 'requestingOrgName' in identity in request body")
-        requesting_org: str = requesting_org_item.get("value")
+        requesting_org: str = cast("str", requesting_org_item.get("valueString"))
         if not requesting_org:
             # TODO: Handle this better, return correct http error
             raise ValueError(
@@ -114,7 +116,7 @@ class Controller:
             raise ValueError("Missing 'requestingDevice' in identity in request body")
 
         requesting_device: Device = Device.model_validate(
-            {k: v for k, v in requesting_device_item.items() if k != "name"}
+            requesting_device_item["resource"]
         )
 
         requesting_practitioner_item = cdg_identity.get("requestingPractitioner")
@@ -125,7 +127,7 @@ class Controller:
             )
 
         requesting_practitioner: Practitioner = Practitioner.model_validate(
-            {k: v for k, v in requesting_practitioner_item.items() if k != "name"}
+            requesting_practitioner_item["resource"]
         )
 
         if (
