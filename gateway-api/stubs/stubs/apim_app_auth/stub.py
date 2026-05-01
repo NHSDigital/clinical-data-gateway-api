@@ -4,7 +4,6 @@ In-memory APIM APP Auth API stub.
 The stub does **not** implement the full APIM APP Auth API surface.
 """
 
-import logging
 from typing import Any
 
 from requests import Response, Session
@@ -60,8 +59,6 @@ class APIMAppAuthStub(StubBase, SessionPostStub):
         data: str | dict[str, str],  # noqa: ARG002 - required to match subclass signature
         **kwargs: Any,  # noqa: ARG002 - required to match subclass signature
     ) -> Response:
-        logger = logging.getLogger(__name__)
-        logger.info("DaveW in stub session_post data: %s", data)
         if session is None:
             raise ValueError("Session must be provided for APIMAppAuthStub")
 

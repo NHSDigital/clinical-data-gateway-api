@@ -23,17 +23,10 @@ STUB_APIM_APP_AUTH = _pds_url.strip().lower() == "stub"
 def _make_session_post(
     session: requests.Session, endpoint: str, data: dict[str, str]
 ) -> requests.Response:
-    print("DaveW: in _make_session_post STUB_APIM_APP_AUTH", STUB_APIM_APP_AUTH)
     if not STUB_APIM_APP_AUTH:
-        print("DaveW: in if ", session.post)
         return session.post(endpoint, data=data)
     else:
         stub = APIMAppAuthStub()
-        print("Dave W: in _make_session_post, stub:", stub.session_post)
-        print(
-            "Dave W: in _make_session_post, session_post:",
-            stub.session_post(session, endpoint, data),
-        )
         response = stub.session_post(session, endpoint, data)
         return response
 
