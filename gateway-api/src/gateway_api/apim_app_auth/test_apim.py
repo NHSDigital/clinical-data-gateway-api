@@ -200,17 +200,26 @@ class TestApimAuthenticator:
 
         method()
 
+    @patch("gateway_api.apim_app_auth.apim.APIMAppAuthStub")
     @patch("gateway_api.apim_app_auth.http.SessionManager")
     @patch("gateway_api.apim_app_auth.apim.jwt.encode")
     def test_auth_unsuccessful_status_code(
-        self, mock_jwt: MagicMock, mock_session_manager: MagicMock
+        self,
+        mock_jwt: MagicMock,
+        mock_session_manager: MagicMock,
+        mock_apim_app_auth_stub: MagicMock,
     ) -> None:
         mock_session_manager.with_session = self.mock_with_session
 
         mock_jwt.return_value = "client_assertion"
 
-        self.mock_session.post.return_value.status_code = 401
-        self.mock_session.post.return_value.text = "Unauthorized"
+        mock_apim_app_auth_stub.return_value.session_post.return_value.status_code = 401
+        mock_apim_app_auth_stub.return_value.session_post.return_value.text = (
+            "Unauthorized"
+        )
+
+        # self.mock_session.post.return_value.status_code = 401
+        # self.mock_session.post.return_value.text = "Unauthorized"
 
         apim_authenticator = ApimAuthenticator(
             private_key="private_key",
