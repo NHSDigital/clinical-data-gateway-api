@@ -4,10 +4,12 @@ import copy
 import os
 from collections.abc import Callable
 from datetime import timedelta
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
 import requests
+from dotenv import load_dotenv
 from fhir.constants import FHIRSystem
 
 DEFAULT_REQUEST_HEADERS = {
@@ -15,6 +17,16 @@ DEFAULT_REQUEST_HEADERS = {
     "Ods-from": "CONSUMER",
     "Ssp-TraceID": "test-trace-id",
 }
+
+
+def _load_test_env_file() -> None:
+    """Load repository-level test env vars for VS Code pytest runs."""
+    workspace_root = Path(__file__).resolve().parents[2]
+    test_env_file = workspace_root / ".env.test"
+    load_dotenv(dotenv_path=test_env_file, override=True)
+
+
+_load_test_env_file()
 
 
 SIMPLE_PAYLOAD = {

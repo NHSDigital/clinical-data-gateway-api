@@ -66,7 +66,7 @@
   "gitlens.ai.enabled": false,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
-  "python.envFile": "${workspaceFolder}/.env.test",
+  "python.envFile": "${workspaceFolder}/.env",
   "git.enableCommitSigning": true,
   "sonarlint.connectedMode.project": {
     "connectionId": "nhsdigital",
